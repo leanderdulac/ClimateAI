@@ -1,6 +1,6 @@
-# ClimateWise - Framework Integrado de Modelagem Climático-Econômica (FIMCE)
+# ClimateAI - Framework Integrado de Modelagem Climático-Econômica (FIMCE)
 
-O ClimateWise é uma plataforma inovadora que integra o Framework Integrado de Modelagem Climático-Econômica (FIMCE) para prever eventos climáticos extremos e seus impactos nos preços de commodities e mercados financeiros.
+APP Atuarial Climático que integra o Framework Integrado de Modelagem Climático-Econômica (FIMCE) para prever eventos climáticos extremos e seus impactos nos preços de commodities e mercados financeiros.
 
 ## 🌍 Visão Geral
 
@@ -97,40 +97,3 @@ Endpoints principais:
 3. **Simulador de Preços**: Modelagem do impacto climático nos preços
 4. **Tokenização de Eventos**: Mecanismo para criar tokens representando eventos climáticos
 5. **Monitoramento de Contratos Inteligentes**: Rastreamento de contratos baseados em eventos climáticos
-6. **Sistema de Alertas**: Notificações sobre eventos climáticos extremos
-
-## 🤖 Modelos Implementados
-
-O backend implementa diversos modelos:
-- **Random Forest** para padrões sazonais
-- **XGBoost** para eventos extremos
-- **LSTM** para séries temporais
-- **CNN** para dados espaciais de satélite
-- **Modelos Ensemble** para combinação otimizada
-
-## 🔬 Métricas e Validação
-
-O sistema utiliza métricas avançadas para avaliação:
-- RMSE, MAE, MAPE para modelos climáticos
-- Precisão, recall, F1-score para detecção de eventos
-- AUC-ROC para classificação
-- Directional Accuracy para previsões financeiras
-
-## 📈 Casos de Uso
-
-- **Agricultura**: Otimização de plantio e colheita
-- **Trading**: Estratégias baseadas em fatores climáticos
-- **Seguros Rurais**: Precificação de riscos climáticos
-- **Indústria Alimentícia**: Planejamento de suprimentos
-
-## 📚 Documentação
-
-A documentação completa do FIMCE está disponível no arquivo `FIMCE.md`.
-
-## 🤝 Contribuições
-
-Fique à vontade para abrir issues e pull requests. Este é um projeto colaborativo para enfrentar os desafios das mudanças climáticas.
-
-## ©️ Licença
-
-Este projeto está licenciado conforme especificado no arquivo de licença.
