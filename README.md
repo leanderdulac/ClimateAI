@@ -46,9 +46,24 @@ pip install -r requirements.txt
 
 2. Configure as variáveis de ambiente:
 ```bash
-cp .env.template .env
-# Edite .env com suas chaves de API
+cp server/.env.example server/.env
+# Edite server/.env com suas chaves de API
 ```
+
+#### Configuração das APIs
+
+**Embrapa API** (Dados históricos):
+- Obtenha sua chave em: https://api.cnptia.embrapa.br/
+- Configure `EMBRAPA_API_KEY` no arquivo `.env`
+
+**OpenMeteo API** (Previsões):
+- Gratuita, não requer chave de API
+- Usada automaticamente para previsões climáticas
+
+**Outras configurações**:
+- `HOST`: Endereço do servidor (padrão: 0.0.0.0)
+- `PORT`: Porta do servidor (padrão: 8000)
+- `DEBUG`: Modo de desenvolvimento (padrão: true)
 
 3. Execute o backend:
 ```bash
@@ -83,12 +98,25 @@ docker-compose up --build
 - **Frontend**: http://localhost:5173
 - **Documentação da API**: http://localhost:8000/docs
 
-Endpoints principais:
-- `GET /api/v1/clima/historico` - Dados climáticos históricos
-- `GET /api/v1/previsao/clima` - Previsão climática
+### Endpoints Principais
+
+#### Dados Climáticos
+- `GET /api/v1/clima/historico` - **Embrapa**: Dados climáticos históricos (30+ anos)
+- `GET /api/v1/clima/previsao` - **OpenMeteo**: Previsão climática (7-15 dias)
+- `GET /api/v1/clima/atual` - Condições climáticas atuais
+
+#### Cálculos Atuariais
+- `POST /api/v1/clima/calculo-avancado-premio` - Cálculo atuarial com técnicas avançadas:
+  - Análise fractal de padrões climáticos
+  - Simulação Monte Carlo (50k iterações)
+  - Lógica fuzzy para avaliação de risco
+  - Física estatística para sistemas complexos
+
+#### Outros
 - `GET /api/v1/eventos` - Eventos climáticos detectados
 - `GET /api/v1/modelagem/previsao-precos` - Previsão de preços de commodities
 - `GET /api/v1/alertas` - Sistema de alertas
+- `GET /api/v1/localizacao` - Serviços de geocodificação
 
 ## 📊 Funcionalidades
 

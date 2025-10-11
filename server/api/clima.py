@@ -20,55 +20,40 @@ async def get_historico_clima(
     longitude: float = Query(..., ge=-180, le=180),
     data_inicio: datetime = Query(...),
     data_fim: datetime = Query(...),
-    variavel: Optional[str] = Query(None),
-    fonte: str = Query("openmeteo", enum=["openmeteo", "embrapa"])
+    variavel: Optional[str] = Query(None)
 ):
     """
-    Obter dados climáticos históricos para uma localização específica
-    
+    Obter dados climáticos históricos para uma localização específica usando Embrapa
+
     - **latitude**: Latitude do local (-90 a 90)
     - **longitude**: Longitude do local (-180 a 180)
     - **data_inicio**: Data inicial para busca dos dados
     - **data_fim**: Data final para busca dos dados
     - **variavel**: Filtrar por variável específica (opcional)
-    - **fonte**: Fonte dos dados ("openmeteo" ou "embrapa")
     """
     try:
-        if fonte == "openmeteo":
-            # Usar OpenMeteo para dados históricos detalhados
-            dados = openmeteo_service.obter_historico(
-                latitude=latitude,
-                longitude=longitude,
-                data_inicio=data_inicio,
-                data_fim=data_fim,
-                variavel=variavel
+        # Usar Embrapa para dados históricos
+        if not embrapa_service.is_configured:
+            raise HTTPException(
+                status_code=503,
+                detail="Serviço Embrapa não configurado. Configure EMBRAPA_API_KEY no arquivo .env"
             )
-            
-            return {
-                "dados": dados,
-                "fonte": "OpenMeteo",
-                "periodo": {
-                    "inicio": data_inicio.strftime("%Y-%m-%d"),
-                    "fim": data_fim.strftime("%Y-%m-%d")
-                }
+
+        dados = await embrapa_service.get_climate_data(
+            latitude=latitude,
+            longitude=longitude,
+            start_date=data_inicio.strftime("%Y-%m-%d"),
+            end_date=data_fim.strftime("%Y-%m-%d")
+        )
+
+        return {
+            "dados": dados,
+            "fonte": "Embrapa",
+            "periodo": {
+                "inicio": data_inicio.strftime("%Y-%m-%d"),
+                "fim": data_fim.strftime("%Y-%m-%d")
             }
-        else:
-            # Usar Embrapa como fallback ou para dados específicos do Brasil
-            dados = await embrapa_service.get_climate_data(
-                latitude=latitude,
-                longitude=longitude,
-                start_date=data_inicio.strftime("%Y-%m-%d"),
-                end_date=data_fim.strftime("%Y-%m-%d")
-            )
-            
-            return {
-                "dados": dados,
-                "fonte": "Embrapa",
-                "periodo": {
-                    "inicio": data_inicio.strftime("%Y-%m-%d"),
-                    "fim": data_fim.strftime("%Y-%m-%d")
-                }
-            }
+        }
     except Exception as e:
         raise HTTPException(
             status_code=500,
@@ -111,22 +96,10 @@ async def get_previsao_clima(
     dias: int = Query(7, ge=1, le=15)
 ):
     """
-    Obter previsão do tempo para os próximos dias
+    Obter previsão do tempo para os próximos dias usando OpenMeteo
     """
     try:
-        # Verificar se Embrapa está configurado
-        if embrapa_service.is_configured:
-            try:
-                # Tentar primeiro com Embrapa (dados específicos do Brasil)
-                return await embrapa_service.get_weather_forecast(
-                    latitude=latitude,
-                    longitude=longitude,
-                    days=dias
-                )
-            except Exception as e:
-                print(f"Embrapa falhou: {str(e)}")
-        
-        # Fallback para OpenMeteo
+        # Usar OpenMeteo para previsões
         dados_openmeteo = openmeteo_service.obter_previsao(
             latitude=latitude,
             longitude=longitude,
@@ -138,14 +111,14 @@ async def get_previsao_clima(
         for dado in dados_openmeteo:
             previsao.append({
                 "data": dado.data.strftime("%Y-%m-%d"),
-                "temperatura_max": dado.temperatura + 5,  # Aproximação
-                "temperatura_min": dado.temperatura - 5,  # Aproximação
+                "temperatura_max": dado.temperatura + 5,  # Aproximação baseada na média
+                "temperatura_min": dado.temperatura - 5,  # Aproximação baseada na média
                 "precipitacao": dado.precipitacao,
                 "probabilidade_precipitacao": dado.probabilidade_precipitacao,
                 "vento_velocidade": dado.vento_velocidade,
                 "vento_rajada": dado.vento_rajada,
                 "vento_direcao": dado.vento_direcao,
-                "fonte": "OpenMeteo" + (" (fallback)" if embrapa_service.is_configured else "")
+                "fonte": "OpenMeteo"
             })
 
         return {
@@ -155,8 +128,7 @@ async def get_previsao_clima(
                 "longitude": longitude
             },
             "periodo_dias": dias,
-            "fonte": "OpenMeteo" + (" (fallback - Embrapa indisponível)" if embrapa_service.is_configured else ""),
-            "observacao": "Dados aproximados" + (" devido à indisponibilidade da API Embrapa" if embrapa_service.is_configured else "")
+            "fonte": "OpenMeteo"
         }
 
     except Exception as e:
@@ -245,16 +217,19 @@ async def calcular_premio_avancado(
             end_date = datetime.now().strftime("%Y-%m-%d")
             start_date = (datetime.now() - timedelta(days=365)).strftime("%Y-%m-%d")
 
-        # Buscar dados climáticos
-        climate_data_raw = openmeteo_service.obter_historico(
+        # Buscar dados climáticos usando Embrapa
+        if not embrapa_service.is_configured:
+            raise HTTPException(
+                status_code=503,
+                detail="Serviço Embrapa não configurado para análise atuarial. Configure EMBRAPA_API_KEY no arquivo .env"
+            )
+        
+        climate_data = await embrapa_service.get_climate_data(
             latitude=latitude,
             longitude=longitude,
-            data_inicio=datetime.strptime(start_date, "%Y-%m-%d"),
-            data_fim=datetime.strptime(end_date, "%Y-%m-%d")
+            start_date=start_date,
+            end_date=end_date
         )
-        
-        # Converter para dicionários para o serviço atuarial
-        climate_data = [data.dict() for data in climate_data_raw]
 
         # Calcular prêmio usando técnicas avançadas
         premium_result = advanced_actuarial_service.calculate_comprehensive_premium(

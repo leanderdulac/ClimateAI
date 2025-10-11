@@ -149,3 +149,55 @@ INFO:     127.0.0.1:51852 - "GET /api/v1/clima/previsao?latitude=-22.906847&long
 INFO:     127.0.0.1:51852 - "GET /api/v1/clima/previsao?latitude=-22.906847&longitude=-43.172897&dias=7 HTTP/1.1" 200 OK
 INFO:     127.0.0.1:39744 - "OPTIONS /api/v1/clima/calculo-avancado-premio HTTP/1.1" 200 OK
 INFO:     127.0.0.1:39744 - "POST /api/v1/clima/calculo-avancado-premio HTTP/1.1" 422 Unprocessable Entity
+WARNING:  WatchFiles detected changes in 'api/clima.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [46808]
+INFO:     Started server process [50629]
+INFO:     Waiting for application startup.
+2025-10-11 18:09:24,044 - main - INFO - Iniciando servidor FIMCE...
+2025-10-11 18:09:24,045 - main - INFO - Configurações validadas com sucesso
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'api/clima.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [50629]
+INFO:     Started server process [50820]
+INFO:     Waiting for application startup.
+2025-10-11 18:10:08,854 - main - INFO - Iniciando servidor FIMCE...
+2025-10-11 18:10:08,854 - main - INFO - Configurações validadas com sucesso
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'api/clima.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [50820]
+INFO:     Started server process [50909]
+INFO:     Waiting for application startup.
+2025-10-11 18:10:26,179 - main - INFO - Iniciando servidor FIMCE...
+2025-10-11 18:10:26,179 - main - INFO - Configurações validadas com sucesso
+INFO:     Application startup complete.
+2025-10-11 18:11:31,914 - main - WARNING - HTTPException: Erro ao obter previsão do tempo: 'ClimaData' object has no attribute 'temperatura_max'
+INFO:     127.0.0.1:49886 - "GET /api/v1/clima/previsao?latitude=-23.5505&longitude=-46.6333 HTTP/1.1" 500 Internal Server Error
+2025-10-11 18:11:39,073 - main - WARNING - HTTPException: Erro ao obter previsão do tempo: 'ClimaData' object has no attribute 'temperatura_max'
+INFO:     127.0.0.1:54984 - "GET /api/v1/clima/previsao?latitude=-23.5505&longitude=-46.6333 HTTP/1.1" 500 Internal Server Error
+WARNING:  WatchFiles detected changes in 'api/clima.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [50909]
+INFO:     Started server process [51572]
+INFO:     Waiting for application startup.
+2025-10-11 18:12:16,987 - main - INFO - Iniciando servidor FIMCE...
+2025-10-11 18:12:16,987 - main - INFO - Configurações validadas com sucesso
+INFO:     Application startup complete.
+INFO:     127.0.0.1:52816 - "GET /api/v1/clima/previsao?latitude=-23.5505&longitude=-46.6333 HTTP/1.1" 200 OK
+2025-10-11 18:18:20,702 - main - WARNING - HTTPException: {'erro': '503: Serviço Embrapa não configurado. Configure EMBRAPA_API_KEY no arquivo .env', 'mensagem': 'Falha ao obter dados históricos', 'sugestao': 'Tente reduzir o período de busca ou usar outra fonte de dados'}
+INFO:     127.0.0.1:38140 - "GET /api/v1/clima/historico?latitude=-23.5505&longitude=-46.6333&data_inicio=2020-01-01&data_fim=2020-01-31 HTTP/1.1" 500 Internal Server Error
+2025-10-11 18:18:28,020 - main - WARNING - HTTPException: {'erro': '503: Serviço Embrapa não configurado. Configure EMBRAPA_API_KEY no arquivo .env', 'mensagem': 'Falha ao obter dados históricos', 'sugestao': 'Tente reduzir o período de busca ou usar outra fonte de dados'}
+INFO:     127.0.0.1:43866 - "GET /api/v1/clima/historico?latitude=-23.5505&longitude=-46.6333&data_inicio=2020-01-01&data_fim=2020-01-31 HTTP/1.1" 500 Internal Server Error
+2025-10-11 18:18:46,696 - main - WARNING - HTTPException: {'erro': '503: Serviço Embrapa não configurado para análise atuarial. Configure EMBRAPA_API_KEY no arquivo .env', 'mensagem': 'Falha no cálculo avançado de prêmio', 'sugestao': 'Verifique os parâmetros de entrada e tente novamente'}
+INFO:     127.0.0.1:45688 - "POST /api/v1/clima/calculo-avancado-premio?latitude=-23.5505&longitude=-46.6333&frequency=5.0&severity=50000&asset_value=100000 HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:47844 - "GET /api/v1/clima/previsao?latitude=-23.5505&longitude=-46.6333 HTTP/1.1" 200 OK
