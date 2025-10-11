@@ -1,0 +1,151 @@
+nohup: ignorando entrada
+INFO:     Will watch for changes in these directories: ['/home/artha/climateAI/server']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [19712] using WatchFiles
+INFO:     Started server process [19715]
+INFO:     Waiting for application startup.
+2025-10-11 16:26:55,901 - main - INFO - Iniciando servidor FIMCE...
+2025-10-11 16:26:55,901 - main - INFO - Configurações validadas com sucesso
+INFO:     Application startup complete.
+INFO:     127.0.0.1:58600 - "GET /docs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56770 - "GET /clima/previsao?latitude=-23.5505 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:56772 - "GET /clima/historico?latitude=-23.5505 HTTP/1.1" 404 Not Found
+2025-10-11 16:27:53,925 - main - WARNING - HTTPException: {'erro': "500: Erro ao obter dados históricos: Client.weather_api() missing 2 required positional arguments: 'url' and 'params'", 'mensagem': 'Falha ao obter dados históricos', 'sugestao': 'Tente reduzir o período de busca ou usar outra fonte de dados'}
+INFO:     127.0.0.1:49800 - "GET /api/v1/clima/historico?latitude=-23.5505&longitude=-46.6333&data_inicio=2023-01-01&data_fim=2023-01-05 HTTP/1.1" 500 Internal Server Error
+2025-10-11 16:28:01,749 - main - WARNING - HTTPException: {'erro': "500: Erro ao obter dados históricos: Client.weather_api() missing 2 required positional arguments: 'url' and 'params'", 'mensagem': 'Falha ao obter dados históricos', 'sugestao': 'Tente reduzir o período de busca ou usar outra fonte de dados'}
+INFO:     127.0.0.1:50516 - "GET /api/v1/clima/historico?latitude=-23.5505&longitude=-46.6333&data_inicio=2023-01-01T00:00:00&data_fim=2023-01-05T00:00:00 HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:57362 - "GET /api/v1/clima/previsao?latitude=-23.5505&longitude=-46.6333 HTTP/1.1" 200 OK
+2025-10-11 16:33:38,919 - main - WARNING - HTTPException: {'erro': "500: Erro ao obter dados históricos: Client.weather_api() missing 2 required positional arguments: 'url' and 'params'", 'mensagem': 'Falha ao obter dados históricos', 'sugestao': 'Tente reduzir o período de busca ou usar outra fonte de dados'}
+INFO:     127.0.0.1:44536 - "GET /api/v1/clima/historico?latitude=-23.5505&longitude=-46.6333&data_inicio=2020-01-01&data_fim=2020-01-31 HTTP/1.1" 500 Internal Server Error
+WARNING:  WatchFiles detected changes in 'api/clima.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [19715]
+INFO:     Started server process [23022]
+INFO:     Waiting for application startup.
+2025-10-11 16:34:19,488 - main - INFO - Iniciando servidor FIMCE...
+2025-10-11 16:34:19,488 - main - INFO - Configurações validadas com sucesso
+INFO:     Application startup complete.
+2025-10-11 16:34:27,052 - main - WARNING - HTTPException: {'erro': "500: Erro ao obter dados históricos: Client.weather_api() missing 2 required positional arguments: 'url' and 'params'", 'mensagem': 'Falha ao obter dados históricos', 'sugestao': 'Tente reduzir o período de busca ou usar outra fonte de dados'}
+INFO:     127.0.0.1:49032 - "GET /api/v1/clima/historico?latitude=-23.5505&longitude=-46.6333&data_inicio=2020-01-01&data_fim=2020-01-31 HTTP/1.1" 500 Internal Server Error
+WARNING:  WatchFiles detected changes in 'services/openmeteo_service.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [23022]
+INFO:     Started server process [24838]
+INFO:     Waiting for application startup.
+2025-10-11 16:39:13,876 - main - INFO - Iniciando servidor FIMCE...
+2025-10-11 16:39:13,876 - main - INFO - Configurações validadas com sucesso
+INFO:     Application startup complete.
+INFO:     127.0.0.1:37168 - "GET /clima/historico?latitude=-23.5505&longitude=-46.6333&data_inicio=2020-01-01&data_fim=2020-01-31 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:60954 - "GET /docs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45274 - "GET / HTTP/1.1" 200 OK
+2025-10-11 16:40:15,904 - main - WARNING - HTTPException: {'erro': "500: Erro ao obter dados históricos: 'list' object has no attribute 'Hourly'", 'mensagem': 'Falha ao obter dados históricos', 'sugestao': 'Tente reduzir o período de busca ou usar outra fonte de dados'}
+INFO:     127.0.0.1:56032 - "GET /api/v1/clima/historico?latitude=-23.5505&longitude=-46.6333&data_inicio=2020-01-01&data_fim=2020-01-31 HTTP/1.1" 500 Internal Server Error
+WARNING:  WatchFiles detected changes in 'services/openmeteo_service.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [24838]
+INFO:     Started server process [25381]
+INFO:     Waiting for application startup.
+2025-10-11 16:40:32,407 - main - INFO - Iniciando servidor FIMCE...
+2025-10-11 16:40:32,407 - main - INFO - Configurações validadas com sucesso
+INFO:     Application startup complete.
+INFO:     127.0.0.1:59308 - "GET /api/v1/clima/historico?latitude=-23.5505&longitude=-46.6333&data_inicio=2020-01-01&data_fim=2020-01-31 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34990 - "GET /api/v1/clima/previsao?latitude=-23.5505&longitude=-46.6333 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43624 - "GET /api/v1/clima/historico?latitude=-23.5505&longitude=-46.6333&data_inicio=2020-01-01&data_fim=2020-01-31 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53534 - "POST /api/v1/clima/calculo_premio_avancado HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:39440 - "POST /api/v1/clima/calculo-avancado-premio HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:58968 - "GET /api/v1/clima/calculo-avancado-premio?latitude=-23.5505&longitude=-46.6333&frequency=0.1&severity=0.05&asset_value=100000 HTTP/1.1" 405 Method Not Allowed
+2025-10-11 16:42:09,407 - main - WARNING - HTTPException: {'erro': "name 'timedelta' is not defined", 'mensagem': 'Falha no cálculo avançado de prêmio', 'sugestao': 'Verifique os parâmetros de entrada e tente novamente'}
+INFO:     127.0.0.1:40338 - "POST /api/v1/clima/calculo-avancado-premio?latitude=-23.5505&longitude=-46.6333&frequency=0.1&severity=0.05&asset_value=100000 HTTP/1.1" 500 Internal Server Error
+WARNING:  WatchFiles detected changes in 'api/clima.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [25381]
+INFO:     Started server process [26437]
+INFO:     Waiting for application startup.
+2025-10-11 16:42:26,150 - main - INFO - Iniciando servidor FIMCE...
+2025-10-11 16:42:26,150 - main - INFO - Configurações validadas com sucesso
+INFO:     Application startup complete.
+2025-10-11 16:42:32,560 - main - WARNING - HTTPException: {'erro': 'Embrapa API não configurada. Configure EMBRAPA_API_KEY no arquivo .env', 'mensagem': 'Falha no cálculo avançado de prêmio', 'sugestao': 'Verifique os parâmetros de entrada e tente novamente'}
+INFO:     127.0.0.1:49384 - "POST /api/v1/clima/calculo-avancado-premio?latitude=-23.5505&longitude=-46.6333&frequency=0.1&severity=0.05&asset_value=100000 HTTP/1.1" 500 Internal Server Error
+WARNING:  WatchFiles detected changes in 'api/clima.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [26437]
+INFO:     Started server process [26621]
+INFO:     Waiting for application startup.
+2025-10-11 16:42:50,798 - main - INFO - Iniciando servidor FIMCE...
+2025-10-11 16:42:50,799 - main - INFO - Configurações validadas com sucesso
+INFO:     Application startup complete.
+2025-10-11 16:42:55,587 - main - WARNING - HTTPException: {'erro': '400: Período máximo de consulta é 1 ano', 'mensagem': 'Falha no cálculo avançado de prêmio', 'sugestao': 'Verifique os parâmetros de entrada e tente novamente'}
+INFO:     127.0.0.1:37956 - "POST /api/v1/clima/calculo-avancado-premio?latitude=-23.5505&longitude=-46.6333&frequency=0.1&severity=0.05&asset_value=100000 HTTP/1.1" 500 Internal Server Error
+WARNING:  WatchFiles detected changes in 'api/clima.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [26621]
+INFO:     Started server process [26740]
+INFO:     Waiting for application startup.
+2025-10-11 16:43:06,579 - main - INFO - Iniciando servidor FIMCE...
+2025-10-11 16:43:06,580 - main - INFO - Configurações validadas com sucesso
+INFO:     Application startup complete.
+2025-10-11 16:43:11,509 - main - WARNING - HTTPException: {'erro': "'ClimaData' object has no attribute 'get'", 'mensagem': 'Falha no cálculo avançado de prêmio', 'sugestao': 'Verifique os parâmetros de entrada e tente novamente'}
+INFO:     127.0.0.1:52160 - "POST /api/v1/clima/calculo-avancado-premio?latitude=-23.5505&longitude=-46.6333&frequency=0.1&severity=0.05&asset_value=100000 HTTP/1.1" 500 Internal Server Error
+2025-10-11 16:43:17,402 - main - WARNING - HTTPException: {'erro': "'ClimaData' object has no attribute 'get'", 'mensagem': 'Falha no cálculo avançado de prêmio', 'sugestao': 'Verifique os parâmetros de entrada e tente novamente'}
+INFO:     127.0.0.1:40080 - "POST /api/v1/clima/calculo-avancado-premio?latitude=-23.5505&longitude=-46.6333&frequency=0.1&severity=0.05&asset_value=100000 HTTP/1.1" 500 Internal Server Error
+WARNING:  WatchFiles detected changes in 'api/clima.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [26740]
+INFO:     Started server process [27059]
+INFO:     Waiting for application startup.
+2025-10-11 16:43:42,872 - main - INFO - Iniciando servidor FIMCE...
+2025-10-11 16:43:42,872 - main - INFO - Configurações validadas com sucesso
+INFO:     Application startup complete.
+/home/artha/climateAI/venv/lib/python3.12/site-packages/numpy/lib/_function_base_impl.py:2922: RuntimeWarning: invalid value encountered in divide
+  c /= stddev[:, None]
+INFO:     127.0.0.1:53876 - "POST /api/v1/clima/calculo-avancado-premio?latitude=-23.5505&longitude=-46.6333&frequency=0.1&severity=0.05&asset_value=100000 HTTP/1.1" 200 OK
+/home/artha/climateAI/venv/lib/python3.12/site-packages/numpy/lib/_function_base_impl.py:2922: RuntimeWarning: invalid value encountered in divide
+  c /= stddev[:, None]
+INFO:     127.0.0.1:52704 - "POST /api/v1/clima/calculo-avancado-premio?latitude=-23.5505&longitude=-46.6333&frequency=0.1&severity=0.05&asset_value=100000 HTTP/1.1" 200 OK
+/home/artha/climateAI/venv/lib/python3.12/site-packages/numpy/lib/_function_base_impl.py:2922: RuntimeWarning: invalid value encountered in divide
+  c /= stddev[:, None]
+WARNING:  WatchFiles detected changes in 'api/clima.py'. Reloading...
+INFO:     127.0.0.1:38736 - "POST /api/v1/clima/calculo-avancado-premio?latitude=-23.5505&longitude=-46.6333&frequency=5.0&severity=50000&asset_value=100000 HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [27059]
+WARNING:  WatchFiles detected changes in 'services/openmeteo_service.py'. Reloading...
+INFO:     Started server process [46808]
+INFO:     Waiting for application startup.
+2025-10-11 17:56:43,931 - main - INFO - Iniciando servidor FIMCE...
+2025-10-11 17:56:43,931 - main - INFO - Configurações validadas com sucesso
+INFO:     Application startup complete.
+/home/artha/climateAI/venv/lib/python3.12/site-packages/numpy/lib/_function_base_impl.py:2922: RuntimeWarning: invalid value encountered in divide
+  c /= stddev[:, None]
+INFO:     127.0.0.1:51648 - "POST /api/v1/clima/calculo-avancado-premio?latitude=-23.5505&longitude=-46.6333&frequency=5.0&severity=50000&asset_value=100000 HTTP/1.1" 200 OK
+2025-10-11 18:03:59,213 - main - WARNING - HTTPException: {'erro': '400: Período máximo de consulta é 1 ano', 'mensagem': 'Falha ao obter dados históricos', 'sugestao': 'Tente reduzir o período de busca ou usar outra fonte de dados'}
+INFO:     127.0.0.1:45088 - "GET /api/v1/clima/historico?latitude=-23.5505&longitude=-46.6333&data_inicio=1995-10-11&data_fim=2025-10-11 HTTP/1.1" 500 Internal Server Error
+2025-10-11 18:03:59,217 - main - WARNING - HTTPException: {'erro': '400: Período máximo de consulta é 1 ano', 'mensagem': 'Falha ao obter dados históricos', 'sugestao': 'Tente reduzir o período de busca ou usar outra fonte de dados'}
+INFO:     127.0.0.1:45088 - "GET /api/v1/clima/historico?latitude=-23.5505&longitude=-46.6333&data_inicio=1995-10-11&data_fim=2025-10-11 HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:45088 - "GET /api/v1/clima/previsao?latitude=-23.5505&longitude=-46.6333&dias=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45096 - "GET /api/v1/clima/previsao?latitude=-23.5505&longitude=-46.6333&dias=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45088 - "GET /api/v1/clima/previsao?latitude=-23.5505&longitude=-46.6333&dias=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45096 - "GET /api/v1/clima/previsao?latitude=-23.5505&longitude=-46.6333&dias=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51852 - "GET /api/v1/localizacao/cep/21230220 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51852 - "GET /api/v1/localizacao/coordenadas?latitude=-22.906847&longitude=-43.172897 HTTP/1.1" 200 OK
+2025-10-11 18:04:23,264 - main - WARNING - HTTPException: {'erro': '400: Período máximo de consulta é 1 ano', 'mensagem': 'Falha ao obter dados históricos', 'sugestao': 'Tente reduzir o período de busca ou usar outra fonte de dados'}
+INFO:     127.0.0.1:51852 - "GET /api/v1/clima/historico?latitude=-22.906847&longitude=-43.172897&data_inicio=1995-10-11&data_fim=2025-10-11 HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:51852 - "GET /api/v1/clima/previsao?latitude=-22.906847&longitude=-43.172897&dias=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51852 - "GET /api/v1/clima/previsao?latitude=-22.906847&longitude=-43.172897&dias=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39744 - "OPTIONS /api/v1/clima/calculo-avancado-premio HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39744 - "POST /api/v1/clima/calculo-avancado-premio HTTP/1.1" 422 Unprocessable Entity

@@ -10,14 +10,14 @@ interface StackProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 const Stack = React.forwardRef<HTMLDivElement, StackProps>(
-  ({ 
-    className, 
-    direction = 'col', 
-    spacing = 'default', 
+  ({
+    className,
+    direction = 'col',
+    spacing = 'default',
     align = 'start',
     justify = 'start',
     wrap = false,
-    ...props 
+    ...props
   }, ref) => {
     return (
       <div

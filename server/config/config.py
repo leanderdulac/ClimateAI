@@ -7,23 +7,34 @@ from typing import Optional
 
 class Settings(BaseSettings):
     # Configurações do servidor
-    HOST: str = "0.0.0.0"
+    HOST: str = "localhost"
     PORT: int = 8000
     DEBUG: bool = True
+    API_HOST: str = "localhost"
+    API_PORT: int = 8000
+    SECRET_KEY: str = "changeme123"
+    ALLOW_ORIGINS: list = ["*"]
     
     # Configurações de API
-    METEOBLUE_API_KEY: Optional[str] = None
-    OPENWEATHER_API_KEY: Optional[str] = None
-    YAHOO_FINANCE_ENABLED: bool = True
+    EMBRAPA_API_KEY: Optional[str] = None
+    EMBRAPA_API_URL: Optional[str] = None
+    EMBRAPA_API_VERSION: Optional[str] = None
     
-    # Configurações de banco de dados
-    DATABASE_URL: str = "postgresql://user:password@localhost:5432/fimce"
+    # Configurações OpenMeteo
+    OPENMETEO_CACHE_DIR: str = ".cache"
+    OPENMETEO_CACHE_TIMEOUT: int = 3600  # 1 hora
+    
+    # Configurações de geocodificação
+    GEOCODING_CACHE_TIMEOUT: int = 86400  # 24 horas
+    GEOCODING_MAX_RETRIES: int = 3
     
     # Configurações de cache
-    REDIS_URL: str = "redis://localhost:6379"
+    REDIS_ENABLED: bool = False
+    REDIS_URL: Optional[str] = None
     
-    # Configurações de modelos
-    MODEL_PATH: str = "./models"
+    # Configurações de banco de dados
+    DATABASE_ENABLED: bool = False
+    DATABASE_URL: Optional[str] = None
     
     class Config:
         env_file = ".env"

@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useState } from 'react';
-import { Zap, Package, Calendar, TrendingUp, AlertTriangle, Eye, Thermometer, Droplets, Wind } from "lucide-react";
+import { Zap, Package, TrendingUp, AlertTriangle, Thermometer } from "lucide-react";
 
 export function ClimateEventTokenizer() {
   const [eventName, setEventName] = useState<string>('');
@@ -20,7 +20,7 @@ export function ClimateEventTokenizer() {
       tokenAmount,
       tokenSymbol
     });
-    
+
     // Show success message (in a real app, this would be a toast notification)
     alert(`Token ${tokenSymbol} created successfully for event: ${eventName}`);
   };
@@ -57,7 +57,7 @@ export function ClimateEventTokenizer() {
               className="border-gray-300"
             />
           </div>
-          
+
           <div>
             <Label htmlFor="trigger" className="text-sm font-medium text-gray-700 flex items-center gap-1">
               <Thermometer className="h-4 w-4 text-red-600" />
@@ -71,7 +71,7 @@ export function ClimateEventTokenizer() {
               className="border-gray-300"
             />
           </div>
-          
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="token-amount" className="text-sm font-medium text-gray-700 flex items-center gap-1">
@@ -86,7 +86,7 @@ export function ClimateEventTokenizer() {
                 className="border-gray-300"
               />
             </div>
-            
+
             <div>
               <Label htmlFor="token-symbol" className="text-sm font-medium text-gray-700 flex items-center gap-1">
                 <Package className="h-4 w-4 text-blue-600" />
@@ -102,16 +102,16 @@ export function ClimateEventTokenizer() {
             </div>
           </div>
         </div>
-        
+
         <div className="flex flex-wrap gap-2 p-3 bg-yellow-100 rounded-lg">
           <Badge variant="outline" className="bg-white border-yellow-300 text-yellow-700">Temperature Threshold</Badge>
           <Badge variant="outline" className="bg-white border-yellow-300 text-yellow-700">Precipitation</Badge>
           <Badge variant="outline" className="bg-white border-yellow-300 text-yellow-700">Wind Speed</Badge>
           <Badge variant="outline" className="bg-white border-yellow-300 text-yellow-700">Flood Level</Badge>
         </div>
-        
-        <Button 
-          onClick={handleCreateToken} 
+
+        <Button
+          onClick={handleCreateToken}
           className="w-full bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 text-white"
         >
           <Zap className="h-4 w-4 mr-2" />

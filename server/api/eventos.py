@@ -11,7 +11,7 @@ router = APIRouter()
 eventos_service = EventosService()
 
 
-@router.get("/eventos", response_model=List[EventoClimatico])
+@router.get("/", response_model=List[EventoClimatico])
 async def get_eventos_climaticos(
     latitude: Optional[float] = Query(None, ge=-90, le=90),
     longitude: Optional[float] = Query(None, ge=-180, le=180),
@@ -36,7 +36,7 @@ async def get_eventos_climaticos(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/eventos/severidade", response_model=List[EventoClimatico])
+@router.get("/severidade", response_model=List[EventoClimatico])
 async def get_eventos_por_severidade(
     latitude: float = Query(..., ge=-90, le=90),
     longitude: float = Query(..., ge=-180, le=180),

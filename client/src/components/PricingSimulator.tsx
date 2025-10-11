@@ -1,3 +1,5 @@
+import { embrapaApi } from '@/lib/embrapaApi';
+import { useLocation } from '@/lib/LocationContext';
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -5,36 +7,191 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
-import { DollarSign, Calculator, AlertTriangle, TrendingUp, Activity } from "lucide-react";
+import {
+  DollarSign,
+  Calculator,
+  AlertTriangle,
+  TrendingUp,
+  Activity,
+  Cloud,
+  Droplets,
+  Wind,
+  Sun,
+  CloudRain,
+  Flame
+} from "lucide-react";
 
-// Mock actuarial calculation function
-const calculatePremium = (frequency: number, severity: number, confidence: number) => {
-  // Simplified Monte Carlo simulation
-  const simulations = 10000;
-  let totalLoss = 0;
-  
-  for (let i = 0; i < simulations; i++) {
-    // Simple model: loss occurs with 'frequency' probability
-    // Loss amount is random between 0 and 'severity'
-    if (Math.random() < frequency / 100) {
-      totalLoss += Math.random() * severity;
-    }
+type ClimateEvent = {
+  id: string;
+  name: string;
+  icon: JSX.Element;
+  baseFrequency: number;
+  baseSeverity: number;
+};
+
+const climateEvents: ClimateEvent[] = [
+  {
+    id: 'drought',
+    name: 'Seca',
+    icon: <Sun className="h-4 w-4" />,
+    baseFrequency: 15,
+    baseSeverity: 8000
+  },
+  {
+    id: 'flood',
+    name: 'Inundação',
+    icon: <Droplets className="h-4 w-4" />,
+    baseFrequency: 12,
+    baseSeverity: 12000
+  },
+  {
+    id: 'rain',
+    name: 'Chuvas Intensas',
+    icon: <CloudRain className="h-4 w-4" />,
+    baseFrequency: 25,
+    baseSeverity: 5000
+  },
+  {
+    id: 'wind',
+    name: 'Ventos Fortes',
+    icon: <Wind className="h-4 w-4" />,
+    baseFrequency: 20,
+    baseSeverity: 7000
+  },
+  {
+    id: 'hail',
+    name: 'Granizo',
+    icon: <Cloud className="h-4 w-4" />,
+    baseFrequency: 8,
+    baseSeverity: 15000
+  },
+  {
+    id: 'fire',
+    name: 'Queimadas',
+    icon: <Flame className="h-4 w-4" />,
+    baseFrequency: 10,
+    baseSeverity: 20000
   }
-  
-  const averageLoss = totalLoss / simulations;
-  // Add confidence margin
-  return averageLoss * (1 + (100 - confidence) / 100);
+];
+
+// Advanced actuarial calculation using backend API
+const calculateAdvancedPremium = async (
+  frequency: number,
+  severity: number,
+  confidence: number,
+  assetValue: number,
+  latitude?: number,
+  longitude?: number
+) => {
+  try {
+    // Use current location if available, otherwise default to São Paulo
+    const lat = latitude || -23.5505;
+    const lon = longitude || -46.6333;
+
+    const response = await embrapaApi.calculateAdvancedPremium({
+      latitude: lat,
+      longitude: lon,
+      frequency: frequency,
+      severity: severity,
+      asset_value: assetValue,
+      confidence_level: confidence
+    });
+
+    return response;
+  } catch (error) {
+    console.error('Erro no cálculo avançado:', error);
+    // Fallback para cálculo simplificado
+    const simulations = 10000;
+    let totalLoss = 0;
+    const maxSeverity = Math.min(severity, assetValue);
+
+    for (let i = 0; i < simulations; i++) {
+      if (Math.random() < frequency / 100) {
+        const lossPercentage = Math.pow(Math.random(), 2);
+        totalLoss += lossPercentage * maxSeverity;
+      }
+    }
+
+    const averageLoss = totalLoss / simulations;
+    const riskFactor = 1 + Math.log10(assetValue) / 20;
+    const fallbackPremium = averageLoss * riskFactor * (1 + (100 - confidence) / 100);
+
+    return {
+      premio_total: fallbackPremium,
+      premio_puro: averageLoss,
+      carregamentos: fallbackPremium * 0.35,
+      margem_risco: fallbackPremium * 0.15,
+      intervalo_confianca: {
+        inferior: fallbackPremium * 0.8,
+        superior: fallbackPremium * 1.2
+      },
+      analise_fractal: {
+        dimensao_fractal: 1.5,
+        lacunaaridade: 1.0,
+        persistencia: 0.5
+      },
+      risco_fuzzy: {
+        muito_baixo: 0.1,
+        baixo: 0.2,
+        medio: 0.4,
+        alto: 0.2,
+        muito_alto: 0.1
+      },
+      metodologia: {
+        iteracoes_monte_carlo: simulations,
+        tecnicas_utilizadas: ['Fallback - Monte Carlo Básico']
+      }
+    };
+  }
 };
 
 export function PricingSimulator() {
+  const [assetValue, setAssetValue] = useState<number>(100000); // Valor do bem/serviço
+  const [selectedEvent, setSelectedEvent] = useState<ClimateEvent | null>(null);
   const [frequency, setFrequency] = useState<number>(10); // %
   const [severity, setSeverity] = useState<number>(10000); // $
   const [confidence, setConfidence] = useState<number>(95); // %
   const [premium, setPremium] = useState<number>(0);
-  
-  const handleCalculate = () => {
-    const calculatedPremium = calculatePremium(frequency, severity, confidence);
-    setPremium(calculatedPremium);
+  const [advancedResults, setAdvancedResults] = useState<any>(null);
+  const [calculating, setCalculating] = useState<boolean>(false);
+
+  const { selectedLocation } = useLocation();
+
+  const handleEventSelect = (event: ClimateEvent) => {
+    setSelectedEvent(event);
+    setFrequency(event.baseFrequency);
+    setSeverity(event.baseSeverity);
+  };
+
+  const handleCalculate = async () => {
+    if (assetValue <= 0) {
+      alert('Por favor, insira um valor válido para o bem ou serviço.');
+      return;
+    }
+    if (!selectedEvent) {
+      alert('Por favor, selecione um evento climático.');
+      return;
+    }
+
+    setCalculating(true);
+    try {
+      const results = await calculateAdvancedPremium(
+        frequency,
+        severity,
+        confidence,
+        assetValue,
+        selectedLocation?.latitude,
+        selectedLocation?.longitude
+      );
+
+      setPremium(results.premio_total);
+      setAdvancedResults(results);
+    } catch (error) {
+      console.error('Erro no cálculo:', error);
+      alert('Erro no cálculo avançado. Usando método simplificado.');
+    } finally {
+      setCalculating(false);
+    }
   };
 
   return (
@@ -46,9 +203,9 @@ export function PricingSimulator() {
               <Calculator className="h-6 w-6 text-white" />
             </div>
             <div>
-              <CardTitle className="text-xl font-bold text-white">Risk Pricing</CardTitle>
+              <CardTitle className="text-xl font-bold text-white">Simulador de Preços</CardTitle>
               <CardDescription className="text-primary-100">
-                Actuarial model for climate risk assessment
+                Cálculo de seguros contra eventos climáticos
               </CardDescription>
             </div>
           </div>
@@ -56,9 +213,9 @@ export function PricingSimulator() {
             <div className="flex items-center gap-3 rounded-lg bg-white/10 px-4 py-2">
               <DollarSign className="h-5 w-5 text-primary-100" />
               <div>
-                <div className="text-sm text-primary-100">Estimated Premium</div>
+                <div className="text-sm text-primary-100">Valor do Seguro</div>
                 <div className="text-lg font-semibold text-white">
-                  ${premium.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                  R$ {premium.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                 </div>
               </div>
             </div>
@@ -68,14 +225,77 @@ export function PricingSimulator() {
       <CardContent className="space-y-8 p-6 bg-gradient-to-b from-white to-neutral-50">
         <div className="grid gap-8 sm:grid-cols-2">
           <div className="space-y-6">
+            {/* Climate Events Selection */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <Label 
-                  htmlFor="frequency" 
+                <Label className="flex items-center gap-2 text-sm font-medium text-neutral-700">
+                  <Cloud className="h-4 w-4 text-primary-500" />
+                  Evento Climático
+                </Label>
+                {selectedEvent && (
+                  <Badge variant="default" className="px-2 py-1">
+                    {selectedEvent.name}
+                  </Badge>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {climateEvents.map((event) => (
+                  <Button
+                    key={event.id}
+                    variant={selectedEvent?.id === event.id ? "default" : "outline"}
+                    className={`flex items-center gap-2 ${selectedEvent?.id === event.id
+                      ? "bg-primary-500 text-white"
+                      : "hover:bg-primary-50"
+                      }`}
+                    onClick={() => handleEventSelect(event)}
+                  >
+                    {event.icon}
+                    {event.name}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Asset Value Input */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label
+                  htmlFor="assetValue"
+                  className="flex items-center gap-2 text-sm font-medium text-neutral-700"
+                >
+                  <DollarSign className="h-4 w-4 text-primary-500" />
+                  Valor do Bem
+                </Label>
+                <Badge variant="default" className="px-2 py-1">
+                  ${assetValue.toLocaleString()}
+                </Badge>
+              </div>
+              <div className="rounded-lg border border-neutral-200 bg-white p-4">
+                <Input
+                  id="assetValue"
+                  type="number"
+                  min={0}
+                  step={1000}
+                  value={assetValue}
+                  onChange={(e) => setAssetValue(Number(e.target.value))}
+                  className="text-center"
+                  placeholder="Enter asset value"
+                />
+                <div className="mt-2 flex justify-between">
+                  <span className="text-xs text-neutral-500">Value in USD ($)</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Event Frequency Input */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label
+                  htmlFor="frequency"
                   className="flex items-center gap-2 text-sm font-medium text-neutral-700"
                 >
                   <Activity className="h-4 w-4 text-primary-500" />
-                  Event Frequency
+                  Frequência do Evento
                 </Label>
                 <Badge variant="default" className="px-2 py-1">
                   {frequency}%
@@ -91,16 +311,16 @@ export function PricingSimulator() {
                   onValueChange={([value]) => setFrequency(value)}
                 />
                 <div className="mt-2 flex justify-between">
-                  <span className="text-xs text-neutral-500">Rare Events</span>
-                  <span className="text-xs text-neutral-500">Frequent Events</span>
+                  <span className="text-xs text-neutral-500">Eventos Raros</span>
+                  <span className="text-xs text-neutral-500">Eventos Frequentes</span>
                 </div>
               </div>
             </div>
 
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <Label 
-                  htmlFor="severity" 
+                <Label
+                  htmlFor="severity"
                   className="flex items-center gap-2 text-sm font-medium text-neutral-700"
                 >
                   <AlertTriangle className="h-4 w-4 text-warning-500" />
@@ -119,11 +339,11 @@ export function PricingSimulator() {
                 className="text-center"
               />
             </div>
-            
+
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <Label 
-                  htmlFor="confidence" 
+                <Label
+                  htmlFor="confidence"
                   className="flex items-center gap-2 text-sm font-medium text-neutral-700"
                 >
                   <TrendingUp className="h-4 w-4 text-primary-500" />
@@ -148,69 +368,202 @@ export function PricingSimulator() {
                 </div>
               </div>
             </div>
-          </div>
 
-          <div className="mt-8">
+            {/* Risk Assessment Button */}
             <div className="rounded-lg border-2 border-dashed border-neutral-200 bg-neutral-50 p-6">
               <div className="space-y-4 text-center">
                 <Calculator className="mx-auto h-8 w-8 text-primary-400" />
                 <div>
                   <h3 className="text-sm font-semibold text-neutral-900">Risk Assessment</h3>
                   <p className="mt-1 text-xs text-neutral-500">
-                    Our actuarial model uses Monte Carlo simulation with {premium === 0 ? '10,000' : '10,000+'} iterations
+                    Our actuarial model uses advanced mathematical techniques: fractal analysis, Monte Carlo simulation, fuzzy logic, statistical physics, and actuarial calculations
                   </p>
                 </div>
-                <Button 
+                <Button
                   onClick={handleCalculate}
-                  className="w-full shadow-sm bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white"
+                  disabled={calculating}
+                  className="w-full shadow-sm bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white disabled:opacity-50"
                   size="lg"
                 >
                   <Calculator className="mr-2 h-4 w-4" />
-                  Calculate Premium
+                  {calculating ? 'Calculando...' : 'Calculate Premium'}
                 </Button>
               </div>
             </div>
+          </div>
 
-            {premium > 0 && (
-              <div className="mt-6 animate-slide-up rounded-lg bg-gradient-to-r from-success-50 to-success-100 p-6">
+          {/* Resultados Avançados */}
+          {premium > 0 && advancedResults && (
+            <div className="mt-6 space-y-6">
+              {/* Resultado Principal */}
+              <div className="animate-slide-up rounded-lg bg-gradient-to-r from-success-50 to-success-100 p-6">
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className="rounded-full bg-success-100 p-2">
                         <DollarSign className="h-4 w-4 text-success-600" />
                       </div>
-                      <h3 className="font-medium text-success-900">Premium Estimate</h3>
+                      <h3 className="font-medium text-success-900">Cálculo Atuarial Avançado</h3>
                     </div>
                     <Badge variant="secondary" className="px-2 py-1">
-                      {confidence}% Confidence
+                      {confidence}% Confiança
                     </Badge>
                   </div>
-                  
+
                   <div className="text-3xl font-bold text-success-700">
-                    ${premium.toLocaleString(undefined, {
+                    R$ {premium.toLocaleString(undefined, {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     })}
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="rounded-lg bg-white p-4 shadow-sm">
-                      <div className="text-xs text-neutral-600">Event Frequency</div>
-                      <div className="text-lg font-bold text-primary-600">{frequency}%</div>
+                      <div className="text-xs text-neutral-600">Prêmio Puro</div>
+                      <div className="text-lg font-bold text-primary-600">
+                        R$ {advancedResults.premio_puro?.toLocaleString() || 'N/A'}
+                      </div>
                     </div>
                     <div className="rounded-lg bg-white p-4 shadow-sm">
-                      <div className="text-xs text-neutral-600">Max Severity</div>
-                      <div className="text-lg font-bold text-warning-600">${severity.toLocaleString()}</div>
+                      <div className="text-xs text-neutral-600">Carregamentos</div>
+                      <div className="text-lg font-bold text-blue-600">
+                        R$ {advancedResults.carregamentos?.toLocaleString() || 'N/A'}
+                      </div>
                     </div>
                     <div className="rounded-lg bg-white p-4 shadow-sm">
-                      <div className="text-xs text-neutral-600">Confidence</div>
-                      <div className="text-lg font-bold text-success-600">{confidence}%</div>
+                      <div className="text-xs text-neutral-600">Margem de Risco</div>
+                      <div className="text-lg font-bold text-orange-600">
+                        R$ {advancedResults.margem_risco?.toLocaleString() || 'N/A'}
+                      </div>
+                    </div>
+                    <div className="rounded-lg bg-white p-4 shadow-sm">
+                      <div className="text-xs text-neutral-600">Intervalo de Confiança</div>
+                      <div className="text-sm font-bold text-purple-600">
+                        R$ {advancedResults.intervalo_confianca?.inferior?.toLocaleString() || 'N/A'} -<br />
+                        R$ {advancedResults.intervalo_confianca?.superior?.toLocaleString() || 'N/A'}
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            )}
-          </div>
+
+              {/* Análise Fractal */}
+              {advancedResults.analise_fractal && (
+                <div className="animate-slide-up rounded-lg bg-gradient-to-r from-purple-50 to-purple-100 p-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <div className="rounded-full bg-purple-100 p-2">
+                        <Activity className="h-4 w-4 text-purple-600" />
+                      </div>
+                      <h3 className="font-medium text-purple-900">Análise Fractal Climática</h3>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="rounded-lg bg-white p-4 shadow-sm">
+                        <div className="text-xs text-neutral-600">Dimensão Fractal</div>
+                        <div className="text-lg font-bold text-purple-600">
+                          {advancedResults.analise_fractal.dimensao_fractal?.toFixed(3) || 'N/A'}
+                        </div>
+                        <div className="text-xs text-neutral-500">Complexidade do padrão</div>
+                      </div>
+                      <div className="rounded-lg bg-white p-4 shadow-sm">
+                        <div className="text-xs text-neutral-600">Lacunaaridade</div>
+                        <div className="text-lg font-bold text-purple-600">
+                          {advancedResults.analise_fractal.lacunaaridade?.toFixed(3) || 'N/A'}
+                        </div>
+                        <div className="text-xs text-neutral-500">Heterogeneidade</div>
+                      </div>
+                      <div className="rounded-lg bg-white p-4 shadow-sm">
+                        <div className="text-xs text-neutral-600">Persistência</div>
+                        <div className="text-lg font-bold text-purple-600">
+                          {advancedResults.analise_fractal.persistencia?.toFixed(3) || 'N/A'}
+                        </div>
+                        <div className="text-xs text-neutral-500">Autocorrelação</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Avaliação Fuzzy */}
+              {advancedResults.risco_fuzzy && (
+                <div className="animate-slide-up rounded-lg bg-gradient-to-r from-yellow-50 to-yellow-100 p-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <div className="rounded-full bg-yellow-100 p-2">
+                        <TrendingUp className="h-4 w-4 text-yellow-600" />
+                      </div>
+                      <h3 className="font-medium text-yellow-900">Avaliação Fuzzy de Risco</h3>
+                    </div>
+
+                    <div className="space-y-2">
+                      {[
+                        { label: 'Muito Baixo', value: advancedResults.risco_fuzzy.muito_baixo, color: 'bg-green-500' },
+                        { label: 'Baixo', value: advancedResults.risco_fuzzy.baixo, color: 'bg-green-400' },
+                        { label: 'Médio', value: advancedResults.risco_fuzzy.medio, color: 'bg-yellow-500' },
+                        { label: 'Alto', value: advancedResults.risco_fuzzy.alto, color: 'bg-orange-500' },
+                        { label: 'Muito Alto', value: advancedResults.risco_fuzzy.muito_alto, color: 'bg-red-500' }
+                      ].map((item) => (
+                        <div key={item.label} className="flex items-center gap-3">
+                          <div className="w-20 text-sm text-neutral-600">{item.label}</div>
+                          <div className="flex-1 bg-neutral-200 rounded-full h-2">
+                            <div
+                              className={`h-2 rounded-full ${item.color}`}
+                              style={{ width: `${(item.value || 0) * 100}%` }}
+                            ></div>
+                          </div>
+                          <div className="w-12 text-sm font-medium text-neutral-700">
+                            {((item.value || 0) * 100).toFixed(1)}%
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Metodologia */}
+              {advancedResults.metodologia && (
+                <div className="animate-slide-up rounded-lg bg-gradient-to-r from-blue-50 to-blue-100 p-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <div className="rounded-full bg-blue-100 p-2">
+                        <Calculator className="h-4 w-4 text-blue-600" />
+                      </div>
+                      <h3 className="font-medium text-blue-900">Metodologia Avançada</h3>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="rounded-lg bg-white p-4 shadow-sm">
+                        <div className="text-xs text-neutral-600">Iterações Monte Carlo</div>
+                        <div className="text-lg font-bold text-blue-600">
+                          {advancedResults.metodologia.iteracoes_monte_carlo?.toLocaleString() || 'N/A'}
+                        </div>
+                      </div>
+                      <div className="rounded-lg bg-white p-4 shadow-sm">
+                        <div className="text-xs text-neutral-600">Técnicas Utilizadas</div>
+                        <div className="text-sm font-medium text-blue-600">
+                          {advancedResults.metodologia.tecnicas_utilizadas?.join(', ') || 'N/A'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Estado de cálculo */}
+          {calculating && (
+            <div className="mt-6 animate-pulse rounded-lg bg-blue-50 p-6">
+              <div className="flex items-center gap-3">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                <div className="text-blue-900 font-medium">
+                  Calculando com técnicas avançadas de matemática atuarial...
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

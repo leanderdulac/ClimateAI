@@ -10,6 +10,12 @@ sqlalchemy==2.0.36
 psycopg2-binary==2.9.10
 pandas==2.2.3
 numpy>=1.26.0,<2.1.0
+scipy>=1.11.0,<1.14.0
 scikit-learn==1.5.2
 tensorflow==2.18.0
 pytz==2024.2
+openmeteo-requests
+requests-cache
+retry-requests
+geopy==2.4.1
+pycep-correios==5.1.0

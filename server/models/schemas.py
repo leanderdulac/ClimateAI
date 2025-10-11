@@ -30,8 +30,10 @@ class ClimaData(BaseModel):
     data: datetime
     temperatura: Optional[float] = None
     precipitacao: Optional[float] = None
+    probabilidade_precipitacao: Optional[float] = None
     umidade: Optional[float] = None
     vento_velocidade: Optional[float] = None
+    vento_rajada: Optional[float] = None
     vento_direcao: Optional[float] = None
     pressao: Optional[float] = None
     indice_spi: Optional[float] = None  # Standardized Precipitation Index

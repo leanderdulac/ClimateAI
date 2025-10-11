@@ -11,7 +11,7 @@ router = APIRouter()
 previsao_service = PrevisaoService()
 
 
-@router.get("/previsao/clima", response_model=PrevisaoClima)
+@router.get("/clima", response_model=PrevisaoClima)
 async def get_previsao_clima(
     latitude: float = Query(..., ge=-90, le=90),
     longitude: float = Query(..., ge=-180, le=180),
@@ -30,7 +30,7 @@ async def get_previsao_clima(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/previsao/eventos", response_model=List[str])
+@router.get("/eventos", response_model=List[str])
 async def get_previsao_eventos(
     latitude: float = Query(..., ge=-90, le=90),
     longitude: float = Query(..., ge=-180, le=180),

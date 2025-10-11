@@ -1,11 +1,12 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { LocationSelector } from "@/components/LocationSelector";
-import { ClimateDataWidget } from "@/components/ClimateDataWidget";
+import { WeatherWidget } from "@/components/WeatherWidget";
 import { PricingSimulator } from "@/components/PricingSimulator";
 import { ClimateEventTokenizer } from "@/components/ClimateEventTokenizer";
 import { SmartContractMonitor } from "@/components/SmartContractMonitor";
-import { Globe, TrendingUp, DollarSign, Sun, CloudRain, Wind, Droplets, Thermometer, Zap } from "lucide-react";
+import { LocationProvider } from "@/lib/LocationContext";
+import { Globe, TrendingUp, DollarSign, Zap } from "lucide-react";
 
 export function IndexPage() {
   return (
@@ -25,10 +26,38 @@ export function IndexPage() {
               A revolutionary platform for tokenizing and pricing climate events with advanced analytics and real-time monitoring
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white">
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white"
+                onClick={() => {
+                  const dashboard = document.querySelector('#dashboard');
+                  if (dashboard) {
+                    dashboard.scrollIntoView({ behavior: 'smooth' });
+                  } else {
+                    console.warn('Dashboard section not found');
+                    // Fallback: scroll to ClimateDataWidget if it exists
+                    const dataWidget = document.querySelector('.climate-data-widget');
+                    dataWidget?.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }}
+              >
                 Start Analysis
               </Button>
-              <Button size="lg" variant="outline" className="border-2 border-blue-200 text-blue-700">
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-2 border-blue-200 text-blue-700 hover:bg-blue-50"
+                onClick={() => {
+                  const dataWidget = document.querySelector('.climate-data-widget');
+                  if (dataWidget) {
+                    dataWidget.scrollIntoView({ behavior: 'smooth' });
+                  } else {
+                    // Alternativa: Rolar até a seção de estatísticas
+                    const statsSection = document.querySelector('.stats-section');
+                    statsSection?.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }}
+              >
                 Explore Data
               </Button>
             </div>
@@ -37,7 +66,7 @@ export function IndexPage() {
       </section>
 
       {/* Stats Section */}
-      <section className="py-16 bg-white">
+      <section className="py-16 bg-white stats-section">
         <div className="container mx-auto max-w-7xl px-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-16">
             <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100">
@@ -81,12 +110,14 @@ export function IndexPage() {
                 <Button variant="outline" size="sm">90D</Button>
               </div>
             </div>
-            
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <LocationSelector />
-              <ClimateDataWidget />
-              <PricingSimulator />
-              <ClimateEventTokenizer />
+              <LocationProvider>
+                <LocationSelector />
+                <WeatherWidget />
+                <PricingSimulator />
+                <ClimateEventTokenizer />
+              </LocationProvider>
             </div>
           </div>
 

@@ -11,7 +11,7 @@ router = APIRouter()
 modelagem_service = ModelagemService()
 
 
-@router.get("/modelagem/previsao-precos", response_model=List[PrevisaoPreco])
+@router.get("/previsao-precos", response_model=List[PrevisaoPreco])
 async def get_previsao_precos(
     simbolos: List[str] = Query(..., description="Símbolos de commodities"),
     latitude: Optional[float] = Query(None, ge=-90, le=90),
@@ -32,7 +32,7 @@ async def get_previsao_precos(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/modelagem/impacto-climatico", response_model=List[Dict])
+@router.get("/impacto-climatico", response_model=List[Dict])
 async def get_impacto_climatico(
     simbolo: str = Query(...),
     latitude: float = Query(..., ge=-90, le=90),

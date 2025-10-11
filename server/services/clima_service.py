@@ -3,12 +3,16 @@ Serviço para dados climáticos
 """
 from typing import List, Optional
 from datetime import datetime, timedelta
-from models.schemas import ClimaData, ClimaTipo
-import random
 import math
+import random
+from models.schemas import ClimaData
+from services.openmeteo_service import OpenMeteoService
 
 
 class ClimaService:
+    def __init__(self):
+        self.openmeteo_service = OpenMeteoService()
+
     def obter_historico(
         self,
         latitude: float,
@@ -20,32 +24,14 @@ class ClimaService:
         """
         Obter dados climáticos históricos para uma localização específica
         """
-        # Simulação de dados históricos (em um sistema real, isso viria de uma API ou banco de dados)
-        dados = []
-        dias = (data_fim - data_inicio).days
-        
-        for i in range(dias):
-            data_atual = data_inicio + timedelta(days=i)
-            
-            # Gerar dados climáticos simulados baseados na localização
-            temperatura = self._gerar_temperatura_simulada(latitude, data_atual)
-            precipitacao = self._gerar_precipitacao_simulada(data_atual)
-            umidade = self._gerar_umidade_simulada(temperatura)
-            
-            dado = ClimaData(
-                latitude=latitude,
-                longitude=longitude,
-                data=data_atual,
-                temperatura=temperatura,
-                precipitacao=precipitacao,
-                umidade=umidade,
-                vento_velocidade=random.uniform(0, 20),
-                vento_direcao=random.uniform(0, 360),
-                pressao=random.uniform(980, 1040),
-                indice_spi=self._calcular_spi(precipitacao, i),
-                fonte="simulado"
-            )
-            dados.append(dado)
+        # Obter dados reais da API OpenMeteo
+        dados = self.openmeteo_service.obter_historico(
+            latitude=latitude,
+            longitude=longitude,
+            data_inicio=data_inicio,
+            data_fim=data_fim,
+            variavel=variavel
+        )
         
         return dados
 
@@ -57,75 +43,54 @@ class ClimaService:
         """
         Obter condições climáticas atuais para uma localização específica
         """
+        # Usar o mesmo serviço do OpenMeteo, mas apenas para hoje
         agora = datetime.now()
-        
-        temperatura = self._gerar_temperatura_simulada(latitude, agora)
-        precipitacao = self._gerar_precipitacao_simulada(agora)
-        umidade = self._gerar_umidade_simulada(temperatura)
-        
-        return ClimaData(
+        dados = self.openmeteo_service.obter_historico(
             latitude=latitude,
             longitude=longitude,
-            data=agora,
-            temperatura=temperatura,
-            precipitacao=precipitacao,
-            umidade=umidade,
-            vento_velocidade=random.uniform(0, 20),
-            vento_direcao=random.uniform(0, 360),
-            pressao=random.uniform(980, 1040),
-            indice_spi=self._calcular_spi(precipitacao, 0),
-            fonte="simulado"
+            data_inicio=agora,
+            data_fim=agora + timedelta(days=1)
         )
+        
+        # Retornar os dados do primeiro (e único) dia
+        return dados[0] if dados else None
 
     def _gerar_temperatura_simulada(self, latitude: float, data: datetime) -> float:
         """
-        Gerar temperatura simulada baseada na latitude e estação do ano
+        Gerar temperatura simulada considerando latitude e sazonalidade do dia do ano.
         """
-        # Temperatura base variando com a latitude (mais quente perto do equador)
-        temp_base = 30 - abs(latitude) * 0.3
-        
-        # Variação sazonal
-        dia_ano = data.timetuple().tm_yday
-        variacao_sazonal = 5 * math.sin(2 * math.pi * (dia_ano - 80) / 365)
-        
-        # Variação diária
-        variacao_diaria = random.uniform(-3, 3)
-        
-        return round(temp_base + variacao_sazonal + variacao_diaria, 2)
+        dia_do_ano = data.timetuple().tm_yday
+        variacao_sazonal = 8 * math.sin((2 * math.pi * dia_do_ano) / 365)
+        ajuste_latitude = max(-8.0, min(8.0, -abs(latitude) * 0.2))
+        ruido = random.uniform(-2.5, 2.5)
+        return 24 + variacao_sazonal + ajuste_latitude + ruido
 
     def _gerar_precipitacao_simulada(self, data: datetime) -> float:
         """
-        Gerar precipitação simulada
+        Gerar precipitação simulada com base em padrões sazonais simples.
         """
-        # Probabilidade de chuva baseada no dia do ano
-        dia_ano = data.timetuple().tm_yday
-        probabilidade_chuva = 0.3 + 0.2 * math.sin(2 * math.pi * dia_ano / 365)
-        
-        if random.random() < probabilidade_chuva:
-            return round(random.uniform(0.1, 50), 2)  # mm
-        else:
-            return 0.0
+        dia_do_ano = data.timetuple().tm_yday
+        indice_estacao = (math.sin((2 * math.pi * (dia_do_ano - 30)) / 365) + 1) / 2
+        precipitacao_base = 5 + 20 * indice_estacao
+        ruido = random.uniform(-3, 3)
+        return max(0.0, precipitacao_base + ruido)
 
     def _gerar_umidade_simulada(self, temperatura: float) -> float:
         """
-        Gerar umidade simulada baseada na temperatura
+        Gerar umidade relativa simulada em função da temperatura.
         """
-        # Umidade tende a ser inversamente proporcional à temperatura
-        umidade_base = 80 - temperatura * 0.5
-        variacao = random.uniform(-10, 10)
-        return max(0, min(100, round(umidade_base + variacao, 2)))
+        umidade_base = 75 - (temperatura - 25) * 1.1
+        ruido = random.uniform(-5, 5)
+        return max(30.0, min(100.0, umidade_base + ruido))
 
-    def _calcular_spi(self, precipitacao: float, dia: int) -> float:
+    def _calcular_spi(self, precipitacao: float, indice_dia: int) -> float:
         """
-        Calcular Standardized Precipitation Index (simulado)
+        Calcular um índice SPI (Standardized Precipitation Index) simplificado.
         """
-        # Simulação simplificada do SPI
-        media_historica = 5.0  # média histórica de precipitação
-        desvio_padrao = 8.0    # desvio padrão histórico
-        
-        if media_historica == 0:
-            return 0
-            
-        # SPI simplificado
+        media_historica = 12.0  # média diária aproximada
+        desvio_padrao = 6.0
+        if desvio_padrao == 0:
+            return 0.0
         spi = (precipitacao - media_historica) / desvio_padrao
-        return round(spi, 2)
+        ajuste_temporal = math.sin(indice_dia / 3.0) * 0.1
+        return max(-3.0, min(3.0, spi + ajuste_temporal))

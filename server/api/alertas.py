@@ -11,7 +11,7 @@ router = APIRouter()
 alertas_service = AlertasService()
 
 
-@router.get("/alertas", response_model=List[Alerta])
+@router.get("/", response_model=List[Alerta])
 async def get_alertas(
     latitude: Optional[float] = Query(None, ge=-90, le=90),
     longitude: Optional[float] = Query(None, ge=-180, le=180),
@@ -34,7 +34,7 @@ async def get_alertas(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/alertas/usuario", response_model=List[Alerta])
+@router.get("/usuario", response_model=List[Alerta])
 async def get_alertas_usuario(
     usuario_id: str = Query(...),
     lido: Optional[bool] = Query(None)
@@ -51,7 +51,7 @@ async def get_alertas_usuario(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.put("/alertas/{alerta_id}/marcar-lido")
+@router.put("/{alerta_id}/marcar-lido")
 async def marcar_alerta_lido(alerta_id: str):
     """
     Marcar um alerta como lido
