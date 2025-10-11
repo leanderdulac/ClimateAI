@@ -8,6 +8,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { useEffect, useState } from 'react';
 import { embrapaApi } from '@/lib/embrapaApi';
 import { useLocation } from '@/lib/LocationContext';
+import { usePeriod } from '@/lib/PeriodContext';
 import { Sun, Droplets, Wind, Thermometer } from 'lucide-react';
 
 interface ClimateDataPoint {
@@ -32,6 +33,7 @@ export function WeatherWidget() {
   const [loadingHistorical, setLoadingHistorical] = useState<boolean>(false);
 
   const { selectedLocation, isLoadingLocation } = useLocation();
+  const { selectedPeriod } = usePeriod();
 
   const getWeatherDescription = (temperature: number, humidity: number, precipitation: number) => {
     if (precipitation > 5) return 'Chuva';
@@ -64,13 +66,13 @@ export function WeatherWidget() {
           console.log('WeatherWidget: Usando localização padrão (São Paulo)');
         }
 
-        // Buscar dados históricos de 30 anos (Embrapa)
-        console.log('WeatherWidget: Buscando dados históricos de 30 anos...');
+        // Buscar dados históricos baseados no período selecionado
+        console.log(`WeatherWidget: Buscando dados históricos de ${selectedPeriod} dias...`);
         setLoadingHistorical(true);
         try {
           const endDate = new Date();
           const startDate = new Date();
-          startDate.setFullYear(startDate.getFullYear() - 30);
+          startDate.setDate(startDate.getDate() - selectedPeriod);
 
           const historical = await embrapaApi.getClimateData(
             latitude,
@@ -110,7 +112,7 @@ export function WeatherWidget() {
 
         // Adaptar formato dos dados
         const adaptedData: ClimateDataPoint[] = forecastData.map(item => ({
-          date: item.date || item.data,
+          date: (item.date || item.data || new Date().toISOString().split('T')[0]),
           temperature: item.temperature || item.temperatura_max || 20,
           precipitation: item.precipitation || item.precipitacao || 0,
           humidity: item.humidity || 60,

@@ -2,6 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { useEffect, useState } from 'react';
 import { embrapaApi } from '@/lib/embrapaApi';
+import { usePeriod } from '@/lib/PeriodContext';
 import { Sun, Droplets, Wind, Thermometer, TrendingUp, TrendingDown, Minus, AlertTriangle, Cloud, Gauge } from 'lucide-react';
 
 interface ClimateDataPoint {
@@ -111,6 +112,8 @@ export function ClimateDataWidget({ latitude = -23.5505, longitude = -46.6333 }:
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  const { selectedPeriod } = usePeriod();
+
   useEffect(() => {
     const fetchClimateData = async () => {
       try {
@@ -136,10 +139,10 @@ export function ClimateDataWidget({ latitude = -23.5505, longitude = -46.6333 }:
           });
         }
 
-        // Calcular datas para dados históricos (últimos 30 dias)
+        // Calcular datas para dados históricos baseados no período selecionado
         const endDate = new Date();
         const startDate = new Date();
-        startDate.setDate(startDate.getDate() - 30);
+        startDate.setDate(startDate.getDate() - selectedPeriod);
 
         // Buscar dados históricos
         const historicalData = await embrapaApi.getClimateData(

@@ -6,7 +6,38 @@ import { PricingSimulator } from "@/components/PricingSimulator";
 import { ClimateEventTokenizer } from "@/components/ClimateEventTokenizer";
 import { SmartContractMonitor } from "@/components/SmartContractMonitor";
 import { LocationProvider } from "@/lib/LocationContext";
-import { Globe, TrendingUp, DollarSign, Zap } from "lucide-react";
+import { PeriodProvider, usePeriod } from "@/lib/PeriodContext";
+import { Globe, TrendingUp, DollarSign, Zap, Cloud } from "lucide-react";
+
+function PeriodButtons() {
+  const { selectedPeriod, setSelectedPeriod } = usePeriod();
+
+  return (
+    <div className="ml-auto flex gap-2">
+      <Button
+        variant={selectedPeriod === 7 ? "default" : "outline"}
+        size="sm"
+        onClick={() => setSelectedPeriod(7)}
+      >
+        7D
+      </Button>
+      <Button
+        variant={selectedPeriod === 30 ? "default" : "outline"}
+        size="sm"
+        onClick={() => setSelectedPeriod(30)}
+      >
+        30D
+      </Button>
+      <Button
+        variant={selectedPeriod === 90 ? "default" : "outline"}
+        size="sm"
+        onClick={() => setSelectedPeriod(90)}
+      >
+        90D
+      </Button>
+    </div>
+  );
+}
 
 export function IndexPage() {
   return (
@@ -100,25 +131,40 @@ export function IndexPage() {
           </div>
 
           {/* Main Dashboard Section */}
-          <div className="mb-12">
-            <div className="flex items-center gap-3 mb-8">
-              <Globe className="h-8 w-8 text-blue-600" />
-              <h2 className="text-3xl font-bold text-gray-800">Climate Dashboard</h2>
-              <div className="ml-auto flex gap-2">
-                <Button variant="outline" size="sm">7D</Button>
-                <Button variant="outline" size="sm">30D</Button>
-                <Button variant="outline" size="sm">90D</Button>
+          <div className="mb-16">
+            <PeriodProvider>
+              <div className="flex items-center gap-3 mb-8">
+                <Globe className="h-8 w-8 text-blue-600" />
+                <h2 className="text-3xl font-bold text-gray-800">Climate Dashboard</h2>
+                <PeriodButtons />
               </div>
-            </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <LocationProvider>
-                <LocationSelector />
-                <WeatherWidget />
-                <PricingSimulator />
-                <ClimateEventTokenizer />
-              </LocationProvider>
-            </div>
+              {/* Top Section - Location and Weather */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+                <LocationProvider>
+                  <LocationSelector />
+                  <WeatherWidget />
+                </LocationProvider>
+              </div>
+
+              {/* Pricing Simulator - Full Width with More Space */}
+              <div className="mb-16">
+                <LocationProvider>
+                  <PricingSimulator />
+                </LocationProvider>
+              </div>
+
+              {/* Climate Event Tokenizer - Separate Section Below */}
+              <div className="mb-8">
+                <div className="flex items-center gap-3 mb-6">
+                  <Cloud className="h-6 w-6 text-orange-600" />
+                  <h3 className="text-2xl font-semibold text-gray-800">Tokenização de Eventos Climáticos</h3>
+                </div>
+                <LocationProvider>
+                  <ClimateEventTokenizer />
+                </LocationProvider>
+              </div>
+            </PeriodProvider>
           </div>
 
           {/* Smart Contract Monitor Section */}
