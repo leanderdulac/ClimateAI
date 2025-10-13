@@ -52,13 +52,18 @@ cp server/.env.example server/.env
 
 #### Configuração das APIs
 
-**Embrapa API** (Dados históricos):
-- Obtenha sua chave em: https://api.cnptia.embrapa.br/
-- Configure `EMBRAPA_API_KEY` no arquivo `.env`
+**Embrapa Climate API** (Dados históricos e previsões):
+- URL da API: `https://api.cnptia.embrapa.br/climapi/v1`
+- Para obter acesso, visite: https://www.embrapa.br/
+- Configure as seguintes variáveis no arquivo `.env`:
+  - `EMBRAPA_API_URL=https://api.cnptia.embrapa.br`
+  - `EMBRAPA_API_VERSION=climapi/v1`
+  - `EMBRAPA_API_KEY=sua_chave_aqui`
+- **Fallback automático**: Se a API Embrapa estiver indisponível, o sistema automaticamente usa OpenMeteo como alternativa
 
-**OpenMeteo API** (Previsões):
+**OpenMeteo API** (Previsões alternativas):
 - Gratuita, não requer chave de API
-- Usada automaticamente para previsões climáticas
+- Usada automaticamente como fallback para previsões climáticas
 
 **Outras configurações**:
 - `HOST`: Endereço do servidor (padrão: 0.0.0.0)

@@ -32,13 +32,7 @@ async def get_historico_clima(
     - **variavel**: Filtrar por variável específica (opcional)
     """
     try:
-        # Usar Embrapa para dados históricos
-        if not embrapa_service.is_configured:
-            raise HTTPException(
-                status_code=503,
-                detail="Serviço Embrapa não configurado. Configure EMBRAPA_API_KEY no arquivo .env"
-            )
-
+        # Usar Embrapa com fallback para OpenMeteo
         dados = await embrapa_service.get_climate_data(
             latitude=latitude,
             longitude=longitude,
