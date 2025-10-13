@@ -87,12 +87,14 @@ from api.eventos import router as eventos_router
 from api.modelagem import router as modelagem_router
 from api.alertas import router as alertas_router
 from api.localizacao import router as localizacao_router
+from api.auth import router as auth_router
 # from api.audit import router as audit_router
 from services.ml_service import predict_sinistrality, train_ml_models, get_ml_model_info
 from services.external_api_service import get_weather_data, get_economic_indicators, get_commodity_prices, get_real_time_data
 from services.microsegmentation_service import create_microsegments, analyze_location_risk, get_microsegmentation_summary
 from services.audit_service import log_operation, log_risk_assessment, log_policy_decision, get_audit_logs, get_compliance_report
 from config.config import settings
+from config.database import init_db, close_db
 
 # Importar Pydantic models para pricing
 from pydantic import BaseModel
@@ -159,6 +161,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Adicionar middleware de autenticação opcional
+from middleware.auth_middleware import optional_auth
+app.middleware("http")(optional_auth)
 
 # Middleware de cache
 @app.middleware("http")
@@ -697,10 +703,29 @@ try:
     app.include_router(modelagem_router, prefix=f"{API_PREFIX}/modelagem", tags=["modelagem"])
     app.include_router(alertas_router, prefix=f"{API_PREFIX}/alertas", tags=["alertas"])
     app.include_router(localizacao_router, prefix=f"{API_PREFIX}/localizacao", tags=["localizacao"])
+    app.include_router(auth_router, prefix=f"{API_PREFIX}/auth", tags=["auth"])
     # app.include_router(audit_router, prefix=f"{API_PREFIX}/audit", tags=["audit"])
 except Exception as e:
     logger.error(f"Erro ao incluir routers: {str(e)}")
     raise
+
+# Eventos de startup e shutdown
+@app.on_event("startup")
+async def startup_event():
+    """Evento executado na inicialização do servidor"""
+    logger.info("Inicializando ClimateAI...")
+    if settings.DATABASE_ENABLED:
+        await init_db()
+        logger.info("Banco de dados inicializado")
+    logger.info("Servidor ClimateAI iniciado com sucesso")
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Evento executado no encerramento do servidor"""
+    logger.info("Encerrando ClimateAI...")
+    if settings.DATABASE_ENABLED:
+        await close_db()
+        logger.info("Conexões de banco de dados fechadas")
 
 @app.get("/")
 async def root():

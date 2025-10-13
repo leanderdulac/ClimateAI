@@ -33,8 +33,8 @@ class Settings(BaseSettings):
     REDIS_URL: Optional[str] = None
     
     # Configurações de banco de dados
-    DATABASE_ENABLED: bool = False
-    DATABASE_URL: Optional[str] = None
+    DATABASE_ENABLED: bool = True
+    DATABASE_URL: str = "postgresql+asyncpg://climateai:climateai123@localhost/climateai"
     
     class Config:
         env_file = ".env"
