@@ -29,7 +29,27 @@ O sistema é composto por duas partes principais:
 - Modelagem de impactos econômicos
 - Sistema de alertas inteligente
 
-## 🚀 Execução
+## 🌐 Landing Page
+
+Uma landing page moderna e responsiva foi criada baseada no design do i4sea.com, adaptada para apresentar o ClimateAI de forma profissional.
+
+### Como Acessar
+```bash
+# Iniciar servidor da landing page
+./start_landing_page.sh
+
+# Ou manualmente:
+python3 -m http.server 8080
+```
+
+Acesse: **http://localhost:8080/landing-page.html**
+
+### Funcionalidades da Landing Page
+- **Design Responsivo**: Otimizado para desktop, tablet e mobile
+- **Demonstração Interativa**: Conecta com o backend para mostrar análises reais
+- **Seções Informativas**: Plataforma, funcionalidades, depoimentos e CTA
+- **Animações Suaves**: Transições e efeitos visuais modernos
+- **SEO Otimizado**: Meta tags e estrutura semântica
 
 ### Requisitos
 - Python 3.9+

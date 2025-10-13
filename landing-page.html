@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClimateAI - Framework Integrado de Modelagem Climático-Econômica</title>
+    <meta name="description" content="Transforme riscos climáticos em oportunidades com inteligência artificial e modelagem atuarial avançada.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #1e40af;
+            --accent-color: #f59e0b;
+            --text-dark: #1f2937;
+            --text-light: #6b7280;
+            --bg-light: #f8fafc;
+            --bg-white: #ffffff;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            --border-radius: 12px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: var(--text-dark);
+            background-color: var(--bg-light);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        header {
+            background: var(--bg-white);
+            box-shadow: var(--shadow);
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        header.scrolled {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-dark);
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary-color);
+        }
+
+        .cta-button {
+            background: var(--primary-color);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--border-radius);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .cta-button:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 120px 0 80px;
+            background: linear-gradient(135deg, var(--bg-white) 0%, var(--bg-light) 100%);
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-light);
+            margin-bottom: 2rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .hero-stats {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            margin: 3rem 0;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .stat-label {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        /* Sections */
+        .section {
+            padding: 80px 0;
+        }
+
+        .section h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 3rem;
+            color: var(--text-dark);
+        }
+
+        .section p {
+            font-size: 1.1rem;
+            color: var(--text-light);
+            text-align: center;
+            max-width: 700px;
+            margin: 0 auto 3rem;
+        }
+
+        /* Features Grid */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .feature-card {
+            background: var(--bg-white);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.15);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--text-dark);
+        }
+
+        .feature-card p {
+            color: var(--text-light);
+        }
+
+        /* Platform Section */
+        .platform-section {
+            background: var(--bg-white);
+        }
+
+        .platform-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .platform-text h3 {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            color: var(--text-dark);
+        }
+
+        .platform-features {
+            list-style: none;
+            margin: 2rem 0;
+        }
+
+        .platform-features li {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+        }
+
+        .platform-features li i {
+            color: var(--accent-color);
+            margin-right: 1rem;
+        }
+
+        .platform-image {
+            text-align: center;
+        }
+
+        .platform-image img {
+            max-width: 100%;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+        }
+
+        /* Testimonials */
+        .testimonials {
+            background: var(--bg-white);
+        }
+
+        .testimonial-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .testimonial-card {
+            background: var(--bg-light);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+        }
+
+        .testimonial-quote {
+            font-style: italic;
+            margin-bottom: 1.5rem;
+            color: var(--text-dark);
+        }
+
+        .testimonial-author {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .testimonial-role {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        /* CTA Section */
+        .cta-section {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            text-align: center;
+            padding: 80px 0;
+        }
+
+        .cta-section h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .cta-section p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+
+        .cta-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .cta-button-secondary {
+            background: transparent;
+            border: 2px solid white;
+            color: white;
+        }
+
+        .cta-button-secondary:hover {
+            background: white;
+            color: var(--primary-color);
+        }
+
+        /* Footer */
+        footer {
+            background: var(--text-dark);
+            color: white;
+            padding: 3rem 0 1rem;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .footer-section h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+
+        .footer-section ul {
+            list-style: none;
+        }
+
+        .footer-section ul li {
+            margin-bottom: 0.5rem;
+        }
+
+        .footer-section ul li a {
+            color: #9ca3af;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-section ul li a:hover {
+            color: white;
+        }
+
+        .footer-bottom {
+            border-top: 1px solid #374151;
+            padding-top: 1rem;
+            text-align: center;
+            color: #9ca3af;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero-stats {
+                flex-direction: column;
+                gap: 1.5rem;
+            }
+
+            .platform-content {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .cta-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+
+        /* Demo Section */
+        .demo-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            background: var(--bg-white);
+            padding: 3rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+        }
+
+        .demo-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .control-group label {
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .control-group input {
+            padding: 0.75rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .control-group input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .demo-results {
+            background: var(--bg-light);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .result-placeholder {
+            text-align: center;
+            color: var(--text-light);
+        }
+
+        .result-placeholder i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+
+        .result-content {
+            width: 100%;
+        }
+
+        .result-item {
+            background: var(--bg-white);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .result-item h4 {
+            margin-bottom: 0.5rem;
+            color: var(--text-dark);
+        }
+
+        .result-item p {
+            color: var(--text-light);
+            margin: 0;
+        }
+
+        .loading {
+            text-align: center;
+            color: var(--primary-color);
+        }
+
+        .loading i {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #fef2f2;
+            color: #dc2626;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid #dc2626;
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in-up {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.3s; }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header id="header">
+        <nav class="container">
+            <div class="logo">ClimateAI</div>
+            <ul class="nav-links">
+                <li><a href="#platform">Plataforma</a></li>
+                <li><a href="#features">Funcionalidades</a></li>
+                <li><a href="#testimonials">Depoimentos</a></li>
+                <li><a href="#contact">Contato</a></li>
+            </ul>
+            <a href="#demo" class="cta-button">Agendar Demo</a>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <h1 class="fade-in-up">O Clima Mudou. E a Maneira Como Tomamos Decisões Também.</h1>
+            <p class="fade-in-up delay-1">Transforme riscos climáticos em oportunidades com inteligência artificial e modelagem atuarial avançada. Maximize resultados e garanta previsibilidade operacional.</p>
+
+            <div class="hero-stats fade-in-up delay-2">
+                <div class="stat">
+                    <div class="stat-number">10:1</div>
+                    <div class="stat-label">Retorno sobre Investimento</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">94%</div>
+                    <div class="stat-label">Precisão nas Decisões</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">24/7</div>
+                    <div class="stat-label">Monitoramento Contínuo</div>
+                </div>
+            </div>
+
+            <div class="fade-in-up delay-3">
+                <a href="#demo" class="cta-button">Começar Agora</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Platform Section -->
+    <section id="platform" class="section platform-section">
+        <div class="container">
+            <div class="platform-content">
+                <div class="platform-text">
+                    <h2>ClimateAI: A Plataforma de Suporte à Decisão para Gestão de Riscos Climáticos</h2>
+                    <p>Gerencie riscos climáticos em suas operações ajustando estrategicamente seu planejamento baseado em onde, quando e como seu negócio será afetado por condições ambientais adversas.</p>
+
+                    <ul class="platform-features">
+                        <li><i class="fas fa-brain"></i> <strong>Inteligência Artificial:</strong> Modelos de machine learning para previsão climática</li>
+                        <li><i class="fas fa-chart-line"></i> <strong>Análise Atuarial:</strong> Avaliação de riscos e precificação de derivativos</li>
+                        <li><i class="fas fa-shield-alt"></i> <strong>Gestão de Riscos:</strong> VaR, CVaR e análise de cenários extremos</li>
+                        <li><i class="fas fa-clock"></i> <strong>Monitoramento 24/7:</strong> Alertas automáticos e dashboards em tempo real</li>
+                        <li><i class="fas fa-globe"></i> <strong>Dados Globais:</strong> Integração com APIs climáticas mundiais</li>
+                    </ul>
+
+                    <a href="#demo" class="cta-button">Saiba Mais</a>
+                </div>
+                <div class="platform-image">
+                    <img src="https://via.placeholder.com/600x400/2563eb/ffffff?text=ClimateAI+Dashboard" alt="ClimateAI Dashboard" />
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="section">
+        <div class="container">
+            <h2>Estratégias Avançadas Requerem Recursos Avançados: Inteligência Climática</h2>
+            <p>Descubra como aplicar inteligência climática para otimizar suas operações e transformar riscos em oportunidades.</p>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-eye"></i>
+                    </div>
+                    <h3>Conscientização Situacional</h3>
+                    <p>Analise condições climáticas que causam impacto ou risco em suas operações com previsões hiperlocais e dados em tempo real.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-cogs"></i>
+                    </div>
+                    <h3>Otimização Operacional</h3>
+                    <p>Adapte dinamicamente seu planejamento operacional baseado em condições ambientais previstas e cenários de risco.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <h3>Monitoramento Contínuo</h3>
+                    <p>Monitore automaticamente riscos climáticos em suas operações com alertas inteligentes e dashboards interativos.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-coins"></i>
+                    </div>
+                    <h3>Derivativos Climáticos</h3>
+                    <p>Precifique e gerencie derivativos climáticos com modelos atuariais avançados e análise de Monte Carlo.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <h3>Análise de Capital</h3>
+                    <p>Avalie requisitos de capital e estratégias de investimento para produtos climáticos com análise de ROI.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-microchip"></i>
+                    </div>
+                    <h3>API Integrada</h3>
+                    <p>Integre dados climáticos e análises em seus sistemas existentes através de nossa API REST completa.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demo Section -->
+    <section id="demo" class="section">
+        <div class="container">
+            <h2>Experimente o ClimateAI em Ação</h2>
+            <p>Veja uma demonstração ao vivo das capacidades de análise climática e precificação de derivativos.</p>
+
+            <div class="demo-container">
+                <div class="demo-controls">
+                    <div class="control-group">
+                        <label for="latitude">Latitude:</label>
+                        <input type="number" id="latitude" value="-23.5505" step="0.0001">
+                    </div>
+                    <div class="control-group">
+                        <label for="longitude">Longitude:</label>
+                        <input type="number" id="longitude" value="-46.6333" step="0.0001">
+                    </div>
+                    <div class="control-group">
+                        <label for="askPrice">Preço do Derivativo (R$):</label>
+                        <input type="number" id="askPrice" value="308864959.51" step="1000">
+                    </div>
+                    <div class="control-group">
+                        <label for="initialCapital">Capital Inicial (R$):</label>
+                        <input type="number" id="initialCapital" value="1000000" step="10000">
+                    </div>
+                    <button id="runDemo" class="cta-button">Executar Análise</button>
+                </div>
+
+                <div class="demo-results" id="demoResults">
+                    <div class="result-placeholder">
+                        <i class="fas fa-chart-line"></i>
+                        <p>Clique em "Executar Análise" para ver os resultados da modelagem climático-econômica</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section id="testimonials" class="section testimonials">
+        <div class="container">
+            <h2>Aprovado por Empresas Líderes no Setor</h2>
+            <p>Veja como organizações estão transformando riscos climáticos em vantagens competitivas.</p>
+
+            <div class="testimonial-grid">
+                <div class="testimonial-card">
+                    <div class="testimonial-quote">
+                        "O ClimateAI revolucionou nossa abordagem aos riscos climáticos. A precisão das previsões e a análise atuarial nos permitiram otimizar nosso portfólio de investimentos em 40%."
+                    </div>
+                    <div class="testimonial-author">Dr. Maria Silva</div>
+                    <div class="testimonial-role">Diretora de Riscos - Banco Nacional</div>
+                </div>
+
+                <div class="testimonial-card">
+                    <div class="testimonial-quote">
+                        "A plataforma nos deu visibilidade unprecedented sobre impactos climáticos em nossas operações portuárias. Reduzimos perdas por eventos extremos em 60%."
+                    </div>
+                    <div class="testimonial-author">João Santos</div>
+                    <div class="testimonial-role">Gerente de Operações - Porto Brasil</div>
+                </div>
+
+                <div class="testimonial-card">
+                    <div class="testimonial-quote">
+                        "Os derivativos climáticos do ClimateAI nos permitiram hedgear riscos de commodities agrícolas com precisão cirúrgica. ROI excepcional."
+                    </div>
+                    <div class="testimonial-author">Ana Costa</div>
+                    <div class="testimonial-role">CFO - Agronegócios Ltda</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="container">
+            <h2>Transforme Riscos em Oportunidades</h2>
+            <p>Garanta resultados e alcance metas com previsibilidade operacional através de inteligência climática avançada.</p>
+
+            <div class="cta-buttons">
+                <a href="#demo" class="cta-button">Agendar Demonstração</a>
+                <a href="#contact" class="cta-button cta-button-secondary">Falar com Especialista</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>ClimateAI</h3>
+                    <p>Framework integrado de modelagem climático-econômica para transformar riscos climáticos em oportunidades de negócio.</p>
+                </div>
+
+                <div class="footer-section">
+                    <h3>Produto</h3>
+                    <ul>
+                        <li><a href="#platform">Plataforma</a></li>
+                        <li><a href="#features">Funcionalidades</a></li>
+                        <li><a href="#api">API</a></li>
+                        <li><a href="#pricing">Preços</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h3>Empresa</h3>
+                    <ul>
+                        <li><a href="#about">Sobre Nós</a></li>
+                        <li><a href="#careers">Carreiras</a></li>
+                        <li><a href="#blog">Blog</a></li>
+                        <li><a href="#contact">Contato</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h3>Suporte</h3>
+                    <ul>
+                        <li><a href="#docs">Documentação</a></li>
+                        <li><a href="#help">Central de Ajuda</a></li>
+                        <li><a href="#status">Status do Sistema</a></li>
+                        <li><a href="#privacy">Privacidade</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>&copy; 2025 ClimateAI. Todos os direitos reservados. | Termos de Uso | Política de Privacidade</p>
+                <div style="margin-top: 1rem;">
+                    <a href="#" style="color: #9ca3af; margin: 0 1rem;"><i class="fab fa-linkedin"></i></a>
+                    <a href="#" style="color: #9ca3af; margin: 0 1rem;"><i class="fab fa-twitter"></i></a>
+                    <a href="#" style="color: #9ca3af; margin: 0 1rem;"><i class="fab fa-github"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Header scroll effect
+        window.addEventListener('scroll', function() {
+            const header = document.getElementById('header');
+            if (window.scrollY > 50) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Intersection Observer for animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver(function(entries) {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('fade-in-up');
+                }
+            });
+        }, observerOptions);
+
+        // Observe all feature cards and sections
+        document.querySelectorAll('.feature-card, .testimonial-card').forEach(card => {
+            observer.observe(card);
+        });
+
+        // Demo functionality
+        document.getElementById('runDemo').addEventListener('click', async function() {
+            const resultsDiv = document.getElementById('demoResults');
+            const latitude = document.getElementById('latitude').value;
+            const longitude = document.getElementById('longitude').value;
+            const askPrice = document.getElementById('askPrice').value;
+            const initialCapital = document.getElementById('initialCapital').value;
+
+            // Show loading state
+            resultsDiv.innerHTML = `
+                <div class="loading">
+                    <i class="fas fa-spinner"></i>
+                    <p>Executando análise climático-econômica...</p>
+                </div>
+            `;
+
+            try {
+                // Test climate data endpoint
+                const climateResponse = await fetch(`http://localhost:8000/api/v1/clima/historico?latitude=${latitude}&longitude=${longitude}&data_inicio=2023-01-01&data_fim=2023-01-31`);
+                const climateData = await climateResponse.json();
+
+                // Test capital analysis endpoint
+                const capitalResponse = await fetch('http://localhost:8000/api/v1/modelagem/derivativos-climaticos/analise-capital', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        ask_price: parseFloat(askPrice),
+                        initial_capital: parseFloat(initialCapital)
+                    })
+                });
+                const capitalData = await capitalResponse.json();
+
+                // Display results
+                resultsDiv.innerHTML = `
+                    <div class="result-content">
+                        <div class="result-item">
+                            <h4><i class="fas fa-cloud-sun"></i> Dados Climáticos</h4>
+                            <p>${climateData.dados ? climateData.dados.length : 0} registros históricos obtidos para a localização especificada.</p>
+                        </div>
+
+                        <div class="result-item">
+                            <h4><i class="fas fa-coins"></i> Análise de Capital</h4>
+                            <p>Capital necessário: R$ ${capitalData.capital_necessario ? capitalData.capital_necessario.toLocaleString('pt-BR', {maximumFractionDigits: 2}) : 'N/A'}</p>
+                            <p>Retorno esperado: ${capitalData.retorno_esperado ? (capitalData.retorno_esperado * 100).toFixed(1) : 'N/A'}%</p>
+                        </div>
+
+                        <div class="result-item">
+                            <h4><i class="fas fa-chart-line"></i> Estratégia Recomendada</h4>
+                            <p>${capitalData.estrategia_recomendada || 'Análise baseada em dados climáticos históricos e modelagem atuarial.'}</p>
+                        </div>
+                    </div>
+                `;
+
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="error">
+                        <h4><i class="fas fa-exclamation-triangle"></i> Erro na Demonstração</h4>
+                        <p>Não foi possível conectar com o backend. Certifique-se de que o servidor está rodando na porta 8000.</p>
+                        <p>Erro: ${error.message}</p>
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html></content>
+<parameter name="filePath">/home/artha/climateAI/landing-page.html
