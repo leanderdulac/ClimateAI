@@ -197,11 +197,38 @@ cd ..
 
 ## 🤝 **Contribuição**
 
-1. Fork o projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request
+### CI/CD Pipeline
+O projeto utiliza GitHub Actions para CI/CD automatizado:
+
+- **Build**: Compilação e testes automatizados
+- **Security**: Varredura de vulnerabilidades com Trivy
+- **Quality**: Análise de código com flake8, black, isort
+- **Docker**: Build e push de imagens
+- **Deploy**: Implantação automatizada
+
+### Testes
+```bash
+# Executar todos os testes
+cd server
+pytest
+
+# Com cobertura
+pytest --cov=.
+
+# Testes de performance
+./run_performance_tests.sh
+```
+
+### Monitoramento
+```bash
+# Iniciar stack de monitoramento
+./start_monitoring.sh
+
+# Acessar dashboards
+# Grafana: http://localhost:3000 (admin/admin)
+# Prometheus: http://localhost:9090
+# Kibana: http://localhost:5601
+```
 
 ## 📄 **Licença**
 

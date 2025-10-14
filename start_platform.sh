@@ -26,6 +26,7 @@ check_port 8080 && LANDING_OK=true || LANDING_OK=false
 if [ "$BACKEND_OK" = true ]; then
     echo "🔧 Iniciando Backend (porta 8000)..."
     cd /home/artha/climateAI/server
+    source venv/bin/activate
     PYTHONPATH=/home/artha/climateAI/server uvicorn main:app --host 0.0.0.0 --port 8000 --reload &
     BACKEND_PID=$!
     echo "✅ Backend iniciado (PID: $BACKEND_PID)"

@@ -1,0 +1,334 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '18'
+
+jobs:
+  # Backend Tests and Build
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_USER: climateai
+          POSTGRES_PASSWORD: climateai123
+          POSTGRES_DB: climateai
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:6-alpine
+        ports:
+          - 6379:6379
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('server/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install dependencies
+      run: |
+        cd server
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Run security scan
+      run: |
+        cd server
+        pip install safety
+        safety check --full-report
+
+    - name: Run linting
+      run: |
+        cd server
+        pip install flake8 black isort
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        black --check --diff .
+        isort --check-only --diff .
+
+    - name: Run tests
+      env:
+        DATABASE_URL: postgresql://climateai:climateai123@localhost:5432/climateai
+        REDIS_URL: redis://localhost:6379
+        SECRET_KEY: test-secret-key-for-ci
+      run: |
+        cd server
+        pip install pytest pytest-asyncio pytest-cov
+        pytest --cov=. --cov-report=xml --cov-report=term-missing
+
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./server/coverage.xml
+        flags: backend
+        name: Backend Coverage
+
+    - name: Build Docker image
+      run: |
+        cd server
+        docker build -t climateai-backend:${{ github.sha }} .
+
+  # Frontend Tests and Build
+  frontend:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: client/package-lock.json
+
+    - name: Install dependencies
+      run: |
+        cd client
+        npm ci
+
+    - name: Run linting
+      run: |
+        cd client
+        npm run lint
+
+    - name: Run type checking
+      run: |
+        cd client
+        npm run type-check
+
+    - name: Run tests
+      run: |
+        cd client
+        npm test -- --coverage --watchAll=false
+
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./client/coverage/lcov.info
+        flags: frontend
+        name: Frontend Coverage
+
+    - name: Build application
+      run: |
+        cd client
+        npm run build
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: frontend-build
+        path: client/dist/
+
+  # Security Scanning
+  security:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+    - name: Dependency Review
+      uses: actions/dependency-review-action@v3
+      if: github.event_name == 'pull_request'
+
+  # Integration Tests
+  integration:
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_USER: climateai
+          POSTGRES_PASSWORD: climateai123
+          POSTGRES_DB: climateai
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:6-alpine
+        ports:
+          - 6379:6379
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install dependencies
+      run: |
+        cd server
+        pip install -r requirements.txt
+
+    - name: Start services
+      run: |
+        cd server
+        docker-compose up -d db redis
+
+    - name: Wait for services
+      run: |
+        timeout 60 bash -c 'until docker-compose exec -T db pg_isready; do sleep 1; done'
+
+    - name: Run integration tests
+      env:
+        DATABASE_URL: postgresql://climateai:climateai123@localhost:5432/climateai
+        REDIS_URL: redis://localhost:6379
+        SECRET_KEY: test-secret-key-for-ci
+      run: |
+        cd server
+        pip install pytest pytest-asyncio requests
+        pytest tests/integration/ -v --tb=short
+
+    - name: Clean up
+      if: always()
+      run: |
+        cd server
+        docker-compose down -v
+
+  # Docker Build and Push
+  docker:
+    runs-on: ubuntu-latest
+    needs: [backend, frontend, integration]
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Build and push backend
+      uses: docker/build-push-action@v5
+      with:
+        context: ./server
+        push: true
+        tags: leanderdulac/climateai-backend:latest,leanderdulac/climateai-backend:${{ github.sha }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Build and push frontend
+      uses: docker/build-push-action@v5
+      with:
+        context: ./client
+        push: true
+        tags: leanderdulac/climateai-frontend:latest,leanderdulac/climateai-frontend:${{ github.sha }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  # Deploy to Staging (optional)
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: [docker]
+    if: github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[deploy]')
+    environment: staging
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Deploy to staging
+      run: |
+        echo "Deploying to staging environment..."
+        # Add your deployment commands here
+        # Example: kubectl apply -f k8s/staging/
+
+  # Performance Tests
+  performance:
+    runs-on: ubuntu-latest
+    needs: [backend]
+    if: github.event_name == 'workflow_dispatch'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install Locust
+      run: pip install locust
+
+    - name: Run performance tests
+      run: |
+        # Add performance test commands here
+        echo "Running performance tests..."
+        # locust -f tests/performance/locustfile.py --headless --users 100 --spawn-rate 10 --run-time 1m
+
+  # Documentation
+  docs:
+    runs-on: ubuntu-latest
+    needs: [backend]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Generate API docs
+      run: |
+        cd server
+        pip install -r requirements.txt
+        python -c "from main import app; print('API docs generated')"
+
+    - name: Upload docs
+      uses: actions/upload-artifact@v3
+      with:
+        name: api-docs
+        path: docs/

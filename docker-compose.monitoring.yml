@@ -1,0 +1,177 @@
+version: '3.8'
+
+services:
+  # Core Services
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://climateai:climateai123@db:5432/climateai
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - db
+      - redis
+    networks:
+      - climateai
+      - monitoring
+
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    networks:
+      - climateai
+
+  # Database Services
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: climateai
+      POSTGRES_PASSWORD: climateai123
+      POSTGRES_DB: climateai
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./server/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - climateai
+      - monitoring
+
+  redis:
+    image: redis:6-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - climateai
+      - monitoring
+
+  # Monitoring Stack
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+    networks:
+      - monitoring
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    networks:
+      - monitoring
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    devices:
+      - /dev/kmsg
+    networks:
+      - monitoring
+
+  # Logging Stack (ELK)
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - logging
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.11.0
+    ports:
+      - "5044:5044"
+      - "5000:5000"
+      - "9600:9600"
+    volumes:
+      - ./monitoring/logstash/pipeline:/usr/share/logstash/pipeline
+      - ./monitoring/logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
+    depends_on:
+      - elasticsearch
+    networks:
+      - logging
+      - climateai
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    networks:
+      - logging
+
+volumes:
+  postgres_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:
+  elasticsearch_data:
+
+
+networks:
+  climateai:
+    driver: bridge
+  monitoring:
+    driver: bridge
+  logging:
+    driver: bridge

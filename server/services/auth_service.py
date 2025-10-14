@@ -25,7 +25,12 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 REFRESH_TOKEN_EXPIRE_DAYS = 7
 
 # Contexto para hashing de senhas
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(
+    schemes=["bcrypt"],
+    deprecated="auto",
+    bcrypt__default_rounds=12,
+    bcrypt__ident="2b"
+)
 
 # Bearer token scheme
 security = HTTPBearer()
@@ -46,7 +51,9 @@ class AuthService:
 
     def get_password_hash(self, password: str) -> str:
         """Gera hash da senha"""
-        return pwd_context.hash(password)
+        # bcrypt limita senhas a 72 bytes, truncar se necessário
+        truncated_password = password.encode('utf-8')[:72].decode('utf-8', errors='ignore')
+        return pwd_context.hash(truncated_password)
 
     def create_access_token(self, data: Dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:
         """Cria token de acesso JWT"""

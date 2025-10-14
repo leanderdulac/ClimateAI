@@ -697,8 +697,8 @@ export function PricingSimulator() {
           <button
             onClick={() => setActiveTab('simulator')}
             className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'simulator'
-                ? 'border-primary-500 text-primary-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+              ? 'border-primary-500 text-primary-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
           >
             Simulador de Preços
@@ -706,8 +706,8 @@ export function PricingSimulator() {
           <button
             onClick={() => setActiveTab('dashboard')}
             className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'dashboard'
-                ? 'border-primary-500 text-primary-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+              ? 'border-primary-500 text-primary-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
           >
             Dashboard Executivo
@@ -715,8 +715,8 @@ export function PricingSimulator() {
           <button
             onClick={() => setActiveTab('audit')}
             className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'audit'
-                ? 'border-primary-500 text-primary-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+              ? 'border-primary-500 text-primary-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
           >
             Auditoria & Compliance
@@ -1192,8 +1192,8 @@ export function PricingSimulator() {
               <div className="mt-10 space-y-8">
                 {/* Status Geral da Apólice */}
                 <div className={`animate-slide-up rounded-lg p-8 ${financialAnalysis.overallAssessment.isViable
-                    ? 'bg-gradient-to-r from-green-50 to-green-100 border-2 border-green-200'
-                    : 'bg-gradient-to-r from-red-50 to-red-100 border-2 border-red-200'
+                  ? 'bg-gradient-to-r from-green-50 to-green-100 border-2 border-green-200'
+                  : 'bg-gradient-to-r from-red-50 to-red-100 border-2 border-red-200'
                   }`}>
                   <div className="space-y-6">
                     <div className="flex items-center justify-between">
@@ -1503,10 +1503,10 @@ export function PricingSimulator() {
                     <div
                       key={index}
                       className={`animate-slide-up rounded-lg border-2 p-6 transition-all duration-300 ${sim.isViable
-                          ? index === 0
-                            ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-300 shadow-lg'
-                            : 'bg-gradient-to-br from-blue-50 to-cyan-50 border-blue-300'
-                          : 'bg-gradient-to-br from-red-50 to-orange-50 border-red-300'
+                        ? index === 0
+                          ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-300 shadow-lg'
+                          : 'bg-gradient-to-br from-blue-50 to-cyan-50 border-blue-300'
+                        : 'bg-gradient-to-br from-red-50 to-orange-50 border-red-300'
                         }`}
                       style={{ animationDelay: `${index * 100}ms` }}
                     >
