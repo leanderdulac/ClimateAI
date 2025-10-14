@@ -9,11 +9,11 @@ class Settings(BaseSettings):
     # Configurações do servidor
     HOST: str = "localhost"
     PORT: int = 8000
-    DEBUG: bool = True
+    DEBUG: bool = False  # Production default
     API_HOST: str = "localhost"
     API_PORT: int = 8000
-    SECRET_KEY: str = "changeme123"
-    ALLOW_ORIGINS: list = ["*"]
+    SECRET_KEY: str = "changeme123"  # Should be set via environment in production
+    ALLOW_ORIGINS: list = []  # Restrictive default for production
     
     # Configurações de API
     EMBRAPA_API_KEY: Optional[str] = None

@@ -83,6 +83,40 @@ O sistema é composto por três partes principais:
 ./stop_platform.sh
 ```
 
+## 🔗 **Integração Landing Page ↔ Dashboard**
+
+### **Fluxo de Conversão Otimizado**
+A landing page está totalmente integrada ao dashboard para maximizar conversões:
+
+#### **Botões de CTA Conectados**
+- **"Acessar Dashboard"**: Redireciona diretamente para `http://localhost:3000/welcome`
+- **Verificação Automática**: JavaScript verifica se o dashboard está rodando
+- **Fallback Inteligente**: Se dashboard offline, mostra alerta para iniciar plataforma
+
+#### **Página de Boas-Vindas**
+- **Rota `/welcome`**: Página dedicada para usuários vindos da landing page
+- **Onboarding Guiado**: Explica funcionalidades principais do ClimateAI
+- **Navegação Fluida**: Botões para explorar dashboard completo
+- **Design Consistente**: Mantém identidade visual da landing page
+
+#### **Experiência Seamless**
+1. **Usuário visita landing page** (`http://localhost:8080/landing-page.html`)
+2. **Clica em "Acessar Dashboard"** → Redirecionado para `/welcome`
+3. **Página de boas-vindas** explica funcionalidades e guia usuário
+4. **Transição suave** para dashboard principal (`/`)
+
+### **Como Testar a Integração**
+```bash
+# Script automatizado de teste
+./test_integration.sh
+
+# Ou testar manualmente:
+# 1. Iniciar landing page: ./start_landing_page.sh
+# 2. Iniciar plataforma: ./start_platform.sh
+# 3. Acessar landing page e clicar nos botões CTA
+# 4. Verificar redirecionamento para dashboard
+```
+
 ## 🌐 **Landing Page Detalhada**
 
 ### Design e Funcionalidades

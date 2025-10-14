@@ -1128,7 +1128,7 @@
                 <li><a href="#testimonials">Depoimentos</a></li>
                 <li><a href="#contact">Contato</a></li>
             </ul>
-            <a href="#demo" class="cta-button">Agendar Demo</a>
+            <a href="http://localhost:3000/welcome" class="cta-button" target="_blank">Acessar Dashboard</a>
         </nav>
     </header>
 
@@ -1180,9 +1180,9 @@
                     </div>
 
                     <div class="fade-in-up delay-3">
-                        <a href="#demo" class="cta-button hero-cta">
+                        <a href="http://localhost:3000/welcome" class="cta-button hero-cta" target="_blank">
                             <i class="fas fa-rocket"></i>
-                            Começar Agora
+                            Acessar Dashboard
                         </a>
                         <a href="#demo" class="cta-button-secondary">
                             <i class="fas fa-play-circle"></i>
@@ -1289,7 +1289,7 @@
                             mundiais</li>
                     </ul>
 
-                    <a href="#demo" class="cta-button">Saiba Mais</a>
+                    <a href="http://localhost:3000/welcome" class="cta-button" target="_blank">Acessar Dashboard</a>
                 </div>
                 <div class="platform-image">
                     <img src="https://via.placeholder.com/600x400/2563eb/ffffff?text=ClimateAI+Dashboard"
@@ -1498,7 +1498,7 @@
                 avançada.</p>
 
             <div class="cta-buttons">
-                <a href="#demo" class="cta-button">Agendar Demonstração</a>
+                <a href="http://localhost:3000/welcome" class="cta-button" target="_blank">Acessar Dashboard</a>
                 <a href="#contact" class="cta-button cta-button-secondary">Falar com Especialista</a>
             </div>
         </div>
@@ -1557,6 +1557,42 @@
     </footer>
 
     <script>
+        // Function to check if dashboard is running
+        async function checkDashboardStatus() {
+            try {
+                const response = await fetch('http://localhost:3000/welcome', {
+                    method: 'HEAD',
+                    mode: 'no-cors'
+                });
+                return true;
+            } catch (error) {
+                return false;
+            }
+        }
+
+        // Update dashboard links based on status
+        async function updateDashboardLinks() {
+            const dashboardLinks = document.querySelectorAll('a[href="http://localhost:3000/welcome"]');
+            const isRunning = await checkDashboardStatus();
+
+            dashboardLinks.forEach(link => {
+                if (!isRunning) {
+                    link.href = '#demo';
+                    link.innerHTML = link.innerHTML.replace('Acessar Dashboard', 'Iniciar Dashboard');
+                    link.onclick = function(e) {
+                        e.preventDefault();
+                        alert('O dashboard não está rodando. Execute: ./start_platform.sh');
+                        return false;
+                    };
+                }
+            });
+        }
+
+        // Check dashboard status on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateDashboardLinks();
+        });
+
         // Header scroll effect
         window.addEventListener('scroll', function () {
             const header = document.getElementById('header');

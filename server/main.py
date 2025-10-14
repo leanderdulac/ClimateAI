@@ -156,11 +156,15 @@ API_PREFIX = "/api/v1"
 # Configurar CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.ALLOW_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Adicionar middleware de segurança
+from middleware.security_middleware import SecurityHeadersMiddleware
+app.add_middleware(SecurityHeadersMiddleware)
 
 # Adicionar middleware de autenticação opcional
 from middleware.auth_middleware import optional_auth

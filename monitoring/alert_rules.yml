@@ -1,0 +1,60 @@
+groups:
+  - name: climateai_alerts
+    rules:
+      # Backend alerts
+      - alert: BackendDown
+        expr: up{job="climateai-backend"} == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "ClimateAI Backend is down"
+          description: "ClimateAI Backend has been down for more than 5 minutes."
+
+      - alert: BackendHighErrorRate
+        expr: rate(http_requests_total{job="climateai-backend", status=~"5.."}[5m]) / rate(http_requests_total{job="climateai-backend"}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate on ClimateAI Backend"
+          description: "Error rate is {{ $value }}% which is above 5%."
+
+      # Database alerts
+      - alert: DatabaseDown
+        expr: up{job="postgres"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL database is down"
+          description: "PostgreSQL has been down for more than 2 minutes."
+
+      # Redis alerts
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis is down"
+          description: "Redis has been down for more than 2 minutes."
+
+      # System alerts
+      - alert: HighMemoryUsage
+        expr: (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is {{ $value }}%."
+
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is {{ $value }}%."

@@ -3,45 +3,42 @@ Configuração de Banco de Dados para ClimateAI
 """
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine
 from typing import AsyncGenerator
 import os
 
-# Configurações do banco de dados - Temporariamente usando sync para resolver problema
+# Configurações do banco de dados
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./test.db")
 
-# Usando engine síncrona temporariamente para resolver problema de driver
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker as sync_sessionmaker
+# Detect database type
+is_postgres = DATABASE_URL.startswith("postgresql")
 
-# Engine síncrona (temporária)
-engine = create_engine(
-    DATABASE_URL,
-    echo=False,
-    connect_args={"check_same_thread": False}
-)
-
-# Session factory síncrona (temporária)
-sync_session_maker = sync_sessionmaker(
-    engine,
-    expire_on_commit=False
-)
-
-# Mock das funções assíncronas para manter compatibilidade
-async def get_db_session():
-    """Mock assíncrono temporário"""
-    # Retorna um gerador vazio para evitar erros
-    return
-    yield  # pragma: no cover
-
-# Manter compatibilidade com código existente
-async_session_maker = sync_session_maker
-
-# Session factory
-async_session_maker = sessionmaker(
-    engine,
-    class_=AsyncSession,
-    expire_on_commit=False
-)
+if is_postgres:
+    # PostgreSQL async setup
+    engine = create_async_engine(
+        DATABASE_URL,
+        echo=False,
+        pool_size=10,
+        max_overflow=20,
+    )
+    async_session_maker = sessionmaker(
+        engine,
+        class_=AsyncSession,
+        expire_on_commit=False
+    )
+else:
+    # SQLite setup (development)
+    engine = create_engine(
+        DATABASE_URL,
+        echo=False,
+        connect_args={"check_same_thread": False}
+    )
+    # For SQLite, use sync session maker wrapped as async
+    sync_session_maker = sessionmaker(
+        engine,
+        expire_on_commit=False
+    )
+    async_session_maker = sync_session_maker
 
 
 async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
