@@ -1,0 +1,6 @@
+# Netlify Redirects
+# Redirect raiz para landing page
+/  /landing.html  200
+
+# SPA routing - todas as outras rotas vão para o React app
+/*  /index.html  200

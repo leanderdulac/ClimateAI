@@ -40,8 +40,17 @@ function PeriodButtons() {
 }
 
 export function IndexPage() {
+  const isDemoMode = !import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_BASE_URL === '';
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
+      {/* Banner de Modo Demo */}
+      {isDemoMode && (
+        <div className="bg-amber-500 text-white py-2 px-4 text-center text-sm">
+          <span className="font-medium">⚠️ Modo Demo:</span> Exibindo dados simulados. Configure VITE_API_BASE_URL para conectar ao backend real.
+        </div>
+      )}
+      
       {/* Hero Section */}
       <section className="py-16 md:py-24 bg-gradient-to-r from-blue-900/10 to-green-900/10">
         <div className="container mx-auto max-w-7xl px-4">
