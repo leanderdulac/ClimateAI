@@ -37,7 +37,7 @@ export function WelcomePage() {
               <span className="text-xl font-bold text-gray-900">ClimateAI</span>
             </div>
             <Button
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/dashboard')}
               className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700"
             >
               Explorar Dashboard
@@ -80,7 +80,7 @@ export function WelcomePage() {
           <div className="space-y-4">
             <Button
               size="lg"
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/dashboard')}
               className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white px-8 py-4 text-lg"
             >
               Começar a Explorar

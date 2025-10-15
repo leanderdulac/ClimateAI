@@ -1,5 +1,2 @@
-# Landing page como página inicial
-/  /landing.html  200
-
-# SPA routing - todas as outras rotas vão para o React app
+# SPA routing - todas as rotas vão para o React app
 /*  /index.html  200
