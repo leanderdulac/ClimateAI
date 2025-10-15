@@ -5,11 +5,15 @@ import { WelcomePage } from '@/pages/Welcome';
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <IndexPage />,
+    element: <WelcomePage />,
   },
   {
     path: "/welcome",
     element: <WelcomePage />,
+  },
+  {
+    path: "/dashboard",
+    element: <IndexPage />,
   },
   {
     path: "/admin",
