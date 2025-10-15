@@ -26,7 +26,10 @@ export default defineConfig({
     include: ['react', 'react-dom', 'react-router-dom']
   },
   build: {
-    sourcemap: true,
+    sourcemap: false,
+    outDir: 'dist',
+    assetsDir: 'assets',
+    emptyOutDir: true,
     rollupOptions: {
       output: {
         manualChunks: {

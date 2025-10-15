@@ -3,7 +3,7 @@
 # ClimateAI - Deploy Script for DigitalOcean
 # This script automates the deployment of ClimateAI to DigitalOcean Droplet
 
-set -e
+set -euo pipefail
 
 # Colors for output
 RED='\033[0;31m'
