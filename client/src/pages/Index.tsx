@@ -41,13 +41,15 @@ function PeriodButtons() {
 
 export function IndexPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
-      {/* Hero Section */}
-      <section className="py-16 md:py-24 bg-gradient-to-r from-blue-900/10 to-green-900/10">
-        <div className="container mx-auto max-w-7xl px-4">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 bg-blue-100/20 px-4 py-2 rounded-full text-sm text-blue-800 mb-6">
-              <Zap className="h-4 w-4" />
+    <LocationProvider>
+      <PeriodProvider>
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
+          {/* Hero Section */}
+          <section className="py-16 md:py-24 bg-gradient-to-r from-blue-900/10 to-green-900/10">
+            <div className="container mx-auto max-w-7xl px-4">
+              <div className="text-center mb-16">
+                <div className="inline-flex items-center gap-2 bg-blue-100/20 px-4 py-2 rounded-full text-sm text-blue-800 mb-6">
+                  <Zap className="h-4 w-4" />
               Advanced Climate Analytics
             </div>
             <h1 className="text-5xl md:text-7xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-green-600 mb-6">
@@ -132,7 +134,6 @@ export function IndexPage() {
 
           {/* Main Dashboard Section */}
           <div className="mb-16">
-            <PeriodProvider>
               <div className="flex items-center gap-3 mb-8">
                 <Globe className="h-8 w-8 text-blue-600" />
                 <h2 className="text-3xl font-bold text-gray-800">Climate Dashboard</h2>
@@ -141,17 +142,13 @@ export function IndexPage() {
 
               {/* Top Section - Location and Weather */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-                <LocationProvider>
                   <LocationSelector />
                   <WeatherWidget />
-                </LocationProvider>
               </div>
 
               {/* Pricing Simulator - Full Width with More Space */}
               <div className="mb-16">
-                <LocationProvider>
                   <PricingSimulator />
-                </LocationProvider>
               </div>
 
               {/* Climate Event Tokenizer - Separate Section Below */}
@@ -160,11 +157,8 @@ export function IndexPage() {
                   <Cloud className="h-6 w-6 text-orange-600" />
                   <h3 className="text-2xl font-semibold text-gray-800">Tokenização de Eventos Climáticos</h3>
                 </div>
-                <LocationProvider>
                   <ClimateEventTokenizer />
-                </LocationProvider>
               </div>
-            </PeriodProvider>
           </div>
 
           {/* Smart Contract Monitor Section */}
@@ -198,5 +192,7 @@ export function IndexPage() {
         </div>
       </section>
     </div>
+      </PeriodProvider>
+    </LocationProvider>
   );
 }
