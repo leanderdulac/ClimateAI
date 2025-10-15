@@ -1,235 +1,85 @@
-# 🔍 ClimateAI - Relatório de Verificação e Preparação para Deploy
+# Guia de Verificação - Deploy Netlify
 
-**Data:** 14 de outubro de 2025  
-**Status:** ✅ **PRONTO PARA DEPLOY**
+**Data:** 15 de outubro de 2025  
+**Commit:** `2ca69f5`
 
----
+## 🔍 Como Verificar se Está Funcionando
 
-## ✅ Correções Implementadas
+### 1. Landing Page (Página Inicial)
 
-### **1. Erros de Código Corrigidos**
+**Acesse:** `https://seu-site.netlify.app/`
 
-#### **server/api/modelagem.py**
-- ❌ **Problema**: Referências indefinidas a `smart_cache`
-- ✅ **Solução**: Removidas todas as referências ao smart_cache
-- ✅ **Solução**: Adicionado import `numpy` faltante
-- ✅ **Resultado**: Código limpo e funcional
+**Deve mostrar:**
+- ✅ Página HTML completa com design azul/roxo
+- ✅ Botão "Acessar Dashboard"
+- ✅ Seções sobre ClimateAI
+- ✅ **SEM erro 404**
 
-#### **server/requirements.txt**
-- ❌ **Problema**: `statsmodels` não listado nas dependências
-- ✅ **Solução**: Adicionado `statsmodels>=0.14.0`
-- ✅ **Resultado**: Todas as dependências documentadas
+### 2. Dashboard
 
-### **2. Erros CSS Ignorados**
-- ⚠️ **client/src/index.css**: Avisos do Tailwind CSS são normais
-- ✅ **Motivo**: PostCSS processa corretamente as diretivas @tailwind
-- ✅ **Resultado**: Build funciona perfeitamente (testado)
+**Acesse:** `https://seu-site.netlify.app/welcome`
 
-### **3. Dependências Opcionais**
-- ℹ️ **locust**: Usado apenas para testes de performance (não crítico)
-- ℹ️ **Resultado**: Não afeta deploy de produção
+**Deve mostrar:**
+- ✅ **Banner amarelo** no topo: "⚠️ Modo Demo"
+- ✅ Interface completa
+- ✅ Campos de busca funcionais
+- ✅ **SEM tela branca**
 
----
+### 3. Busca de Cidades
 
-## 🧪 Testes Realizados
+1. Digite "São" no campo de busca
+2. **Deve retornar:** São Paulo, Rio de Janeiro, Belo Horizonte, Brasília, Curitiba
+3. Selecione uma cidade
 
-### **Frontend Build**
-```bash
-✅ Build completado com sucesso
-✅ Tamanho otimizado: 695KB (189KB gzipped)
-⚠️ Chunks grandes (sugestão de otimização futura)
+### 4. Dados Climáticos
+
+Após selecionar cidade:
+- ✅ Gráficos carregam (2-5 segundos)
+- ✅ Mostra temperatura, umidade, precipitação
+- ✅ Valores realistas (não zeros)
+
+### 5. Console do Navegador (F12)
+
+**Mensagens esperadas (NORMAIS):**
+```
+Usando dados climáticos mock
+Usando localização mock
+Usando busca de cidades mock
 ```
 
-### **Docker Compose**
-```bash
-✅ Configuração validada sem erros
-✅ Todos os serviços configurados corretamente
-✅ Health checks implementados
+**NÃO deve ter:**
+```
+Cannot find module ❌
+Uncaught Error ❌
+Failed to load ❌
 ```
 
-### **Status da Plataforma**
-```bash
-✅ Backend: Rodando (porta 8000)
-✅ Frontend: Rodando (porta 3000)
-✅ Landing Page: Rodando (porta 8080)
-✅ Todos os serviços conectando corretamente
-```
+## 🐛 Se Não Funcionar
+
+### Landing page 404
+- Limpar cache: Ctrl+Shift+R
+- Modo anônimo do navegador
+- Aguardar 5min após deploy
+
+### Dashboard tela branca
+1. F12 → Console → ver erros
+2. Recarregar (F5)
+3. Tentar `/index.html` diretamente
+
+### Dados não carregam
+1. Verificar se selecionou cidade
+2. Ver console: deve ter "usando dados mock"
+3. Aguardar até 10 segundos
+
+## ✅ Resultado Esperado
+
+Se tudo estiver certo:
+- Landing page carrega
+- Dashboard mostra banner amarelo
+- Busca retorna 5 cidades
+- Gráficos mostram dados
+- Console tem mensagens "mock"
 
 ---
 
-## 📦 Estrutura de Deploy Pronta
-
-### **Arquivos Principais**
-- ✅ `docker-compose.prod.yml` - Configuração de produção otimizada
-- ✅ `vercel.json` - Configuração para deploy Vercel
-- ✅ `client/nginx.conf` - Configuração Nginx para Docker
-- ✅ `.env.example` - Template de variáveis de ambiente
-- ✅ `test_deploy.sh` - Script de teste local
-- ✅ `deploy/deploy_digitalocean.sh` - Deploy automatizado
-
-### **Documentação**
-- ✅ `deploy/README.md` - Guia completo de deploy
-- ✅ `deploy/DIGITALOCEAN_DEPLOY.md` - Instruções DigitalOcean
-- ✅ `deploy/deploy.config` - Configurações centralizadas
-- ✅ `README.md` - Documentação principal atualizada
-
----
-
-## 🚀 Plataformas Suportadas
-
-### **✅ DigitalOcean (Recomendado)**
-- Deploy completo (backend + frontend + banco)
-- Script automatizado pronto
-- Custo: ~R$ 150/mês
-- SSL automático com Let's Encrypt
-
-### **✅ Vercel (Frontend)**
-- Deploy frontend otimizado
-- CDN global
-- Custo: R$ 0-150/mês (Hobby grátis)
-- Backend deve ser deployado separadamente
-
-### **✅ Docker (Qualquer plataforma)**
-- Containers prontos e testados
-- Health checks configurados
-- Logging otimizado
-- Resource limits definidos
-
----
-
-## 🔒 Segurança Implementada
-
-- ✅ Arquivos sensíveis no `.gitignore`
-- ✅ Template `.env.example` sem credenciais
-- ✅ Headers de segurança HTTP configurados
-- ✅ CORS configurado adequadamente
-- ✅ DEBUG=False para produção
-- ✅ Senhas fortes obrigatórias
-
----
-
-## 📊 Otimizações Implementadas
-
-### **Docker**
-- ✅ Resource limits (CPU/memória)
-- ✅ Health checks em todos os serviços
-- ✅ Log rotation configurado
-- ✅ Restart policies otimizados
-
-### **Frontend**
-- ✅ Build otimizado (Vite)
-- ✅ Gzip compression (Nginx)
-- ✅ Cache headers para assets
-- ✅ SPA routing configurado
-
-### **Backend**
-- ✅ PostgreSQL com shared_preload_libraries
-- ✅ Redis com maxmemory policy
-- ✅ Async database connections
-- ✅ Connection pooling
-
----
-
-## 📝 Próximos Passos para Deploy
-
-### **Opção 1: DigitalOcean (Completo)**
-```bash
-# 1. Criar droplet Ubuntu 22.04 (2GB RAM)
-# 2. Conectar via SSH
-ssh root@YOUR_DROPLET_IP
-
-# 3. Executar script de deploy
-wget https://raw.githubusercontent.com/leanderdulac/ClimateAI/main/deploy/deploy_digitalocean.sh
-chmod +x deploy_digitalocean.sh
-
-export DOMAIN="seu-dominio.com"
-export EMAIL="admin@dominio.com"
-export DB_PASSWORD="sua_senha_forte"
-
-./deploy_digitalocean.sh
-```
-
-### **Opção 2: Teste Local**
-```bash
-# Testar deployment localmente
-./test_deploy.sh
-
-# Verificar serviços
-docker-compose -f docker-compose.prod.yml ps
-docker-compose -f docker-compose.prod.yml logs -f
-```
-
-### **Opção 3: Vercel (Frontend)**
-```bash
-# Deploy frontend para Vercel
-cd client
-npm i -g vercel
-vercel --prod
-
-# Configure backend URL no vercel.json
-```
-
----
-
-## ⚠️ Recomendações
-
-### **Antes do Deploy**
-1. ✅ Atualizar `.env` com valores de produção
-2. ✅ Gerar SECRET_KEY forte (use `openssl rand -hex 32`)
-3. ✅ Configurar domínio DNS
-4. ✅ Preparar certificado SSL (Let's Encrypt automático)
-5. ✅ Revisar limites de recursos Docker
-
-### **Após Deploy**
-1. ✅ Testar todos os endpoints da API
-2. ✅ Verificar logs de todos os serviços
-3. ✅ Configurar backup automático (script incluído)
-4. ✅ Ativar monitoramento (Grafana/Prometheus)
-5. ✅ Configurar alertas de disponibilidade
-
-### **Otimizações Futuras**
-1. ⚠️ Implementar code splitting no frontend (chunks grandes)
-2. ⚠️ Adicionar CDN para assets estáticos
-3. ⚠️ Implementar cache Redis no backend
-4. ⚠️ Configurar auto-scaling quando necessário
-
----
-
-## 💰 Custos Estimados
-
-| Plataforma | Configuração | Custo Mensal |
-|------------|-------------|--------------|
-| **DigitalOcean** | Droplet 2GB | R$ 120 |
-| **Domínio** | .com ou .com.br | R$ 30-50 |
-| **SSL** | Let's Encrypt | Gratuito |
-| **Vercel** | Hobby (opcional) | Gratuito |
-| **Total** | Full stack | **R$ 150-170** |
-
----
-
-## ✅ Checklist Final
-
-- ✅ Erros de código corrigidos
-- ✅ Dependências atualizadas
-- ✅ Build do frontend testado
-- ✅ Docker validado
-- ✅ Scripts de deploy prontos
-- ✅ Documentação completa
-- ✅ Segurança implementada
-- ✅ Otimizações aplicadas
-- ✅ Backup no GitHub
-- ✅ Plataforma testada localmente
-
----
-
-## 🎯 Conclusão
-
-**ClimateAI está 100% pronto para deploy em produção!**
-
-Todos os erros foram corrigidos, as dependências estão atualizadas, e o código foi testado. A plataforma pode ser deployada no DigitalOcean, Vercel, ou qualquer outra plataforma que suporte Docker.
-
-**Recomendação**: Começar com DigitalOcean para deploy completo, com custo otimizado de ~R$ 150/mês.
-
----
-
-**Próximo passo**: Escolher plataforma e executar deploy! 🚀
+**Me informe:** O que você vê ao acessar o site?
