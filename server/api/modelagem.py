@@ -4,6 +4,7 @@ Router para endpoints de modelagem econômica
 from fastapi import APIRouter, HTTPException, Query, Body
 from typing import List, Optional, Dict
 from datetime import datetime
+import numpy as np
 from models.schemas import PrevisaoPreco
 from services.modelagem_service import ModelagemService
 
@@ -22,20 +23,7 @@ async def get_previsao_precos(
     Obter previsões de preços de commodities considerando fatores climáticos
     """
     try:
-        # Gera chave de cache baseada nos parâmetros
-        cache_key = smart_cache._generate_key({
-            'simbolos': sorted(simbolos),
-            'latitude': latitude,
-            'longitude': longitude,
-            'dias': dias
-        })
-
-        # Verifica cache
-        cached_result = smart_cache.get(cache_key)
-        if cached_result is not None:
-            return cached_result
-
-        # Executa cálculo se não estiver em cache
+        # Executa cálculo
         result = modelagem_service.obter_previsao_precos(
             simbolos=simbolos,
             latitude=latitude,
@@ -43,8 +31,6 @@ async def get_previsao_precos(
             dias=dias
         )
 
-        # Armazena no cache (TTL: 30 minutos para dados de commodities)
-        smart_cache.set(cache_key, result, 1800)
         return result
 
     except Exception as e:
@@ -59,23 +45,10 @@ async def get_impacto_climatico(
     periodo: int = Query(30, ge=1, le=365)
 ):
     """
-    Obter análise de impacto climático sobre o preço de uma commodity
+    Obter análise de impacto climático nos preços de commodities
     """
     try:
-        # Gera chave de cache baseada nos parâmetros
-        cache_key = smart_cache._generate_key({
-            'simbolo': simbolo,
-            'latitude': latitude,
-            'longitude': longitude,
-            'periodo': periodo
-        })
-
-        # Verifica cache
-        cached_result = smart_cache.get(cache_key)
-        if cached_result is not None:
-            return cached_result
-
-        # Executa cálculo se não estiver em cache
+        # Executa cálculo
         result = modelagem_service.obter_impacto_climatico(
             simbolo=simbolo,
             latitude=latitude,
@@ -83,8 +56,6 @@ async def get_impacto_climatico(
             periodo=periodo
         )
 
-        # Armazena no cache (TTL: 15 minutos para análises de impacto)
-        smart_cache.set(cache_key, result, 900)
         return result
 
     except Exception as e:
@@ -109,26 +80,9 @@ async def predict_sinistrality_ml(
     try:
         from services.ml_service import predict_sinistrality
 
-        # Gera chave de cache
-        cache_key = smart_cache._generate_key(features) if use_cache else None
-
-        # Verifica cache se habilitado
-        if use_cache and cache_key:
-            cached_result = smart_cache.get(cache_key)
-            if cached_result is not None:
-                return cached_result
-
-        # Executa predição ML
+        # Executa predição
         result = predict_sinistrality(features)
-
-        # Armazena no cache se habilitado (TTL: 1 hora para predições ML)
-        if use_cache and cache_key:
-            smart_cache.set(cache_key, result, 3600)
-
         return result
-
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Erro na predição ML: {str(e)}")
 
 
 @router.post("/derivativos-climaticos/preco")
