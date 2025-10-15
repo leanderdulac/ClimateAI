@@ -1,6 +1,10 @@
-# Netlify Redirects
-# Redirect raiz para landing page
-/  /landing.html  200
+# Netlify Redirects - ordem importa!
+# SPA routing para rotas do React (exceto landing)
+/welcome  /index.html  200
+/dashboard  /index.html  200
+/clima  /index.html  200
+/alertas  /index.html  200
+/modelagem  /index.html  200
 
-# SPA routing - todas as outras rotas vão para o React app
-/*  /index.html  200
+# Landing page como página inicial
+/  /landing.html  200

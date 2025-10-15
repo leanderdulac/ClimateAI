@@ -117,16 +117,19 @@ export function ClimateDataWidget({ latitude = -23.5505, longitude = -46.6333 }:
   useEffect(() => {
     const fetchClimateData = async () => {
       try {
+        console.log('[ClimateDataWidget] Iniciando fetch de dados...', { latitude, longitude });
         setLoading(true);
         setError(null);
 
         // Obter dados atuais primeiro
+        console.log('[ClimateDataWidget] Buscando dados atuais...');
         const currentData = await embrapaApi.getClimateData(
           latitude,
           longitude,
           new Date().toISOString().split('T')[0],
           new Date().toISOString().split('T')[0]
         );
+        console.log('[ClimateDataWidget] Dados atuais recebidos:', currentData);
 
         if (currentData && currentData.length > 0) {
           setCurrentWeather({
@@ -144,6 +147,12 @@ export function ClimateDataWidget({ latitude = -23.5505, longitude = -46.6333 }:
         const startDate = new Date();
         startDate.setDate(startDate.getDate() - selectedPeriod);
 
+        console.log('[ClimateDataWidget] Buscando dados históricos...', {
+          startDate: startDate.toISOString().split('T')[0],
+          endDate: endDate.toISOString().split('T')[0],
+          period: selectedPeriod
+        });
+
         // Buscar dados históricos
         const historicalData = await embrapaApi.getClimateData(
           latitude,
@@ -151,6 +160,7 @@ export function ClimateDataWidget({ latitude = -23.5505, longitude = -46.6333 }:
           startDate.toISOString().split('T')[0],
           endDate.toISOString().split('T')[0]
         );
+        console.log('[ClimateDataWidget] Dados históricos recebidos:', historicalData.length, 'registros');
 
         // Processar dados históricos
         const chartData: ClimateDataPoint[] = historicalData.map(data => ({
@@ -165,23 +175,29 @@ export function ClimateDataWidget({ latitude = -23.5505, longitude = -46.6333 }:
         }));
 
         setClimateData(chartData);
+        console.log('[ClimateDataWidget] ChartData definido:', chartData.length, 'pontos');
 
         // Analisar tendências
         if (chartData.length > 0) {
           const trends = analyzeTrends(chartData);
           setClimateTrends(trends);
+          console.log('[ClimateDataWidget] Tendências calculadas:', trends);
         }
 
+        console.log('[ClimateDataWidget] Carregamento concluído com sucesso!');
         setLoading(false);
       } catch (error) {
-        console.error('Erro ao buscar dados climáticos:', error);
+        console.error('[ClimateDataWidget] ERRO ao buscar dados climáticos:', error);
         setError('Não foi possível carregar os dados climáticos');
         setLoading(false);
       }
     };
 
     if (latitude && longitude) {
+      console.log('[ClimateDataWidget] Latitude e longitude disponíveis, iniciando fetch...');
       fetchClimateData();
+    } else {
+      console.log('[ClimateDataWidget] Aguardando latitude e longitude...', { latitude, longitude });
     }
   }, [latitude, longitude]);
 
