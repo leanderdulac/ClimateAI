@@ -11,6 +11,10 @@ O build no Netlify estava falhar com múltiplos erros TypeScript:
 2. **Erros TS7006**: "Parameter implicitly has an 'any' type"
    - Afetava: AuditDashboard.tsx, ClimateDataWidget.tsx, WeatherWidget.tsx
 
+3. **ENOENT: no such file or directory** ⚠️ **CAUSA RAIZ**
+   - `client/src/lib/error-handler.ts` não existia no repositório!
+   - **TODOS os arquivos em `client/src/lib/` estavam sendo ignorados pelo git**
+
 ## 🔍 Causa Raiz
 
 O comando de build `tsc -b && vite build` estava executando:
@@ -19,7 +23,41 @@ O comando de build `tsc -b && vite build` estava executando:
 - O `moduleResolution: "bundler"` não funciona com `tsc -b`
 - TypeScript strict mode estava rejeitando tipos `any` implícitos
 
+**MAS O PROBLEMA REAL ERA:**
+- O `.gitignore` tinha `lib/` na linha 13 para ignorar bibliotecas Python
+- Isso estava ignorando **TODA a pasta `client/src/lib/`**
+- Resultado: 7 arquivos essenciais nunca foram commitados ao git!
+- Build local funcionava porque arquivos existiam no disco
+- Build Netlify falhava porque arquivos não existiam no repositório
+
 ## ✅ Solução Implementada
+
+### 0. CORRIGIR .GITIGNORE (CRÍTICO!) ⚠️
+
+**Antes (.gitignore linha 13):**
+```
+lib/
+```
+
+**Depois:**
+```
+server/lib/
+```
+
+**Adicionar arquivos que estavam sendo ignorados:**
+```bash
+git add client/src/lib/
+# Adicionados:
+# - LocationContext.tsx
+# - PeriodContext.tsx
+# - api.ts
+# - embrapaApi.ts
+# - error-handler.ts ← CAUSAVA ENOENT!
+# - geoUtils.ts
+# - utils.ts
+```
+
+**Motivo:** O padrão genérico `lib/` ignorava bibliotecas Python MAS também ignorava código frontend essencial!
 
 ### 1. Modificar Script de Build (package.json)
 
@@ -135,14 +173,21 @@ cd client && npm install && npm run build
 ## 🎯 Commit
 
 ```
-Commit: 6496e65
+Commit: 65c97ee ← CORREÇÃO CRÍTICA!
 Branch: main
 Pushed: ✅
 Status: Aguardando redeploy Netlify
-Fixes:
+
+Histórico de fixes:
   - e5fefa2: TypeScript config + build script
   - 6496e65: Vite alias resolution (path.resolve)
+  - 8234aff: main.tsx usar alias @
+  - 67ac75b: Simplificar import path
+  - e376cad: Empty commit (forçar redeploy)
+  - 65c97ee: ADICIONAR client/src/lib/* AO GIT! ⚠️
 ```
+
+**IMPORTANTE:** O commit `65c97ee` adiciona 1560 linhas de código (7 arquivos) que estavam faltando no repositório!
 
 ---
 
