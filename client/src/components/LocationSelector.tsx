@@ -58,12 +58,63 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
   const [state, setState] = useState<string>('');
   const [cep, setCep] = useState<string>('');
   const [recentLocations, setRecentLocations] = useState<SavedLocation[]>([]);
+  const [citySuggestions, setCitySuggestions] = useState<LocalizacaoData[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState<boolean>(false);
 
   const { setSelectedLocation, setIsLoadingLocation } = useLocation();
 
   useEffect(() => {
     setRecentLocations(getRecentLocations());
   }, []);
+
+  // Buscar sugestões de cidades
+  const searchCitySuggestions = async (term: string) => {
+    if (term.length < 2) {
+      setCitySuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    try {
+      const suggestions = await embrapaApi.buscarCidades(term);
+      setCitySuggestions(suggestions);
+      setShowSuggestions(suggestions.length > 0);
+    } catch (error) {
+      console.error('Erro ao buscar sugestões de cidades:', error);
+      setCitySuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
+  // Handler para mudança no campo cidade
+  const handleCityChange = (value: string) => {
+    setCity(value);
+    searchCitySuggestions(value);
+  };
+
+  // Selecionar uma sugestão
+  const selectCitySuggestion = async (suggestion: LocalizacaoData) => {
+    setCity(suggestion.cidade || '');
+    setState(suggestion.estado || '');
+    setCitySuggestions([]);
+    setShowSuggestions(false);
+    
+    // Buscar automaticamente a localização completa
+    setLoading(true);
+    setError(null);
+    
+    try {
+      await handleLocationData(
+        suggestion.latitude,
+        suggestion.longitude,
+        `${suggestion.cidade}, ${suggestion.estado}`
+      );
+    } catch (err) {
+      console.error('Erro ao selecionar cidade:', err);
+      setError('Erro ao carregar dados da cidade selecionada');
+      setLoading(false);
+    }
+  };
 
   const handleLocationData = async (lat: number, lon: number, locationName?: string) => {
     if (!isWithinBrazil(lat, lon)) {
@@ -294,13 +345,29 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-2">
               {/* Busca por cidade */}
-              <div className="space-y-2">
+              <div className="space-y-2 relative">
                 <Label>Cidade</Label>
                 <Input
-                  placeholder="Nome da cidade"
+                  placeholder="Digite o nome da cidade"
                   value={city}
-                  onChange={(e) => setCity(e.target.value)}
+                  onChange={(e) => handleCityChange(e.target.value)}
+                  onFocus={() => city.length >= 2 && setShowSuggestions(citySuggestions.length > 0)}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)} // Delay para permitir clique
                 />
+                {showSuggestions && citySuggestions.length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                    {citySuggestions.map((suggestion, index) => (
+                      <div
+                        key={index}
+                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                        onClick={() => selectCitySuggestion(suggestion)}
+                      >
+                        <div className="font-medium">{suggestion.cidade}</div>
+                        <div className="text-gray-500 text-xs">{suggestion.stateName || suggestion.estado} - {suggestion.estado}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>UF</Label>
