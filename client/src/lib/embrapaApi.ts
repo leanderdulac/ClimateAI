@@ -182,25 +182,65 @@ class EmbrapaApiService {
   async getLocationByCep(cep: string): Promise<LocationData> {
     try {
       const sanitized = cep.replace(/\D/g, '');
+      console.log(`🔍 [API] Buscando CEP via API: ${sanitized}`);
       const location = await this.apiGet(`/localizacao/cep/${sanitized}`);
+      console.log('✅ [API] CEP encontrado via API');
       return this.normalizeLocation(location);
     } catch (error) {
       // Fallback para dados mock
-      console.log('Usando localização por CEP mock');
+      console.warn(`⚠️ [API] CEP não encontrado, usando mock (São Paulo)`);
       return mockLocationData(-23.5505, -46.6333);
     }
   }
 
   async getLocationByCity(city: string, state: string): Promise<LocationData> {
     try {
+      console.log(`🔍 [API] Buscando cidade via API: ${city}, ${state}`);
       const location = await this.apiGet('/localizacao/cidade', {
         cidade: city,
         estado: state.toUpperCase()
       });
+      console.log('✅ [API] Cidade encontrada via API');
       return this.normalizeLocation(location);
     } catch (error) {
-      // Fallback para dados mock
-      console.log('Usando localização por cidade mock');
+      // Fallback para dados mock de cidades brasileiras
+      console.warn(`⚠️ [API] API falhou, usando mock data para: ${city}, ${state}`);
+      
+      const cityMocks: { [key: string]: { lat: number; lon: number; state: string } } = {
+        'rio_de_janeiro': { lat: -22.9068, lon: -43.1729, state: 'RJ' },
+        'rio': { lat: -22.9068, lon: -43.1729, state: 'RJ' },
+        'belo_horizonte': { lat: -19.9167, lon: -43.9345, state: 'MG' },
+        'belo': { lat: -19.9167, lon: -43.9345, state: 'MG' },
+        'brasilia': { lat: -15.7942, lon: -47.8822, state: 'DF' },
+        'brasília': { lat: -15.7942, lon: -47.8822, state: 'DF' },
+        'curitiba': { lat: -25.4284, lon: -49.2733, state: 'PR' },
+        'salvador': { lat: -12.9714, lon: -38.5014, state: 'BA' },
+        'florianópolis': { lat: -27.5973, lon: -48.5500, state: 'SC' },
+        'florianopolis': { lat: -27.5973, lon: -48.5500, state: 'SC' },
+        'porto_alegre': { lat: -30.0346, lon: -51.2177, state: 'RS' },
+        'porto alegre': { lat: -30.0346, lon: -51.2177, state: 'RS' },
+        'goiânia': { lat: -15.7942, lon: -48.8694, state: 'GO' },
+        'goiania': { lat: -15.7942, lon: -48.8694, state: 'GO' },
+        'vitória': { lat: -20.3155, lon: -40.3436, state: 'ES' },
+        'vitoria': { lat: -20.3155, lon: -40.3436, state: 'ES' },
+        'são paulo': { lat: -23.5505, lon: -46.6333, state: 'SP' },
+        'sao paulo': { lat: -23.5505, lon: -46.6333, state: 'SP' },
+        'sp': { lat: -23.5505, lon: -46.6333, state: 'SP' }
+      };
+      
+      const key = city.toLowerCase().trim();
+      const mockData = cityMocks[key];
+      
+      if (mockData) {
+        console.log(`✅ [API] Mock encontrado para: ${city}`);
+        return {
+          ...mockLocationData(mockData.lat, mockData.lon),
+          city,
+          state: state.toUpperCase()
+        };
+      }
+      
+      console.warn(`⚠️ [API] Cidade não encontrada em mock, usando padrão (São Paulo)`);
       return { ...mockLocationData(-23.5505, -46.6333), city, state: state.toUpperCase() };
     }
   }
@@ -216,23 +256,44 @@ class EmbrapaApiService {
         : [];
     } catch (error) {
       // Fallback para dados mock de cidades
-      console.log('Usando busca de cidades mock');
+      console.log('🌍 Usando busca de cidades mock');
+      
+      const estadosMap: { [key: string]: string } = {
+        'SP': 'São Paulo',
+        'RJ': 'Rio de Janeiro',
+        'MG': 'Minas Gerais',
+        'DF': 'Distrito Federal',
+        'PR': 'Paraná',
+        'BA': 'Bahia',
+        'SC': 'Santa Catarina',
+        'RS': 'Rio Grande do Sul',
+        'GO': 'Goiás',
+        'ES': 'Espírito Santo'
+      };
+      
       const mockCities = [
         { city: 'São Paulo', state: 'SP', latitude: -23.5505, longitude: -46.6333 },
         { city: 'Rio de Janeiro', state: 'RJ', latitude: -22.9068, longitude: -43.1729 },
         { city: 'Belo Horizonte', state: 'MG', latitude: -19.9167, longitude: -43.9345 },
         { city: 'Brasília', state: 'DF', latitude: -15.7942, longitude: -47.8822 },
-        { city: 'Curitiba', state: 'PR', latitude: -25.4284, longitude: -49.2733 }
+        { city: 'Curitiba', state: 'PR', latitude: -25.4284, longitude: -49.2733 },
+        { city: 'Salvador', state: 'BA', latitude: -12.9714, longitude: -38.5014 },
+        { city: 'Florianópolis', state: 'SC', latitude: -27.5973, longitude: -48.5500 },
+        { city: 'Porto Alegre', state: 'RS', latitude: -30.0346, longitude: -51.2177 },
+        { city: 'Goiânia', state: 'GO', latitude: -15.7942, longitude: -48.8694 },
+        { city: 'Vitória', state: 'ES', latitude: -20.3155, longitude: -40.3436 }
       ].filter(c => 
         c.city.toLowerCase().includes(term.toLowerCase()) ||
         (state && c.state === state.toUpperCase())
       );
       
+      console.log(`✅ Cidades encontradas: ${mockCities.length} resultado(s)`);
+      
       return mockCities.map(c => ({
         ...mockLocationData(c.latitude, c.longitude),
         city: c.city,
         state: c.state,
-        stateName: c.city
+        stateName: estadosMap[c.state] || c.state
       }));
     }
   }

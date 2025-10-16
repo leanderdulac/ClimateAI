@@ -67,6 +67,13 @@ export function WeatherWidget() {
           console.log('⚠️ [WeatherWidget] Usando localização padrão (São Paulo)');
         }
 
+        // Validar coordenadas
+        if (!latitude || !longitude || isNaN(latitude) || isNaN(longitude)) {
+          console.error('❌ [WeatherWidget] Coordenadas inválidas:', { latitude, longitude });
+          setLoading(false);
+          return;
+        }
+
         // Buscar dados históricos baseados no período selecionado
         console.log(`📊 [WeatherWidget] Buscando dados históricos de ${selectedPeriod} dias...`);
         setLoadingHistorical(true);
@@ -83,7 +90,19 @@ export function WeatherWidget() {
             startDate.toISOString().split('T')[0],
             endDate.toISOString().split('T')[0]
           );
-          console.log('📈 [WeatherWidget] Dados históricos recebidos:', historical?.length, 'pontos');
+          
+          console.log('📈 [WeatherWidget] Tipo de histórico:', typeof historical, '| Length:', historical?.length);
+          
+          // Validar que histórico é um array
+          if (!Array.isArray(historical)) {
+            console.error('❌ [WeatherWidget] Histórico não é array:', historical);
+            setClimateData([]);
+            setHistoricalData([]);
+            setLoadingHistorical(false);
+            return;
+          }
+          
+          console.log(`📊 [WeatherWidget] Dados históricos recebidos: ${historical.length} pontos`);
           
           // Usar dados históricos para o gráfico principal
           const adaptedHistorical: ClimateDataPoint[] = (historical || []).map(item => ({
@@ -91,8 +110,7 @@ export function WeatherWidget() {
             temperature: item.temperature || item.temperature_max || 20,
             precipitation: item.precipitation || 0,
             humidity: item.humidity || 60,
-            windSpeed: item.windSpeed || item.wind_speed,
-            cloudCover: item.cloudCover || 0
+            windSpeed: item.windSpeed || item.wind_speed
           }));
           
           console.log(`✅ [WeatherWidget] Dados adaptados: ${adaptedHistorical.length} pontos para gráfico`);
