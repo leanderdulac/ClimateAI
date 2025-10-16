@@ -46,7 +46,7 @@ export function WeatherWidget() {
   useEffect(() => {
     const fetchClimateData = async () => {
       try {
-        console.log('WeatherWidget: Iniciando busca de dados climáticos...');
+        console.log('🌤️ [WeatherWidget] Iniciando busca de dados climáticos...');
         setLoading(true);
 
         let latitude: number;
@@ -58,22 +58,24 @@ export function WeatherWidget() {
           latitude = selectedLocation.latitude;
           longitude = selectedLocation.longitude;
           locationName = `${selectedLocation.cidade || 'Localização'}, ${selectedLocation.estado || ''}`;
-          console.log('WeatherWidget: Usando localização selecionada:', locationName);
+          console.log('✅ [WeatherWidget] Usando localização selecionada:', locationName, { latitude, longitude });
         } else {
           // Fallback para São Paulo
           latitude = -23.5505;
           longitude = -46.6333;
           locationName = 'São Paulo, SP';
-          console.log('WeatherWidget: Usando localização padrão (São Paulo)');
+          console.log('⚠️ [WeatherWidget] Usando localização padrão (São Paulo)');
         }
 
         // Buscar dados históricos baseados no período selecionado
-        console.log(`WeatherWidget: Buscando dados históricos de ${selectedPeriod} dias...`);
+        console.log(`📊 [WeatherWidget] Buscando dados históricos de ${selectedPeriod} dias...`);
         setLoadingHistorical(true);
         try {
           const endDate = new Date();
           const startDate = new Date();
           startDate.setDate(startDate.getDate() - selectedPeriod);
+
+          console.log(`📅 [WeatherWidget] Período: ${startDate.toISOString().split('T')[0]} a ${endDate.toISOString().split('T')[0]}`);
 
           const historical = await embrapaApi.getClimateData(
             latitude,
@@ -81,7 +83,7 @@ export function WeatherWidget() {
             startDate.toISOString().split('T')[0],
             endDate.toISOString().split('T')[0]
           );
-          console.log('WeatherWidget: Dados históricos recebidos:', historical);
+          console.log('📈 [WeatherWidget] Dados históricos recebidos:', historical?.length, 'pontos');
           
           // Usar dados históricos para o gráfico principal
           const adaptedHistorical: ClimateDataPoint[] = (historical || []).map(item => ({
@@ -93,10 +95,11 @@ export function WeatherWidget() {
             cloudCover: item.cloudCover || 0
           }));
           
+          console.log(`✅ [WeatherWidget] Dados adaptados: ${adaptedHistorical.length} pontos para gráfico`);
           setClimateData(adaptedHistorical);
           setHistoricalData(historical || []);
         } catch (historicalError) {
-          console.warn('WeatherWidget: Não foi possível obter dados históricos:', historicalError);
+          console.error('❌ [WeatherWidget] Erro ao buscar dados históricos:', historicalError);
           setHistoricalData([]);
           setClimateData([]);
         } finally {
@@ -104,9 +107,9 @@ export function WeatherWidget() {
         }
 
         // Buscar previsão atual (último dia)
-        console.log('WeatherWidget: Buscando previsão atual...');
+        console.log('🌡️ [WeatherWidget] Buscando previsão atual...');
         const currentData = await embrapaApi.getWeatherForecast(latitude, longitude, 1);
-        console.log('WeatherWidget: Dados atuais recebidos:', currentData);
+        console.log('🌦️ [WeatherWidget] Dados atuais recebidos:', currentData);
 
         if (currentData.length > 0) {
           // Adaptar formato dos dados do backend para o formato esperado pelo frontend
@@ -117,18 +120,22 @@ export function WeatherWidget() {
             precipitation: current.precipitation || current.precipitacao || 0,
             windSpeed: current.windSpeed || current.vento_velocidade
           });
+          console.log('✅ [WeatherWidget] Tempo atual definido:', current.temperature, '°C');
+        } else {
+          console.warn('⚠️ [WeatherWidget] Sem dados de previsão');
         }
 
         setLoading(false);
-        console.log('WeatherWidget: Dados carregados com sucesso');
+        console.log('✅ [WeatherWidget] Dados carregados com sucesso');
       } catch (error) {
-        console.error('WeatherWidget: Erro ao buscar dados climáticos:', error);
+        console.error('❌ [WeatherWidget] Erro geral ao buscar dados climáticos:', error);
         setLoading(false);
         setLoadingHistorical(false);
       }
     };
 
     // Buscar dados quando o componente monta ou quando a localização/período muda
+    console.log(`🔄 [WeatherWidget] Verificando condições: isLoadingLocation=${isLoadingLocation}, selectedLocation=${selectedLocation ? 'sim' : 'não'}`);
     if (!isLoadingLocation) {
       fetchClimateData();
     }

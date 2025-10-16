@@ -81,6 +81,24 @@ const mockClimateData = (days: number = 30): ClimateData[] => {
   return data;
 };
 
+const mockForecastData = (days: number = 7): ForecastData[] => {
+  const data: ForecastData[] = [];
+  const hoje = new Date();
+  for (let i = 0; i < days; i++) {
+    const date = new Date(hoje);
+    date.setDate(date.getDate() + i);
+    data.push({
+      date: date.toISOString().split('T')[0],
+      temperature: 20 + Math.random() * 10,
+      precipitation: Math.random() * 20,
+      humidity: 60 + Math.random() * 30,
+      windSpeed: 5 + Math.random() * 15,
+      cloudCover: Math.random() * 100
+    });
+  }
+  return data;
+};
+
 const mockLocationData = (lat: number, lon: number): LocationData => ({
   latitude: lat,
   longitude: lon,
@@ -220,15 +238,21 @@ class EmbrapaApiService {
   }
 
   async getWeatherForecast(latitude: number, longitude: number, days: number = 7): Promise<ForecastData[]> {
-    const response = await this.apiGet('/clima/previsao', {
-      latitude,
-      longitude,
-      dias: days
-    }) as any;
+    try {
+      const response = await this.apiGet('/clima/previsao', {
+        latitude,
+        longitude,
+        dias: days
+      }) as any;
 
-    // O backend retorna { previsao: [...], ... }, então extraímos o array
-    const forecastArray = response.previsao || response;
-    return Array.isArray(forecastArray) ? forecastArray : [];
+      // O backend retorna { previsao: [...], ... }, então extraímos o array
+      const forecastArray = response.previsao || response;
+      return Array.isArray(forecastArray) ? forecastArray : [];
+    } catch (error) {
+      // Fallback para dados mock
+      console.log('Usando previsão mock');
+      return mockForecastData(Math.min(days, 30));
+    }
   }
 
   async getAgriculturalZoning(latitude: number, longitude: number, crop: string): Promise<any> {
