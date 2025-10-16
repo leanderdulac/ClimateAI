@@ -47,6 +47,7 @@ export function WeatherWidget() {
     const fetchClimateData = async () => {
       try {
         console.log('WeatherWidget: Iniciando busca de dados climáticos...');
+        setLoading(true);
 
         let latitude: number;
         let longitude: number;
@@ -81,15 +82,28 @@ export function WeatherWidget() {
             endDate.toISOString().split('T')[0]
           );
           console.log('WeatherWidget: Dados históricos recebidos:', historical);
+          
+          // Usar dados históricos para o gráfico principal
+          const adaptedHistorical: ClimateDataPoint[] = (historical || []).map(item => ({
+            date: (item.date || new Date().toISOString().split('T')[0]),
+            temperature: item.temperature || item.temperature_max || 20,
+            precipitation: item.precipitation || 0,
+            humidity: item.humidity || 60,
+            windSpeed: item.windSpeed || item.wind_speed,
+            cloudCover: item.cloudCover || 0
+          }));
+          
+          setClimateData(adaptedHistorical);
           setHistoricalData(historical || []);
         } catch (historicalError) {
           console.warn('WeatherWidget: Não foi possível obter dados históricos:', historicalError);
           setHistoricalData([]);
+          setClimateData([]);
         } finally {
           setLoadingHistorical(false);
         }
 
-        // Buscar previsão atual (OpenMeteo)
+        // Buscar previsão atual (último dia)
         console.log('WeatherWidget: Buscando previsão atual...');
         const currentData = await embrapaApi.getWeatherForecast(latitude, longitude, 1);
         console.log('WeatherWidget: Dados atuais recebidos:', currentData);
@@ -105,22 +119,6 @@ export function WeatherWidget() {
           });
         }
 
-        console.log('WeatherWidget: Buscando previsão para 7 dias...');
-        // Busca previsão para os próximos dias
-        const forecastData = await embrapaApi.getWeatherForecast(latitude, longitude, 7);
-        console.log('WeatherWidget: Dados de previsão recebidos:', forecastData);
-
-        // Adaptar formato dos dados
-        const adaptedData: ClimateDataPoint[] = forecastData.map(item => ({
-          date: (item.date || item.data || new Date().toISOString().split('T')[0]),
-          temperature: item.temperature || item.temperatura_max || 20,
-          precipitation: item.precipitation || item.precipitacao || 0,
-          humidity: item.humidity || 60,
-          windSpeed: item.windSpeed || item.vento_velocidade,
-          cloudCover: item.cloudCover || 0
-        }));
-
-        setClimateData(adaptedData);
         setLoading(false);
         console.log('WeatherWidget: Dados carregados com sucesso');
       } catch (error) {
@@ -130,11 +128,11 @@ export function WeatherWidget() {
       }
     };
 
-    // Buscar dados quando o componente monta ou quando a localização muda
+    // Buscar dados quando o componente monta ou quando a localização/período muda
     if (!isLoadingLocation) {
       fetchClimateData();
     }
-  }, [selectedLocation, isLoadingLocation]);
+  }, [selectedLocation, isLoadingLocation, selectedPeriod]);
 
   if (loading || isLoadingLocation) {
     return (
