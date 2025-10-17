@@ -116,6 +116,15 @@ export function WeatherWidget() {
           console.log(`✅ [WeatherWidget] Dados adaptados: ${adaptedHistorical.length} pontos para gráfico`);
           setClimateData(adaptedHistorical);
           setHistoricalData(historical || []);
+
+          // Realizar análise histórica avançada baseada no período selecionado
+          console.log(`📊 [WeatherWidget] Realizando análise histórica avançada para ${selectedPeriod} dias...`);
+          const historicalAnalysis = await embrapaApi.getHistoricalClimateAnalysis(
+            latitude,
+            longitude,
+            selectedPeriod
+          );
+          console.log('📈 [WeatherWidget] Análise histórica concluída:', historicalAnalysis);
         } catch (historicalError) {
           console.error('❌ [WeatherWidget] Erro ao buscar dados históricos:', historicalError);
           setHistoricalData([]);

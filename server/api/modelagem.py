@@ -83,6 +83,8 @@ async def predict_sinistrality_ml(
         # Executa predição
         result = predict_sinistrality(features)
         return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro na predição ML: {str(e)}")
 
 
 @router.post("/derivativos-climaticos/preco")

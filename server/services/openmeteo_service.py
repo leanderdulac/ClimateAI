@@ -127,6 +127,9 @@ class OpenMeteoService:
                 'wind_direction': lambda x: float(pd.Series.mode(x)[0])  # direção dominante
             }).reset_index()
 
+            # Ordenar por data para garantir ordem cronológica
+            daily_data = daily_data.sort_values('date').reset_index(drop=True)
+
             # Converter para o formato ClimaData
             dados = []
             for _, row in daily_data.iterrows():

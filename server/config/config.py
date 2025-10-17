@@ -36,6 +36,14 @@ class Settings(BaseSettings):
     DATABASE_ENABLED: bool = True
     DATABASE_URL: str = "postgresql+asyncpg://climateai:climateai123@localhost/climateai"
     
+    # Configurações de produção (adicionadas para compatibilidade)
+    DB_PASSWORD: Optional[str] = None
+    POSTGRES_PASSWORD: Optional[str] = None
+    DOMAIN: Optional[str] = None
+    PROMETHEUS_METRICS_ENABLED: bool = False
+    GRAFANA_ADMIN_PASSWORD: Optional[str] = None
+    OPENMETEO_API_KEY: Optional[str] = None
+    
     class Config:
         env_file = ".env"
 

@@ -66,7 +66,7 @@ const baseUrl =
 const mockClimateData = (days: number = 30): ClimateData[] => {
   const data: ClimateData[] = [];
   const hoje = new Date();
-  for (let i = 0; i < days; i++) {
+  for (let i = days - 1; i >= 0; i--) {
     const date = new Date(hoje);
     date.setDate(date.getDate() - i);
     data.push({
@@ -589,15 +589,327 @@ class EmbrapaApiService {
     return riskAnalysis.riskLevel;
   }
 
-  async calculateAdvancedPremium(data: {
-    latitude: number;
-    longitude: number;
-    frequency: number;
-    severity: number;
-    asset_value: number;
-    confidence_level: number;
-  }): Promise<any> {
-    return this.apiPost('/clima/calculo-avancado-premio', data);
+  // Advanced historical analysis for climate event probabilities
+  async getHistoricalClimateAnalysis(
+    latitude: number,
+    longitude: number,
+    periodDays: number
+  ): Promise<{
+    eventProbabilities: {
+      drought: number;
+      flood: number;
+      heatwave: number;
+      storm: number;
+    };
+    riskMetrics: {
+      volatilityIndex: number;
+      trendDirection: 'increasing' | 'decreasing' | 'stable';
+      confidenceLevel: number;
+    };
+    forecastAccuracy: number;
+    historicalPatterns: {
+      seasonalCycles: number[];
+      extremeEvents: number;
+      averageDeviation: number;
+    };
+  }> {
+    try {
+      // Get historical data for the specified period
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - periodDays);
+
+      const historicalData = await this.getClimateData(
+        latitude,
+        longitude,
+        startDate.toISOString().split('T')[0],
+        endDate.toISOString().split('T')[0]
+      );
+
+      if (!historicalData || historicalData.length === 0) {
+        // Return default analysis if no data available
+        return {
+          eventProbabilities: { drought: 0.1, flood: 0.1, heatwave: 0.1, storm: 0.1 },
+          riskMetrics: { volatilityIndex: 0.5, trendDirection: 'stable', confidenceLevel: 0.5 },
+          forecastAccuracy: 0.7,
+          historicalPatterns: { seasonalCycles: [], extremeEvents: 0, averageDeviation: 0 }
+        };
+      }
+
+      // Analyze temperature patterns
+      const temperatures = historicalData.map(d => d.temperature).filter(t => t !== undefined);
+      const precipitation = historicalData.map(d => d.precipitation).filter(p => p !== undefined);
+
+      // Calculate event probabilities based on historical data
+      const avgTemp = temperatures.reduce((a, b) => a + b, 0) / temperatures.length;
+      const avgPrecip = precipitation.reduce((a, b) => a + b, 0) / precipitation.length;
+
+      // Drought probability: low precipitation periods
+      const droughtEvents = precipitation.filter(p => p < avgPrecip * 0.3).length;
+      const droughtProbability = droughtEvents / precipitation.length;
+
+      // Flood probability: high precipitation periods
+      const floodEvents = precipitation.filter(p => p > avgPrecip * 2.5).length;
+      const floodProbability = floodEvents / precipitation.length;
+
+      // Heatwave probability: high temperature periods
+      const heatwaveEvents = temperatures.filter(t => t > avgTemp + 5).length;
+      const heatwaveProbability = heatwaveEvents / temperatures.length;
+
+      // Storm probability: combination of high precip and wind
+      const stormEvents = historicalData.filter(d =>
+        (d.precipitation || 0) > avgPrecip * 1.5 &&
+        (d.wind_speed || d.windSpeed || 0) > 15
+      ).length;
+      const stormProbability = stormEvents / historicalData.length;
+
+      // Calculate volatility index
+      const tempVariance = temperatures.reduce((sum, t) => sum + Math.pow(t - avgTemp, 2), 0) / temperatures.length;
+      const precipVariance = precipitation.reduce((sum, p) => sum + Math.pow(p - avgPrecip, 2), 0) / precipitation.length;
+      const volatilityIndex = Math.min((Math.sqrt(tempVariance) + Math.sqrt(precipVariance)) / 20, 1);
+
+      // Analyze trend direction
+      const recentData = historicalData.slice(-Math.floor(historicalData.length / 3));
+      const oldData = historicalData.slice(0, Math.floor(historicalData.length / 3));
+
+      const recentAvgTemp = recentData.reduce((sum, d) => sum + (d.temperature || 0), 0) / recentData.length;
+      const oldAvgTemp = oldData.reduce((sum, d) => sum + (d.temperature || 0), 0) / oldData.length;
+
+      const trendDirection = recentAvgTemp > oldAvgTemp + 1 ? 'increasing' :
+                           recentAvgTemp < oldAvgTemp - 1 ? 'decreasing' : 'stable';
+
+      // Calculate seasonal cycles (simplified)
+      const seasonalCycles = [];
+      for (let i = 0; i < 12; i++) {
+        const monthData = historicalData.filter(d => new Date(d.date).getMonth() === i);
+        const monthAvg = monthData.reduce((sum, d) => sum + (d.temperature || 0), 0) / monthData.length;
+        seasonalCycles.push(isNaN(monthAvg) ? avgTemp : monthAvg);
+      }
+
+      // Count extreme events
+      const extremeEvents = historicalData.filter(d =>
+        (d.temperature || 0) > avgTemp + 3 ||
+        (d.temperature || 0) < avgTemp - 3 ||
+        (d.precipitation || 0) > avgPrecip * 3
+      ).length;
+
+      // Calculate average deviation
+      const deviations = historicalData.map(d =>
+        Math.abs((d.temperature || 0) - avgTemp) +
+        Math.abs((d.precipitation || 0) - avgPrecip) / 10
+      );
+      const averageDeviation = deviations.reduce((a, b) => a + b, 0) / deviations.length;
+
+      // Forecast accuracy based on data consistency
+      const dataCompleteness = historicalData.filter(d =>
+        d.temperature !== undefined && d.precipitation !== undefined
+      ).length / historicalData.length;
+      const forecastAccuracy = Math.min(dataCompleteness * 0.8 + 0.2, 0.95);
+
+      return {
+        eventProbabilities: {
+          drought: Math.min(droughtProbability, 0.5),
+          flood: Math.min(floodProbability, 0.5),
+          heatwave: Math.min(heatwaveProbability, 0.5),
+          storm: Math.min(stormProbability, 0.3)
+        },
+        riskMetrics: {
+          volatilityIndex,
+          trendDirection,
+          confidenceLevel: dataCompleteness
+        },
+        forecastAccuracy,
+        historicalPatterns: {
+          seasonalCycles,
+          extremeEvents,
+          averageDeviation
+        }
+      };
+
+    } catch (error) {
+      console.error('Erro na análise histórica:', error);
+      // Return conservative default values
+      return {
+        eventProbabilities: { drought: 0.15, flood: 0.15, heatwave: 0.15, storm: 0.1 },
+        riskMetrics: { volatilityIndex: 0.5, trendDirection: 'stable', confidenceLevel: 0.3 },
+        forecastAccuracy: 0.6,
+        historicalPatterns: { seasonalCycles: [], extremeEvents: 0, averageDeviation: 1.0 }
+      };
+    }
+  }
+
+  // Advanced forecasting algorithm using historical climate analysis
+  async getClimateEventForecast(
+    latitude: number,
+    longitude: number,
+    forecastDays: number
+  ): Promise<{
+    predictions: {
+      date: string;
+      eventProbabilities: {
+        drought: number;
+        flood: number;
+        heatwave: number;
+        storm: number;
+      };
+      riskLevel: number;
+      recommendedActions: string[];
+    }[];
+    overallRiskAssessment: {
+      periodRisk: number;
+      confidenceLevel: number;
+      keyRiskFactors: string[];
+    };
+  }> {
+    try {
+      // Get historical analysis for the same period
+      const historicalAnalysis = await this.getHistoricalClimateAnalysis(latitude, longitude, forecastDays);
+
+      // Generate forecast based on historical patterns
+      const predictions = [];
+      const today = new Date();
+
+      for (let i = 0; i < forecastDays; i++) {
+        const forecastDate = new Date(today);
+        forecastDate.setDate(today.getDate() + i);
+
+        // Adjust probabilities based on seasonal patterns and trends
+        const seasonalMultiplier = this.getSeasonalMultiplier(forecastDate.getMonth());
+        const trendMultiplier = historicalAnalysis.riskMetrics.trendDirection === 'increasing' ? 1.2 :
+                               historicalAnalysis.riskMetrics.trendDirection === 'decreasing' ? 0.8 : 1.0;
+
+        const adjustedProbabilities = {
+          drought: Math.min(historicalAnalysis.eventProbabilities.drought * seasonalMultiplier * trendMultiplier, 0.8),
+          flood: Math.min(historicalAnalysis.eventProbabilities.flood * seasonalMultiplier * trendMultiplier, 0.8),
+          heatwave: Math.min(historicalAnalysis.eventProbabilities.heatwave * seasonalMultiplier * trendMultiplier, 0.8),
+          storm: Math.min(historicalAnalysis.eventProbabilities.storm * seasonalMultiplier * trendMultiplier, 0.6)
+        };
+
+        // Calculate risk level based on combined probabilities
+        const riskLevel = (
+          adjustedProbabilities.drought * 0.3 +
+          adjustedProbabilities.flood * 0.3 +
+          adjustedProbabilities.heatwave * 0.2 +
+          adjustedProbabilities.storm * 0.2
+        );
+
+        // Generate recommended actions based on risk level
+        const recommendedActions = this.generateRecommendedActions(adjustedProbabilities, riskLevel);
+
+        predictions.push({
+          date: forecastDate.toISOString().split('T')[0],
+          eventProbabilities: adjustedProbabilities,
+          riskLevel,
+          recommendedActions
+        });
+      }
+
+      // Calculate overall risk assessment
+      const avgRisk = predictions.reduce((sum, p) => sum + p.riskLevel, 0) / predictions.length;
+      const keyRiskFactors = this.identifyKeyRiskFactors(historicalAnalysis, predictions);
+
+      return {
+        predictions,
+        overallRiskAssessment: {
+          periodRisk: avgRisk,
+          confidenceLevel: historicalAnalysis.forecastAccuracy,
+          keyRiskFactors
+        }
+      };
+
+    } catch (error) {
+      console.error('Erro na previsão de eventos climáticos:', error);
+      // Return conservative forecast
+      return {
+        predictions: [],
+        overallRiskAssessment: {
+          periodRisk: 0.3,
+          confidenceLevel: 0.5,
+          keyRiskFactors: ['Dados insuficientes para análise precisa']
+        }
+      };
+    }
+  }
+
+  private getSeasonalMultiplier(month: number): number {
+    // Seasonal risk multipliers for Brazil
+    // Higher risk during rainy season (Dec-Mar) and dry season extremes
+    const seasonalMultipliers = [
+      1.1, // Jan - Dry season end
+      1.0, // Feb
+      0.9, // Mar - Rainy season start
+      1.2, // Apr - Heavy rains
+      1.3, // May - Peak rains
+      1.1, // Jun
+      0.8, // Jul - Dry transition
+      0.7, // Aug - Dry season
+      0.8, // Sep
+      1.0, // Oct
+      1.1, // Nov
+      1.2  // Dec - Rainy season start
+    ];
+    return seasonalMultipliers[month] || 1.0;
+  }
+
+  private generateRecommendedActions(probabilities: any, riskLevel: number): string[] {
+    const actions = [];
+
+    if (probabilities.drought > 0.3) {
+      actions.push('Implementar medidas de conservação de água');
+      actions.push('Monitorar umidade do soil regularmente');
+    }
+
+    if (probabilities.flood > 0.3) {
+      actions.push('Preparar plano de evacuação');
+      actions.push('Elevar equipamentos críticos');
+      actions.push('Instalar sistemas de drenagem');
+    }
+
+    if (probabilities.heatwave > 0.3) {
+      actions.push('Implementar pausas para trabalho em horários quentes');
+      actions.push('Garantir acesso a água potável');
+      actions.push('Instalar sistemas de resfriamento');
+    }
+
+    if (probabilities.storm > 0.2) {
+      actions.push('Reforçar estruturas contra ventos fortes');
+      actions.push('Preparar geradores de emergência');
+      actions.push('Proteger equipamentos externos');
+    }
+
+    if (riskLevel > 0.5) {
+      actions.push('Considerar seguro adicional contra eventos climáticos');
+      actions.push('Revisar plano de contingência');
+    }
+
+    return actions.length > 0 ? actions : ['Monitorar condições climáticas regularmente'];
+  }
+
+  private identifyKeyRiskFactors(historicalAnalysis: any, predictions: any[]): string[] {
+    const factors = [];
+
+    if (historicalAnalysis.riskMetrics.volatilityIndex > 0.3) {
+      factors.push('Alta volatilidade climática histórica');
+    }
+
+    if (historicalAnalysis.eventProbabilities.flood > 0.2) {
+      factors.push('Histórico de eventos de inundação');
+    }
+
+    if (historicalAnalysis.eventProbabilities.drought > 0.2) {
+      factors.push('Histórico de períodos de seca');
+    }
+
+    if (historicalAnalysis.riskMetrics.trendDirection === 'increasing') {
+      factors.push('Tendência de aumento nos eventos extremos');
+    }
+
+    const avgPredictionRisk = predictions.reduce((sum, p) => sum + p.riskLevel, 0) / predictions.length;
+    if (avgPredictionRisk > 0.4) {
+      factors.push('Risco elevado previsto para o período');
+    }
+
+    return factors.length > 0 ? factors : ['Condições climáticas relativamente estáveis'];
   }
 
   private normalizeLocation(data: any, fallback?: { latitude: number; longitude: number }): LocationData {

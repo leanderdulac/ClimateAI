@@ -3,6 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { useEffect, useState } from 'react';
 import { embrapaApi } from '@/lib/embrapaApi';
 import { usePeriod } from '@/lib/PeriodContext';
+import { useLocation } from '@/lib/LocationContext';
 import { Sun, Droplets, Wind, Thermometer, TrendingUp, TrendingDown, Minus, AlertTriangle, Cloud, Gauge } from 'lucide-react';
 
 interface ClimateDataPoint {
@@ -93,12 +94,7 @@ function sum(values: number[]): number {
   return values.reduce((a, b) => a + b, 0);
 }
 
-interface ClimateDataWidgetProps {
-  latitude?: number;
-  longitude?: number;
-}
-
-export function ClimateDataWidget({ latitude = -23.5505, longitude = -46.6333 }: ClimateDataWidgetProps) {
+export function ClimateDataWidget() {
   const [climateData, setClimateData] = useState<ClimateDataPoint[]>([]);
   const [climateTrends, setClimateTrends] = useState<ClimateTrends | null>(null);
   const [currentWeather, setCurrentWeather] = useState<{
@@ -113,16 +109,26 @@ export function ClimateDataWidget({ latitude = -23.5505, longitude = -46.6333 }:
   const [error, setError] = useState<string | null>(null);
 
   const { selectedPeriod } = usePeriod();
+  const { selectedLocation, isLoadingLocation } = useLocation();
 
   useEffect(() => {
     const fetchClimateData = async () => {
       try {
-        console.log('[ClimateDataWidget] Iniciando fetch de dados...', { latitude, longitude });
+        console.log('[ClimateDataWidget] Iniciando fetch de dados...', { selectedLocation, isLoadingLocation });
         setLoading(true);
         setError(null);
 
-        // Obter dados atuais primeiro
-        console.log('[ClimateDataWidget] Buscando dados atuais...');
+        // Verificar se há localização selecionada
+        if (!selectedLocation || isLoadingLocation) {
+          console.log('[ClimateDataWidget] Aguardando localização ser selecionada...');
+          setLoading(false);
+          return;
+        }
+
+        const latitude = selectedLocation.latitude;
+        const longitude = selectedLocation.longitude;
+
+        console.log('[ClimateDataWidget] Usando localização:', selectedLocation.cidade, { latitude, longitude });
         const currentData = await embrapaApi.getClimateData(
           latitude,
           longitude,
@@ -177,6 +183,15 @@ export function ClimateDataWidget({ latitude = -23.5505, longitude = -46.6333 }:
         setClimateData(chartData);
         console.log('[ClimateDataWidget] ChartData definido:', chartData.length, 'pontos');
 
+        // Realizar análise histórica avançada baseada no período selecionado
+        console.log('[ClimateDataWidget] Realizando análise histórica avançada...');
+        const historicalAnalysis = await embrapaApi.getHistoricalClimateAnalysis(
+          latitude,
+          longitude,
+          selectedPeriod
+        );
+        console.log('[ClimateDataWidget] Análise histórica concluída:', historicalAnalysis);
+
         // Analisar tendências
         if (chartData.length > 0) {
           const trends = analyzeTrends(chartData);
@@ -193,13 +208,13 @@ export function ClimateDataWidget({ latitude = -23.5505, longitude = -46.6333 }:
       }
     };
 
-    if (latitude && longitude) {
-      console.log('[ClimateDataWidget] Latitude e longitude disponíveis, iniciando fetch...');
+    if (selectedLocation && !isLoadingLocation) {
+      console.log('[ClimateDataWidget] Localização selecionada disponível, iniciando fetch...');
       fetchClimateData();
     } else {
-      console.log('[ClimateDataWidget] Aguardando latitude e longitude...', { latitude, longitude });
+      console.log('[ClimateDataWidget] Aguardando localização ser selecionada...', { selectedLocation, isLoadingLocation });
     }
-  }, [latitude, longitude]);
+  }, [selectedLocation, isLoadingLocation, selectedPeriod]);
 
   if (loading) {
     return (
@@ -264,6 +279,33 @@ export function ClimateDataWidget({ latitude = -23.5505, longitude = -46.6333 }:
             </div>
           </div>
         </CardHeader>
+      </Card>
+    );
+  }
+
+  // Verificar se há localização selecionada
+  if (!selectedLocation) {
+    return (
+      <Card className="overflow-hidden animate-fade-in">
+        <CardHeader className="border-none bg-gradient-to-r from-gray-500 to-gray-600">
+          <div className="flex items-center gap-4">
+            <div className="rounded-lg bg-white/10 p-3">
+              <Cloud className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <CardTitle className="text-xl font-bold text-white">Análise Climática Detalhada</CardTitle>
+              <CardDescription className="text-gray-100">
+                Selecione uma cidade para visualizar dados climáticos detalhados
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="text-center py-8">
+            <Globe className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-600">Escolha uma localização no seletor acima para ver gráficos detalhados de temperatura, precipitação e tendências climáticas.</p>
+          </div>
+        </CardContent>
       </Card>
     );
   }
@@ -485,16 +527,7 @@ export function ClimateDataWidget({ latitude = -23.5505, longitude = -46.6333 }:
                 </h4>
                 <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                   <div className="rounded-lg bg-neutral-50 p-4">
-                    <div className="text-sm text-neutral-600">Hot Days</div>
-                    <div className="mt-1 text-2xl font-semibold text-red-500">
-                      {climateTrends.extremeEvents.hotDays}
-                    </div>
-                    <div className="text-xs text-neutral-500">Above 30°C</div>
-                  </div>
-                  <div className="rounded-lg bg-neutral-50 p-4">
-                    <div className="text-sm text-neutral-600">Cold Days</div>
-                    <div className="mt-1 text-2xl font-semibold text-blue-500">
-                      {climateTrends.extremeEvents.coldDays}
+                    <div className="text-sm text-neutral-600">Hot Days
                     </div>
                     <div className="text-xs text-neutral-500">Below 15°C</div>
                   </div>

@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { LocationSelector } from "@/components/LocationSelector";
 import { WeatherWidget } from "@/components/WeatherWidget";
+import { ClimateDataWidget } from "@/components/ClimateDataWidget";
 import { PricingSimulator } from "@/components/PricingSimulator";
 import { ClimateEventTokenizer } from "@/components/ClimateEventTokenizer";
 import { SmartContractMonitor } from "@/components/SmartContractMonitor";
@@ -144,6 +145,11 @@ export function IndexPage() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
                   <LocationSelector />
                   <WeatherWidget />
+              </div>
+
+              {/* Climate Data Analysis */}
+              <div className="mb-12">
+                <ClimateDataWidget />
               </div>
 
               {/* Pricing Simulator - Full Width with More Space */}
