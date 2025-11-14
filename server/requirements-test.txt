@@ -1,0 +1,41 @@
+# Testing requirements for ClimateAI
+# Install with: pip install -r requirements-test.txt
+
+# Core testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+pytest-timeout>=2.1.0
+pytest-xdist>=3.3.0
+pytest-mock>=3.11.1
+
+# Fixtures and factories
+faker>=19.0.0
+factory-boy>=3.3.0
+
+# FastAPI testing
+httpx>=0.24.0
+
+# Code quality
+coverage>=7.2.0
+coverage-badge>=1.1.0
+
+# Mocking
+responses>=0.23.0
+pytest-mock>=3.11.1
+
+# Performance testing
+locust>=2.15.0
+pytest-benchmark>=4.0.0
+
+# Database testing
+sqlalchemy>=2.0.0
+alembic>=1.11.0
+
+# Async testing
+asynctest>=0.13.0
+
+# Optional cloud storage testing
+boto3>=1.28.0
+google-cloud-storage>=2.10.0
+azure-storage-blob>=12.16.0

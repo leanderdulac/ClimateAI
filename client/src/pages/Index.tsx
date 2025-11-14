@@ -4,8 +4,9 @@ import { LocationSelector } from "@/components/LocationSelector";
 import { WeatherWidget } from "@/components/WeatherWidget";
 import { ClimateDataWidget } from "@/components/ClimateDataWidget";
 import { PricingSimulator } from "@/components/PricingSimulator";
-import { ClimateEventTokenizer } from "@/components/ClimateEventTokenizer";
 import { SmartContractMonitor } from "@/components/SmartContractMonitor";
+import { TokenWalletMonitor } from "@/components/TokenWalletMonitor";
+import { DashboardLayout } from "@/components/DashboardLayout";
 import { LocationProvider } from "@/lib/LocationContext";
 import { PeriodProvider, usePeriod } from "@/lib/PeriodContext";
 import { Globe, TrendingUp, DollarSign, Zap, Cloud } from "lucide-react";
@@ -42,9 +43,9 @@ function PeriodButtons() {
 
 export function IndexPage() {
   return (
-    <LocationProvider>
-      <PeriodProvider>
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
+    <DashboardLayout>
+      <LocationProvider>
+        <PeriodProvider>
           {/* Hero Section */}
           <section className="py-16 md:py-24 bg-gradient-to-r from-blue-900/10 to-green-900/10">
             <div className="container mx-auto max-w-7xl px-4">
@@ -156,15 +157,6 @@ export function IndexPage() {
               <div className="mb-16">
                   <PricingSimulator />
               </div>
-
-              {/* Climate Event Tokenizer - Separate Section Below */}
-              <div className="mb-8">
-                <div className="flex items-center gap-3 mb-6">
-                  <Cloud className="h-6 w-6 text-orange-600" />
-                  <h3 className="text-2xl font-semibold text-gray-800">Tokenização de Eventos Climáticos</h3>
-                </div>
-                  <ClimateEventTokenizer />
-              </div>
           </div>
 
           {/* Smart Contract Monitor Section */}
@@ -174,6 +166,11 @@ export function IndexPage() {
               <h2 className="text-3xl font-bold text-gray-800">Smart Contract Monitor</h2>
             </div>
             <SmartContractMonitor />
+          </div>
+
+          {/* Token Wallet Monitor Section */}
+          <div className="mb-12">
+            <TokenWalletMonitor />
           </div>
 
           {/* CTA Section */}
@@ -197,8 +194,8 @@ export function IndexPage() {
           </div>
         </div>
       </section>
-    </div>
       </PeriodProvider>
     </LocationProvider>
+    </DashboardLayout>
   );
 }

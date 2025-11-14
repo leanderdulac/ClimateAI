@@ -37,10 +37,10 @@ export function WelcomePage() {
               <span className="text-xl font-bold text-gray-900">ClimateAI</span>
             </div>
             <Button
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate('/auth')}
               className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700"
             >
-              Explorar Dashboard
+              Entrar / Cadastrar
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </div>

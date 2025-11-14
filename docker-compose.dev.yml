@@ -1,0 +1,92 @@
+version: '3.8'
+
+# Docker Compose para DESENVOLVIMENTO com suporte a ML/TensorFlow
+# Use: docker-compose -f docker-compose.dev.yml up
+
+services:
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+      # Usar 'development' para TensorFlow
+      target: development
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://climateai:climateai123@db:5432/climateai
+      - REDIS_URL=redis://redis:6379
+      - SECRET_KEY=dev-secret-key-not-for-production
+      - ALLOW_ORIGINS=http://localhost:3000,http://localhost:5173,http://localhost:8080
+      - DEBUG=true
+    volumes:
+      # Mount para hot reload
+      - ./server:/app
+    depends_on:
+      - db
+      - redis
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    volumes:
+      # Mount para hot reload React
+      - ./client/src:/app/src
+      - ./client/public:/app/public
+    depends_on:
+      - backend
+
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: climateai
+      POSTGRES_PASSWORD: climateai123
+      POSTGRES_DB: climateai
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U climateai"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:6-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Jupyter para desenvolvimento e experimentação com ML
+  jupyter:
+    image: jupyter/datascience-notebook:latest
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./server:/app
+      - ./notebooks:/home/jovyan/notebooks
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+    command: start-notebook.sh --NotebookApp.token='' --NotebookApp.password=''
+
+volumes:
+  postgres_data:
+
+# ===== NOTA =====
+# Imagem de produção: ~500MB
+# Imagem de desenvolvimento: ~2GB (com TensorFlow)
+# Use docker-compose.yml para produção
+# Use docker-compose.dev.yml para desenvolvimento

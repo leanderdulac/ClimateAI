@@ -5,14 +5,26 @@ services:
     build:
       context: ./server
       dockerfile: Dockerfile
+      # Usar 'production' para tamanho mínimo (~500MB)
+      # Usar 'development' para desenvolvimento com TensorFlow (~2GB)
+      target: production
     ports:
       - "8000:8000"
     environment:
       - DATABASE_URL=postgresql+asyncpg://climateai:climateai123@db:5432/climateai
       - REDIS_URL=redis://redis:6379
+      - SECRET_KEY=docker-dev-key-change-in-production
+      - ALLOW_ORIGINS=http://localhost:3000,http://localhost:5173
+      - DEBUG=true
     depends_on:
       - db
       - redis
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   frontend:
     build:
@@ -33,11 +45,21 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U climateai"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:6-alpine
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_data:

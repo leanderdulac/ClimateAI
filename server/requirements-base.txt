@@ -1,0 +1,44 @@
+# ClimateAI Base Requirements
+# Dependências essenciais para produção (SEM ML/TensorFlow)
+# Tamanho reduzido de ~2GB para ~500MB
+
+# === FRAMEWORK WEB ===
+fastapi==0.115.0
+uvicorn[standard]==0.32.0
+python-multipart==0.0.20
+
+# === CONFIGURAÇÃO E VALIDAÇÃO ===
+pydantic==2.9.2
+pydantic-settings==2.6.0
+python-dotenv==1.0.1
+
+# === BANCO DE DADOS ===
+sqlalchemy==2.0.36
+psycopg2-binary==2.9.10
+aiosqlite==0.21.0
+alembic==1.13.3
+
+# === CACHE ===
+redis==5.2.0
+
+# === APIs EXTERNAS ===
+requests==2.32.3
+requests-cache
+geopy==2.4.1
+pycep-correios==5.1.0
+openmeteo-requests
+retry-requests
+
+# === AUTENTICAÇÃO E SEGURANÇA ===
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# === UTILITÁRIOS ===
+pytz==2024.2
+
+# === DADOS (versão leve) ===
+pandas==2.2.3
+numpy>=1.26.0,<2.1.0
+
+# NOTA: TensorFlow removido da produção
+# Usar requirements-ml.txt para desenvolvimento e treinamento de modelos

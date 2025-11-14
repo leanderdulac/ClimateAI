@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException, Query
 from typing import List, Optional
 from datetime import datetime
 from models.schemas import EventoClimatico, EventoClimaticoTipo
+from models.token_schemas import EventoToken
 from services.eventos_service import EventosService
 
 router = APIRouter()

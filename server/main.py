@@ -13,12 +13,24 @@ from typing import Optional, List, Dict, Any
 import uvicorn
 from functools import lru_cache
 
-# Configurar logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+# Importar health checker
+from api.health import HealthChecker
+
+# Importar logging estruturado
+from api.logging import (
+    setup_json_logging,
+    LoggingMiddleware,
+    StructuredLogger,
+    LogContext,
+    LogCategory,
+    init_logging,
+    get_logger,
+    get_structured_logger,
 )
-logger = logging.getLogger(__name__)
+
+# Importar módulos de segurança
+from lib.security import rate_limiter, SecurityConfig
+from config.config import settings
 
 # Sistema de Cache Inteligente
 class SmartCache:
@@ -73,21 +85,28 @@ class SmartCache:
 # Instância global do cache
 smart_cache = SmartCache()
 
-# Configurar logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
-
 # Importar routers e configurações
+# Obs: Logging será inicializado após a criação do app FastAPI
 from api.clima import router as clima_router
 from api.previsao import router as previsao_router
 from api.eventos import router as eventos_router
+from api.tokenizacao import router as tokenizacao_router
+from api.blockchain_tokens import router as blockchain_tokens_router
 from api.modelagem import router as modelagem_router
 from api.alertas import router as alertas_router
 from api.localizacao import router as localizacao_router
 from api.auth import router as auth_router
+from api.mathematical_engines import router as mathematical_engines_router
+from api.climate_risk_modeling import router as climate_risk_modeling_router
+from api.lstm_attention import router as lstm_attention_router
+from api.parametric_insurance import router as parametric_insurance_router
+from api.climate_hmm import router as climate_hmm_router
+from api.ensemble_pricing import router as ensemble_pricing_router
+from api.climate_risk_analysis import router as climate_risk_analysis_router
+from api.climate_premium import router as climate_premium_router
+from api.bayesian_bootstrap import router as bayesian_bootstrap_router
+from api.climate_alert import router as climate_alert_router
+from api.performance_testing import router as performance_testing_router
 # from api.audit import router as audit_router
 from services.ml_service import predict_sinistrality, train_ml_models, get_ml_model_info
 from services.external_api_service import get_weather_data, get_economic_indicators, get_commodity_prices, get_real_time_data
@@ -153,6 +172,11 @@ app = FastAPI(
 
 API_PREFIX = "/api/v1"
 
+# Inicializar logging estruturado em JSON
+init_logging(app_name="fimce", level=logging.INFO)
+json_logger = get_logger()
+logger = json_logger  # Alias for convenience
+
 # Configurar CORS
 app.add_middleware(
     CORSMiddleware,
@@ -161,6 +185,31 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Middleware de Logging estruturado para todas as requisições HTTP
+app.add_middleware(LoggingMiddleware, logger=json_logger)
+
+# Middleware de Rate Limiting
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+    """Aplica rate limiting por IP"""
+    # Obter IP do cliente
+    client_ip = request.client.host if request.client else "unknown"
+    
+    # Verificar se ainda está dentro do limite
+    if not rate_limiter.is_allowed(client_ip):
+        return JSONResponse(
+            status_code=429,
+            content={"detail": "Limite de requisições excedido. Tente novamente em 1 minuto."}
+        )
+    
+    response = await call_next(request)
+    
+    # Adicionar header informativo de rate limit
+    response.headers["X-RateLimit-Limit"] = "100"
+    response.headers["X-RateLimit-Window"] = "60"
+    
+    return response
 
 # Adicionar middleware de segurança
 from middleware.security_middleware import SecurityHeadersMiddleware
@@ -660,11 +709,45 @@ async def http_exception_handler(request, exc):
         content={"detail": exc.detail}
     )
 
-# Endpoint de verificação de saúde
+# Variável global para armazenar o health checker
+health_checker: Optional[HealthChecker] = None
+
+# Endpoint de verificação de saúde completa
+@app.get("/api/v1/health/full")
+async def health_check_full() -> Dict[str, Any]:
+    """
+    Verificação completa de saúde da API incluindo todas as dependências
+    """
+    if health_checker is None:
+        return {
+            "status": "degraded",
+            "message": "Health checker não inicializado",
+            "timestamp": time.time()
+        }
+    
+    return await health_checker.check_all()
+
+
+# Endpoint de verificação de saúde crítica
+@app.get("/api/v1/health/critical")
+async def health_check_critical() -> Dict[str, Any]:
+    """
+    Verificação de saúde apenas de componentes críticos (Database, System)
+    """
+    if health_checker is None:
+        return {
+            "status": "degraded",
+            "message": "Health checker não inicializado"
+        }
+    
+    return await health_checker.check_critical()
+
+
+# Endpoint de verificação de saúde simples (compatibilidade)
 @app.get("/health")
 async def health_check() -> Dict[str, str]:
     """
-    Verificar o estado de saúde da API e suas dependências
+    Verificar o estado de saúde da API (health check simples)
     """
     status = "healthy" if not missing_vars else "degraded"
     response = {
@@ -683,6 +766,8 @@ async def startup_event():
     """
     Verificar configurações e dependências na inicialização
     """
+    global health_checker
+    
     logger.info("Iniciando servidor FIMCE...")
     
     # Verificar variáveis de ambiente críticas
@@ -699,15 +784,57 @@ async def startup_event():
     except Exception as e:
         logger.error(f"Erro na validação das configurações: {str(e)}")
         raise
+    
+    # Inicializar o health checker
+    try:
+        # Obter URL do banco de dados
+        database_url = os.getenv("DATABASE_URL")
+        if not database_url:
+            # Usar SQLite como fallback
+            database_url = "sqlite:///./test.db"
+        
+        # Obter URL do Redis (opcional)
+        redis_url = os.getenv("REDIS_URL", None)
+        
+        # Criar instância global do health checker
+        health_checker = HealthChecker(
+            database_url=database_url,
+            redis_url=redis_url
+        )
+        
+        logger.info("Health checker inicializado com sucesso")
+        logger.info(f"Database URL configurada: {database_url[:50]}...")
+        if redis_url:
+            logger.info(f"Redis URL configurada: {redis_url[:50]}...")
+        else:
+            logger.info("Redis não configurado (verificações de cache desabilitadas)")
+            
+    except Exception as e:
+        logger.warning(f"Falha ao inicializar health checker: {str(e)}")
+        # Não falhar completamente se o health checker não inicializar
+        health_checker = None
 
 try:
     app.include_router(clima_router, prefix=f"{API_PREFIX}/clima", tags=["clima"])
     app.include_router(previsao_router, prefix=f"{API_PREFIX}/previsao", tags=["previsao"])
     app.include_router(eventos_router, prefix=f"{API_PREFIX}/eventos", tags=["eventos"])
+    app.include_router(tokenizacao_router, prefix=f"{API_PREFIX}/tokenizacao", tags=["tokenizacao"])
+    app.include_router(blockchain_tokens_router, prefix=f"{API_PREFIX}/blockchain", tags=["blockchain"])
     app.include_router(modelagem_router, prefix=f"{API_PREFIX}/modelagem", tags=["modelagem"])
     app.include_router(alertas_router, prefix=f"{API_PREFIX}/alertas", tags=["alertas"])
     app.include_router(localizacao_router, prefix=f"{API_PREFIX}/localizacao", tags=["localizacao"])
     app.include_router(auth_router, prefix=f"{API_PREFIX}/auth", tags=["auth"])
+    app.include_router(mathematical_engines_router, prefix=f"{API_PREFIX}/math-engines", tags=["mathematical-engines"])
+    app.include_router(climate_risk_modeling_router, prefix=f"{API_PREFIX}/climate-risk", tags=["climate-risk-modeling"])
+    app.include_router(lstm_attention_router, prefix=f"{API_PREFIX}/lstm-attention", tags=["lstm-attention"])
+    app.include_router(parametric_insurance_router, prefix=f"{API_PREFIX}/parametric-insurance", tags=["parametric-insurance"])
+    app.include_router(climate_hmm_router, prefix=f"{API_PREFIX}/climate-hmm", tags=["climate-hmm"])
+    app.include_router(ensemble_pricing_router, prefix=f"{API_PREFIX}/ensemble-pricing", tags=["ensemble-pricing"])
+    app.include_router(climate_risk_analysis_router, prefix=f"{API_PREFIX}/climate-risk-analysis", tags=["climate-risk-analysis"])
+    app.include_router(climate_premium_router, prefix=f"{API_PREFIX}/climate-premium", tags=["climate-premium"])
+    app.include_router(bayesian_bootstrap_router, prefix=f"{API_PREFIX}/bayesian-bootstrap", tags=["bayesian-bootstrap"])
+    app.include_router(climate_alert_router, prefix=f"{API_PREFIX}/climate-alert", tags=["climate-alert"])
+    app.include_router(performance_testing_router, prefix=f"{API_PREFIX}/performance-testing", tags=["performance-testing"])
     # app.include_router(audit_router, prefix=f"{API_PREFIX}/audit", tags=["audit"])
 except Exception as e:
     logger.error(f"Erro ao incluir routers: {str(e)}")

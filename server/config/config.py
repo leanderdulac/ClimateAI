@@ -12,8 +12,8 @@ class Settings(BaseSettings):
     DEBUG: bool = False  # Production default
     API_HOST: str = "localhost"
     API_PORT: int = 8000
-    SECRET_KEY: str = "changeme123"  # Should be set via environment in production
-    ALLOW_ORIGINS: list = []  # Restrictive default for production
+    SECRET_KEY: str = ""  # Must be set via environment variables
+    ALLOW_ORIGINS: list = ["http://localhost:3000", "http://localhost:5173"]  # Whitelist de origem
     
     # Configurações de API
     EMBRAPA_API_KEY: Optional[str] = None
@@ -49,3 +49,20 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+# Validação de segurança obrigatória
+if not settings.SECRET_KEY or len(settings.SECRET_KEY) < 32:
+    import warnings
+    warnings.warn(
+        "⚠️  SECRET_KEY não está definido ou é muito curto! "
+        "Use: export SECRET_KEY=$(python -c 'import secrets; print(secrets.token_urlsafe(32))')",
+        RuntimeWarning
+    )
+    # Em produção (DEBUG=False), falhar
+    if not settings.DEBUG:
+        raise ValueError("SECRET_KEY must be set in environment variables and be at least 32 characters")
+
+# Validar CORS
+if not settings.ALLOW_ORIGINS or settings.ALLOW_ORIGINS == []:
+    import warnings
+    warnings.warn("⚠️  ALLOW_ORIGINS está vazio. Configure via ALLOW_ORIGINS env var", RuntimeWarning)

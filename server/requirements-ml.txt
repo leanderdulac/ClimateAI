@@ -1,0 +1,47 @@
+# ClimateAI ML Requirements
+# DESENVOLVIMENTO E TREINAMENTO APENAS
+# Inclui dependências pesadas de machine learning
+# Use: pip install -r requirements-base.txt -r requirements-ml.txt
+
+# === MACHINE LEARNING (PESADO) ===
+tensorflow==2.18.0          # ~500MB - Remove em produção!
+scikit-learn==1.5.2
+statsmodels>=0.14.0
+scipy>=1.11.0,<1.14.0
+
+# === DESENVOLVIMENTO ===
+jupyter==1.0.0
+notebook==7.0.0
+matplotlib==3.8.0
+seaborn==0.13.0
+plotly==5.17.0
+
+# === TESTES E QUALIDADE ===
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+black==23.12.0
+isort==5.13.2
+flake8==6.1.0
+mypy==1.7.1
+bandit==1.7.5
+safety==2.3.5
+
+# === PERFORMANCE ===
+locust==2.17.0
+
+# === LOGGING E MONITORAMENTO (desenvolvimento) ===
+python-json-logger==2.0.7
+
+# ===== INSTALAÇÃO =====
+# Para desenvolvimento:
+#   pip install -r requirements-base.txt -r requirements-ml.txt
+#
+# Para produção:
+#   pip install -r requirements-base.txt
+#
+# ===== TAMANHO =====
+# requirements-base.txt: ~200MB
+# requirements-ml.txt:   +~800MB (tensorflow)
+# Total dev:             ~1000MB
+# Total produção:        ~200MB (redução de 80%)

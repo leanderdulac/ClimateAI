@@ -1,14 +1,19 @@
 """
 Serviço para detecção de eventos climáticos
 """
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from datetime import datetime, timedelta
 from models.schemas import EventoClimatico, EventoClimaticoTipo
+from models.token_schemas import EventoToken
+from services.tokenizacao_eventos_service import TokenizacaoEventosService
 import random
 import math
 
 
 class EventosService:
+    def __init__(self):
+        self.token_service = TokenizacaoEventosService()
+
     def obter_eventos(
         self,
         latitude: Optional[float],
@@ -23,7 +28,7 @@ class EventosService:
         """
         # Simular eventos climáticos com base nos parâmetros
         eventos = []
-        
+
         # Simular alguns eventos climáticos
         for i in range(random.randint(0, 5)):
             # Data aleatória dentro do intervalo se especificado
@@ -33,14 +38,14 @@ class EventosService:
                 )
             else:
                 data_evento = datetime.now() - timedelta(days=random.randint(0, 30))
-            
+
             # Tipo aleatório de evento se não especificado
             tipo_evento = tipo or random.choice(list(EventoClimaticoTipo))
-            
+
             # Intensidade e probabilidade simuladas
             intensidade = random.uniform(3.0, 5.0)  # Escala de 1 a 5
             probabilidade = random.uniform(0.6, 0.95)
-            
+
             # Gerar coordenadas dentro do raio especificado se latitude/longitude fornecidas
             if latitude and longitude:
                 # Adicionar variação aleatória dentro do raio (aproximadamente)
@@ -126,3 +131,79 @@ class EventosService:
         }
         
         return descricoes.get(tipo, f"Evento climático {tipo.value} detectado em {data.strftime('%Y-%m-%d')}")
+
+    def obter_eventos_com_tokens(
+        self,
+        latitude: Optional[float],
+        longitude: Optional[float],
+        tipo: Optional[EventoClimaticoTipo],
+        data_inicio: Optional[datetime],
+        data_fim: Optional[datetime],
+        raio: float
+    ) -> Tuple[List[EventoClimatico], List[EventoToken]]:
+        """
+        Obter eventos climáticos com seus respectivos tokens
+
+        Returns:
+            Tuple com lista de eventos e lista de tokens correspondentes
+        """
+        eventos = self.obter_eventos(latitude, longitude, tipo, data_inicio, data_fim, raio)
+        tokens = self.token_service.tokenizar_multiplos_eventos(eventos)
+
+        return eventos, tokens
+
+    def obter_tokens_eventos(
+        self,
+        latitude: Optional[float],
+        longitude: Optional[float],
+        tipo: Optional[EventoClimaticoTipo],
+        data_inicio: Optional[datetime],
+        data_fim: Optional[datetime],
+        raio: float
+    ) -> List[EventoToken]:
+        """
+        Obter apenas os tokens dos eventos climáticos detectados
+
+        Returns:
+            Lista de tokens dos eventos
+        """
+        eventos = self.obter_eventos(latitude, longitude, tipo, data_inicio, data_fim, raio)
+        tokens = self.token_service.tokenizar_multiplos_eventos(eventos)
+
+        return tokens
+
+    def obter_evento_por_token(self, token_id: str) -> Tuple[Optional[EventoClimatico], Optional[EventoToken]]:
+        """
+        Obter evento e token por ID do token
+
+        Args:
+            token_id: ID do token a ser buscado
+
+        Returns:
+            Tuple com evento e token, ou (None, None) se não encontrado
+        """
+        try:
+            # Decodificar informações do token
+            token_info = self.token_service.decodificar_token(token_id)
+
+            # Simular busca do evento baseado nas informações do token
+            # Em produção, isso seria uma busca no banco de dados
+            evento_simulado = EventoClimatico(
+                tipo=token_info.get('event_type'),
+                latitude=-8.7618,  # Porto Velho como exemplo
+                longitude=-63.9039,
+                data_inicio=datetime.now() - timedelta(days=2),
+                intensidade=4.0,
+                probabilidade=0.8,
+                descricao=f"Evento {token_info.get('event_type').value} recuperado por token",
+                nivel_alerta=token_info.get('severity_level', 3)
+            )
+
+            # Gerar token para o evento simulado
+            token = self.token_service.gerar_token_evento(evento_simulado)
+
+            return evento_simulado, token
+
+        except Exception as e:
+            print(f"Erro ao buscar evento por token: {str(e)}")
+            return None, None

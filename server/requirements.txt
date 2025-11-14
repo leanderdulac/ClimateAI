@@ -12,7 +12,8 @@ pandas==2.2.3
 numpy>=1.26.0,<2.1.0
 scipy>=1.11.0,<1.14.0
 scikit-learn==1.5.2
-tensorflow==2.18.0
+# ⚠️ REMOVIDO: tensorflow==2.18.0
+# Usar requirements-ml.txt para desenvolvimento com TensorFlow
 statsmodels>=0.14.0
 pytz==2024.2
 openmeteo-requests
@@ -27,3 +28,11 @@ passlib[bcrypt]==1.7.4
 python-multipart==0.0.20
 # Database migration
 alembic==1.13.3
+
+# NOTA IMPORTANTE:
+# Este arquivo agora referencia requirements-base.txt
+# Para instalar com suporte a ML (desenvolvimento):
+#   pip install -r requirements-base.txt -r requirements-ml.txt
+# 
+# Para instalar apenas produção (recomendado para Docker):
+#   pip install -r requirements-base.txt
