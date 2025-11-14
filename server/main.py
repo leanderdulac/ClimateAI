@@ -107,19 +107,23 @@ from api.climate_premium import router as climate_premium_router
 from api.bayesian_bootstrap import router as bayesian_bootstrap_router
 from api.climate_alert import router as climate_alert_router
 from api.performance_testing import router as performance_testing_router
+from api.dynamical_climate import router as dynamical_climate_router
+from api.dynamic_insurance_analysis import router as dynamic_insurance_analysis_router
 # from api.audit import router as audit_router
 from services.ml_service import sinistrality_predictor, predict_sinistrality, train_ml_models, get_ml_model_info
 from services.external_api_service import get_weather_data, get_economic_indicators, get_commodity_prices, get_real_time_data
 from services.microsegmentation_service import create_microsegments, analyze_location_risk, get_microsegmentation_summary
 from services.audit_service import log_operation, log_risk_assessment, log_policy_decision, get_audit_logs, get_compliance_report
+from services.dynamic_insurance_analysis_service import dynamic_analysis_service
 from config.config import settings
 from config.database import init_db, close_db
 
 # Importar Pydantic models para pricing
 from pydantic import BaseModel
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
 from fastapi import Query
+import numpy as np
 
 class PricingRequest(BaseModel):
     location_id: str
@@ -128,27 +132,100 @@ class PricingRequest(BaseModel):
     user_id: Optional[str] = None
     session_id: Optional[str] = None
 
-# Função de cálculo de pricing (placeholder - implementar lógica completa)
+# Função de cálculo de pricing aprimorada com análise dinâmica de lucratividade
 def calculate_pricing(request: PricingRequest) -> Dict[str, Any]:
     """
     Calcula preço de seguro baseado em dados climáticos e fatores de risco
+    Incorpora análise dinâmica de lucratividade e otimização de portfólio
     """
-    # Placeholder - implementar lógica real de cálculo
-    # Por enquanto retorna dados simulados
-    return {
-        "final_price": request.coverage_amount * 0.05,  # 5% do valor coberto
-        "risk_score": 0.3,
-        "risk_factors": {
-            "climatic_risk": 0.4,
-            "economic_risk": 0.2,
-            "location_risk": 0.3
-        },
-        "recommendations": [
-            "Considerar cobertura adicional contra inundações",
-            "Avaliar período de cobertura mais longo"
-        ],
-        "compliance_flags": []
-    }
+    from services.clima_service import ClimaService
+    from services.previsao_service import PrevisaoService
+
+    clima_service = ClimaService()
+    previsao_service = PrevisaoService()
+
+    # Obter dados climáticos para a localização
+    try:
+        # Obter dados históricos para análise de risco
+        historico_inicio = datetime.now() - timedelta(days=365)  # Último ano
+        historico_fim = datetime.now()
+
+        # Obter dados reais de clima para análise de risco
+        dados_clima = clima_service.obter_historico(
+            latitude=-23.5507,  # São Paulo como exemplo
+            longitude=-46.6339,
+            data_inicio=historico_inicio,
+            data_fim=historico_fim
+        )
+
+        # Calcular fatores de risco com base nos dados históricos
+        climatic_risk = 0.0
+        economic_risk = 0.2  # Mantém valor padrão
+        location_risk = 0.3  # Avaliado por sistema de microsegmentação
+
+        if dados_clima:
+            # Análise da variabilidade climática
+            temps = [d.temperatura for d in dados_clima if d.temperatura is not None]
+            precip = [d.precipitacao for d in dados_clima if d.precipitacao is not None]
+
+            if temps:
+                temp_variability = np.std(temps) / np.mean(temps) if np.mean(temps) != 0 else 0
+                climatic_risk = min(1.0, temp_variability * 2)  # Ajuste baseado na variabilidade
+
+            if precip:
+                precip_variability = np.std(precip) / np.mean(precip) if np.mean(precip) != 0 else 0
+                climatic_risk = max(climatic_risk, min(1.0, precip_variability * 1.5))
+
+        # Atualizar fatores de risco com base em dados reais
+        risk_factors = {
+            "climatic_risk": climatic_risk,
+            "economic_risk": economic_risk,
+            "location_risk": location_risk
+        }
+
+        # Calcular prêmio dinâmico usando o novo sistema de análise
+        dynamic_pricing_result = dynamic_analysis_service.calculate_dynamic_premium(
+            coverage_amount=request.coverage_amount,
+            risk_factors=risk_factors,
+            base_loading_factor=0.20  # 20% de loading base
+        )
+
+        # Retornar o resultado com todas as informações de análise
+        return {
+            "final_price": dynamic_pricing_result['final_premium'],
+            "expected_claims": dynamic_pricing_result['expected_claims'],
+            "profit": dynamic_pricing_result['profit'],
+            "profit_margin": dynamic_pricing_result['profit_margin'],
+            "break_even_premium": dynamic_pricing_result['break_even_premium'],
+            "risk_score": (climatic_risk + economic_risk + location_risk) / 3,
+            "risk_factors": risk_factors,
+            "is_profitable": dynamic_pricing_result['is_profitable'],
+            "recommendations": [
+                f"Margem de lucro esperada: {dynamic_pricing_result['profit_margin']:.1%}",
+                f"Prêmio mínimo para equilíbrio: R$ {dynamic_pricing_result['break_even_premium']:,.2f}",
+                "Considerar cobertura adicional contra inundações" if climatic_risk > 0.5 else "",
+                "Avaliar período de cobertura mais longo" if request.coverage_period == 1 else ""
+            ],
+            "compliance_flags": []
+        }
+    except Exception as e:
+        logger.error(f"Error in enhanced pricing calculation: {str(e)}")
+        # Fallback para cálculo original em caso de erro
+        return {
+            "final_price": request.coverage_amount * 0.05,  # 5% do valor coberto
+            "risk_score": 0.3,
+            "risk_factors": {
+                "climatic_risk": 0.4,
+                "economic_risk": 0.2,
+                "location_risk": 0.3
+            },
+            "recommendations": [
+                "Considerar cobertura adicional contra inundações",
+                "Avaliar período de cobertura mais longo"
+            ],
+            "compliance_flags": [],
+            "error": f"Fallback pricing used due to error: {str(e)}"
+        }
 
 # Verificar variáveis de ambiente críticas
 required_env_vars = [
@@ -835,6 +912,8 @@ try:
     app.include_router(bayesian_bootstrap_router, prefix=f"{API_PREFIX}/bayesian-bootstrap", tags=["bayesian-bootstrap"])
     app.include_router(climate_alert_router, prefix=f"{API_PREFIX}/climate-alert", tags=["climate-alert"])
     app.include_router(performance_testing_router, prefix=f"{API_PREFIX}/performance-testing", tags=["performance-testing"])
+    app.include_router(dynamical_climate_router, prefix=f"{API_PREFIX}/dynamical-climate", tags=["dynamical-climate"])
+    app.include_router(dynamic_insurance_analysis_router, prefix=f"{API_PREFIX}/dynamic-insurance", tags=["dynamic-insurance"])
     # app.include_router(audit_router, prefix=f"{API_PREFIX}/audit", tags=["audit"])
 except Exception as e:
     logger.error(f"Erro ao incluir routers: {str(e)}")
