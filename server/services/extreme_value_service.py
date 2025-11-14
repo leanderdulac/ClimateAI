@@ -595,7 +595,7 @@ class ExtremeValueService:
 extreme_value_service = ExtremeValueService()
 
 # Convenience functions for API integration
-def calculate_extreme_event_probability(data: List[float], threshold: float, 
+def calculate_extreme_event_probability(data: List[float], threshold: float,
                                      event_magnitude: float) -> Dict[str, float]:
     """Calculate probability of extreme events using GPD model"""
     return extreme_value_service.calculate_extreme_event_probability(
@@ -613,3 +613,33 @@ def peaks_over_threshold_analysis(data: List[float], threshold: float) -> Dict[s
 def combined_gev_gpd_analysis(time_series: List[float], threshold: float = None) -> Dict[str, Any]:
     """Combined GEV and GPD analysis for comprehensive extreme value modeling"""
     return extreme_value_service.combined_gev_gpd_analysis(time_series, threshold)
+
+def gev_distribution_cdf(z: float, mu: float, sigma: float, xi: float) -> float:
+    """Calculate GEV distribution CDF: G(z) = exp{-[1 + ξ((z-μ)/σ)]^(-1/ξ)}"""
+    return extreme_value_service.gev_distribution_cdf(z, mu, sigma, xi)
+
+def calculate_climate_adapted_gev_params(base_params: GEVParameters,
+                                       delta_temperature: float,
+                                       delta_precipitation: float,
+                                       co2_level: float,
+                                       alpha: float = 0.02,
+                                       beta: float = 0.01,
+                                       gamma: float = 0.001) -> GEVParameters:
+    """Calculate climate-adapted GEV parameters using climate sensitivity factors"""
+    return extreme_value_service.calculate_climate_adapted_gev_params(
+        base_params, delta_temperature, delta_precipitation, co2_level, alpha, beta, gamma
+    )
+
+def calculate_return_level_with_climate_adaptation(base_params: GEVParameters,
+                                                 delta_temperature: float,
+                                                 delta_precipitation: float,
+                                                 co2_level: float,
+                                                 return_period: float,
+                                                 alpha: float = 0.02,
+                                                 beta: float = 0.01,
+                                                 gamma: float = 0.001) -> Dict[str, float]:
+    """Calculate return level accounting for climate adaptation"""
+    return extreme_value_service.calculate_return_level_with_climate_adaptation(
+        base_params, delta_temperature, delta_precipitation, co2_level,
+        return_period, alpha, beta, gamma
+    )

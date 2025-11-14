@@ -108,7 +108,7 @@ from api.bayesian_bootstrap import router as bayesian_bootstrap_router
 from api.climate_alert import router as climate_alert_router
 from api.performance_testing import router as performance_testing_router
 # from api.audit import router as audit_router
-from services.ml_service import predict_sinistrality, train_ml_models, get_ml_model_info
+from services.ml_service import sinistrality_predictor, predict_sinistrality, train_ml_models, get_ml_model_info
 from services.external_api_service import get_weather_data, get_economic_indicators, get_commodity_prices, get_real_time_data
 from services.microsegmentation_service import create_microsegments, analyze_location_risk, get_microsegmentation_summary
 from services.audit_service import log_operation, log_risk_assessment, log_policy_decision, get_audit_logs, get_compliance_report

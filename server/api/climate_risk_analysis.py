@@ -51,9 +51,9 @@ async def calculate_extreme_climate_event_probability_endpoint(
 @router.post("/climate-systemic-risk/conditional-var")
 async def calculate_conditional_var_endpoint(
     portfolio_returns: List[float] = Query(..., description="Portfolio returns time series"),
-    climate_data: Dict[str, List[float]],
     event_type: str = Query("compound", description="Type of extreme event: compound, temperature, precipitation, wind, drought"),
-    confidence_level: float = Query(0.95, ge=0.5, lt=1.0, description="Confidence level for CoVaR calculation")
+    confidence_level: float = Query(0.95, ge=0.5, lt=1.0, description="Confidence level for CoVaR calculation"),
+    climate_data: Dict[str, List[float]] = Query(..., description="Climate variables data")
 ):
     """
     Calculate Conditional Value at Risk (CoVaR) of portfolio conditional on extreme climate event
@@ -73,9 +73,9 @@ async def calculate_conditional_var_endpoint(
 @router.post("/climate-systemic-risk/climate-loading")
 async def calculate_climate_loading_endpoint(
     portfolio_returns: List[float] = Query(..., description="Portfolio returns time series"),
-    climate_data: Dict[str, List[float]],
+    event_type: str = Query("compound", description="Type of extreme event: compound, temperature, precipitation, wind, drought"),
     confidence_level: float = Query(0.95, ge=0.5, lt=1.0, description="Confidence level for CoVaR calculation"),
-    event_type: str = Query("compound", description="Type of extreme event: compound, temperature, precipitation, wind, drought")
+    climate_data: Dict[str, List[float]] = Query(..., description="Climate variables data")
 ):
     """
     Calculate climate loading: Loading_clim = max(0, CoVaR_portfolio - CoVaR_benchmark)

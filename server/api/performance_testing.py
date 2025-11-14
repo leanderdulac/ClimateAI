@@ -8,6 +8,7 @@ Implements:
 from fastapi import APIRouter, HTTPException, Query
 from typing import Dict, List, Optional, Any
 from datetime import datetime
+from pydantic import BaseModel
 import numpy as np
 
 from services.performance_testing_service import (
@@ -17,6 +18,27 @@ from services.performance_testing_service import (
     robustness_analysis_test,
     comprehensive_performance_evaluation
 )
+
+class RobustnessAnalysisRequest(BaseModel):
+    """Request model for robustness analysis"""
+    base_params: Dict[str, float]  # Base model parameters
+    parameter_perturbation: float = 0.20  # Parameter perturbation (default 20%)
+    n_perturbations: int = 100  # Number of perturbation trials
+    base_output: Optional[float] = None  # Base output value for comparison
+    base_input_data: Optional[List[float]] = None  # Input data for the model
+
+class ComprehensiveEvaluationRequest(BaseModel):
+    """Request model for comprehensive performance evaluation"""
+    climate_model_predictions: List[float]
+    actual_losses: List[float]
+    event_dates: List[str]
+    event_types: List[str]
+    base_scenario_losses: List[float]
+    climate_model_parameters: Dict[str, float]
+    stress_multiplier: float = 2.0
+    parameter_perturbation: float = 0.20
+    black_swan_probability: float = 0.1
+    black_swan_impact_factor: float = 3.0
 
 router = APIRouter()
 
@@ -88,11 +110,7 @@ async def stress_testing_endpoint(
 
 @router.post("/performance-testing/robustness-analysis")
 async def robustness_analysis_endpoint(
-    base_params: Dict[str, float] = Query(..., description="Base model parameters"),
-    parameter_perturbation: float = Query(0.20, ge=0.01, le=0.5, description="Parameter perturbation (default 0.20 = 20%)"),
-    n_perturbations: int = Query(100, ge=10, le=1000, description="Number of perturbation trials"),
-    base_output: Optional[float] = Query(None, description="Base output value for comparison"),
-    base_input_data: Optional[List[float]] = Query(None, description="Input data for the model")
+    request: RobustnessAnalysisRequest
 ):
     """
     Robustness analysis: 20% parameter perturbation → ΔPrêmio < 10%
@@ -102,11 +120,11 @@ async def robustness_analysis_endpoint(
         # For now, we'll use a placeholder approach
         result = robustness_analysis_test(
             base_model=None,  # Would be actual model in production
-            base_params=base_params,
-            parameter_perturbation=parameter_perturbation,
-            n_perturbations=n_perturbations,
-            base_input_data=base_input_data,
-            base_output=base_output
+            base_params=request.base_params,
+            parameter_perturbation=request.parameter_perturbation,
+            n_perturbations=request.n_perturbations,
+            base_input_data=request.base_input_data,
+            base_output=request.base_output
         )
         
         return {
@@ -125,16 +143,7 @@ async def robustness_analysis_endpoint(
 
 @router.post("/performance-testing/comprehensive-evaluation")
 async def comprehensive_performance_evaluation_endpoint(
-    model_predictions: List[float] = Query(..., description="Model predictions"),
-    actual_losses: List[float] = Query(..., description="Actual losses from historical events"),
-    event_dates: List[str] = Query(..., description="Dates of historical events"),
-    event_types: List[str] = Query(..., description="Types of historical events"),
-    base_scenario_losses: List[float] = Query(..., description="Base losses for stress testing"),
-    model_parameters: Dict[str, float] = Query(..., description="Model parameters for robustness testing"),
-    stress_multiplier: float = Query(2.0, description="Stress multiplier for CMIP6 scenarios"),
-    parameter_perturbation: float = Query(0.20, description="Parameter perturbation for robustness"),
-    black_swan_probability: float = Query(0.1, description="Black swan probability for stress test"),
-    black_swan_impact_factor: float = Query(3.0, description="Black swan impact factor")
+    request: ComprehensiveEvaluationRequest
 ):
     """
     Comprehensive performance evaluation combining:
@@ -143,17 +152,17 @@ async def comprehensive_performance_evaluation_endpoint(
     - Robustness analysis with parameter perturbations
     """
     try:
-        if len(model_predictions) != len(actual_losses) or len(model_predictions) != len(event_dates) or len(model_predictions) != len(event_types):
+        if len(request.model_predictions) != len(request.actual_losses) or len(request.model_predictions) != len(request.event_dates) or len(request.model_predictions) != len(request.event_types):
             raise HTTPException(
                 status_code=400,
                 detail="Model predictions, actual losses, event dates, and event types must have the same length"
             )
-        
+
         result = comprehensive_performance_evaluation(
-            model_predictions, actual_losses, event_dates, event_types,
-            base_scenario_losses, model_parameters,
-            stress_multiplier=stress_multiplier,
-            robustness_perturbation=parameter_perturbation
+            request.climate_model_predictions, request.actual_losses, request.event_dates, request.event_types,
+            request.base_scenario_losses, request.climate_model_parameters,
+            stress_multiplier=request.stress_multiplier,
+            robustness_perturbation=request.parameter_perturbation
         )
         
         return {
