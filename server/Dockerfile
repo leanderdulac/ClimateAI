@@ -13,10 +13,7 @@ FROM base as production
 
 # Instalar dependências de produção (com PyTorch CPU-only, sem TensorFlow)
 COPY requirements-prod-ml.txt .
-# Install CPU-only PyTorch first to avoid conflicts
-RUN pip install torch==2.1.0 --index-url https://download.pytorch.org/whl/cpu --no-cache-dir
-# Install remaining requirements
-RUN pip install --no-cache-dir -r requirements-prod-ml.txt
+RUN pip install --no-cache-dir torch==2.1.0 --index-url https://download.pytorch.org/whl/cpu -r requirements-prod-ml.txt
 
 # Copiar código da aplicação
 COPY . .
