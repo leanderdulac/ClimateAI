@@ -60,6 +60,14 @@ class ProcessNotificationsRequest(BaseModel):
     weather_forecast: List[Dict[str, Any]]
     event_thresholds: Optional[Dict[str, float]] = None
 
+class ProcessMultiChannelNotificationsRequest(BaseModel):
+    """Request model for processing multi-channel climate notifications with 24h and 72h windows"""
+    customer_data: Dict[str, Any]  # {customer_id, contract_id, location}
+    premium_history: List[float]
+    current_premium: float
+    weather_forecast: List[Dict[str, Any]]  # Should contain at least 72 hours of forecast
+    event_thresholds: Optional[Dict[str, float]] = None
+
 router = APIRouter()
 
 @router.post("/climate-alert/premium-change")
@@ -105,30 +113,59 @@ async def calculate_severe_event_probability_endpoint(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Severe event probability calculation failed: {str(e)}")
 
+@router.post("/climate-alert/severe-event-probability-24h")
+async def calculate_severe_event_probability_24h_endpoint(
+    request: SevereEventProbabilityRequest
+):
+    """
+    Calculate probability of severe climate events in the next 24 hours
+    """
+    try:
+        from services.climate_alert_service import calculate_severe_event_probability_24h
+        probability = calculate_severe_event_probability_24h(
+            request.weather_forecast, request.event_thresholds
+        )
+        return {
+            "severe_event_probability_24h": probability,
+            "weather_forecast_periods": len(request.weather_forecast),
+            "event_thresholds_used": request.event_thresholds or {
+                'precipitation': 50.0, 'wind_speed': 25.0, 'temperature': 35.0, 'pressure': 980.0
+            }
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Severe event probability calculation failed: {str(e)}")
+
 @router.post("/climate-alert/should-trigger")
 async def should_trigger_notification_endpoint(
     premium_change: float = Query(..., description="Percentage change in premium"),
-    severe_event_probability: float = Query(..., description="Probability of severe event"),
+    severe_event_probability_72h: float = Query(..., description="Probability of severe event in next 72h"),
+    severe_event_probability_24h: float = Query(0.0, description="Probability of severe event in next 24h"),
     premium_threshold: float = Query(0.20, description="Premium change threshold (default 20%)"),
-    event_probability_threshold: float = Query(0.05, description="Event probability threshold (default 5%)")
+    event_probability_72h_threshold: float = Query(0.05, description="72h Event probability threshold (default 5%)"),
+    event_probability_24h_threshold: float = Query(0.15, description="24h Event probability threshold (default 15%)")
 ):
     """
-    Determine if notification should be triggered:
-    Notificação_push = I{ΔPrêmio_7d > 20% OR P(evento_severo_72h) > 5%}
+    Determine if notification should be triggered with channel selection:
+    - Se P(evento_severo_72h) > 5%: Push notification
+    - Se P(evento_severo_24h) > 15%: SMS + Email + parametric trigger
+    - Notificação_push = I{ΔPrêmio_7d > 20% OR P(evento_severo_72h) > 5%}
     """
     try:
-        should_trigger, condition = should_trigger_notification(
-            premium_change, severe_event_probability, 
-            premium_threshold, event_probability_threshold
+        should_trigger, condition, channel = should_trigger_notification(
+            premium_change, severe_event_probability_72h, severe_event_probability_24h,
+            premium_threshold, event_probability_72h_threshold, event_probability_24h_threshold
         )
         return {
             "should_trigger_notification": should_trigger,
             "triggering_condition": condition,
+            "notification_channel": channel,
             "premium_change": premium_change,
-            "severe_event_probability": severe_event_probability,
+            "severe_event_probability_72h": severe_event_probability_72h,
+            "severe_event_probability_24h": severe_event_probability_24h,
             "premium_threshold": premium_threshold,
-            "event_probability_threshold": event_probability_threshold,
-            "formula_applied": "I{ΔPrêmio_7d > 20% OR P(evento_severo_72h) > 5%}"
+            "event_probability_72h_threshold": event_probability_72h_threshold,
+            "event_probability_24h_threshold": event_probability_24h_threshold,
+            "formula_applied": "I{ΔPrêmio_7d > 20% OR P(evento_severo_72h) > 5% OR P(evento_severo_24h) > 15%}"
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Notification trigger check failed: {str(e)}")
@@ -227,6 +264,35 @@ async def process_climate_notifications_endpoint(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Climate notification processing failed: {str(e)}")
 
+@router.post("/climate-alert/process-multichannel-notifications")
+async def process_multichannel_notifications_endpoint(
+    request: ProcessMultiChannelNotificationsRequest
+):
+    """
+    Complete multi-channel climate notification processing with 24h and 72h windows:
+    - Se P(evento_severo_72h) > 5%: Push notification
+    - Se P(evento_severo_24h) > 15%: SMS + Email + parametric trigger (R$ 2.000)
+    Triggers mitigation recommendations, complementary coverage offers, and customer alerts
+    """
+    try:
+        from services.climate_alert_service import process_climate_notifications
+        actions = process_climate_notifications(
+            request.customer_data, request.premium_history, request.current_premium,
+            request.weather_forecast, request.event_thresholds
+        )
+        return {
+            "actions_taken": actions,
+            "n_customers_affected": len(actions),
+            "formula_applied": "I{P(evento_severo_72h) > 5% OR P(evento_severo_24h) > 15%}",
+            "logic": {
+                "P_evento_severo_72h_gt_5": "Push notification",
+                "P_evento_severo_24h_gt_15": "SMS + Email + parametric trigger (R$ 2.000)"
+            },
+            "processing_timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Multi-channel climate notification processing failed: {str(e)}")
+
 @router.get("/climate-alert/status")
 async def climate_alert_status():
     """
@@ -236,12 +302,19 @@ async def climate_alert_status():
         "service_available": True,
         "n_active_alerts": len(getattr(climate_alert_service, 'active_alerts', [])),
         "premium_change_threshold": 0.20,  # 20%
-        "severe_event_probability_threshold": 0.05,  # 5%
-        "formula_implemented": "Notificação_push = I{ΔPrêmio_7d > 20% OU P(evento_severo_72h) > 5%}",
+        "severe_event_probability_72h_threshold": 0.05,  # 5%
+        "severe_event_probability_24h_threshold": 0.15,  # 15%
+        "formula_implemented": [
+            "Notificação_push = I{ΔPrêmio_7d > 20% OU P(evento_severo_72h) > 5%}",
+            "Se P(evento_severo_72h) > 5%: Push notification",
+            "Se P(evento_severo_24h) > 15%: SMS + Email + parametric trigger (R$ 2.000)"
+        ],
         "triggered_actions": [
             "Immediate mitigation recommendation",
-            "Temporary complementary coverage offer", 
-            "Customer alert for preventive actions"
+            "Temporary complementary coverage offer",
+            "Customer alert for preventive actions",
+            "Multi-channel notifications (Push, SMS, Email)",
+            "Parametric payment triggers for emergency expenses"
         ],
         "timestamp": datetime.now().isoformat()
     }

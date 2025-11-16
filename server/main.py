@@ -109,12 +109,31 @@ from api.climate_alert import router as climate_alert_router
 from api.performance_testing import router as performance_testing_router
 from api.dynamical_climate import router as dynamical_climate_router
 from api.dynamic_insurance_analysis import router as dynamic_insurance_analysis_router
+from api.integrated_pipeline import router as integrated_pipeline_router
+from api.physical_risk import router as physical_risk_router
+from api.transition_risk import router as transition_risk_router
+from api.concentration_risk import router as concentration_risk_router
+from api.mitigation_measures import router as mitigation_measures_router
+from api.operating_costs import router as operating_costs_router
+from api.climate_capital_charge import router as climate_capital_charge_router
+from api.loading_margin import router as loading_margin_router
+from api.investment_return import router as investment_return_router
+from api.comprehensive_pricing import router as comprehensive_pricing_router
+from api.integrated_pricing_framework import router as integrated_pricing_framework_router
+from api.lei_analysis import router as lei_analysis_router
+from api.climate_risk_report import router as climate_risk_report_router
+from api.tcfd_issb import router as tcfd_issb_router
+from api.climate_scr import router as climate_scr_router
+from api.policy_uncertainty import router as policy_uncertainty_router
+from api.smart_exclusions import router as smart_exclusions_router
+from api.sips_performance_analytics import router as sips_performance_analytics_router
 # from api.audit import router as audit_router
 from services.ml_service import sinistrality_predictor, predict_sinistrality, train_ml_models, get_ml_model_info
 from services.external_api_service import get_weather_data, get_economic_indicators, get_commodity_prices, get_real_time_data
 from services.microsegmentation_service import create_microsegments, analyze_location_risk, get_microsegmentation_summary
 from services.audit_service import log_operation, log_risk_assessment, log_policy_decision, get_audit_logs, get_compliance_report
 from services.dynamic_insurance_analysis_service import dynamic_analysis_service
+from services.loading_margin_service import calculate_loading_margin
 from config.config import settings
 from config.database import init_db, close_db
 
@@ -914,6 +933,24 @@ try:
     app.include_router(performance_testing_router, prefix=f"{API_PREFIX}/performance-testing", tags=["performance-testing"])
     app.include_router(dynamical_climate_router, prefix=f"{API_PREFIX}/dynamical-climate", tags=["dynamical-climate"])
     app.include_router(dynamic_insurance_analysis_router, prefix=f"{API_PREFIX}/dynamic-insurance", tags=["dynamic-insurance"])
+    app.include_router(integrated_pipeline_router, prefix=f"{API_PREFIX}/integrated-pipeline", tags=["integrated-pipeline"])
+    app.include_router(physical_risk_router, prefix=f"{API_PREFIX}/physical-risk", tags=["physical-risk"])
+    app.include_router(transition_risk_router, prefix=f"{API_PREFIX}/transition-risk", tags=["transition-risk"])
+    app.include_router(concentration_risk_router, prefix=f"{API_PREFIX}/concentration-risk", tags=["concentration-risk"])
+    app.include_router(mitigation_measures_router, prefix=f"{API_PREFIX}/mitigation-measures", tags=["mitigation-measures"])
+    app.include_router(lei_analysis_router, prefix=f"{API_PREFIX}/lei-analysis", tags=["lei-analysis"])
+    app.include_router(operating_costs_router, prefix=f"{API_PREFIX}/operating-costs", tags=["operating-costs"])
+    app.include_router(climate_capital_charge_router, prefix=f"{API_PREFIX}/climate-capital-charge", tags=["climate-capital-charge"])
+    app.include_router(loading_margin_router, prefix=f"{API_PREFIX}/loading-margin", tags=["loading-margin"])
+    app.include_router(investment_return_router, prefix=f"{API_PREFIX}/investment-return", tags=["investment-return"])
+    app.include_router(comprehensive_pricing_router, prefix=f"{API_PREFIX}/comprehensive-pricing", tags=["comprehensive-pricing"])
+    app.include_router(integrated_pricing_framework_router, prefix=f"{API_PREFIX}/integrated-pricing-framework", tags=["integrated-pricing-framework"])
+    app.include_router(climate_risk_report_router, prefix=f"{API_PREFIX}/climate-risk-report", tags=["climate-risk-report"])
+    app.include_router(tcfd_issb_router, prefix=f"{API_PREFIX}/tcfd-issb", tags=["tcfd-issb"])
+    app.include_router(climate_scr_router, prefix=f"{API_PREFIX}/climate-scr", tags=["climate-scr"])
+    app.include_router(policy_uncertainty_router, prefix=f"{API_PREFIX}/policy-uncertainty", tags=["policy-uncertainty"])
+    app.include_router(smart_exclusions_router, prefix=f"{API_PREFIX}/smart-exclusions", tags=["smart-exclusions"])
+    app.include_router(sips_performance_analytics_router, prefix=f"{API_PREFIX}/sips-analytics", tags=["sips-analytics"])
     # app.include_router(audit_router, prefix=f"{API_PREFIX}/audit", tags=["audit"])
 except Exception as e:
     logger.error(f"Erro ao incluir routers: {str(e)}")
