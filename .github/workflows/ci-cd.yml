@@ -55,9 +55,9 @@ jobs:
       run: |
         cd server
         python -m pip install --upgrade pip
-        # Install PyTorch with maximum reliability settings
-        pip install --timeout 1800 --retries 5 --prefer-binary --index-url https://download.pytorch.org/whl/cpu 'torch==2.0.1+cpu' --find-links https://download.pytorch.org/whl/torch_stable.html
-        pip install --timeout 1800 --retries 5 -r requirements-prod-ml.txt
+        # Install PyTorch with maximum reliability settings in CI environment
+        pip install --timeout 1800 --retries 5 --prefer-binary --index-url https://download.pytorch.org/whl/cpu 'torch==2.0.1+cpu' --find-links https://download.pytorch.org/whl/torch_stable.html --no-build-isolation
+        pip install --timeout 1800 --retries 5 --no-build-isolation -r requirements-prod-ml.txt
 
     - name: Run security scan
       run: |
@@ -209,9 +209,9 @@ jobs:
     - name: Install dependencies
       run: |
         cd server
-        # Install PyTorch with maximum reliability settings
-        pip install --timeout 1800 --retries 5 --prefer-binary --index-url https://download.pytorch.org/whl/cpu 'torch==2.0.1+cpu' --find-links https://download.pytorch.org/whl/torch_stable.html
-        pip install --timeout 1800 --retries 5 -r requirements-prod-ml.txt
+        # Install PyTorch with maximum reliability settings in CI environment
+        pip install --timeout 1800 --retries 5 --prefer-binary --index-url https://download.pytorch.org/whl/cpu 'torch==2.0.1+cpu' --find-links https://download.pytorch.org/whl/torch_stable.html --no-build-isolation
+        pip install --timeout 1800 --retries 5 --no-build-isolation -r requirements-prod-ml.txt
 
     - name: Start services
       run: |
@@ -328,9 +328,9 @@ jobs:
     - name: Generate API docs
       run: |
         cd server
-        # Install PyTorch with maximum reliability settings
-        pip install --timeout 1800 --retries 5 --prefer-binary --index-url https://download.pytorch.org/whl/cpu 'torch==2.0.1+cpu' --find-links https://download.pytorch.org/whl/torch_stable.html
-        pip install --timeout 1800 --retries 5 -r requirements-prod-ml.txt
+        # Install PyTorch with maximum reliability settings in CI environment
+        pip install --timeout 1800 --retries 5 --prefer-binary --index-url https://download.pytorch.org/whl/cpu 'torch==2.0.1+cpu' --find-links https://download.pytorch.org/whl/torch_stable.html --no-build-isolation
+        pip install --timeout 1800 --retries 5 --no-build-isolation -r requirements-prod-ml.txt
         python -c "from main import app; print('API docs generated')"
 
     - name: Upload docs
