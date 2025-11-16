@@ -12,6 +12,8 @@ pandas==2.2.3
 numpy>=1.26.0,<2.1.0
 scipy>=1.11.0,<1.14.0
 scikit-learn==1.5.2
+torch==2.1.0  # PyTorch for LSTM attention mechanisms (added for production)
+python-json-logger==2.0.7  # For structured JSON logging
 # ⚠️ REMOVIDO: tensorflow==2.18.0
 # Usar requirements-ml.txt para desenvolvimento com TensorFlow
 statsmodels>=0.14.0
@@ -31,9 +33,9 @@ python-multipart==0.0.20
 alembic==1.13.3
 
 # NOTA IMPORTANTE:
-# Este arquivo agora referencia requirements-base.txt
-# Para instalar com suporte a ML (desenvolvimento):
+# Este arquivo inclui PyTorch necessário para LSTM attention (produção)
+# Para instalar com suporte a ML completo (desenvolvimento):
 #   pip install -r requirements-base.txt -r requirements-ml.txt
-# 
-# Para instalar apenas produção (recomendado para Docker):
-#   pip install -r requirements-base.txt
+#
+# Para instalar produção com ML essencial (recomendado para Docker):
+#   pip install -r requirements-prod-ml.txt

@@ -11,9 +11,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # ===== PRODUCTION STAGE =====
 FROM base as production
 
-# Instalar apenas dependências de produção (sem TensorFlow)
-COPY requirements-base.txt .
-RUN pip install --no-cache-dir -r requirements-base.txt
+# Instalar dependências de produção (com PyTorch, sem TensorFlow)
+COPY requirements-prod-ml.txt .
+RUN pip install --no-cache-dir -r requirements-prod-ml.txt
 
 # Copiar código da aplicação
 COPY . .

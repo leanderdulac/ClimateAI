@@ -1,0 +1,54 @@
+# ClimateAI Production Requirements with Essential ML
+# Production requirements including essential ML libraries (but not heavy TensorFlow)
+# Use this for production services that need PyTorch but not TensorFlow
+
+# === FRAMEWORK WEB ===
+fastapi==0.115.0
+uvicorn[standard]==0.32.0
+python-multipart==0.0.20
+
+# === CONFIGURAÇÃO E VALIDAÇÃO ===
+pydantic==2.9.2
+pydantic-settings==2.6.0
+python-dotenv==1.0.1
+
+# === BANCO DE DADOS ===
+sqlalchemy==2.0.36
+psycopg2-binary==2.9.10
+aiosqlite==0.21.0
+alembic==1.13.3
+
+# === CACHE ===
+redis==5.2.0
+
+# === APIs EXTERNAS ===
+requests==2.32.3
+requests-cache
+geopy==2.4.1
+pycep-correios==5.1.0
+openmeteo-requests
+retry-requests
+
+# === AUTENTICAÇÃO E SEGURANÇA ===
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# === UTILITÁRIOS ===
+pytz==2024.2
+google-generativeai>=0.4.0
+
+# === DADOS E ML ESSENCIAIS (PRODUÇÃO) ===
+pandas==2.2.3
+numpy>=1.26.0,<2.1.0
+scikit-learn==1.5.2
+scipy>=1.11.0,<1.14.0
+statsmodels>=0.14.0
+torch==2.1.0  # PyTorch for LSTM attention mechanisms
+python-json-logger==2.0.7  # For structured JSON logging
+# NOTA: TensorFlow NÃO incluído em produção (~500MB)
+
+# ===== TAMANHO COMPARATIVO =====
+# requirements-base.txt:     ~200MB
+# requirements-prod-ml.txt:  ~700MB (PyTorch ~500MB)
+# requirements-ml.txt:       ~1200MB (com TensorFlow)
+# NOTA: Este arquivo deve ser usado para produção quando funcionalidades ML são necessárias
