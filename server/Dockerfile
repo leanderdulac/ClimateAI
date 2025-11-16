@@ -1,12 +1,11 @@
-FROM python:3.11-slim as base
+# Use PyTorch base image which is pre-installed with PyTorch
+FROM pytorch/pytorch:2.0.1-cpu as base
 
 WORKDIR /app
 
-# Instalar dependências de sistema necessárias
+# Install system dependencies needed for the application
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
-    g++ \
-    build-essential \
     postgresql-client \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
@@ -14,13 +13,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # ===== PRODUCTION STAGE =====
 FROM base as production
 
-# Instalar dependências de produção (com PyTorch CPU-only, sem TensorFlow)
+# PyTorch is already available from base image, install remaining dependencies
 COPY requirements-prod-ml.txt .
-# Install PyTorch first separately to handle potential build issues
-RUN pip install --no-cache-dir --timeout 1800 --retries 5 --prefer-binary \
-    --index-url https://download.pytorch.org/whl/cpu 'torch==2.0.1+cpu' --find-links https://download.pytorch.org/whl/torch_stable.html && \
-    # Install remaining dependencies
-    pip install --no-cache-dir --timeout 1800 --retries 5 -r requirements-prod-ml.txt
+# Remove torch from requirements since it's already in base image
+RUN grep -v '^torch' requirements-prod-ml.txt > requirements-prod-ml-no-torch.txt && \
+    pip install --no-cache-dir --timeout 1800 --retries 5 -r requirements-prod-ml-no-torch.txt
 
 # Copiar código da aplicação
 COPY . .
@@ -38,7 +35,14 @@ USER appuser
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
 
 # ===== DEVELOPMENT STAGE =====
-FROM base as development
+FROM pytorch/pytorch:2.0.1-cpu as development
+
+# Install system dependencies needed for development
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    postgresql-client \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
 # Instalar dependências de desenvolvimento (com TensorFlow)
 COPY requirements-base.txt .
