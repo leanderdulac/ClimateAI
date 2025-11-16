@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     g++ \
     build-essential \
     postgresql-client \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # ===== PRODUCTION STAGE =====
@@ -15,10 +16,10 @@ FROM base as production
 
 # Instalar dependências de produção (com PyTorch CPU-only, sem TensorFlow)
 COPY requirements-prod-ml.txt .
-# Install PyTorch with the most reliable approach for CI/CD
-RUN pip install --no-cache-dir --timeout 1200 --retries 3 --index-url https://download.pytorch.org/whl/cpu 'torch==2.0.0+cpu' && \
-    # Then install other requirements with timeout
-    pip install --no-cache-dir --timeout 1200 --retries 3 -r requirements-prod-ml.txt
+# Install PyTorch with wheel URL for maximum reliability in CI/CD
+RUN pip install --no-cache-dir --timeout 1800 --retries 5 --prefer-binary \
+    'torch==2.0.0+cpu' --index-url https://download.pytorch.org/whl/cpu && \
+    pip install --no-cache-dir --timeout 1800 --retries 5 -r requirements-prod-ml.txt
 
 # Copiar código da aplicação
 COPY . .
