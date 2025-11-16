@@ -56,7 +56,7 @@ jobs:
         cd server
         python -m pip install --upgrade pip
         # Install PyTorch with maximum reliability settings in CI environment
-        pip install --timeout 1800 --retries 5 --prefer-binary --index-url https://download.pytorch.org/whl/cpu 'torch==2.0.1+cpu' --find-links https://download.pytorch.org/whl/torch_stable.html --no-build-isolation
+        pip install --timeout 1800 --retries 5 --prefer-binary --index-url https://download.pytorch.org/whl/cpu 'torch==2.1.2+cpu' --find-links https://download.pytorch.org/whl/torch_stable.html --no-build-isolation
         pip install --timeout 1800 --retries 5 --no-build-isolation -r requirements-prod-ml.txt
 
     - name: Run security scan
@@ -210,7 +210,7 @@ jobs:
       run: |
         cd server
         # Install PyTorch with maximum reliability settings in CI environment
-        pip install --timeout 1800 --retries 5 --prefer-binary --index-url https://download.pytorch.org/whl/cpu 'torch==2.0.1+cpu' --find-links https://download.pytorch.org/whl/torch_stable.html --no-build-isolation
+        pip install --timeout 1800 --retries 5 --prefer-binary --index-url https://download.pytorch.org/whl/cpu 'torch==2.1.2+cpu' --find-links https://download.pytorch.org/whl/torch_stable.html --no-build-isolation
         pip install --timeout 1800 --retries 5 --no-build-isolation -r requirements-prod-ml.txt
 
     - name: Start services
@@ -329,7 +329,7 @@ jobs:
       run: |
         cd server
         # Install PyTorch with maximum reliability settings in CI environment
-        pip install --timeout 1800 --retries 5 --prefer-binary --index-url https://download.pytorch.org/whl/cpu 'torch==2.0.1+cpu' --find-links https://download.pytorch.org/whl/torch_stable.html --no-build-isolation
+        pip install --timeout 1800 --retries 5 --prefer-binary --index-url https://download.pytorch.org/whl/cpu 'torch==2.1.2+cpu' --find-links https://download.pytorch.org/whl/torch_stable.html --no-build-isolation
         pip install --timeout 1800 --retries 5 --no-build-isolation -r requirements-prod-ml.txt
         python -c "from main import app; print('API docs generated')"
 

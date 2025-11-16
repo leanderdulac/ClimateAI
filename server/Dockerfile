@@ -1,5 +1,5 @@
 # Use PyTorch base image which is pre-installed with PyTorch
-FROM pytorch/pytorch:2.0.1-cpu as base
+FROM pytorch/pytorch:2.1.2-cpu as base
 
 WORKDIR /app
 
@@ -35,7 +35,7 @@ USER appuser
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
 
 # ===== DEVELOPMENT STAGE =====
-FROM pytorch/pytorch:2.0.1-cpu as development
+FROM pytorch/pytorch:2.1.2-cpu as development
 
 # Install system dependencies needed for development
 RUN apt-get update && apt-get install -y --no-install-recommends \
