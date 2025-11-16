@@ -9,7 +9,7 @@ import { TokenWalletMonitor } from "@/components/TokenWalletMonitor";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { LocationProvider } from "@/lib/LocationContext";
 import { PeriodProvider, usePeriod } from "@/lib/PeriodContext";
-import { Globe, TrendingUp, DollarSign, Zap, Cloud } from "lucide-react";
+import { Globe, TrendingUp, DollarSign, Zap, Cloud, AlertTriangle, Thermometer, Sun } from "lucide-react";
 
 function PeriodButtons() {
   const { selectedPeriod, setSelectedPeriod } = usePeriod();
@@ -168,9 +168,85 @@ export function IndexPage() {
             <SmartContractMonitor />
           </div>
 
-          {/* Token Wallet Monitor Section */}
-          <div className="mb-12">
-            <TokenWalletMonitor />
+          {/* Tokenization Section */}
+          <div className="mb-12" id="tokenization-section">
+            <div className="flex items-center gap-3 mb-8">
+              <Zap className="h-8 w-8 text-yellow-600" />
+              <h2 className="text-3xl font-bold text-gray-800">Tokenização</h2>
+              <Button
+                variant="outline"
+                className="ml-auto"
+                onClick={() => window.location.href = '/tokenization'}
+              >
+                Ver Tudo
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+              {/* Token Stats Cards */}
+              <Card className="border-0 shadow-lg bg-gradient-to-br from-yellow-50 to-orange-50">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Zap className="h-6 w-6 text-yellow-600" />
+                    <h3 className="font-semibold text-gray-800">Eventos Tokenizados</h3>
+                  </div>
+                  <div className="text-2xl font-bold text-gray-800">89</div>
+                  <div className="text-sm text-gray-600">Tokens criados este mês</div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-cyan-50">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <DollarSign className="h-6 w-6 text-blue-600" />
+                    <h3 className="font-semibold text-gray-800">Volume Tokenizado</h3>
+                  </div>
+                  <div className="text-2xl font-bold text-gray-800">R$ 2.4M</div>
+                  <div className="text-sm text-gray-600">Valor total de tokens</div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-emerald-50">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <TrendingUp className="h-6 w-6 text-green-600" />
+                    <h3 className="font-semibold text-gray-800">Carteiras Ativas</h3>
+                  </div>
+                  <div className="text-2xl font-bold text-gray-800">156</div>
+                  <div className="text-sm text-gray-600">Portfólios monitorados</div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <TokenWalletMonitor />
+              <div>
+                <h3 className="text-lg font-semibold mb-4">Eventos Recentes</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 text-red-600" />
+                      <span className="font-medium">Enchente - SP</span>
+                    </div>
+                    <span className="text-sm text-red-600">R$ 150K</span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Thermometer className="h-4 w-4 text-blue-600" />
+                      <span className="font-medium">Onda Calor - RJ</span>
+                    </div>
+                    <span className="text-sm text-blue-600">R$ 200K</span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Sun className="h-4 w-4 text-yellow-600" />
+                      <span className="font-medium">Seca - MG</span>
+                    </div>
+                    <span className="text-sm text-yellow-600">R$ 180K</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* CTA Section */}
