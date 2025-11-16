@@ -55,11 +55,9 @@ jobs:
       run: |
         cd server
         python -m pip install --upgrade pip
-        # Install PyTorch separately with CPU index URL to ensure compatibility
-        pip install --timeout 300 torch --index-url https://download.pytorch.org/whl/cpu
-        # Create a temporary requirements file without torch to avoid conflicts
-        grep -v '^torch' requirements-prod-ml.txt > requirements-prod-ml-no-torch.txt
-        pip install --timeout 300 -r requirements-prod-ml-no-torch.txt
+        # Install PyTorch with CPU index URL in a single reliable command
+        pip install --timeout 600 --index-url https://download.pytorch.org/whl/cpu torch==2.1.0
+        pip install --timeout 600 -r requirements-prod-ml.txt
 
     - name: Run security scan
       run: |
@@ -211,11 +209,9 @@ jobs:
     - name: Install dependencies
       run: |
         cd server
-        # Install PyTorch separately with CPU index URL to ensure compatibility
-        pip install --timeout 300 torch --index-url https://download.pytorch.org/whl/cpu
-        # Create a temporary requirements file without torch to avoid conflicts
-        grep -v '^torch' requirements-prod-ml.txt > requirements-prod-ml-no-torch.txt
-        pip install --timeout 300 -r requirements-prod-ml-no-torch.txt
+        # Install PyTorch with CPU index URL in a single reliable command
+        pip install --timeout 600 --index-url https://download.pytorch.org/whl/cpu torch==2.1.0
+        pip install --timeout 600 -r requirements-prod-ml.txt
 
     - name: Start services
       run: |
@@ -332,11 +328,9 @@ jobs:
     - name: Generate API docs
       run: |
         cd server
-        # Install PyTorch separately with CPU index URL to ensure compatibility
-        pip install --timeout 300 torch --index-url https://download.pytorch.org/whl/cpu
-        # Create a temporary requirements file without torch to avoid conflicts
-        grep -v '^torch' requirements-prod-ml.txt > requirements-prod-ml-no-torch.txt
-        pip install --timeout 300 -r requirements-prod-ml-no-torch.txt
+        # Install PyTorch with CPU index URL in a single reliable command
+        pip install --timeout 600 --index-url https://download.pytorch.org/whl/cpu torch==2.1.0
+        pip install --timeout 600 -r requirements-prod-ml.txt
         python -c "from main import app; print('API docs generated')"
 
     - name: Upload docs
