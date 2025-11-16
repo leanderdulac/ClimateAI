@@ -1,0 +1,7 @@
+# Requirements for CI/CD environment
+# Includes CPU-only PyTorch for CI/CD compatibility
+
+-r requirements-prod-ml.txt
+
+# This file ensures PyTorch is installed with proper CPU-only index during CI/CD
+# Install with: pip install torch --index-url https://download.pytorch.org/whl/cpu --no-deps --force-reinstall

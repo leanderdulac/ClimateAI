@@ -43,7 +43,8 @@ numpy>=1.26.0,<2.1.0
 scikit-learn==1.5.2
 scipy>=1.11.0,<1.14.0
 statsmodels>=0.14.0
-torch==2.1.0  # PyTorch for LSTM attention mechanisms (CPU-only specified in Dockerfile/installation)
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.1.0+cpu  # PyTorch CPU-only for LSTM attention mechanisms
 python-json-logger==2.0.7  # For structured JSON logging
 # NOTA: TensorFlow NÃO incluído em produção (~500MB)
 

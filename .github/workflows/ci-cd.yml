@@ -55,7 +55,7 @@ jobs:
       run: |
         cd server
         python -m pip install --upgrade pip
-        pip install torch==2.1.0 --index-url https://download.pytorch.org/whl/cpu -r requirements-prod-ml.txt
+        pip install -r requirements-prod-ml.txt
 
     - name: Run security scan
       run: |
@@ -207,7 +207,7 @@ jobs:
     - name: Install dependencies
       run: |
         cd server
-        pip install torch==2.1.0 --index-url https://download.pytorch.org/whl/cpu -r requirements-prod-ml.txt
+        pip install -r requirements-prod-ml.txt
 
     - name: Start services
       run: |
@@ -324,7 +324,7 @@ jobs:
     - name: Generate API docs
       run: |
         cd server
-        pip install torch==2.1.0 --index-url https://download.pytorch.org/whl/cpu -r requirements-prod-ml.txt
+        pip install -r requirements-prod-ml.txt
         python -c "from main import app; print('API docs generated')"
 
     - name: Upload docs
