@@ -57,9 +57,9 @@ jobs:
         python -m pip install --upgrade pip
         # Install PyTorch separately with CPU index URL to ensure compatibility
         pip install torch --index-url https://download.pytorch.org/whl/cpu
-        # Then install requirements excluding PyTorch to avoid conflicts
-        sed -i '/torch==.*/d' requirements-prod-ml.txt
-        pip install -r requirements-prod-ml.txt
+        # Create a temporary requirements file without torch to avoid conflicts
+        grep -v '^torch' requirements-prod-ml.txt > requirements-prod-ml-no-torch.txt
+        pip install -r requirements-prod-ml-no-torch.txt
 
     - name: Run security scan
       run: |
@@ -213,9 +213,9 @@ jobs:
         cd server
         # Install PyTorch separately with CPU index URL to ensure compatibility
         pip install torch --index-url https://download.pytorch.org/whl/cpu
-        # Then install requirements excluding PyTorch to avoid conflicts
-        sed -i '/torch==.*/d' requirements-prod-ml.txt
-        pip install -r requirements-prod-ml.txt
+        # Create a temporary requirements file without torch to avoid conflicts
+        grep -v '^torch' requirements-prod-ml.txt > requirements-prod-ml-no-torch.txt
+        pip install -r requirements-prod-ml-no-torch.txt
 
     - name: Start services
       run: |
@@ -334,9 +334,9 @@ jobs:
         cd server
         # Install PyTorch separately with CPU index URL to ensure compatibility
         pip install torch --index-url https://download.pytorch.org/whl/cpu
-        # Then install requirements excluding PyTorch to avoid conflicts
-        sed -i '/torch==.*/d' requirements-prod-ml.txt
-        pip install -r requirements-prod-ml.txt
+        # Create a temporary requirements file without torch to avoid conflicts
+        grep -v '^torch' requirements-prod-ml.txt > requirements-prod-ml-no-torch.txt
+        pip install -r requirements-prod-ml-no-torch.txt
         python -c "from main import app; print('API docs generated')"
 
     - name: Upload docs
