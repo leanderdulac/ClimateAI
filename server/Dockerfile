@@ -15,8 +15,8 @@ FROM base as production
 
 # Instalar dependências de produção (com PyTorch CPU-only, sem TensorFlow)
 COPY requirements-prod-ml.txt .
-# Install PyTorch first with extended timeout and proper index
-RUN pip install --no-cache-dir --timeout 1200 --retries 3 --index-url https://download.pytorch.org/whl/cpu 'torch==2.1.0' && \
+# Install PyTorch with the most reliable approach for CI/CD
+RUN pip install --no-cache-dir --timeout 1200 --retries 3 --index-url https://download.pytorch.org/whl/cpu 'torch==2.0.0+cpu' && \
     # Then install other requirements with timeout
     pip install --no-cache-dir --timeout 1200 --retries 3 -r requirements-prod-ml.txt
 
