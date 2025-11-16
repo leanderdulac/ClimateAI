@@ -55,7 +55,10 @@ jobs:
       run: |
         cd server
         python -m pip install --upgrade pip
+        # Install PyTorch separately with CPU index URL to ensure compatibility
         pip install torch --index-url https://download.pytorch.org/whl/cpu
+        # Then install requirements excluding PyTorch to avoid conflicts
+        sed -i '/torch==.*/d' requirements-prod-ml.txt
         pip install -r requirements-prod-ml.txt
 
     - name: Run security scan
@@ -208,7 +211,10 @@ jobs:
     - name: Install dependencies
       run: |
         cd server
+        # Install PyTorch separately with CPU index URL to ensure compatibility
         pip install torch --index-url https://download.pytorch.org/whl/cpu
+        # Then install requirements excluding PyTorch to avoid conflicts
+        sed -i '/torch==.*/d' requirements-prod-ml.txt
         pip install -r requirements-prod-ml.txt
 
     - name: Start services
@@ -326,7 +332,10 @@ jobs:
     - name: Generate API docs
       run: |
         cd server
+        # Install PyTorch separately with CPU index URL to ensure compatibility
         pip install torch --index-url https://download.pytorch.org/whl/cpu
+        # Then install requirements excluding PyTorch to avoid conflicts
+        sed -i '/torch==.*/d' requirements-prod-ml.txt
         pip install -r requirements-prod-ml.txt
         python -c "from main import app; print('API docs generated')"
 
