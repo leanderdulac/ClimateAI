@@ -127,6 +127,9 @@ from api.climate_scr import router as climate_scr_router
 from api.policy_uncertainty import router as policy_uncertainty_router
 from api.smart_exclusions import router as smart_exclusions_router
 from api.sips_performance_analytics import router as sips_performance_analytics_router
+from api.ia_analytics_agent import router as ia_analytics_agent_router
+from api.gemini_integration import router as gemini_integration_router
+from api.policy_valuation import router as policy_valuation_router
 # from api.audit import router as audit_router
 from services.ml_service import sinistrality_predictor, predict_sinistrality, train_ml_models, get_ml_model_info
 from services.external_api_service import get_weather_data, get_economic_indicators, get_commodity_prices, get_real_time_data
@@ -951,6 +954,9 @@ try:
     app.include_router(policy_uncertainty_router, prefix=f"{API_PREFIX}/policy-uncertainty", tags=["policy-uncertainty"])
     app.include_router(smart_exclusions_router, prefix=f"{API_PREFIX}/smart-exclusions", tags=["smart-exclusions"])
     app.include_router(sips_performance_analytics_router, prefix=f"{API_PREFIX}/sips-analytics", tags=["sips-analytics"])
+    app.include_router(ia_analytics_agent_router, prefix=f"{API_PREFIX}/ia-agent", tags=["ia-agent"])
+    app.include_router(gemini_integration_router, prefix=f"{API_PREFIX}/gemini", tags=["gemini"])
+    app.include_router(policy_valuation_router, prefix=f"{API_PREFIX}/policy-valuation", tags=["policy-valuation"])
     # app.include_router(audit_router, prefix=f"{API_PREFIX}/audit", tags=["audit"])
 except Exception as e:
     logger.error(f"Erro ao incluir routers: {str(e)}")

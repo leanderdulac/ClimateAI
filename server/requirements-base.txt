@@ -35,6 +35,7 @@ passlib[bcrypt]==1.7.4
 
 # === UTILITÁRIOS ===
 pytz==2024.2
+google-generativeai>=0.4.0
 
 # === DADOS (versão leve) ===
 pandas==2.2.3
