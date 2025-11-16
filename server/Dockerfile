@@ -13,10 +13,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # ===== PRODUCTION STAGE =====
 FROM base as production
 
-# PyTorch is already available from base image, install remaining dependencies
+# PyTorch is already available from base image, install remaining dependencies only
 COPY requirements-prod-ml.txt .
-# Remove torch from requirements since it's already in base image
-RUN grep -v '^torch' requirements-prod-ml.txt > requirements-prod-ml-no-torch.txt && \
+# Filter out torch from requirements since it's already in base image
+RUN grep -v '^torch==' requirements-prod-ml.txt > requirements-prod-ml-no-torch.txt && \
     pip install --no-cache-dir --timeout 1800 --retries 5 -r requirements-prod-ml-no-torch.txt
 
 # Copiar código da aplicação
