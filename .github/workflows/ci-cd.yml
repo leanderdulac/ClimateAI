@@ -55,9 +55,9 @@ jobs:
       run: |
         cd server
         python -m pip install --upgrade pip
-        # Install PyTorch with CPU index URL and extra index for reliability
-        pip install --timeout 900 --index-url https://download.pytorch.org/whl/cpu 'torch==2.1.0' --extra-index-url https://pypi.org/simple/
-        pip install --timeout 900 -r requirements-prod-ml.txt
+        # Install PyTorch with extended timeout, retries, and proper index
+        pip install --timeout 1200 --retries 3 --index-url https://download.pytorch.org/whl/cpu 'torch==2.1.0'
+        pip install --timeout 1200 --retries 3 -r requirements-prod-ml.txt
 
     - name: Run security scan
       run: |
@@ -209,9 +209,9 @@ jobs:
     - name: Install dependencies
       run: |
         cd server
-        # Install PyTorch with CPU index URL and extra index for reliability
-        pip install --timeout 900 --index-url https://download.pytorch.org/whl/cpu 'torch==2.1.0' --extra-index-url https://pypi.org/simple/
-        pip install --timeout 900 -r requirements-prod-ml.txt
+        # Install PyTorch with extended timeout, retries, and proper index
+        pip install --timeout 1200 --retries 3 --index-url https://download.pytorch.org/whl/cpu 'torch==2.1.0'
+        pip install --timeout 1200 --retries 3 -r requirements-prod-ml.txt
 
     - name: Start services
       run: |
@@ -328,9 +328,9 @@ jobs:
     - name: Generate API docs
       run: |
         cd server
-        # Install PyTorch with CPU index URL and extra index for reliability
-        pip install --timeout 900 --index-url https://download.pytorch.org/whl/cpu 'torch==2.1.0' --extra-index-url https://pypi.org/simple/
-        pip install --timeout 900 -r requirements-prod-ml.txt
+        # Install PyTorch with extended timeout, retries, and proper index
+        pip install --timeout 1200 --retries 3 --index-url https://download.pytorch.org/whl/cpu 'torch==2.1.0'
+        pip install --timeout 1200 --retries 3 -r requirements-prod-ml.txt
         python -c "from main import app; print('API docs generated')"
 
     - name: Upload docs
