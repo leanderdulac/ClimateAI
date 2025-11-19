@@ -44,7 +44,7 @@ numpy>=1.26.0,<2.1.0
 scikit-learn==1.5.2
 scipy>=1.11.0,<1.14.0
 statsmodels>=0.14.0
-torch==2.2.2  # PyTorch for LSTM attention mechanisms - CPU version installed via base image in Docker, separately in CI/CD
+torch==2.1.1  # PyTorch for LSTM attention mechanisms - CPU version installed via base image in Docker, separately in CI/CD
 python-json-logger==2.0.7  # For structured JSON logging
 # NOTA: TensorFlow NÃO incluído em produção (~500MB)
 

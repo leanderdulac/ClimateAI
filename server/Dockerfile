@@ -1,5 +1,5 @@
-# Use a slim Python image for a smaller footprint
-FROM python:3.10-slim as base
+# Use PyTorch base image to ensure compatibility
+FROM pytorch/pytorch:2.1.1-cpu as base
 
 WORKDIR /app
 
@@ -15,7 +15,8 @@ FROM base as production
 
 # Install all production dependencies, including torch
 COPY requirements-prod-ml.txt .
-RUN pip install --no-cache-dir --timeout 1800 --retries 5 -r requirements-prod-ml.txt
+RUN pip install --no-cache-dir --timeout 1800 --retries 5 --prefer-binary --index-url https://download.pytorch.org/whl/cpu 'torch==2.1.1+cpu' --find-links https://download.pytorch.org/whl/torch_stable.html --no-build-isolation --force-reinstall
+RUN pip install --no-cache-dir --timeout 1800 --retries 5 --no-build-isolation -r requirements-prod-ml.txt
 
 # Copiar código da aplicação
 COPY . .

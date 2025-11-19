@@ -54,7 +54,7 @@ jobs:
     - name: Install dependencies
       run: |
         cd server
-        pip install --timeout 1800 --retries 5 --prefer-binary --index-url https://download.pytorch.org/whl/cpu 'torch==2.2.2+cpu' --find-links https://download.pytorch.org/whl/torch_stable.html --no-build-isolation --force-reinstall
+        pip install --timeout 1800 --retries 5 --prefer-binary --index-url https://download.pytorch.org/whl/cpu 'torch==2.1.1+cpu' --find-links https://download.pytorch.org/whl/torch_stable.html --no-build-isolation --force-reinstall
         pip install --timeout 1800 --retries 5 --no-build-isolation -r requirements-prod-ml.txt
 
     - name: Run pip-audit security scan
