@@ -124,7 +124,7 @@ export function AuthPage() {
                         placeholder="seu@email.com"
                         className="pl-10"
                         value={loginData.email}
-                        onChange={(e) => setLoginData({...loginData, email: e.target.value})}
+                        onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
                         required
                       />
                     </div>
@@ -140,7 +140,7 @@ export function AuthPage() {
                         placeholder="••••••••"
                         className="pl-10 pr-10"
                         value={loginData.password}
-                        onChange={(e) => setLoginData({...loginData, password: e.target.value})}
+                        onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
                         required
                       />
                       <button
@@ -197,7 +197,7 @@ export function AuthPage() {
                         placeholder="Seu nome completo"
                         className="pl-10"
                         value={registerData.name}
-                        onChange={(e) => setRegisterData({...registerData, name: e.target.value})}
+                        onChange={(e) => setRegisterData({ ...registerData, name: e.target.value })}
                         required
                       />
                     </div>
@@ -213,7 +213,7 @@ export function AuthPage() {
                         placeholder="seu@email.com"
                         className="pl-10"
                         value={registerData.email}
-                        onChange={(e) => setRegisterData({...registerData, email: e.target.value})}
+                        onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
                         required
                       />
                     </div>
@@ -226,7 +226,7 @@ export function AuthPage() {
                       type="text"
                       placeholder="Nome da empresa"
                       value={registerData.company}
-                      onChange={(e) => setRegisterData({...registerData, company: e.target.value})}
+                      onChange={(e) => setRegisterData({ ...registerData, company: e.target.value })}
                     />
                   </div>
 
@@ -240,7 +240,7 @@ export function AuthPage() {
                         placeholder="••••••••"
                         className="pl-10 pr-10"
                         value={registerData.password}
-                        onChange={(e) => setRegisterData({...registerData, password: e.target.value})}
+                        onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
                         required
                       />
                       <button
@@ -263,7 +263,7 @@ export function AuthPage() {
                         placeholder="••••••••"
                         className="pl-10 pr-10"
                         value={registerData.confirmPassword}
-                        onChange={(e) => setRegisterData({...registerData, confirmPassword: e.target.value})}
+                        onChange={(e) => setRegisterData({ ...registerData, confirmPassword: e.target.value })}
                         required
                       />
                     </div>
@@ -275,7 +275,7 @@ export function AuthPage() {
                       id="accept-terms"
                       className="mt-1 rounded"
                       checked={registerData.acceptTerms}
-                      onChange={(e) => setRegisterData({...registerData, acceptTerms: e.target.checked})}
+                      onChange={(e) => setRegisterData({ ...registerData, acceptTerms: e.target.checked })}
                       required
                     />
                     <label htmlFor="accept-terms" className="text-sm text-gray-600">

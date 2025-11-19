@@ -115,8 +115,8 @@ const mockLocationData = (lat: number, lon: number): LocationData => ({
 class EmbrapaApiService {
   private isApiAvailable = true;
   private useMockData = import.meta.env.VITE_USE_MOCK_DATA === 'true' ||
-                        !import.meta.env.VITE_API_BASE_URL ||
-                        import.meta.env.VITE_API_BASE_URL === '';
+    !import.meta.env.VITE_API_BASE_URL ||
+    import.meta.env.VITE_API_BASE_URL === '';
 
   // Real geocoding using Nominatim API
   private async nominatimSearch(query: string, limit: number = 10): Promise<any[]> {
@@ -676,7 +676,7 @@ class EmbrapaApiService {
       const oldAvgTemp = oldData.reduce((sum, d) => sum + (d.temperature || 0), 0) / oldData.length;
 
       const trendDirection = recentAvgTemp > oldAvgTemp + 1 ? 'increasing' :
-                           recentAvgTemp < oldAvgTemp - 1 ? 'decreasing' : 'stable';
+        recentAvgTemp < oldAvgTemp - 1 ? 'decreasing' : 'stable';
 
       // Calculate seasonal cycles (simplified)
       const seasonalCycles = [];
@@ -776,7 +776,7 @@ class EmbrapaApiService {
         // Adjust probabilities based on seasonal patterns and trends
         const seasonalMultiplier = this.getSeasonalMultiplier(forecastDate.getMonth());
         const trendMultiplier = historicalAnalysis.riskMetrics.trendDirection === 'increasing' ? 1.2 :
-                               historicalAnalysis.riskMetrics.trendDirection === 'decreasing' ? 0.8 : 1.0;
+          historicalAnalysis.riskMetrics.trendDirection === 'decreasing' ? 0.8 : 1.0;
 
         const adjustedProbabilities = {
           drought: Math.min(historicalAnalysis.eventProbabilities.drought * seasonalMultiplier * trendMultiplier, 0.8),

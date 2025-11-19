@@ -231,7 +231,7 @@ export function TokenizationPage() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <History className="h-5 w-5" />
-                      Atividade Recente
+                    Atividade Recente
                   </CardTitle>
                 </CardHeader>
                 <CardContent>

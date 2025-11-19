@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
-import { PolicyCard } from "./PolicyCard";
 import { ExecutiveDashboard } from './ExecutiveDashboard';
 import { AuditDashboard } from './AuditDashboard';
 import { useLocation } from '@/lib/LocationContext';
@@ -448,13 +447,12 @@ const generatePolicySimulations = async (
 
   const simulations = [
     {
-      name: 'Essencial',
-      description: 'Cobertura básica com foco em custo-benefício.',
-      frequency: baseFrequency * 1.0,
-      severity: baseSeverity * 0.8, // 80% coverage
-      confidence: 90,
-      riskProfile: 'Baixo Custo',
-      tags: ['Econômica', 'Cobertura Parcial'],
+      name: 'Configuração Conservadora Otimizada',
+      description: 'Menor risco para o emissor com fatores dinâmicos adaptativos',
+      frequency: baseFrequency * (1.2 + historicalRiskFactor + seasonalRiskFactor),
+      severity: baseSeverity * (1.1 + regionalRiskPremium),
+      confidence: Math.min(baseConfidence + getAdaptiveConfidenceBuffer(baseConfidence, baseAssetValue, selectedLocation, selectedPeriod), 99.5),
+      riskProfile: 'Conservador Otimizado',
       dynamicFactors: {
         historicalRisk: historicalRiskFactor,
         regionalPremium: regionalRiskPremium,
@@ -462,52 +460,50 @@ const generatePolicySimulations = async (
       }
     },
     {
-      name: 'Padrão',
-      description: 'Equilíbrio ideal entre proteção e investimento.',
-      frequency: baseFrequency * 1.0,
-      severity: baseSeverity * 1.0, // 100% coverage
-      confidence: 95,
-      riskProfile: 'Equilibrado',
-      tags: ['Mais Popular', 'Cobertura Total'],
+      name: 'Configuração Equilibrada Inteligente',
+      description: 'Balanço otimizado entre risco e competitividade com ajustes dinâmicos',
+      frequency: baseFrequency * (1 + historicalRiskFactor * 0.5),
+      severity: baseSeverity * (1 + regionalRiskPremium * 0.7),
+      confidence: baseConfidence + getAdaptiveConfidenceBuffer(baseConfidence, baseAssetValue, selectedLocation, selectedPeriod) * 0.6,
+      riskProfile: 'Equilibrado Inteligente',
       dynamicFactors: {
-        historicalRisk: historicalRiskFactor,
-        regionalPremium: regionalRiskPremium,
-        seasonalAdjustment: seasonalRiskFactor
+        historicalRisk: historicalRiskFactor * 0.5,
+        regionalPremium: regionalRiskPremium * 0.7,
+        seasonalAdjustment: seasonalRiskFactor * 0.3
       }
     },
     {
-      name: 'Premium',
-      description: 'Proteção máxima com margens de segurança estendidas.',
-      frequency: baseFrequency * 1.0,
-      severity: baseSeverity * 1.2, // 120% coverage (extra expenses)
-      confidence: 99,
-      riskProfile: 'Proteção Total',
-      tags: ['Alta Segurança', 'Cobertura Estendida'],
+      name: 'Configuração Agressiva Controlada',
+      description: 'Competitiva com limites de risco inteligentes',
+      frequency: baseFrequency * Math.max(0.7, (0.8 - historicalRiskFactor * 0.3)),
+      severity: baseSeverity * Math.max(0.8, (0.9 - regionalRiskPremium * 0.4)),
+      confidence: Math.max(baseConfidence - 3, 80),
+      riskProfile: 'Agressiva Controlada',
       dynamicFactors: {
-        historicalRisk: historicalRiskFactor,
-        regionalPremium: regionalRiskPremium,
-        seasonalAdjustment: seasonalRiskFactor
+        historicalRisk: -historicalRiskFactor * 0.3,
+        regionalPremium: -regionalRiskPremium * 0.4,
+        seasonalAdjustment: -seasonalRiskFactor * 0.2
       }
     },
     {
-      name: 'Personalizada (Alto Risco)',
-      description: 'Para cenários de alta volatilidade climática.',
-      frequency: baseFrequency * 1.2, // Assume worse conditions
-      severity: baseSeverity * 1.0,
-      confidence: 98,
-      riskProfile: 'Alto Risco',
-      tags: ['Específica', 'Alta Volatilidade'],
+      name: 'Configuração Premium Avançada',
+      description: 'Foco em clientes de alto valor com análise de risco sofisticada',
+      frequency: baseFrequency * (0.85 + historicalRiskFactor * 0.3),
+      severity: baseSeverity * (0.9 + regionalRiskPremium * 0.5),
+      confidence: baseConfidence + getAdaptiveConfidenceBuffer(baseConfidence, baseAssetValue * 2, selectedLocation, selectedPeriod),
+      riskProfile: 'Premium Avançado',
+      assetMultiplier: 2.0,
       dynamicFactors: {
-        historicalRisk: historicalRiskFactor * 1.5,
-        regionalPremium: regionalRiskPremium * 1.2,
-        seasonalAdjustment: seasonalRiskFactor * 1.2
+        historicalRisk: historicalRiskFactor * 0.3,
+        regionalPremium: regionalRiskPremium * 0.5,
+        seasonalAdjustment: seasonalRiskFactor * 0.4
       }
     }
   ];
 
   const results = await Promise.all(
     simulations.map(async (sim) => {
-      const assetValue = baseAssetValue; // Keep asset value constant for comparison
+      const assetValue = sim.assetMultiplier ? baseAssetValue * sim.assetMultiplier : baseAssetValue;
 
       try {
         const premiumResult = await calculateAdvancedPremium(
@@ -537,23 +533,48 @@ const generatePolicySimulations = async (
           riskAdjustedReturn: analysis.insurerAnalysis.riskAdjustedReturn,
           customerCostPercentage: analysis.customerAnalysis.premiumToAssetRatio,
           isViable: analysis.overallAssessment.isViable,
-          status: analysis.overallAssessment.status,
-          recommendation: analysis.overallAssessment.recommendation,
-          roi: analysis.customerAnalysis.costBenefitRatio,
-          riskScore: Math.min(10, Math.max(1, (sim.frequency / 5) + (sim.confidence / 20))) // Simple risk score 1-10
+          recommendation: analysis.overallAssessment.recommendation
         };
       } catch (error) {
-        // Fallback (simplified for brevity, similar logic to main catch)
-        return { ...sim, status: 'rejected', premium: 0, metrics: { profitMargin: 0, roi: 0, riskScore: 0 } };
+        // Fallback calculation
+        const expectedLoss = (sim.frequency / 100) * Math.min(sim.severity, assetValue);
+        const riskFactor = 1 + Math.log10(assetValue) / 20;
+        const fallbackPremium = expectedLoss * riskFactor * (1 + (100 - sim.confidence) / 100);
+
+        const analysis = analyzeFinancialViability(
+          fallbackPremium,
+          fallbackPremium * 0.35,
+          fallbackPremium * 0.15,
+          assetValue,
+          sim.frequency,
+          sim.severity,
+          coveragePeriod
+        );
+
+        return {
+          ...sim,
+          assetValue,
+          premium: fallbackPremium,
+          expectedLoss: analysis.annualExpectedLoss,
+          profitMargin: analysis.insurerAnalysis.profitMargin,
+          profitMarginPercentage: analysis.insurerAnalysis.profitMarginPercentage,
+          riskAdjustedReturn: analysis.insurerAnalysis.riskAdjustedReturn,
+          customerCostPercentage: analysis.customerAnalysis.premiumToAssetRatio,
+          isViable: analysis.overallAssessment.isViable,
+          recommendation: analysis.overallAssessment.recommendation
+        };
       }
     })
   );
 
-  // Sort: Recommended first, then Acceptable, then Caution, then Rejected
-  const statusOrder = { 'recommended': 0, 'acceptable': 1, 'caution': 2, 'rejected': 3 };
-
-  return results.sort((a: any, b: any) => {
-    return statusOrder[a.status as keyof typeof statusOrder] - statusOrder[b.status as keyof typeof statusOrder];
+  // Rank simulations by profitability and viability
+  return results.sort((a, b) => {
+    // Primary sort: viability (viable first)
+    if (a.isViable !== b.isViable) {
+      return a.isViable ? -1 : 1;
+    }
+    // Secondary sort: profit margin percentage
+    return b.profitMarginPercentage - a.profitMarginPercentage;
   });
 };
 
@@ -1572,283 +1593,301 @@ export function PricingSimulator() {
                           <span className="font-medium text-red-600">
                             R$ {sim.expectedLoss.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                           </span>
-                          {/* Policy Simulations Grid */}
-                          {policySimulations.length > 0 && (
-                            <div className="space-y-6">
-                              <h3 className="text-lg font-semibold text-gray-900">Opções de Apólice Recomendadas</h3>
-                              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
-                                {policySimulations.map((sim, index) => (
-                                  <PolicyCard
-                                    key={index}
-                                    title={sim.name}
-                                    description={sim.description}
-                                    premium={sim.premium}
-                                    coverage={sim.severity}
-                                    status={sim.status}
-                                    metrics={{
-                                      profitMargin: sim.profitMarginPercentage,
-                                      roi: sim.roi,
-                                      riskScore: sim.riskScore
-                                    }}
-                                    tags={sim.tags}
-                                    onSelect={() => {
-                                      setPremium(sim.premium);
-                                      setFrequency(sim.frequency);
-                                      setSeverity(sim.severity);
-                                      setConfidence(sim.confidence);
-                                      setAdvancedResults({
-                                        premio_total: sim.premium,
-                                        risk_metrics: { var_95: 0 } // Placeholder update
-                                      });
-                                      // Scroll to top
-                                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                                    }}
-                                  />
-                                ))}
-                              </div>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-gray-600">Lucro Anual Médio:</span>
+                          <span className={`font-medium ${sim.profitMargin > 0 ? 'text-green-600' : 'text-red-600'
+                            }`}>
+                            R$ {sim.profitMargin.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-gray-600">Retorno vs Risco:</span>
+                          <span className="font-medium text-blue-600">
+                            {sim.riskAdjustedReturn.toFixed(2)}x
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-gray-600">Custo para Cliente:</span>
+                          <span className={`font-medium ${sim.customerCostPercentage < 5 ? 'text-green-600' : 'text-orange-600'
+                            }`}>
+                            {sim.customerCostPercentage.toFixed(1)}% do bem
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Recomendação */}
+                      <div className="mt-4 pt-3 border-t border-gray-200">
+                        <div className="flex items-start gap-2">
+                          <div className={`rounded-full p-1 ${sim.isViable ? 'bg-green-100' : 'bg-red-100'
+                            }`}>
+                            {sim.isViable ? (
+                              <TrendingUp className="h-3 w-3 text-green-600" />
+                            ) : (
+                              <AlertTriangle className="h-3 w-3 text-red-600" />
+                            )}
+                          </div>
+                          <div>
+                            <div className="text-xs font-medium text-gray-700 mb-1">
+                              {sim.isViable ? 'Vantagens:' : 'Desvantagens:'}
                             </div>
-                          )}   {/* Resumo Executivo */}
-                          <div className="animate-slide-up rounded-lg bg-gradient-to-r from-gray-50 to-gray-100 p-6">
-                            <div className="space-y-4">
-                              <div className="flex items-center gap-2">
-                                <div className="rounded-full bg-gray-100 p-2">
-                                  <Activity className="h-4 w-4 text-gray-600" />
-                                </div>
-                                <h3 className="font-medium text-gray-900">Resumo Executivo</h3>
-                              </div>
-
-                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div className="bg-white rounded-lg p-4">
-                                  <div className="text-sm font-medium text-gray-700 mb-2">🎯 Melhor Opção</div>
-                                  <div className="text-lg font-bold text-green-600">
-                                    {policySimulations[0]?.name || 'N/A'}
-                                  </div>
-                                  <div className="text-xs text-gray-500 mt-1">
-                                    Maior viabilidade e lucratividade
-                                  </div>
-                                </div>
-
-                                <div className="bg-white rounded-lg p-4">
-                                  <div className="text-sm font-medium text-gray-700 mb-2">💰 Maior Margem</div>
-                                  <div className="text-lg font-bold text-blue-600">
-                                    {Math.max(...policySimulations.map(s => s.profitMarginPercentage)).toFixed(1)}%
-                                  </div>
-                                  <div className="text-xs text-gray-500 mt-1">
-                                    Melhor retorno financeiro
-                                  </div>
-                                </div>
-
-                                <div className="bg-white rounded-lg p-4">
-                                  <div className="text-sm font-medium text-gray-700 mb-2">📊 Risco Otimizado</div>
-                                  <div className="text-lg font-bold text-purple-600">
-                                    {Math.max(...policySimulations.map(s => s.riskAdjustedReturn)).toFixed(2)}x
-                                  </div>
-                                  <div className="text-xs text-gray-500 mt-1">
-                                    Melhor relação risco-retorno
-                                  </div>
-                                </div>
-                              </div>
+                            <div className="text-xs text-gray-600">
+                              {sim.isViable ? (
+                                index === 0 ? (
+                                  'Melhor equilíbrio entre lucratividade e aceitação do mercado'
+                                ) : (
+                                  'Configuração viável com boa margem de segurança'
+                                )
+                              ) : (
+                                'Requer revisão dos parâmetros ou não é adequada para este perfil de risco'
+                              )}
                             </div>
                           </div>
                         </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Resumo Executivo */}
+                <div className="animate-slide-up rounded-lg bg-gradient-to-r from-gray-50 to-gray-100 p-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <div className="rounded-full bg-gray-100 p-2">
+                        <Activity className="h-4 w-4 text-gray-600" />
+                      </div>
+                      <h3 className="font-medium text-gray-900">Resumo Executivo</h3>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="bg-white rounded-lg p-4">
+                        <div className="text-sm font-medium text-gray-700 mb-2">🎯 Melhor Opção</div>
+                        <div className="text-lg font-bold text-green-600">
+                          {policySimulations[0]?.name || 'N/A'}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          Maior viabilidade e lucratividade
+                        </div>
+                      </div>
+
+                      <div className="bg-white rounded-lg p-4">
+                        <div className="text-sm font-medium text-gray-700 mb-2">💰 Maior Margem</div>
+                        <div className="text-lg font-bold text-blue-600">
+                          {Math.max(...policySimulations.map(s => s.profitMarginPercentage)).toFixed(1)}%
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          Melhor retorno financeiro
+                        </div>
+                      </div>
+
+                      <div className="bg-white rounded-lg p-4">
+                        <div className="text-sm font-medium text-gray-700 mb-2">📊 Risco Otimizado</div>
+                        <div className="text-lg font-bold text-purple-600">
+                          {Math.max(...policySimulations.map(s => s.riskAdjustedReturn)).toFixed(2)}x
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          Melhor relação risco-retorno
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             )}
 
-                        {/* Recomendações Inteligentes */}
-                        {policySimulations.length > 0 && financialAnalysis && (
-                          <div className="mt-10 space-y-6">
-                            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-200">
-                              <h3 className="text-lg font-semibold text-blue-800 mb-4 flex items-center">
-                                <TrendingUp className="h-5 w-5 mr-2" />
-                                Recomendações Inteligentes
-                              </h3>
+            {/* Recomendações Inteligentes */}
+            {policySimulations.length > 0 && financialAnalysis && (
+              <div className="mt-10 space-y-6">
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-200">
+                  <h3 className="text-lg font-semibold text-blue-800 mb-4 flex items-center">
+                    <TrendingUp className="h-5 w-5 mr-2" />
+                    Recomendações Inteligentes
+                  </h3>
 
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {/* Recomendação Principal */}
-                                <div className="bg-white/70 rounded-lg p-4">
-                                  <h4 className="font-medium text-gray-800 mb-2">Configuração Recomendada</h4>
-                                  <div className="text-sm text-gray-600 mb-3">
-                                    Baseado na análise de risco-retorno e viabilidade de mercado:
-                                  </div>
-                                  <div className="bg-green-100 border border-green-300 rounded p-3">
-                                    <div className="font-semibold text-green-800">
-                                      {policySimulations.find(sim => sim.isViable)?.name || 'Nenhuma configuração viável'}
-                                    </div>
-                                    <div className="text-sm text-green-700 mt-1">
-                                      Margem esperada: {policySimulations.find(sim => sim.isViable)?.profitMarginPercentage.toFixed(1) || 'N/A'}%
-                                    </div>
-                                  </div>
-                                </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Recomendação Principal */}
+                    <div className="bg-white/70 rounded-lg p-4">
+                      <h4 className="font-medium text-gray-800 mb-2">Configuração Recomendada</h4>
+                      <div className="text-sm text-gray-600 mb-3">
+                        Baseado na análise de risco-retorno e viabilidade de mercado:
+                      </div>
+                      <div className="bg-green-100 border border-green-300 rounded p-3">
+                        <div className="font-semibold text-green-800">
+                          {policySimulations.find(sim => sim.isViable)?.name || 'Nenhuma configuração viável'}
+                        </div>
+                        <div className="text-sm text-green-700 mt-1">
+                          Margem esperada: {policySimulations.find(sim => sim.isViable)?.profitMarginPercentage.toFixed(1) || 'N/A'}%
+                        </div>
+                      </div>
+                    </div>
 
-                                {/* Otimizações Sugeridas */}
-                                <div className="bg-white/70 rounded-lg p-4">
-                                  <h4 className="font-medium text-gray-800 mb-2">Oportunidades de Otimização</h4>
-                                  <div className="space-y-2">
-                                    {financialAnalysis.insurerAnalysis.riskAdjustedReturn < 2 && (
-                                      <div className="flex items-start gap-2 text-sm">
-                                        <AlertTriangle className="h-4 w-4 text-orange-500 mt-0.5" />
-                                        <span>Considere aumentar o prêmio para melhorar o retorno ajustado ao risco</span>
-                                      </div>
-                                    )}
-                                    {financialAnalysis.customerAnalysis.premiumToAssetRatio > 3 && (
-                                      <div className="flex items-start gap-2 text-sm">
-                                        <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5" />
-                                        <span>Prêmio elevado - avalie dedutível para melhorar aceitação</span>
-                                      </div>
-                                    )}
-                                    {policySimulations.filter(sim => sim.isViable).length === 0 && (
-                                      <div className="flex items-start gap-2 text-sm">
-                                        <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5" />
-                                        <span>Ajuste os parâmetros de risco - nenhuma configuração é viável atualmente</span>
-                                      </div>
-                                    )}
-                                    {financialAnalysis.riskAnalysis?.reinsuranceNeed && (
-                                      <div className="flex items-start gap-2 text-sm">
-                                        <Shield className="h-4 w-4 text-blue-500 mt-0.5" />
-                                        <span>Recomendado: Contratar reinsurance para reduzir exposição</span>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Ações Rápidas */}
-                              <div className="mt-6 pt-4 border-t border-blue-300">
-                                <h4 className="font-medium text-gray-800 mb-3">Ações Rápidas</h4>
-                                <div className="flex flex-wrap gap-2">
-                                  <Button
-                                    onClick={() => setActiveTab('dashboard')}
-                                    variant="outline"
-                                    size="sm"
-                                    className="bg-white/50"
-                                  >
-                                    <BarChart3 className="h-4 w-4 mr-2" />
-                                    Ver Dashboard Executivo
-                                  </Button>
-                                  <Button
-                                    onClick={() => {
-                                      // Reset para valores conservadores otimizados
-                                      const bestSim = policySimulations.find(sim => sim.isViable);
-                                      if (bestSim) {
-                                        setFrequency(bestSim.frequency);
-                                        setSeverity(bestSim.severity);
-                                        setConfidence(bestSim.confidence);
-                                      }
-                                    }}
-                                    variant="outline"
-                                    size="sm"
-                                    className="bg-white/50"
-                                  >
-                                    <TrendingUp className="h-4 w-4 mr-2" />
-                                    Aplicar Configuração Ótima
-                                  </Button>
-                                  <Button
-                                    onClick={() => {
-                                      // Simular com diferentes cenários
-                                      setAssetValue(assetValue * 1.2); // +20% no valor do bem
-                                    }}
-                                    variant="outline"
-                                    size="sm"
-                                    className="bg-white/50"
-                                  >
-                                    <Calculator className="h-4 w-4 mr-2" />
-                                    Testar Cenário Premium
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
+                    {/* Otimizações Sugeridas */}
+                    <div className="bg-white/70 rounded-lg p-4">
+                      <h4 className="font-medium text-gray-800 mb-2">Oportunidades de Otimização</h4>
+                      <div className="space-y-2">
+                        {financialAnalysis.insurerAnalysis.riskAdjustedReturn < 2 && (
+                          <div className="flex items-start gap-2 text-sm">
+                            <AlertTriangle className="h-4 w-4 text-orange-500 mt-0.5" />
+                            <span>Considere aumentar o prêmio para melhorar o retorno ajustado ao risco</span>
                           </div>
                         )}
-
-                        {/* Predições de Machine Learning */}
-                        {mlPredictions && (
-                          <div className="mt-10 space-y-6">
-                            <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg p-6 border border-purple-200">
-                              <h3 className="text-lg font-semibold text-purple-800 mb-4 flex items-center">
-                                <Brain className="h-5 w-5 mr-2" />
-                                Predições de Machine Learning
-                              </h3>
-
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {/* Frequência de Sinistros */}
-                                <div className="bg-white/70 rounded-lg p-4">
-                                  <h4 className="font-medium text-gray-800 mb-2">Frequência de Sinistros</h4>
-                                  <div className="text-sm text-gray-600 mb-3">
-                                    Predição baseada em dados históricos e fatores climáticos
-                                  </div>
-                                  <div className="bg-blue-100 border border-blue-300 rounded p-3">
-                                    <div className="text-lg font-bold text-blue-800">
-                                      {mlPredictions.frequency.prediction.toFixed(1)}
-                                    </div>
-                                    <div className="text-xs text-blue-700">
-                                      {mlPredictions.frequency.unit}
-                                    </div>
-                                    <div className="text-xs text-gray-600 mt-1">
-                                      Intervalo: {mlPredictions.frequency.confidence_lower.toFixed(1)} - {mlPredictions.frequency.confidence_upper.toFixed(1)}
-                                    </div>
-                                  </div>
-                                </div>
-
-                                {/* Severidade de Sinistros */}
-                                <div className="bg-white/70 rounded-lg p-4">
-                                  <h4 className="font-medium text-gray-800 mb-2">Severidade de Sinistros</h4>
-                                  <div className="text-sm text-gray-600 mb-3">
-                                    Valor médio estimado por sinistro
-                                  </div>
-                                  <div className="bg-red-100 border border-red-300 rounded p-3">
-                                    <div className="text-lg font-bold text-red-800">
-                                      R$ {mlPredictions.severity.prediction.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                                    </div>
-                                    <div className="text-xs text-red-700">
-                                      {mlPredictions.severity.unit}
-                                    </div>
-                                    <div className="text-xs text-gray-600 mt-1">
-                                      Intervalo: R$ {mlPredictions.severity.confidence_lower.toLocaleString(undefined, { maximumFractionDigits: 0 })} - R$ {mlPredictions.severity.confidence_upper.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Método de Predição */}
-                              <div className="mt-6 pt-4 border-t border-purple-300">
-                                <div className="flex items-center justify-between text-sm">
-                                  <span className="text-gray-600">Método de Predição:</span>
-                                  <Badge variant={mlPredictions.method === 'machine_learning' ? 'default' : 'secondary'}>
-                                    {mlPredictions.method === 'machine_learning' ? 'Machine Learning' : 'Baseado em Regras'}
-                                  </Badge>
-                                </div>
-                                <div className="flex items-center justify-between text-sm mt-2">
-                                  <span className="text-gray-600">Nível de Confiança:</span>
-                                  <span className="font-medium text-purple-700">{mlPredictions.confidence_level}</span>
-                                </div>
-                              </div>
-                            </div>
+                        {financialAnalysis.customerAnalysis.premiumToAssetRatio > 3 && (
+                          <div className="flex items-start gap-2 text-sm">
+                            <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5" />
+                            <span>Prêmio elevado - avalie dedutível para melhorar aceitação</span>
                           </div>
                         )}
-
-                        {/* Estado de cálculo */}
-                        {calculating && (
-                          <div className="mt-6 animate-pulse rounded-lg bg-blue-50 p-6">
-                            <div className="flex items-center gap-3">
-                              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                              <div className="text-blue-900 font-medium">
-                                Calculando com técnicas avançadas de matemática atuarial...
-                              </div>
-                            </div>
+                        {policySimulations.filter(sim => sim.isViable).length === 0 && (
+                          <div className="flex items-start gap-2 text-sm">
+                            <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5" />
+                            <span>Ajuste os parâmetros de risco - nenhuma configuração é viável atualmente</span>
+                          </div>
+                        )}
+                        {financialAnalysis.riskAnalysis?.reinsuranceNeed && (
+                          <div className="flex items-start gap-2 text-sm">
+                            <Shield className="h-4 w-4 text-blue-500 mt-0.5" />
+                            <span>Recomendado: Contratar reinsurance para reduzir exposição</span>
                           </div>
                         )}
                       </div>
+                    </div>
+                  </div>
+
+                  {/* Ações Rápidas */}
+                  <div className="mt-6 pt-4 border-t border-blue-300">
+                    <h4 className="font-medium text-gray-800 mb-3">Ações Rápidas</h4>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        onClick={() => setActiveTab('dashboard')}
+                        variant="outline"
+                        size="sm"
+                        className="bg-white/50"
+                      >
+                        <BarChart3 className="h-4 w-4 mr-2" />
+                        Ver Dashboard Executivo
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          // Reset para valores conservadores otimizados
+                          const bestSim = policySimulations.find(sim => sim.isViable);
+                          if (bestSim) {
+                            setFrequency(bestSim.frequency);
+                            setSeverity(bestSim.severity);
+                            setConfidence(bestSim.confidence);
+                          }
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className="bg-white/50"
+                      >
+                        <TrendingUp className="h-4 w-4 mr-2" />
+                        Aplicar Configuração Ótima
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          // Simular com diferentes cenários
+                          setAssetValue(assetValue * 1.2); // +20% no valor do bem
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className="bg-white/50"
+                      >
+                        <Calculator className="h-4 w-4 mr-2" />
+                        Testar Cenário Premium
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             )}
 
-                      {activeTab === 'dashboard' && (
-                        <ExecutiveDashboard
-                          policySimulations={policySimulations}
-                          financialAnalysis={financialAnalysis}
-                        />
-                      )}
+            {/* Predições de Machine Learning */}
+            {mlPredictions && (
+              <div className="mt-10 space-y-6">
+                <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg p-6 border border-purple-200">
+                  <h3 className="text-lg font-semibold text-purple-800 mb-4 flex items-center">
+                    <Brain className="h-5 w-5 mr-2" />
+                    Predições de Machine Learning
+                  </h3>
 
-                      {activeTab === 'audit' && <AuditDashboard />}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Frequência de Sinistros */}
+                    <div className="bg-white/70 rounded-lg p-4">
+                      <h4 className="font-medium text-gray-800 mb-2">Frequência de Sinistros</h4>
+                      <div className="text-sm text-gray-600 mb-3">
+                        Predição baseada em dados históricos e fatores climáticos
+                      </div>
+                      <div className="bg-blue-100 border border-blue-300 rounded p-3">
+                        <div className="text-lg font-bold text-blue-800">
+                          {mlPredictions.frequency.prediction.toFixed(1)}
+                        </div>
+                        <div className="text-xs text-blue-700">
+                          {mlPredictions.frequency.unit}
+                        </div>
+                        <div className="text-xs text-gray-600 mt-1">
+                          Intervalo: {mlPredictions.frequency.confidence_lower.toFixed(1)} - {mlPredictions.frequency.confidence_upper.toFixed(1)}
+                        </div>
+                      </div>
+                    </div>
 
-                    </CardContent>
+                    {/* Severidade de Sinistros */}
+                    <div className="bg-white/70 rounded-lg p-4">
+                      <h4 className="font-medium text-gray-800 mb-2">Severidade de Sinistros</h4>
+                      <div className="text-sm text-gray-600 mb-3">
+                        Valor médio estimado por sinistro
+                      </div>
+                      <div className="bg-red-100 border border-red-300 rounded p-3">
+                        <div className="text-lg font-bold text-red-800">
+                          R$ {mlPredictions.severity.prediction.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                        </div>
+                        <div className="text-xs text-red-700">
+                          {mlPredictions.severity.unit}
+                        </div>
+                        <div className="text-xs text-gray-600 mt-1">
+                          Intervalo: R$ {mlPredictions.severity.confidence_lower.toLocaleString(undefined, { maximumFractionDigits: 0 })} - R$ {mlPredictions.severity.confidence_upper.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Método de Predição */}
+                  <div className="mt-6 pt-4 border-t border-purple-300">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Método de Predição:</span>
+                      <Badge variant={mlPredictions.method === 'machine_learning' ? 'default' : 'secondary'}>
+                        {mlPredictions.method === 'machine_learning' ? 'Machine Learning' : 'Baseado em Regras'}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between text-sm mt-2">
+                      <span className="text-gray-600">Nível de Confiança:</span>
+                      <span className="font-medium text-purple-700">{mlPredictions.confidence_level}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Estado de cálculo */}
+            {calculating && (
+              <div className="mt-6 animate-pulse rounded-lg bg-blue-50 p-6">
+                <div className="flex items-center gap-3">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                  <div className="text-blue-900 font-medium">
+                    Calculando com técnicas avançadas de matemática atuarial...
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : activeTab === 'dashboard' ? (
+          <ExecutiveDashboard
+            policySimulations={policySimulations}
+            financialAnalysis={financialAnalysis}
+          />
+        ) : (
+          <AuditDashboard />
+        )}
+      </CardContent>
     </Card>
-                );
+  );
 }

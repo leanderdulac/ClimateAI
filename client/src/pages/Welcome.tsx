@@ -2,28 +2,25 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight, CheckCircle, TrendingUp, Shield, Zap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useTranslation } from "@/hooks/useTranslation";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 export function WelcomePage() {
   const navigate = useNavigate();
-  const { t } = useTranslation();
 
   const features = [
     {
       icon: <TrendingUp className="h-8 w-8 text-blue-600" />,
-      title: t('feature.analysis.title'),
-      description: t('feature.analysis.desc')
+      title: "Análise Climática Avançada",
+      description: "Modelos de IA para previsão de riscos climáticos e impacto econômico"
     },
     {
       icon: <Shield className="h-8 w-8 text-green-600" />,
-      title: t('feature.actuarial.title'),
-      description: t('feature.actuarial.desc')
+      title: "Modelagem Atuarial",
+      description: "Cálculos precisos de prêmios baseados em dados climáticos históricos"
     },
     {
       icon: <Zap className="h-8 w-8 text-purple-600" />,
-      title: t('feature.dashboard.title'),
-      description: t('feature.dashboard.desc')
+      title: "Dashboard Interativo",
+      description: "Interface intuitiva para visualização de dados e tomada de decisões"
     }
   ];
 
@@ -39,16 +36,13 @@ export function WelcomePage() {
               </div>
               <span className="text-xl font-bold text-gray-900">ClimateAI</span>
             </div>
-            <div className="flex items-center gap-4">
-              <LanguageSwitcher />
-              <Button
-                onClick={() => navigate('/auth')}
-                className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700"
-              >
-                {t('nav.login')}
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </div>
+            <Button
+              onClick={() => navigate('/auth')}
+              className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700"
+            >
+              Entrar / Cadastrar
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
           </div>
         </div>
       </header>
@@ -59,10 +53,11 @@ export function WelcomePage() {
           <div className="mb-8">
             <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-4" />
             <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
-              {t('hero.welcome')} <span className="bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">ClimateAI</span>
+              Bem-vindo ao <span className="bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">ClimateAI</span>
             </h1>
             <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-              {t('hero.description')}
+              Você chegou ao futuro da modelagem climático-econômica. Nossa plataforma combina inteligência artificial,
+              dados climáticos e modelagem atuarial para ajudar você a tomar decisões mais inteligentes.
             </p>
           </div>
 
@@ -88,11 +83,11 @@ export function WelcomePage() {
               onClick={() => navigate('/dashboard')}
               className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white px-8 py-4 text-lg"
             >
-              {t('hero.cta')}
+              Começar a Explorar
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             <p className="text-gray-500">
-              {t('hero.subtitle')}
+              Descubra como transformar riscos climáticos em oportunidades
             </p>
           </div>
         </div>
@@ -101,18 +96,18 @@ export function WelcomePage() {
       {/* Quick Start Guide */}
       <section className="py-16 bg-white/50">
         <div className="container mx-auto max-w-4xl px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">{t('guide.title')}</h2>
+          <h2 className="text-3xl font-bold text-center mb-12">Como Começar</h2>
           <div className="grid md:grid-cols-2 gap-8">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <span className="bg-blue-100 text-blue-600 rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">1</span>
-                  {t('guide.step1.title')}
+                  Selecione uma Localização
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-gray-600">
-                  {t('guide.step1.desc')}
+                  Escolha uma cidade ou região para analisar os dados climáticos e riscos associados.
                 </p>
               </CardContent>
             </Card>
@@ -121,12 +116,12 @@ export function WelcomePage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <span className="bg-green-100 text-green-600 rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">2</span>
-                  {t('guide.step2.title')}
+                  Configure o Período
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-gray-600">
-                  {t('guide.step2.desc')}
+                  Defina o período de análise (7, 30 ou 90 dias) para obter previsões precisas.
                 </p>
               </CardContent>
             </Card>
@@ -135,12 +130,12 @@ export function WelcomePage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <span className="bg-purple-100 text-purple-600 rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">3</span>
-                  {t('guide.step3.title')}
+                  Visualize os Dados
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-gray-600">
-                  {t('guide.step3.desc')}
+                  Explore gráficos interativos, mapas de risco e métricas de performance.
                 </p>
               </CardContent>
             </Card>
@@ -149,12 +144,12 @@ export function WelcomePage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <span className="bg-orange-100 text-orange-600 rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">4</span>
-                  {t('guide.step4.title')}
+                  Simule Cenários
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-gray-600">
-                  {t('guide.step4.desc')}
+                  Use nossa calculadora atuarial para simular diferentes cenários de risco.
                 </p>
               </CardContent>
             </Card>
@@ -166,7 +161,7 @@ export function WelcomePage() {
       <footer className="bg-gray-900 text-white py-8">
         <div className="container mx-auto px-4 text-center">
           <p className="text-gray-400">
-            {t('footer.copyright')}
+            © 2024 ClimateAI. Transformando riscos climáticos em oportunidades.
           </p>
         </div>
       </footer>

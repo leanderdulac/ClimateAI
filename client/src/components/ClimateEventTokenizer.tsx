@@ -45,7 +45,7 @@ export function ClimateEventTokenizer() {
     try {
       // Validar campos obrigatórios
       if (!formData.tipo || !formData.latitude || !formData.longitude || !formData.data_inicio ||
-          !formData.intensidade || !formData.probabilidade || !formData.descricao || !formData.nivel_alerta) {
+        !formData.intensidade || !formData.probabilidade || !formData.descricao || !formData.nivel_alerta) {
         throw new Error('Todos os campos são obrigatórios');
       }
 
@@ -381,9 +381,9 @@ export function ClimateEventTokenizer() {
                   <span className="text-sm text-gray-600">Severidade:</span>
                   <Badge variant="outline" className={
                     formData.nivel_alerta === '5' ? 'border-red-500 text-red-700' :
-                    formData.nivel_alerta === '4' ? 'border-orange-500 text-orange-700' :
-                    formData.nivel_alerta === '3' ? 'border-yellow-500 text-yellow-700' :
-                    'border-gray-500 text-gray-700'
+                      formData.nivel_alerta === '4' ? 'border-orange-500 text-orange-700' :
+                        formData.nivel_alerta === '3' ? 'border-yellow-500 text-yellow-700' :
+                          'border-gray-500 text-gray-700'
                   }>
                     Nível {formData.nivel_alerta || '?'}
                   </Badge>

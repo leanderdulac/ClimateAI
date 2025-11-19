@@ -70,11 +70,10 @@ export function NavigationMenu() {
             <Link
               key={item.href}
               to={item.href}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 ${
-                isActive(item.href)
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 ${isActive(item.href)
                   ? "bg-blue-100 text-blue-700 font-medium"
                   : "text-gray-600 hover:text-blue-600 hover:bg-gray-50"
-              }`}
+                }`}
             >
               <Icon className="h-4 w-4" />
               {item.label}
@@ -121,15 +120,13 @@ export function NavigationMenu() {
                     key={item.href}
                     to={item.href}
                     onClick={() => setIsOpen(false)}
-                    className={`flex items-center gap-3 p-3 rounded-lg transition-all duration-200 ${
-                      isActive(item.href)
+                    className={`flex items-center gap-3 p-3 rounded-lg transition-all duration-200 ${isActive(item.href)
                         ? "bg-blue-50 text-blue-700 border border-blue-200"
                         : "text-gray-700 hover:bg-gray-50 hover:text-blue-600"
-                    }`}
+                      }`}
                   >
-                    <div className={`p-2 rounded-lg ${
-                      isActive(item.href) ? "bg-blue-100" : "bg-gray-100"
-                    }`}>
+                    <div className={`p-2 rounded-lg ${isActive(item.href) ? "bg-blue-100" : "bg-gray-100"
+                      }`}>
                       <Icon className="h-4 w-4" />
                     </div>
                     <div>

@@ -4,7 +4,6 @@ import { NavigationMenu } from "@/components/NavigationMenu";
 import { useAuth } from "@/lib/AuthContext";
 import { Globe, UserCircle } from "lucide-react";
 import { Link } from "react-router-dom";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -29,7 +28,6 @@ export function DashboardLayout({ children, title, subtitle }: DashboardLayoutPr
               <NavigationMenu />
             </div>
             <div className="flex items-center gap-4">
-              <LanguageSwitcher />
               {user ? (
                 <div className="flex items-center gap-3">
                   <div className="hidden md:flex items-center gap-2 text-sm">

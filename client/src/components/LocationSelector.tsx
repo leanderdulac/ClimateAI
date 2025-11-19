@@ -98,11 +98,11 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
     setState(suggestion.estado || '');
     setCitySuggestions([]);
     setShowSuggestions(false);
-    
+
     // Buscar automaticamente a localização completa
     setLoading(true);
     setError(null);
-    
+
     try {
       await handleLocationData(
         suggestion.latitude,

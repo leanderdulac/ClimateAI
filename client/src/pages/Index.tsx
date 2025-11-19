@@ -52,226 +52,226 @@ export function IndexPage() {
               <div className="text-center mb-16">
                 <div className="inline-flex items-center gap-2 bg-blue-100/20 px-4 py-2 rounded-full text-sm text-blue-800 mb-6">
                   <Zap className="h-4 w-4" />
-              Advanced Climate Analytics
-            </div>
-            <h1 className="text-5xl md:text-7xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-green-600 mb-6">
-              ClimateWise 🌍
-            </h1>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-10 text-gray-700">
-              A revolutionary platform for tokenizing and pricing climate events with advanced analytics and real-time monitoring
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button
-                size="lg"
-                className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white"
-                onClick={() => {
-                  const dashboard = document.querySelector('#dashboard');
-                  if (dashboard) {
-                    dashboard.scrollIntoView({ behavior: 'smooth' });
-                  } else {
-                    console.warn('Dashboard section not found');
-                    // Fallback: scroll to ClimateDataWidget if it exists
-                    const dataWidget = document.querySelector('.climate-data-widget');
-                    dataWidget?.scrollIntoView({ behavior: 'smooth' });
-                  }
-                }}
-              >
-                Start Analysis
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-2 border-blue-200 text-blue-700 hover:bg-blue-50"
-                onClick={() => {
-                  const dataWidget = document.querySelector('.climate-data-widget');
-                  if (dataWidget) {
-                    dataWidget.scrollIntoView({ behavior: 'smooth' });
-                  } else {
-                    // Alternativa: Rolar até a seção de estatísticas
-                    const statsSection = document.querySelector('.stats-section');
-                    statsSection?.scrollIntoView({ behavior: 'smooth' });
-                  }
-                }}
-              >
-                Explore Data
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="py-16 bg-white stats-section">
-        <div className="container mx-auto max-w-7xl px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-16">
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100">
-              <CardContent className="p-6 text-center">
-                <TrendingUp className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-blue-800">+24.5%</div>
-                <div className="text-sm text-blue-600">Market Growth</div>
-              </CardContent>
-            </Card>
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-green-100">
-              <CardContent className="p-6 text-center">
-                <Globe className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-green-800">1.2M+</div>
-                <div className="text-sm text-green-600">Climate Events Monitored</div>
-              </CardContent>
-            </Card>
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-50 to-purple-100">
-              <CardContent className="p-6 text-center">
-                <DollarSign className="h-8 w-8 text-purple-600 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-purple-800">$5.2B</div>
-                <div className="text-sm text-purple-600">Tokenized Value</div>
-              </CardContent>
-            </Card>
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-orange-50 to-orange-100">
-              <CardContent className="p-6 text-center">
-                <Zap className="h-8 w-8 text-orange-600 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-orange-800">99.9%</div>
-                <div className="text-sm text-orange-600">Prediction Accuracy</div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Main Dashboard Section */}
-          <div className="mb-16">
-              <div className="flex items-center gap-3 mb-8">
-                <Globe className="h-8 w-8 text-blue-600" />
-                <h2 className="text-3xl font-bold text-gray-800">Climate Dashboard</h2>
-                <PeriodButtons />
-              </div>
-
-              {/* Top Section - Location and Weather */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-                  <LocationSelector />
-                  <WeatherWidget />
-              </div>
-
-              {/* Climate Data Analysis */}
-              <div className="mb-12">
-                <ClimateDataWidget />
-              </div>
-
-              {/* Pricing Simulator - Full Width with More Space */}
-              <div className="mb-16">
-                  <PricingSimulator />
-              </div>
-          </div>
-
-          {/* Smart Contract Monitor Section */}
-          <div className="mb-12">
-            <div className="flex items-center gap-3 mb-8">
-              <Zap className="h-8 w-8 text-green-600" />
-              <h2 className="text-3xl font-bold text-gray-800">Smart Contract Monitor</h2>
-            </div>
-            <SmartContractMonitor />
-          </div>
-
-          {/* Tokenization Section */}
-          <div className="mb-12" id="tokenization-section">
-            <div className="flex items-center gap-3 mb-8">
-              <Zap className="h-8 w-8 text-yellow-600" />
-              <h2 className="text-3xl font-bold text-gray-800">Tokenização</h2>
-              <Button
-                variant="outline"
-                className="ml-auto"
-                onClick={() => window.location.href = '/tokenization'}
-              >
-                Ver Tudo
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-              {/* Token Stats Cards */}
-              <Card className="border-0 shadow-lg bg-gradient-to-br from-yellow-50 to-orange-50">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <Zap className="h-6 w-6 text-yellow-600" />
-                    <h3 className="font-semibold text-gray-800">Eventos Tokenizados</h3>
-                  </div>
-                  <div className="text-2xl font-bold text-gray-800">89</div>
-                  <div className="text-sm text-gray-600">Tokens criados este mês</div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-cyan-50">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <DollarSign className="h-6 w-6 text-blue-600" />
-                    <h3 className="font-semibold text-gray-800">Volume Tokenizado</h3>
-                  </div>
-                  <div className="text-2xl font-bold text-gray-800">R$ 2.4M</div>
-                  <div className="text-sm text-gray-600">Valor total de tokens</div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-emerald-50">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <TrendingUp className="h-6 w-6 text-green-600" />
-                    <h3 className="font-semibold text-gray-800">Carteiras Ativas</h3>
-                  </div>
-                  <div className="text-2xl font-bold text-gray-800">156</div>
-                  <div className="text-sm text-gray-600">Portfólios monitorados</div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <TokenWalletMonitor />
-              <div>
-                <h3 className="text-lg font-semibold mb-4">Eventos Recentes</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <AlertTriangle className="h-4 w-4 text-red-600" />
-                      <span className="font-medium">Enchente - SP</span>
-                    </div>
-                    <span className="text-sm text-red-600">R$ 150K</span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <Thermometer className="h-4 w-4 text-blue-600" />
-                      <span className="font-medium">Onda Calor - RJ</span>
-                    </div>
-                    <span className="text-sm text-blue-600">R$ 200K</span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <Sun className="h-4 w-4 text-yellow-600" />
-                      <span className="font-medium">Seca - MG</span>
-                    </div>
-                    <span className="text-sm text-yellow-600">R$ 180K</span>
-                  </div>
+                  Advanced Climate Analytics
                 </div>
-              </div>
-            </div>
-          </div>
-
-          {/* CTA Section */}
-          <div className="text-center py-12">
-            <Card className="border-0 shadow-xl bg-gradient-to-r from-blue-600 to-green-600 text-white">
-              <CardContent className="p-12">
-                <h3 className="text-3xl font-bold mb-4">Ready to Transform Climate Risk?</h3>
-                <p className="text-lg mb-8 max-w-2xl mx-auto opacity-90">
-                  Join thousands of users leveraging ClimateWise for advanced climate analytics and risk management
+                <h1 className="text-5xl md:text-7xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-green-600 mb-6">
+                  ClimateWise 🌍
+                </h1>
+                <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-10 text-gray-700">
+                  A revolutionary platform for tokenizing and pricing climate events with advanced analytics and real-time monitoring
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Button size="lg" className="bg-white text-blue-600 hover:bg-blue-50">
-                    Get Started
+                  <Button
+                    size="lg"
+                    className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white"
+                    onClick={() => {
+                      const dashboard = document.querySelector('#dashboard');
+                      if (dashboard) {
+                        dashboard.scrollIntoView({ behavior: 'smooth' });
+                      } else {
+                        console.warn('Dashboard section not found');
+                        // Fallback: scroll to ClimateDataWidget if it exists
+                        const dataWidget = document.querySelector('.climate-data-widget');
+                        dataWidget?.scrollIntoView({ behavior: 'smooth' });
+                      }
+                    }}
+                  >
+                    Start Analysis
                   </Button>
-                  <Button size="lg" variant="secondary" className="bg-transparent border-white text-white hover:bg-white/10">
-                    Schedule Demo
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="border-2 border-blue-200 text-blue-700 hover:bg-blue-50"
+                    onClick={() => {
+                      const dataWidget = document.querySelector('.climate-data-widget');
+                      if (dataWidget) {
+                        dataWidget.scrollIntoView({ behavior: 'smooth' });
+                      } else {
+                        // Alternativa: Rolar até a seção de estatísticas
+                        const statsSection = document.querySelector('.stats-section');
+                        statsSection?.scrollIntoView({ behavior: 'smooth' });
+                      }
+                    }}
+                  >
+                    Explore Data
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-      </PeriodProvider>
-    </LocationProvider>
+              </div>
+            </div>
+          </section>
+
+          {/* Stats Section */}
+          <section className="py-16 bg-white stats-section">
+            <div className="container mx-auto max-w-7xl px-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-16">
+                <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100">
+                  <CardContent className="p-6 text-center">
+                    <TrendingUp className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+                    <div className="text-2xl font-bold text-blue-800">+24.5%</div>
+                    <div className="text-sm text-blue-600">Market Growth</div>
+                  </CardContent>
+                </Card>
+                <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-green-100">
+                  <CardContent className="p-6 text-center">
+                    <Globe className="h-8 w-8 text-green-600 mx-auto mb-2" />
+                    <div className="text-2xl font-bold text-green-800">1.2M+</div>
+                    <div className="text-sm text-green-600">Climate Events Monitored</div>
+                  </CardContent>
+                </Card>
+                <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-50 to-purple-100">
+                  <CardContent className="p-6 text-center">
+                    <DollarSign className="h-8 w-8 text-purple-600 mx-auto mb-2" />
+                    <div className="text-2xl font-bold text-purple-800">$5.2B</div>
+                    <div className="text-sm text-purple-600">Tokenized Value</div>
+                  </CardContent>
+                </Card>
+                <Card className="border-0 shadow-lg bg-gradient-to-br from-orange-50 to-orange-100">
+                  <CardContent className="p-6 text-center">
+                    <Zap className="h-8 w-8 text-orange-600 mx-auto mb-2" />
+                    <div className="text-2xl font-bold text-orange-800">99.9%</div>
+                    <div className="text-sm text-orange-600">Prediction Accuracy</div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Main Dashboard Section */}
+              <div className="mb-16">
+                <div className="flex items-center gap-3 mb-8">
+                  <Globe className="h-8 w-8 text-blue-600" />
+                  <h2 className="text-3xl font-bold text-gray-800">Climate Dashboard</h2>
+                  <PeriodButtons />
+                </div>
+
+                {/* Top Section - Location and Weather */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+                  <LocationSelector />
+                  <WeatherWidget />
+                </div>
+
+                {/* Climate Data Analysis */}
+                <div className="mb-12">
+                  <ClimateDataWidget />
+                </div>
+
+                {/* Pricing Simulator - Full Width with More Space */}
+                <div className="mb-16">
+                  <PricingSimulator />
+                </div>
+              </div>
+
+              {/* Smart Contract Monitor Section */}
+              <div className="mb-12">
+                <div className="flex items-center gap-3 mb-8">
+                  <Zap className="h-8 w-8 text-green-600" />
+                  <h2 className="text-3xl font-bold text-gray-800">Smart Contract Monitor</h2>
+                </div>
+                <SmartContractMonitor />
+              </div>
+
+              {/* Tokenization Section */}
+              <div className="mb-12" id="tokenization-section">
+                <div className="flex items-center gap-3 mb-8">
+                  <Zap className="h-8 w-8 text-yellow-600" />
+                  <h2 className="text-3xl font-bold text-gray-800">Tokenização</h2>
+                  <Button
+                    variant="outline"
+                    className="ml-auto"
+                    onClick={() => window.location.href = '/tokenization'}
+                  >
+                    Ver Tudo
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                  {/* Token Stats Cards */}
+                  <Card className="border-0 shadow-lg bg-gradient-to-br from-yellow-50 to-orange-50">
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-3 mb-4">
+                        <Zap className="h-6 w-6 text-yellow-600" />
+                        <h3 className="font-semibold text-gray-800">Eventos Tokenizados</h3>
+                      </div>
+                      <div className="text-2xl font-bold text-gray-800">89</div>
+                      <div className="text-sm text-gray-600">Tokens criados este mês</div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-cyan-50">
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-3 mb-4">
+                        <DollarSign className="h-6 w-6 text-blue-600" />
+                        <h3 className="font-semibold text-gray-800">Volume Tokenizado</h3>
+                      </div>
+                      <div className="text-2xl font-bold text-gray-800">R$ 2.4M</div>
+                      <div className="text-sm text-gray-600">Valor total de tokens</div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-emerald-50">
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-3 mb-4">
+                        <TrendingUp className="h-6 w-6 text-green-600" />
+                        <h3 className="font-semibold text-gray-800">Carteiras Ativas</h3>
+                      </div>
+                      <div className="text-2xl font-bold text-gray-800">156</div>
+                      <div className="text-sm text-gray-600">Portfólios monitorados</div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  <TokenWalletMonitor />
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4">Eventos Recentes</h3>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <AlertTriangle className="h-4 w-4 text-red-600" />
+                          <span className="font-medium">Enchente - SP</span>
+                        </div>
+                        <span className="text-sm text-red-600">R$ 150K</span>
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <Thermometer className="h-4 w-4 text-blue-600" />
+                          <span className="font-medium">Onda Calor - RJ</span>
+                        </div>
+                        <span className="text-sm text-blue-600">R$ 200K</span>
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <Sun className="h-4 w-4 text-yellow-600" />
+                          <span className="font-medium">Seca - MG</span>
+                        </div>
+                        <span className="text-sm text-yellow-600">R$ 180K</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* CTA Section */}
+              <div className="text-center py-12">
+                <Card className="border-0 shadow-xl bg-gradient-to-r from-blue-600 to-green-600 text-white">
+                  <CardContent className="p-12">
+                    <h3 className="text-3xl font-bold mb-4">Ready to Transform Climate Risk?</h3>
+                    <p className="text-lg mb-8 max-w-2xl mx-auto opacity-90">
+                      Join thousands of users leveraging ClimateWise for advanced climate analytics and risk management
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                      <Button size="lg" className="bg-white text-blue-600 hover:bg-blue-50">
+                        Get Started
+                      </Button>
+                      <Button size="lg" variant="secondary" className="bg-transparent border-white text-white hover:bg-white/10">
+                        Schedule Demo
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </section>
+        </PeriodProvider>
+      </LocationProvider>
     </DashboardLayout>
   );
 }

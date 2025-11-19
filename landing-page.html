@@ -1579,7 +1579,7 @@
                 if (!isRunning) {
                     link.href = '#demo';
                     link.innerHTML = link.innerHTML.replace('Acessar Dashboard', 'Iniciar Dashboard');
-                    link.onclick = function(e) {
+                    link.onclick = function (e) {
                         e.preventDefault();
                         alert('O dashboard não está rodando. Execute: ./start_platform.sh');
                         return false;
@@ -1589,7 +1589,7 @@
         }
 
         // Check dashboard status on page load
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             updateDashboardLinks();
         });
 

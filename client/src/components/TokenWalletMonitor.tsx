@@ -380,11 +380,10 @@ export function TokenWalletMonitor() {
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl shadow-lg ${
-                            tx.type === 'mint' ? 'bg-gradient-to-br from-green-400 to-green-600 text-white' :
-                            tx.type === 'transfer' ? 'bg-gradient-to-br from-blue-400 to-blue-600 text-white' :
-                            'bg-gradient-to-br from-red-400 to-red-600 text-white'
-                          }`}>
+                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl shadow-lg ${tx.type === 'mint' ? 'bg-gradient-to-br from-green-400 to-green-600 text-white' :
+                              tx.type === 'transfer' ? 'bg-gradient-to-br from-blue-400 to-blue-600 text-white' :
+                                'bg-gradient-to-br from-red-400 to-red-600 text-white'
+                            }`}>
                             {tx.type === 'mint' ? '🪙' : tx.type === 'transfer' ? '↗️' : '🔥'}
                           </div>
                           <div>
@@ -464,23 +463,22 @@ export function TokenWalletMonitor() {
                   {balances
                     .sort((a, b) => b.change24h - a.change24h)
                     .map((token) => (
-                    <div key={token.tokenUid} className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-gray-800">{token.symbol}</p>
-                        <p className="text-sm text-gray-600">{token.name.slice(0, 30)}...</p>
+                      <div key={token.tokenUid} className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-gray-800">{token.symbol}</p>
+                          <p className="text-sm text-gray-600">{token.name.slice(0, 30)}...</p>
+                        </div>
+                        <div className={`flex items-center gap-1 font-semibold ${token.change24h >= 0 ? 'text-green-600' : 'text-red-600'
+                          }`}>
+                          {token.change24h >= 0 ? (
+                            <ArrowUpRight className="h-4 w-4" />
+                          ) : (
+                            <ArrowDownRight className="h-4 w-4" />
+                          )}
+                          {Math.abs(token.change24h)}%
+                        </div>
                       </div>
-                      <div className={`flex items-center gap-1 font-semibold ${
-                        token.change24h >= 0 ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {token.change24h >= 0 ? (
-                          <ArrowUpRight className="h-4 w-4" />
-                        ) : (
-                          <ArrowDownRight className="h-4 w-4" />
-                        )}
-                        {Math.abs(token.change24h)}%
-                      </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               </CardContent>
             </Card>
