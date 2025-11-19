@@ -3,7 +3,9 @@ export const translations = {
     'pt-BR': {
         // Header
         'app.name': 'ClimateAI',
-        'nav.login': 'Entrar / Cadastrar',
+        'nav.login': 'Entrar',
+        'nav.signup': 'Cadastrar',
+        'nav.logout': 'Sair',
 
         // Hero
         'hero.welcome': 'Bem-vindo ao',
@@ -36,7 +38,9 @@ export const translations = {
     'en-US': {
         // Header
         'app.name': 'ClimateAI',
-        'nav.login': 'Login / Sign Up',
+        'nav.login': 'Login',
+        'nav.signup': 'Sign Up',
+        'nav.logout': 'Logout',
 
         // Hero
         'hero.welcome': 'Welcome to',
