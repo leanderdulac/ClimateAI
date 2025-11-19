@@ -6,36 +6,44 @@ Triggers:
 - Temporary complementary coverage offer
 - Customer alert for preventive actions
 """
-from fastapi import APIRouter, HTTPException, Query
-from typing import Dict, List, Optional, Any
+
 from datetime import datetime
-from pydantic import BaseModel
+from typing import Any, Dict, List, Optional
+
 import numpy as np
+from fastapi import APIRouter, HTTPException, Query
+from pydantic import BaseModel
 
 from services.climate_alert_service import (
-    climate_alert_service,
     calculate_premium_change,
     calculate_severe_event_probability,
-    should_trigger_notification,
-    generate_recommendations,
+    climate_alert_service,
     create_climate_alert,
     generate_complementary_coverage_offer,
-    process_climate_notifications
+    generate_recommendations,
+    process_climate_notifications,
+    should_trigger_notification,
 )
+
 
 class SevereEventProbabilityRequest(BaseModel):
     """Request model for severe event probability calculation"""
+
     weather_forecast: List[Dict[str, Any]]
     event_thresholds: Optional[Dict[str, float]] = None
 
+
 class GenerateRecommendationsRequest(BaseModel):
     """Request model for generating recommendations"""
+
     event_type: str  # 'severe_weather', 'climate_risk_increase', 'premium_change'
     location: Dict[str, float]  # {latitude, longitude}
     severity: int = 3
 
+
 class CreateClimateAlertRequest(BaseModel):
     """Request model for creating climate alerts"""
+
     customer_id: str
     contract_id: str
     location: Dict[str, float]  # {latitude, longitude}
@@ -45,36 +53,48 @@ class CreateClimateAlertRequest(BaseModel):
     impact_estimate: float
     triggered_condition: str
 
+
 class ComplementaryCoverageRequest(BaseModel):
     """Request model for generating complementary coverage offers"""
+
     customer_id: str
     contract_id: str
     event_type: str
     severity: int
 
+
 class ProcessNotificationsRequest(BaseModel):
     """Request model for processing climate notifications"""
+
     customer_data: Dict[str, Any]  # {customer_id, contract_id, location}
     premium_history: List[float]
     current_premium: float
     weather_forecast: List[Dict[str, Any]]
     event_thresholds: Optional[Dict[str, float]] = None
 
+
 class ProcessMultiChannelNotificationsRequest(BaseModel):
     """Request model for processing multi-channel climate notifications with 24h and 72h windows"""
+
     customer_data: Dict[str, Any]  # {customer_id, contract_id, location}
     premium_history: List[float]
     current_premium: float
-    weather_forecast: List[Dict[str, Any]]  # Should contain at least 72 hours of forecast
+    weather_forecast: List[
+        Dict[str, Any]
+    ]  # Should contain at least 72 hours of forecast
     event_thresholds: Optional[Dict[str, float]] = None
+
 
 router = APIRouter()
 
+
 @router.post("/climate-alert/premium-change")
 async def calculate_premium_change_endpoint(
-    historic_premiums: List[float] = Query(..., description="Historical premium values (most recent first)"),
+    historic_premiums: List[float] = Query(
+        ..., description="Historical premium values (most recent first)"
+    ),
     current_premium: float = Query(..., description="Current premium value"),
-    days: int = Query(7, ge=1, le=30, description="Number of days to look back")
+    days: int = Query(7, ge=1, le=30, description="Number of days to look back"),
 ):
     """
     Calculate percentage change in premium over the specified period
@@ -85,16 +105,21 @@ async def calculate_premium_change_endpoint(
             "premium_change_percentage": change,
             "premium_change_proportion": change,
             "current_premium": current_premium,
-            "reference_premium": historic_premiums[min(days-1, len(historic_premiums)-1)],
+            "reference_premium": historic_premiums[
+                min(days - 1, len(historic_premiums) - 1)
+            ],
             "days_back": days,
-            "historic_premiums_count": len(historic_premiums)
+            "historic_premiums_count": len(historic_premiums),
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Premium change calculation failed: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Premium change calculation failed: {str(e)}"
+        )
+
 
 @router.post("/climate-alert/severe-event-probability")
 async def calculate_severe_event_probability_endpoint(
-    request: SevereEventProbabilityRequest
+    request: SevereEventProbabilityRequest,
 ):
     """
     Calculate probability of severe climate events in the next 72 hours
@@ -106,43 +131,72 @@ async def calculate_severe_event_probability_endpoint(
         return {
             "severe_event_probability": probability,
             "weather_forecast_periods": len(request.weather_forecast),
-            "event_thresholds_used": request.event_thresholds or {
-                'precipitation': 50.0, 'wind_speed': 25.0, 'temperature': 35.0, 'pressure': 980.0
-            }
+            "event_thresholds_used": request.event_thresholds
+            or {
+                "precipitation": 50.0,
+                "wind_speed": 25.0,
+                "temperature": 35.0,
+                "pressure": 980.0,
+            },
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Severe event probability calculation failed: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Severe event probability calculation failed: {str(e)}",
+        )
+
 
 @router.post("/climate-alert/severe-event-probability-24h")
 async def calculate_severe_event_probability_24h_endpoint(
-    request: SevereEventProbabilityRequest
+    request: SevereEventProbabilityRequest,
 ):
     """
     Calculate probability of severe climate events in the next 24 hours
     """
     try:
-        from services.climate_alert_service import calculate_severe_event_probability_24h
+        from services.climate_alert_service import (
+            calculate_severe_event_probability_24h,
+        )
+
         probability = calculate_severe_event_probability_24h(
             request.weather_forecast, request.event_thresholds
         )
         return {
             "severe_event_probability_24h": probability,
             "weather_forecast_periods": len(request.weather_forecast),
-            "event_thresholds_used": request.event_thresholds or {
-                'precipitation': 50.0, 'wind_speed': 25.0, 'temperature': 35.0, 'pressure': 980.0
-            }
+            "event_thresholds_used": request.event_thresholds
+            or {
+                "precipitation": 50.0,
+                "wind_speed": 25.0,
+                "temperature": 35.0,
+                "pressure": 980.0,
+            },
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Severe event probability calculation failed: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Severe event probability calculation failed: {str(e)}",
+        )
+
 
 @router.post("/climate-alert/should-trigger")
 async def should_trigger_notification_endpoint(
     premium_change: float = Query(..., description="Percentage change in premium"),
-    severe_event_probability_72h: float = Query(..., description="Probability of severe event in next 72h"),
-    severe_event_probability_24h: float = Query(0.0, description="Probability of severe event in next 24h"),
-    premium_threshold: float = Query(0.20, description="Premium change threshold (default 20%)"),
-    event_probability_72h_threshold: float = Query(0.05, description="72h Event probability threshold (default 5%)"),
-    event_probability_24h_threshold: float = Query(0.15, description="24h Event probability threshold (default 15%)")
+    severe_event_probability_72h: float = Query(
+        ..., description="Probability of severe event in next 72h"
+    ),
+    severe_event_probability_24h: float = Query(
+        0.0, description="Probability of severe event in next 24h"
+    ),
+    premium_threshold: float = Query(
+        0.20, description="Premium change threshold (default 20%)"
+    ),
+    event_probability_72h_threshold: float = Query(
+        0.05, description="72h Event probability threshold (default 5%)"
+    ),
+    event_probability_24h_threshold: float = Query(
+        0.15, description="24h Event probability threshold (default 15%)"
+    ),
 ):
     """
     Determine if notification should be triggered with channel selection:
@@ -152,8 +206,12 @@ async def should_trigger_notification_endpoint(
     """
     try:
         should_trigger, condition, channel = should_trigger_notification(
-            premium_change, severe_event_probability_72h, severe_event_probability_24h,
-            premium_threshold, event_probability_72h_threshold, event_probability_24h_threshold
+            premium_change,
+            severe_event_probability_72h,
+            severe_event_probability_24h,
+            premium_threshold,
+            event_probability_72h_threshold,
+            event_probability_24h_threshold,
         )
         return {
             "should_trigger_notification": should_trigger,
@@ -165,15 +223,16 @@ async def should_trigger_notification_endpoint(
             "premium_threshold": premium_threshold,
             "event_probability_72h_threshold": event_probability_72h_threshold,
             "event_probability_24h_threshold": event_probability_24h_threshold,
-            "formula_applied": "I{ΔPrêmio_7d > 20% OR P(evento_severo_72h) > 5% OR P(evento_severo_24h) > 15%}"
+            "formula_applied": "I{ΔPrêmio_7d > 20% OR P(evento_severo_72h) > 5% OR P(evento_severo_24h) > 15%}",
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Notification trigger check failed: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Notification trigger check failed: {str(e)}"
+        )
+
 
 @router.post("/climate-alert/generate-recommendations")
-async def generate_recommendations_endpoint(
-    request: GenerateRecommendationsRequest
-):
+async def generate_recommendations_endpoint(request: GenerateRecommendationsRequest):
     """
     Generate appropriate recommendations based on event type and severity
     """
@@ -185,22 +244,29 @@ async def generate_recommendations_endpoint(
             "recommendations": recommendations,
             "event_type": request.event_type,
             "location": request.location,
-            "severity_level": request.severity
+            "severity_level": request.severity,
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Recommendations generation failed: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Recommendations generation failed: {str(e)}"
+        )
+
 
 @router.post("/climate-alert/create-alert")
-async def create_climate_alert_endpoint(
-    request: CreateClimateAlertRequest
-):
+async def create_climate_alert_endpoint(request: CreateClimateAlertRequest):
     """
     Create a climate alert with recommendations
     """
     try:
         alert = create_climate_alert(
-            request.customer_id, request.contract_id, request.location, request.event_type,
-            request.severity_level, request.probability, request.impact_estimate, request.triggered_condition
+            request.customer_id,
+            request.contract_id,
+            request.location,
+            request.event_type,
+            request.severity_level,
+            request.probability,
+            request.impact_estimate,
+            request.triggered_condition,
         )
         return {
             "alert_id": alert.alert_id,
@@ -215,36 +281,44 @@ async def create_climate_alert_endpoint(
             "impact_estimate": alert.impact_estimate,
             "timestamp": alert.timestamp.isoformat(),
             "recommendations": alert.recommendations,
-            "notification_sent": alert.notification_sent
+            "notification_sent": alert.notification_sent,
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Climate alert creation failed: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Climate alert creation failed: {str(e)}"
+        )
+
 
 @router.post("/climate-alert/complementary-coverage")
 async def generate_complementary_coverage_offer_endpoint(
-    request: ComplementaryCoverageRequest
+    request: ComplementaryCoverageRequest,
 ):
     """
     Generate temporary complementary coverage offer
     """
     try:
         offer = generate_complementary_coverage_offer(
-            request.customer_id, request.contract_id, request.event_type, request.severity
+            request.customer_id,
+            request.contract_id,
+            request.event_type,
+            request.severity,
         )
         return {
             "offer_details": offer,
             "customer_id": request.customer_id,
             "contract_id": request.contract_id,
             "event_type": request.event_type,
-            "severity": request.severity
+            "severity": request.severity,
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Complementary coverage offer generation failed: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Complementary coverage offer generation failed: {str(e)}",
+        )
+
 
 @router.post("/climate-alert/process-notifications")
-async def process_climate_notifications_endpoint(
-    request: ProcessNotificationsRequest
-):
+async def process_climate_notifications_endpoint(request: ProcessNotificationsRequest):
     """
     Complete climate notification processing:
     Notificação_push = I{ΔPrêmio_7d > 20% OR P(evento_severo_72h) > 5%}
@@ -252,21 +326,27 @@ async def process_climate_notifications_endpoint(
     """
     try:
         actions = process_climate_notifications(
-            request.customer_data, request.premium_history, request.current_premium,
-            request.weather_forecast, request.event_thresholds
+            request.customer_data,
+            request.premium_history,
+            request.current_premium,
+            request.weather_forecast,
+            request.event_thresholds,
         )
         return {
             "actions_taken": actions,
             "n_customers_affected": len(actions),
             "formula_applied": "I{ΔPrêmio_7d > 20% OR P(evento_severo_72h) > 5%}",
-            "processing_timestamp": datetime.now().isoformat()
+            "processing_timestamp": datetime.now().isoformat(),
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Climate notification processing failed: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Climate notification processing failed: {str(e)}"
+        )
+
 
 @router.post("/climate-alert/process-multichannel-notifications")
 async def process_multichannel_notifications_endpoint(
-    request: ProcessMultiChannelNotificationsRequest
+    request: ProcessMultiChannelNotificationsRequest,
 ):
     """
     Complete multi-channel climate notification processing with 24h and 72h windows:
@@ -276,9 +356,13 @@ async def process_multichannel_notifications_endpoint(
     """
     try:
         from services.climate_alert_service import process_climate_notifications
+
         actions = process_climate_notifications(
-            request.customer_data, request.premium_history, request.current_premium,
-            request.weather_forecast, request.event_thresholds
+            request.customer_data,
+            request.premium_history,
+            request.current_premium,
+            request.weather_forecast,
+            request.event_thresholds,
         )
         return {
             "actions_taken": actions,
@@ -286,12 +370,16 @@ async def process_multichannel_notifications_endpoint(
             "formula_applied": "I{P(evento_severo_72h) > 5% OR P(evento_severo_24h) > 15%}",
             "logic": {
                 "P_evento_severo_72h_gt_5": "Push notification",
-                "P_evento_severo_24h_gt_15": "SMS + Email + parametric trigger (R$ 2.000)"
+                "P_evento_severo_24h_gt_15": "SMS + Email + parametric trigger (R$ 2.000)",
             },
-            "processing_timestamp": datetime.now().isoformat()
+            "processing_timestamp": datetime.now().isoformat(),
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Multi-channel climate notification processing failed: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Multi-channel climate notification processing failed: {str(e)}",
+        )
+
 
 @router.get("/climate-alert/status")
 async def climate_alert_status():
@@ -300,21 +388,21 @@ async def climate_alert_status():
     """
     return {
         "service_available": True,
-        "n_active_alerts": len(getattr(climate_alert_service, 'active_alerts', [])),
+        "n_active_alerts": len(getattr(climate_alert_service, "active_alerts", [])),
         "premium_change_threshold": 0.20,  # 20%
         "severe_event_probability_72h_threshold": 0.05,  # 5%
         "severe_event_probability_24h_threshold": 0.15,  # 15%
         "formula_implemented": [
             "Notificação_push = I{ΔPrêmio_7d > 20% OU P(evento_severo_72h) > 5%}",
             "Se P(evento_severo_72h) > 5%: Push notification",
-            "Se P(evento_severo_24h) > 15%: SMS + Email + parametric trigger (R$ 2.000)"
+            "Se P(evento_severo_24h) > 15%: SMS + Email + parametric trigger (R$ 2.000)",
         ],
         "triggered_actions": [
             "Immediate mitigation recommendation",
             "Temporary complementary coverage offer",
             "Customer alert for preventive actions",
             "Multi-channel notifications (Push, SMS, Email)",
-            "Parametric payment triggers for emergency expenses"
+            "Parametric payment triggers for emergency expenses",
         ],
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
     }

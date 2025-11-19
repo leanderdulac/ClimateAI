@@ -1,10 +1,12 @@
 """
 Serviço para dados climáticos
 """
-from typing import List, Optional
-from datetime import datetime, timedelta
+
 import math
 import random
+from datetime import datetime, timedelta
+from typing import List, Optional
+
 from models.schemas import ClimaData
 from services.openmeteo_service import OpenMeteoService
 
@@ -19,7 +21,7 @@ class ClimaService:
         longitude: float,
         data_inicio: datetime,
         data_fim: datetime,
-        variavel: Optional[str] = None
+        variavel: Optional[str] = None,
     ) -> List[ClimaData]:
         """
         Obter dados climáticos históricos para uma localização específica
@@ -30,16 +32,12 @@ class ClimaService:
             longitude=longitude,
             data_inicio=data_inicio,
             data_fim=data_fim,
-            variavel=variavel
+            variavel=variavel,
         )
-        
+
         return dados
 
-    def obter_clima_atual(
-        self,
-        latitude: float,
-        longitude: float
-    ) -> ClimaData:
+    def obter_clima_atual(self, latitude: float, longitude: float) -> ClimaData:
         """
         Obter condições climáticas atuais para uma localização específica
         """
@@ -49,9 +47,9 @@ class ClimaService:
             latitude=latitude,
             longitude=longitude,
             data_inicio=agora,
-            data_fim=agora + timedelta(days=1)
+            data_fim=agora + timedelta(days=1),
         )
-        
+
         # Retornar os dados do primeiro (e único) dia
         return dados[0] if dados else None
 

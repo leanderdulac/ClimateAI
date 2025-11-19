@@ -1,10 +1,12 @@
 """
 Modelos de dados para o Framework Integrado de Modelagem Climático-Econômica (FIMCE)
 """
-from pydantic import BaseModel, EmailStr
-from typing import Optional, List, Dict, Any
+
 from datetime import datetime
 from enum import Enum
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, EmailStr
 
 
 class UserRole(str, Enum):
@@ -21,6 +23,7 @@ class TokenType(str, Enum):
 
 class UserBase(BaseModel):
     """Modelo base para usuário"""
+
     email: EmailStr
     full_name: str
     role: UserRole = UserRole.USER
@@ -30,11 +33,13 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     """Modelo para criação de usuário"""
+
     password: str
 
 
 class UserUpdate(BaseModel):
     """Modelo para atualização de usuário"""
+
     email: Optional[EmailStr] = None
     full_name: Optional[str] = None
     role: Optional[UserRole] = None
@@ -45,6 +50,7 @@ class UserUpdate(BaseModel):
 
 class User(UserBase):
     """Modelo completo de usuário"""
+
     id: str
     created_at: datetime
     updated_at: datetime
@@ -56,6 +62,7 @@ class User(UserBase):
 
 class Token(BaseModel):
     """Modelo para tokens JWT"""
+
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
@@ -65,6 +72,7 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     """Modelo para dados extraídos do token"""
+
     user_id: str
     email: str
     role: UserRole
@@ -73,36 +81,39 @@ class TokenData(BaseModel):
 
 class LoginRequest(BaseModel):
     """Modelo para requisição de login"""
+
     email: EmailStr
     password: str
 
 
 class RefreshTokenRequest(BaseModel):
     """Modelo para requisição de refresh token"""
+
     refresh_token: str
 
 
 class PasswordResetRequest(BaseModel):
     """Modelo para requisição de reset de senha"""
+
     email: EmailStr
 
 
 class PasswordResetConfirm(BaseModel):
     """Modelo para confirmação de reset de senha"""
+
     token: str
     new_password: str
 
 
 class UserPermissions(BaseModel):
     """Modelo para permissões do usuário"""
+
     can_access_climate_data: bool = True
     can_access_pricing_models: bool = False
     can_access_audit_logs: bool = False
     can_manage_users: bool = False
     can_access_admin_panel: bool = False
     api_rate_limit: int = 100  # requests per hour
-
-
 
 
 class ClimaTipo(str, Enum):
@@ -123,6 +134,7 @@ class EventoClimaticoTipo(str, Enum):
 
 class ClimaData(BaseModel):
     """Modelo para dados climáticos"""
+
     latitude: float
     longitude: float
     data: datetime
@@ -140,6 +152,7 @@ class ClimaData(BaseModel):
 
 class PrevisaoClima(BaseModel):
     """Modelo para previsões climáticas"""
+
     latitude: float
     longitude: float
     data_inicio: datetime
@@ -151,6 +164,7 @@ class PrevisaoClima(BaseModel):
 
 class EventoClimatico(BaseModel):
     """Modelo para eventos climáticos extremos"""
+
     tipo: EventoClimaticoTipo
     latitude: float
     longitude: float
@@ -164,6 +178,7 @@ class EventoClimatico(BaseModel):
 
 class PrevisaoPreco(BaseModel):
     """Modelo para previsões de preços de commodities"""
+
     simbolo: str
     descricao: str
     data_referencia: datetime
@@ -176,6 +191,7 @@ class PrevisaoPreco(BaseModel):
 
 class Alerta(BaseModel):
     """Modelo para alertas do sistema"""
+
     id: str
     tipo: str
     titulo: str

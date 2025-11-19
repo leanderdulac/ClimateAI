@@ -1,13 +1,16 @@
 """
 Router para endpoints de tokenização de eventos climáticos
 """
-from fastapi import APIRouter, HTTPException, Query, Body
-from typing import List, Optional, Dict, Any
+
 from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional
+
+from fastapi import APIRouter, Body, HTTPException, Query
+
 from models.schemas import EventoClimatico, EventoClimaticoTipo
 from models.token_schemas import EventoToken, TokenAnalysis, TokenGroup
-from services.tokenizacao_eventos_service import TokenizacaoEventosService
 from services.eventos_service import EventosService
+from services.tokenizacao_eventos_service import TokenizacaoEventosService
 
 router = APIRouter()
 token_service = TokenizacaoEventosService()
@@ -27,8 +30,7 @@ async def tokenizar_evento(evento: EventoClimatico = Body(...)):
         return token
     except Exception as e:
         raise HTTPException(
-            status_code=400,
-            detail=f"Erro ao tokenizar evento: {str(e)}"
+            status_code=400, detail=f"Erro ao tokenizar evento: {str(e)}"
         )
 
 
@@ -45,8 +47,7 @@ async def tokenizar_multiplos_eventos(eventos: List[EventoClimatico] = Body(...)
         return tokens
     except Exception as e:
         raise HTTPException(
-            status_code=400,
-            detail=f"Erro ao tokenizar eventos: {str(e)}"
+            status_code=400, detail=f"Erro ao tokenizar eventos: {str(e)}"
         )
 
 
@@ -68,8 +69,7 @@ async def decodificar_token(token_id: str):
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(
-            status_code=500,
-            detail=f"Erro interno ao decodificar token: {str(e)}"
+            status_code=500, detail=f"Erro interno ao decodificar token: {str(e)}"
         )
 
 
@@ -78,7 +78,7 @@ async def analisar_tokens(
     latitude: Optional[float] = Query(None, ge=-90, le=90),
     longitude: Optional[float] = Query(None, ge=-180, le=180),
     raio: float = Query(100.0, ge=1.0, le=1000.0),
-    dias: int = Query(30, ge=1, le=365)
+    dias: int = Query(30, ge=1, le=365),
 ):
     """
     Realiza análise estatística dos tokens de eventos na área especificada
@@ -100,7 +100,7 @@ async def analisar_tokens(
             tipo=None,
             data_inicio=datetime.now() - timedelta(days=dias),
             data_fim=datetime.now(),
-            raio=raio
+            raio=raio,
         )
 
         # Tokenizar eventos
@@ -112,8 +112,7 @@ async def analisar_tokens(
         return analysis
     except Exception as e:
         raise HTTPException(
-            status_code=500,
-            detail=f"Erro ao analisar tokens: {str(e)}"
+            status_code=500, detail=f"Erro ao analisar tokens: {str(e)}"
         )
 
 
@@ -122,7 +121,7 @@ async def agrupar_tokens(
     latitude: Optional[float] = Query(None, ge=-90, le=90),
     longitude: Optional[float] = Query(None, ge=-180, le=180),
     raio: float = Query(100.0, ge=1.0, le=1000.0),
-    dias: int = Query(30, ge=1, le=365)
+    dias: int = Query(30, ge=1, le=365),
 ):
     """
     Agrupa tokens similares por tipo e severidade
@@ -144,7 +143,7 @@ async def agrupar_tokens(
             tipo=None,
             data_inicio=datetime.now() - timedelta(days=dias),
             data_fim=datetime.now(),
-            raio=raio
+            raio=raio,
         )
 
         # Tokenizar eventos
@@ -155,10 +154,7 @@ async def agrupar_tokens(
 
         return grupos
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Erro ao agrupar tokens: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Erro ao agrupar tokens: {str(e)}")
 
 
 @router.get("/risco/{token_id}")
@@ -184,8 +180,7 @@ async def calcular_risco_token(token_id: str):
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(
-            status_code=500,
-            detail=f"Erro ao calcular risco do token: {str(e)}"
+            status_code=500, detail=f"Erro ao calcular risco do token: {str(e)}"
         )
 
 
@@ -204,7 +199,4 @@ async def validar_token(token_data: Dict[str, Any] = Body(...)):
         validation_result = token_service.validar_token(token_data)
         return validation_result
     except Exception as e:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Erro ao validar token: {str(e)}"
-        )
+        raise HTTPException(status_code=400, detail=f"Erro ao validar token: {str(e)}")

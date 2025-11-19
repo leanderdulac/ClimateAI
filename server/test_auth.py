@@ -1,9 +1,11 @@
 """
 Testes para o sistema de autenticação
 """
+
 import pytest
-from services.auth_service import auth_service
+
 from models.schemas import UserRole
+from services.auth_service import auth_service
 
 
 def test_password_hashing():
@@ -73,8 +75,8 @@ def test_user_permissions_user():
 
 def test_check_permission():
     """Testa verificação de permissões baseada em papel"""
-    admin_user = type('User', (), {'role': UserRole.ADMIN})()
-    user_user = type('User', (), {'role': UserRole.USER})()
+    admin_user = type("User", (), {"role": UserRole.ADMIN})()
+    user_user = type("User", (), {"role": UserRole.USER})()
 
     # Admin pode acessar tudo
     assert auth_service.check_permission(admin_user, UserRole.ADMIN)

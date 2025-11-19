@@ -1,9 +1,12 @@
 """
 Router para endpoints de sistema de alertas
 """
-from fastapi import APIRouter, HTTPException, Query
-from typing import List, Optional
+
 from datetime import datetime
+from typing import List, Optional
+
+from fastapi import APIRouter, HTTPException, Query
+
 from models.schemas import Alerta
 from services.alertas_service import AlertasService
 
@@ -17,7 +20,7 @@ async def get_alertas(
     longitude: Optional[float] = Query(None, ge=-180, le=180),
     nivel_minimo: Optional[int] = Query(1, ge=1, le=5),
     ativo: bool = Query(True),
-    limite: int = Query(50, ge=1, le=1000)
+    limite: int = Query(50, ge=1, le=1000),
 ):
     """
     Obter alertas ativos em uma área específica
@@ -28,7 +31,7 @@ async def get_alertas(
             longitude=longitude,
             nivel_minimo=nivel_minimo,
             ativo=ativo,
-            limite=limite
+            limite=limite,
         )
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -36,17 +39,13 @@ async def get_alertas(
 
 @router.get("/usuario", response_model=List[Alerta])
 async def get_alertas_usuario(
-    usuario_id: str = Query(...),
-    lido: Optional[bool] = Query(None)
+    usuario_id: str = Query(...), lido: Optional[bool] = Query(None)
 ):
     """
     Obter alertas específicos de um usuário
     """
     try:
-        return alertas_service.obter_alertas_usuario(
-            usuario_id=usuario_id,
-            lido=lido
-        )
+        return alertas_service.obter_alertas_usuario(usuario_id=usuario_id, lido=lido)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 

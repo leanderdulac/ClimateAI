@@ -67,6 +67,12 @@ const router = createBrowserRouter([
   },
 ]);
 
+import { LanguageProvider } from '@/contexts/LanguageContext';
+
 export function AppRoutes() {
-  return <RouterProvider router={router} />;
+  return (
+    <LanguageProvider>
+      <RouterProvider router={router} />
+    </LanguageProvider>
+  );
 }

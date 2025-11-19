@@ -1,10 +1,13 @@
 """
 Router para endpoints de modelagem econômica
 """
-from fastapi import APIRouter, HTTPException, Query, Body
-from typing import List, Optional, Dict
+
 from datetime import datetime
+from typing import Dict, List, Optional
+
 import numpy as np
+from fastapi import APIRouter, Body, HTTPException, Query
+
 from models.schemas import PrevisaoPreco
 from services.modelagem_service import ModelagemService
 
@@ -17,7 +20,7 @@ async def get_previsao_precos(
     simbolos: List[str] = Query(..., description="Símbolos de commodities"),
     latitude: Optional[float] = Query(None, ge=-90, le=90),
     longitude: Optional[float] = Query(None, ge=-180, le=180),
-    dias: int = Query(30, ge=1, le=90)
+    dias: int = Query(30, ge=1, le=90),
 ):
     """
     Obter previsões de preços de commodities considerando fatores climáticos
@@ -25,10 +28,7 @@ async def get_previsao_precos(
     try:
         # Executa cálculo
         result = modelagem_service.obter_previsao_precos(
-            simbolos=simbolos,
-            latitude=latitude,
-            longitude=longitude,
-            dias=dias
+            simbolos=simbolos, latitude=latitude, longitude=longitude, dias=dias
         )
 
         return result
@@ -42,7 +42,7 @@ async def get_impacto_climatico(
     simbolo: str = Query(...),
     latitude: float = Query(..., ge=-90, le=90),
     longitude: float = Query(..., ge=-180, le=180),
-    periodo: int = Query(30, ge=1, le=365)
+    periodo: int = Query(30, ge=1, le=365),
 ):
     """
     Obter análise de impacto climático nos preços de commodities
@@ -50,10 +50,7 @@ async def get_impacto_climatico(
     try:
         # Executa cálculo
         result = modelagem_service.obter_impacto_climatico(
-            simbolo=simbolo,
-            latitude=latitude,
-            longitude=longitude,
-            periodo=periodo
+            simbolo=simbolo, latitude=latitude, longitude=longitude, periodo=periodo
         )
 
         return result
@@ -65,7 +62,7 @@ async def get_impacto_climatico(
 @router.post("/ml-sinistrality-prediction")
 async def predict_sinistrality_ml(
     features: Dict,
-    use_cache: bool = Query(True, description="Usar cache para resultados")
+    use_cache: bool = Query(True, description="Usar cache para resultados"),
 ):
     """
     Prediz sinistralidade usando machine learning
@@ -89,13 +86,21 @@ async def predict_sinistrality_ml(
 
 @router.post("/derivativos-climaticos/preco")
 async def price_climate_derivative(
-    target_year: int = Query(2025, ge=2020, le=2050, description="Ano alvo para precificação"),
+    target_year: int = Query(
+        2025, ge=2020, le=2050, description="Ano alvo para precificação"
+    ),
     iam_adjustment: float = Query(0.5, ge=0, le=5, description="Ajuste IAM em °F"),
-    months_to_expiry: float = Query(3, ge=0.1, le=12, description="Meses até expiração"),
+    months_to_expiry: float = Query(
+        3, ge=0.1, le=12, description="Meses até expiração"
+    ),
     scenario_name: str = Query("Base", description="Nome do cenário"),
     base_temp: float = Query(65.0, ge=50, le=80, description="Temperatura base em °F"),
-    contract_period_days: int = Query(92, ge=30, le=365, description="Período do contrato em dias"),
-    payout_per_cdd: float = Query(10000, ge=1000, le=100000, description="Pagamento por CDD em $")
+    contract_period_days: int = Query(
+        92, ge=30, le=365, description="Período do contrato em dias"
+    ),
+    payout_per_cdd: float = Query(
+        10000, ge=1000, le=100000, description="Pagamento por CDD em $"
+    ),
 ):
     """
     Precifica derivativos climáticos baseados em CDD (Cooling Degree Days)
@@ -109,7 +114,7 @@ async def price_climate_derivative(
         pricer = ClimateDerivativePricer(
             base_temp=base_temp,
             contract_period_days=contract_period_days,
-            payout_per_cdd=payout_per_cdd
+            payout_per_cdd=payout_per_cdd,
         )
 
         # Executar precificação
@@ -117,7 +122,7 @@ async def price_climate_derivative(
             target_year=target_year,
             iam_adjustment=iam_adjustment,
             months_to_expiry=months_to_expiry,
-            scenario_name=scenario_name
+            scenario_name=scenario_name,
         )
 
         return result
@@ -142,12 +147,17 @@ async def compare_climate_derivative_scenarios(
 
         # Validar cenários
         for scenario in scenarios:
-            required_fields = ['target_year', 'iam_adjustment', 'months_to_expiry', 'scenario_name']
+            required_fields = [
+                "target_year",
+                "iam_adjustment",
+                "months_to_expiry",
+                "scenario_name",
+            ]
             for field in required_fields:
                 if field not in scenario:
                     raise HTTPException(
                         status_code=400,
-                        detail=f"Campo obrigatório '{field}' ausente no cenário"
+                        detail=f"Campo obrigatório '{field}' ausente no cenário",
                     )
 
         result = pricer.compare_scenarios(scenarios)
@@ -156,14 +166,18 @@ async def compare_climate_derivative_scenarios(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Erro na comparação de cenários: {str(e)}")
+        raise HTTPException(
+            status_code=400, detail=f"Erro na comparação de cenários: {str(e)}"
+        )
 
 
 @router.get("/derivativos-climaticos/analise-risco")
 async def get_risk_analysis(
     target_year: int = Query(2025, ge=2020, le=2050),
     iam_adjustment: float = Query(0.5, ge=0, le=5),
-    confidence_levels: List[float] = Query([0.95, 0.99], description="Níveis de confiança para VaR/CVaR")
+    confidence_levels: List[float] = Query(
+        [0.95, 0.99], description="Níveis de confiança para VaR/CVaR"
+    ),
 ):
     """
     Análise de risco detalhada para derivativos climáticos
@@ -175,45 +189,50 @@ async def get_risk_analysis(
 
         # Executar precificação completa
         result = pricer.price_climate_derivative(
-            target_year=target_year,
-            iam_adjustment=iam_adjustment
+            target_year=target_year, iam_adjustment=iam_adjustment
         )
 
         # Extrair métricas de risco específicas
         risk_analysis = {
-            'scenario': result['scenario'],
-            'expected_payout': result['risk_metrics']['expected_payout'],
-            'volatility': result['risk_metrics']['std_payout'],
-            'var_cvar': {}
+            "scenario": result["scenario"],
+            "expected_payout": result["risk_metrics"]["expected_payout"],
+            "volatility": result["risk_metrics"]["std_payout"],
+            "var_cvar": {},
         }
 
         # Calcular VaR e CVaR para diferentes níveis de confiança
         payouts = np.random.normal(
-            result['risk_metrics']['expected_payout'],
-            result['risk_metrics']['std_payout'],
-            pricer.n_simulations
+            result["risk_metrics"]["expected_payout"],
+            result["risk_metrics"]["std_payout"],
+            pricer.n_simulations,
         )
 
         for conf_level in confidence_levels:
             var = np.percentile(payouts, (1 - conf_level) * 100)
             cvar = payouts[payouts >= var].mean()
 
-            risk_analysis['var_cvar'][f'{int(conf_level*100)}%'] = {
-                'var': var,
-                'cvar': cvar
+            risk_analysis["var_cvar"][f"{int(conf_level*100)}%"] = {
+                "var": var,
+                "cvar": cvar,
             }
 
         return risk_analysis
 
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Erro na análise de risco: {str(e)}")
+        raise HTTPException(
+            status_code=400, detail=f"Erro na análise de risco: {str(e)}"
+        )
 
 
 @router.post("/derivativos-climaticos/analise-capital")
 async def analyze_capital_requirements(
     ask_price: float = Body(..., ge=0, description="Preço de venda do contrato"),
-    initial_capital: float = Body(1000000, ge=0, description="Capital inicial disponível"),
-    risk_tolerance: float = Body(0.05, ge=0, le=1, description="Tolerância ao risco (0-1)")
+    initial_capital: float = Body(
+        1000000, ge=0, description="Capital inicial disponível"
+    ),
+    risk_tolerance: float = Body(
+        0.05, ge=0, le=1, description="Tolerância ao risco (0-1)"
+    ),
 ):
     """
     Analisa requisitos de capital e estratégias de investimento para derivativos climáticos
@@ -226,29 +245,37 @@ async def analyze_capital_requirements(
         pricer = ClimateDerivativePricer()
 
         # Análise de capital
-        capital_analysis = pricer.analyze_capital_requirements(ask_price, initial_capital)
+        capital_analysis = pricer.analyze_capital_requirements(
+            ask_price, initial_capital
+        )
 
         # Estratégias baseadas na tolerância ao risco
         strategies = {
-            'conservative': {
-                'max_contracts': min(capital_analysis['contracts_affordable'] * 0.3, 0.5),
-                'description': 'Estratégia conservadora: máximo 30% do capital disponível'
+            "conservative": {
+                "max_contracts": min(
+                    capital_analysis["contracts_affordable"] * 0.3, 0.5
+                ),
+                "description": "Estratégia conservadora: máximo 30% do capital disponível",
             },
-            'moderate': {
-                'max_contracts': min(capital_analysis['contracts_affordable'] * 0.6, 1.0),
-                'description': 'Estratégia moderada: até 60% do capital disponível'
+            "moderate": {
+                "max_contracts": min(
+                    capital_analysis["contracts_affordable"] * 0.6, 1.0
+                ),
+                "description": "Estratégia moderada: até 60% do capital disponível",
             },
-            'aggressive': {
-                'max_contracts': min(capital_analysis['contracts_affordable'] * risk_tolerance, 2.0),
-                'description': f'Estratégia agressiva: baseada na tolerância ao risco ({risk_tolerance})'
-            }
+            "aggressive": {
+                "max_contracts": min(
+                    capital_analysis["contracts_affordable"] * risk_tolerance, 2.0
+                ),
+                "description": f"Estratégia agressiva: baseada na tolerância ao risco ({risk_tolerance})",
+            },
         }
 
         # Recomendação baseada na análise
-        if capital_analysis['contracts_affordable'] < 0.1:
+        if capital_analysis["contracts_affordable"] < 0.1:
             recommendation = "capital_insufficient"
             message = "Capital insuficiente para investimento significativo. Considere pooling de recursos."
-        elif capital_analysis['contracts_affordable'] < 1.0:
+        elif capital_analysis["contracts_affordable"] < 1.0:
             recommendation = "fractional_contract"
             message = "Capital permite investimento fracionário. Considere contratos parciais."
         else:
@@ -256,22 +283,28 @@ async def analyze_capital_requirements(
             message = "Capital suficiente para contrato completo. Diversifique em múltiplos contratos."
 
         return {
-            'capital_analysis': capital_analysis,
-            'investment_strategies': strategies,
-            'recommendation': {
-                'type': recommendation,
-                'message': message,
-                'risk_assessment': 'high' if ask_price > initial_capital * 0.1 else 'moderate'
+            "capital_analysis": capital_analysis,
+            "investment_strategies": strategies,
+            "recommendation": {
+                "type": recommendation,
+                "message": message,
+                "risk_assessment": (
+                    "high" if ask_price > initial_capital * 0.1 else "moderate"
+                ),
             },
-            'market_context': {
-                'contract_price_percentile': 'high' if ask_price > 200000000 else 'moderate',
-                'volatility_adjustment': risk_tolerance,
-                'liquidity_note': 'Mercado de derivativos climáticos ainda em desenvolvimento'
-            }
+            "market_context": {
+                "contract_price_percentile": (
+                    "high" if ask_price > 200000000 else "moderate"
+                ),
+                "volatility_adjustment": risk_tolerance,
+                "liquidity_note": "Mercado de derivativos climáticos ainda em desenvolvimento",
+            },
         }
 
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Erro na análise de capital: {str(e)}")
+        raise HTTPException(
+            status_code=400, detail=f"Erro na análise de capital: {str(e)}"
+        )
 
 
 @router.get("/derivativos-climaticos/validacao-inmet")
@@ -279,7 +312,7 @@ async def validate_with_inmet(
     station_code: str = Query(..., description="Código da estação INMET"),
     start_date: str = Query(..., description="Data inicial (YYYY-MM-DD)"),
     end_date: str = Query(..., description="Data final (YYYY-MM-DD)"),
-    threshold_temp: float = Query(28.0, description="Temperatura limiar em °C")
+    threshold_temp: float = Query(28.0, description="Temperatura limiar em °C"),
 ):
     """
     Valida projeções climáticas com dados reais do INMET
@@ -295,23 +328,25 @@ async def validate_with_inmet(
         if temp_real is None:
             raise HTTPException(
                 status_code=404,
-                detail=f"Dados INMET não disponíveis para estação {station_code}"
+                detail=f"Dados INMET não disponíveis para estação {station_code}",
             )
 
         # Calcular payout baseado na temperatura real
         payout = 10000 if temp_real > threshold_temp else 0
 
         return {
-            'station_code': station_code,
-            'period': {'start': start_date, 'end': end_date},
-            'temperature_real': temp_real,
-            'threshold_temp': threshold_temp,
-            'payout': payout,
-            'triggered': temp_real > threshold_temp,
-            'data_source': 'INMET'
+            "station_code": station_code,
+            "period": {"start": start_date, "end": end_date},
+            "temperature_real": temp_real,
+            "threshold_temp": threshold_temp,
+            "payout": payout,
+            "triggered": temp_real > threshold_temp,
+            "data_source": "INMET",
         }
 
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Erro na validação INMET: {str(e)}")
+        raise HTTPException(
+            status_code=400, detail=f"Erro na validação INMET: {str(e)}"
+        )

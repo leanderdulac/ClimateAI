@@ -6,85 +6,74 @@ Global test configuration and reusable fixtures for all tests
 import os
 import sys
 from pathlib import Path
-from typing import Generator, Any
-from unittest.mock import Mock, AsyncMock, patch
+from typing import Any, AsyncGenerator, Generator
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, event
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
-# Add server directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-# Import after path modification
-from main import app, get_db
-from api.models import Base, User, ClimateData
-from api.logging import LogContext, get_logger, init_logging
 from api.health import HealthChecker, HealthCheckResult, ServiceStatus
-from core.security import SecurityManager
-
+from api.logging import LogContext, get_logger, init_logging
+from config.database import (
+    _create_engine_and_session_maker,
+    async_session_maker,
+    engine,
+    get_db_session,
+)
+from lib.security import SecurityManager
+from models.sqlalchemy_models import Base, User
+from services.scr_module_service import ClimateData
 
 # ============================================================================
 # DATABASE FIXTURES
 # ============================================================================
 
-@pytest.fixture(scope="session")
-def test_db_url():
-    """In-memory SQLite database for testing"""
-    return "sqlite:///:memory:"
-
 
 @pytest.fixture(scope="session")
-def engine(test_db_url):
-    """Create test database engine"""
-    # SQLite in-memory database for testing
-    engine = create_engine(
-        test_db_url,
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    
-    # Create all tables
-    Base.metadata.create_all(bind=engine)
+async def engine():
+    """Create test database engine and tables"""
+    # Configura o DATABASE_URL para o teste
+    os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
+
+    # Cria o engine e o session maker para o teste
+    _create_engine_and_session_maker(os.environ["DATABASE_URL"])
+
+    # Cria todas as tabelas
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
     yield engine
-    
-    # Cleanup
-    Base.metadata.drop_all(bind=engine)
+
+    # Limpeza
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
 
 
 @pytest.fixture(scope="function")
-def db_session(engine) -> Generator[Session, None, None]:
+async def db_session(engine) -> AsyncGenerator[AsyncSession, None]:
     """Create a fresh database session for each test"""
-    # Create new connection and transaction
-    connection = engine.connect()
-    transaction = connection.begin()
-    session = sessionmaker(autocommit=False, autoflush=False, bind=connection)()
-    
-    # Configure app to use test session
-    def override_get_db():
-        try:
-            yield session
-        finally:
-            session.close()
-    
-    app.dependency_overrides[get_db] = override_get_db
-    
-    yield session
-    
-    # Cleanup
-    session.close()
-    transaction.rollback()
-    connection.close()
+    async with async_session_maker() as session:
+        # Configura o app para usar a sessão de teste
+        app.dependency_overrides[get_db_session] = lambda: session
+        yield session
+        # Limpeza após o teste
+        await session.close()
+
+    # Limpa o override da dependência
+    app.dependency_overrides.clear()
 
 
 @pytest.fixture
 def sample_user(db_session: Session) -> User:
     """Create a sample user for testing"""
     from datetime import datetime
-    
+
     user = User(
+        id="test-user-id",
         email="test@example.com",
         full_name="Test User",
         hashed_password="hashed_password_123",
@@ -103,7 +92,7 @@ def sample_user(db_session: Session) -> User:
 def sample_climate_data(db_session: Session, sample_user: User) -> ClimateData:
     """Create sample climate data for testing"""
     from datetime import datetime
-    
+
     data = ClimateData(
         user_id=sample_user.id,
         location="São Paulo",
@@ -125,6 +114,7 @@ def sample_climate_data(db_session: Session, sample_user: User) -> ClimateData:
 # API CLIENT FIXTURES
 # ============================================================================
 
+
 @pytest.fixture
 def client(db_session: Session) -> TestClient:
     """FastAPI test client"""
@@ -136,23 +126,21 @@ def authenticated_client(client: TestClient, sample_user: User) -> TestClient:
     """FastAPI test client with authentication"""
     # Create JWT token
     from core.security import create_access_token
-    
+
     token = create_access_token(
         data={"sub": str(sample_user.id), "email": sample_user.email}
     )
-    
+
     # Add authorization header
-    client.headers = {
-        **client.headers,
-        "Authorization": f"Bearer {token}"
-    }
-    
+    client.headers = {**client.headers, "Authorization": f"Bearer {token}"}
+
     return client
 
 
 # ============================================================================
 # LOGGING FIXTURES
 # ============================================================================
+
 
 @pytest.fixture
 def log_context():
@@ -175,13 +163,14 @@ def logger():
 # HEALTH CHECK FIXTURES
 # ============================================================================
 
+
 @pytest.fixture
 async def health_checker():
     """Create a HealthChecker instance"""
     checker = HealthChecker(
         database_url="sqlite:///:memory:",
         redis_url=None,
-        external_apis=["https://api.open-meteo.com/v1/forecast"]
+        external_apis=["https://api.open-meteo.com/v1/forecast"],
     )
     await checker.initialize()
     yield checker
@@ -192,6 +181,7 @@ async def health_checker():
 # ============================================================================
 # SECURITY FIXTURES
 # ============================================================================
+
 
 @pytest.fixture
 def security_manager():
@@ -208,7 +198,9 @@ def sample_password() -> str:
 
 
 @pytest.fixture
-def sample_hashed_password(security_manager: SecurityManager, sample_password: str) -> str:
+def sample_hashed_password(
+    security_manager: SecurityManager, sample_password: str
+) -> str:
     """Hash a sample password"""
     return security_manager.hash_password(sample_password)
 
@@ -216,6 +208,7 @@ def sample_hashed_password(security_manager: SecurityManager, sample_password: s
 # ============================================================================
 # MOCK FIXTURES
 # ============================================================================
+
 
 @pytest.fixture
 def mock_redis():
@@ -255,26 +248,15 @@ def mock_s3_client():
 # PYTEST HOOKS AND CONFIGURATION
 # ============================================================================
 
+
 def pytest_configure(config):
     """Configure pytest markers"""
-    config.addinivalue_line(
-        "markers", "unit: mark test as a unit test"
-    )
-    config.addinivalue_line(
-        "markers", "integration: mark test as an integration test"
-    )
-    config.addinivalue_line(
-        "markers", "performance: mark test as a performance test"
-    )
-    config.addinivalue_line(
-        "markers", "slow: mark test as slow running"
-    )
-    config.addinivalue_line(
-        "markers", "requires_db: mark test as requiring database"
-    )
-    config.addinivalue_line(
-        "markers", "requires_redis: mark test as requiring Redis"
-    )
+    config.addinivalue_line("markers", "unit: mark test as a unit test")
+    config.addinivalue_line("markers", "integration: mark test as an integration test")
+    config.addinivalue_line("markers", "performance: mark test as a performance test")
+    config.addinivalue_line("markers", "slow: mark test as slow running")
+    config.addinivalue_line("markers", "requires_db: mark test as requiring database")
+    config.addinivalue_line("markers", "requires_redis: mark test as requiring Redis")
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -282,14 +264,14 @@ def setup_test_environment():
     """Setup test environment"""
     # Initialize logging
     init_logging()
-    
+
     # Set test environment variables
     os.environ["ENVIRONMENT"] = "test"
     os.environ["DEBUG"] = "True"
     os.environ["DATABASE_URL"] = "sqlite:///:memory:"
-    
+
     yield
-    
+
     # Cleanup after all tests
     app.dependency_overrides.clear()
 
@@ -298,10 +280,12 @@ def setup_test_environment():
 # UTILITY FIXTURES
 # ============================================================================
 
+
 @pytest.fixture
 def faker():
     """Faker instance for generating test data"""
     from faker import Faker
+
     return Faker("pt_BR")
 
 
@@ -309,6 +293,7 @@ def faker():
 def now_timestamp():
     """Get current timestamp"""
     from datetime import datetime
+
     return datetime.utcnow()
 
 
@@ -316,6 +301,7 @@ def now_timestamp():
 def future_timestamp(now_timestamp):
     """Get future timestamp (24 hours from now)"""
     from datetime import timedelta
+
     return now_timestamp + timedelta(hours=24)
 
 
@@ -323,10 +309,12 @@ def future_timestamp(now_timestamp):
 # ASYNC FIXTURES
 # ============================================================================
 
+
 @pytest.fixture
 def event_loop():
     """Create event loop for async tests"""
     import asyncio
+
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
     loop.close()

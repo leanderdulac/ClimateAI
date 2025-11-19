@@ -1,13 +1,16 @@
 """
 Middleware de Autenticação para ClimateAI
 """
-from fastapi import Request, HTTPException, status, Depends
+
+from typing import Optional
+
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Optional
+
+from config.database import get_db_session
 from models.schemas import User, UserRole
 from services.auth_service import auth_service
-from config.database import get_db_session
 
 # Bearer token scheme
 security = HTTPBearer()
@@ -15,13 +18,15 @@ security = HTTPBearer()
 
 async def get_current_user(
     credentials: HTTPBearer = Depends(security),
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db_session),
 ) -> User:
     """Dependência para obter usuário atual"""
     return await auth_service.get_current_user(db, credentials)
 
 
-async def get_current_active_user(current_user: User = Depends(get_current_user)) -> User:
+async def get_current_active_user(
+    current_user: User = Depends(get_current_user),
+) -> User:
     """Dependência para obter usuário ativo"""
     if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Usuário inativo")
@@ -30,13 +35,15 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
 
 def require_role(required_role: UserRole):
     """Decorator para requerer papel específico"""
+
     def role_checker(current_user: User = Depends(get_current_active_user)) -> User:
         if not auth_service.check_permission(current_user, required_role):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Acesso negado. Requer papel: {required_role.value}"
+                detail=f"Acesso negado. Requer papel: {required_role.value}",
             )
         return current_user
+
     return role_checker
 
 
@@ -58,10 +65,7 @@ class AuthMiddleware:
         self.optional = optional
 
     async def __call__(
-        self,
-        request: Request,
-        call_next,
-        db: AsyncSession = Depends(get_db_session)
+        self, request: Request, call_next, db: AsyncSession = Depends(get_db_session)
     ):
         """Middleware que adiciona usuário à requisição se token estiver presente"""
         user = None
@@ -71,7 +75,9 @@ class AuthMiddleware:
         if authorization and authorization.startswith("Bearer "):
             token = authorization.split(" ")[1]
             try:
-                user = await auth_service.get_current_user(db, type('Credentials', (), {'credentials': token})())
+                user = await auth_service.get_current_user(
+                    db, type("Credentials", (), {"credentials": token})()
+                )
             except HTTPException:
                 if not self.optional:
                     raise

@@ -1,11 +1,14 @@
 """
 Teste dos endpoints da API de blockchain tokens
 """
-import requests
+
 import json
 from datetime import datetime, timedelta
 
+import requests
+
 BASE_URL = "http://localhost:8000"
+
 
 def testar_endpoints_blockchain():
     """Testa todos os endpoints de blockchain tokens"""
@@ -40,7 +43,7 @@ def testar_endpoints_blockchain():
         "intensidade": 4.5,
         "probabilidade": 0.88,
         "descricao": "Enchente severa no Rio Madeira - Porto Velho",
-        "nivel_alerta": 5
+        "nivel_alerta": 5,
     }
 
     try:
@@ -70,8 +73,8 @@ def testar_endpoints_blockchain():
             "impact_area": "Rio Madeira Basin",
             "affected_population": 500000,
             "economic_impact": "high",
-            "mitigation_required": True
-        }
+            "mitigation_required": True,
+        },
     }
 
     try:
@@ -84,7 +87,9 @@ def testar_endpoints_blockchain():
             print(f"  Transaction ID: {tx_id}")
             print(f"  Token UID: {token_uid}")
             print(f"  Climate Token ID: {mint_result['climate_token_id']}")
-            print(f"  Token Symbol: {mint_result['blockchain_token']['token_data']['symbol']}")
+            print(
+                f"  Token Symbol: {mint_result['blockchain_token']['token_data']['symbol']}"
+            )
         else:
             print(f"❌ Erro no mint: {response.status_code} - {response.text}")
             return
@@ -103,8 +108,10 @@ def testar_endpoints_blockchain():
             print("✅ Informações do token obtidas!")
             print(f"  Proprietário: {token_info['owner_address']}")
             print(f"  Supply inicial: {token_info['initial_supply']:,}")
-            climate_event = token_info['token_data']['climate_event']
-            print(f"  Evento: {climate_event['event_type']} (Severidade: {climate_event['severity_level']})")
+            climate_event = token_info["token_data"]["climate_event"]
+            print(
+                f"  Evento: {climate_event['event_type']} (Severidade: {climate_event['severity_level']})"
+            )
         else:
             print(f"❌ Erro ao buscar token: {response.status_code} - {response.text}")
     except Exception as e:
@@ -123,7 +130,9 @@ def testar_endpoints_blockchain():
             print(f"  Status: {tx_info['status']}")
             print(f"  Timestamp: {tx_info['timestamp']}")
         else:
-            print(f"❌ Erro ao buscar transação: {response.status_code} - {response.text}")
+            print(
+                f"❌ Erro ao buscar transação: {response.status_code} - {response.text}"
+            )
     except Exception as e:
         print(f"❌ Erro na requisição: {e}")
     print()
@@ -135,7 +144,7 @@ def testar_endpoints_blockchain():
         "token_uid": token_uid,
         "from_address": "climateai_wallet_test_api_001",
         "to_address": "climateai_wallet_recipient_api_001",
-        "amount": 50000
+        "amount": 50000,
     }
 
     try:
@@ -155,12 +164,16 @@ def testar_endpoints_blockchain():
     print("📋 Testando listagem de tokens por proprietário...")
 
     try:
-        response = requests.get(f"{BASE_URL}/blockchain/tokens/owner/climateai_wallet_recipient_api_001")
+        response = requests.get(
+            f"{BASE_URL}/blockchain/tokens/owner/climateai_wallet_recipient_api_001"
+        )
         if response.status_code == 200:
             owner_tokens = response.json()
             print(f"✅ Tokens do destinatário: {len(owner_tokens)}")
             for token in owner_tokens:
-                print(f"    - {token['token_data']['symbol']}: {token['token_data']['name']}")
+                print(
+                    f"    - {token['token_data']['symbol']}: {token['token_data']['name']}"
+                )
         else:
             print(f"❌ Erro ao listar tokens: {response.status_code} - {response.text}")
     except Exception as e:
@@ -176,7 +189,9 @@ def testar_endpoints_blockchain():
             enchente_tokens = response.json()
             print(f"✅ Tokens de enchente encontrados: {len(enchente_tokens)}")
         else:
-            print(f"❌ Erro ao buscar por tipo: {response.status_code} - {response.text}")
+            print(
+                f"❌ Erro ao buscar por tipo: {response.status_code} - {response.text}"
+            )
     except Exception as e:
         print(f"❌ Erro na requisição: {e}")
     print()
@@ -194,12 +209,15 @@ def testar_endpoints_blockchain():
             print(f"  Tokens: {stats['tokens']}")
             print(f"  Rede: {stats['rede']}")
         else:
-            print(f"❌ Erro ao obter estatísticas: {response.status_code} - {response.text}")
+            print(
+                f"❌ Erro ao obter estatísticas: {response.status_code} - {response.text}"
+            )
     except Exception as e:
         print(f"❌ Erro na requisição: {e}")
     print()
 
     print("🎉 Todos os testes de endpoints da API foram concluídos!")
+
 
 if __name__ == "__main__":
     testar_endpoints_blockchain()

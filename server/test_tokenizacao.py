@@ -1,13 +1,17 @@
 """
 Teste da funcionalidade de tokenização de eventos climáticos
 """
-import sys
+
 import os
+import sys
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from datetime import datetime, timedelta
+
 from models.schemas import EventoClimatico, EventoClimaticoTipo
 from services.tokenizacao_eventos_service import TokenizacaoEventosService
+
 
 def testar_tokenizacao():
     """Testa a funcionalidade básica de tokenização"""
@@ -28,7 +32,7 @@ def testar_tokenizacao():
         intensidade=4.2,
         probabilidade=0.85,
         descricao="Enchente severa detectada na região de Porto Velho",
-        nivel_alerta=4
+        nivel_alerta=4,
     )
 
     print("📝 Evento de teste:")
@@ -56,7 +60,9 @@ def testar_tokenizacao():
     try:
         decoded = token_service.decodificar_token(token.token_id)
         print("✅ Token decodificado com sucesso!")
-        print(f"  Tipo decodificado: {decoded['event_type'].value if decoded['event_type'] else 'None'}")
+        print(
+            f"  Tipo decodificado: {decoded['event_type'].value if decoded['event_type'] else 'None'}"
+        )
         print(f"  Severidade decodificada: {decoded['severity_level']}")
         print(f"  Timestamp: {decoded['timestamp']}")
     except Exception as e:
@@ -75,7 +81,7 @@ def testar_tokenizacao():
             intensidade=3.8,
             probabilidade=0.75,
             descricao="Seca moderada na região",
-            nivel_alerta=3
+            nivel_alerta=3,
         ),
         EventoClimatico(
             tipo=EventoClimaticoTipo.ONDA_CALOR,
@@ -85,8 +91,8 @@ def testar_tokenizacao():
             intensidade=4.5,
             probabilidade=0.90,
             descricao="Onda de calor extrema",
-            nivel_alerta=5
-        )
+            nivel_alerta=5,
+        ),
     ]
 
     tokens_multiplos = token_service.tokenizar_multiplos_eventos(eventos_teste)
@@ -118,6 +124,7 @@ def testar_tokenizacao():
     print()
 
     print("🎉 Todos os testes de tokenização foram concluídos com sucesso!")
+
 
 if __name__ == "__main__":
     testar_tokenizacao()

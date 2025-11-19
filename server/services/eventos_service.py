@@ -1,13 +1,15 @@
 """
 Serviço para detecção de eventos climáticos
 """
-from typing import List, Optional, Tuple
+
+import math
+import random
 from datetime import datetime, timedelta
+from typing import List, Optional, Tuple
+
 from models.schemas import EventoClimatico, EventoClimaticoTipo
 from models.token_schemas import EventoToken
 from services.tokenizacao_eventos_service import TokenizacaoEventosService
-import random
-import math
 
 
 class EventosService:
@@ -21,7 +23,7 @@ class EventosService:
         tipo: Optional[EventoClimaticoTipo],
         data_inicio: Optional[datetime],
         data_fim: Optional[datetime],
-        raio: float
+        raio: float,
     ) -> List[EventoClimatico]:
         """
         Obter eventos climáticos detectados em uma área específica
@@ -56,9 +58,11 @@ class EventosService:
             else:
                 evento_lat = -23.5505 + random.uniform(-10, 10)  # Exemplo para Brasil
                 evento_lon = -46.6333 + random.uniform(-10, 10)
-            
-            descricao = self._gerar_descricao_evento(tipo_evento, evento_lat, evento_lon, data_evento)
-            
+
+            descricao = self._gerar_descricao_evento(
+                tipo_evento, evento_lat, evento_lon, data_evento
+            )
+
             evento = EventoClimatico(
                 tipo=tipo_evento,
                 latitude=evento_lat,
@@ -67,19 +71,15 @@ class EventosService:
                 intensidade=intensidade,
                 probabilidade=probabilidade,
                 descricao=descricao,
-                nivel_alerta=math.ceil(intensidade)
+                nivel_alerta=math.ceil(intensidade),
             )
-            
+
             eventos.append(evento)
-        
+
         return sorted(eventos, key=lambda x: x.data_inicio, reverse=True)
 
     def obter_eventos_por_severidade(
-        self,
-        latitude: float,
-        longitude: float,
-        severidade_minima: int,
-        dias: int
+        self, latitude: float, longitude: float, severidade_minima: int, dias: int
     ) -> List[EventoClimatico]:
         """
         Obter eventos climáticos com severidade mínima em uma área
@@ -90,12 +90,12 @@ class EventosService:
             tipo=None,
             data_inicio=datetime.now() - timedelta(days=dias),
             data_fim=datetime.now(),
-            raio=50.0
+            raio=50.0,
         )
-        
+
         # Filtrar por severidade mínima
         eventos_filtrados = [e for e in eventos if e.nivel_alerta >= severidade_minima]
-        
+
         return eventos_filtrados
 
     def _gerar_descricao_evento(
@@ -103,34 +103,33 @@ class EventosService:
         tipo: EventoClimaticoTipo,
         latitude: float,
         longitude: float,
-        data: datetime
+        data: datetime,
     ) -> str:
         """
         Gerar descrição detalhada para um evento climático
         """
         descricoes = {
             EventoClimaticoTipo.SECA: f"Período prolongado de baixa precipitação detectado na região "
-                                      f"(coordenadas: {latitude:.4f}, {longitude:.4f}) em {data.strftime('%Y-%m-%d')}. "
-                                      f"Índice SPI abaixo de -2.0.",
-            
+            f"(coordenadas: {latitude:.4f}, {longitude:.4f}) em {data.strftime('%Y-%m-%d')}. "
+            f"Índice SPI abaixo de -2.0.",
             EventoClimaticoTipo.ENCHENTE: f"Evento de precipitação extrema detectado na região "
-                                          f"(coordenadas: {latitude:.4f}, {longitude:.4f}) em {data.strftime('%Y-%m-%d')}. "
-                                          f"Risco de inundações em áreas de baixada.",
-            
+            f"(coordenadas: {latitude:.4f}, {longitude:.4f}) em {data.strftime('%Y-%m-%d')}. "
+            f"Risco de inundações em áreas de baixada.",
             EventoClimaticoTipo.ONDA_CALOR: f"Onda de calor severa detectada na região "
-                                            f"(coordenadas: {latitude:.4f}, {longitude:.4f}) em {data.strftime('%Y-%m-%d')}. "
-                                            f"Temperaturas acima de 35°C por mais de 3 dias consecutivos.",
-            
+            f"(coordenadas: {latitude:.4f}, {longitude:.4f}) em {data.strftime('%Y-%m-%d')}. "
+            f"Temperaturas acima de 35°C por mais de 3 dias consecutivos.",
             EventoClimaticoTipo.GEADA: f"Ocorrência de geada detectada na região "
-                                       f"(coordenadas: {latitude:.4f}, {longitude:.4f}) em {data.strftime('%Y-%m-%d')}. "
-                                       f"Risco para culturas sensíveis.",
-            
+            f"(coordenadas: {latitude:.4f}, {longitude:.4f}) em {data.strftime('%Y-%m-%d')}. "
+            f"Risco para culturas sensíveis.",
             EventoClimaticoTipo.SECA_FLASH: f"Seca flash detectada na região "
-                                            f"(coordenadas: {latitude:.4f}, {longitude:.4f}) em {data.strftime('%Y-%m-%d')}. "
-                                            f"Degradada rápida da umidade do solo com impacto potencial na agricultura."
+            f"(coordenadas: {latitude:.4f}, {longitude:.4f}) em {data.strftime('%Y-%m-%d')}. "
+            f"Degradada rápida da umidade do solo com impacto potencial na agricultura.",
         }
-        
-        return descricoes.get(tipo, f"Evento climático {tipo.value} detectado em {data.strftime('%Y-%m-%d')}")
+
+        return descricoes.get(
+            tipo,
+            f"Evento climático {tipo.value} detectado em {data.strftime('%Y-%m-%d')}",
+        )
 
     def obter_eventos_com_tokens(
         self,
@@ -139,7 +138,7 @@ class EventosService:
         tipo: Optional[EventoClimaticoTipo],
         data_inicio: Optional[datetime],
         data_fim: Optional[datetime],
-        raio: float
+        raio: float,
     ) -> Tuple[List[EventoClimatico], List[EventoToken]]:
         """
         Obter eventos climáticos com seus respectivos tokens
@@ -147,7 +146,9 @@ class EventosService:
         Returns:
             Tuple com lista de eventos e lista de tokens correspondentes
         """
-        eventos = self.obter_eventos(latitude, longitude, tipo, data_inicio, data_fim, raio)
+        eventos = self.obter_eventos(
+            latitude, longitude, tipo, data_inicio, data_fim, raio
+        )
         tokens = self.token_service.tokenizar_multiplos_eventos(eventos)
 
         return eventos, tokens
@@ -159,7 +160,7 @@ class EventosService:
         tipo: Optional[EventoClimaticoTipo],
         data_inicio: Optional[datetime],
         data_fim: Optional[datetime],
-        raio: float
+        raio: float,
     ) -> List[EventoToken]:
         """
         Obter apenas os tokens dos eventos climáticos detectados
@@ -167,12 +168,16 @@ class EventosService:
         Returns:
             Lista de tokens dos eventos
         """
-        eventos = self.obter_eventos(latitude, longitude, tipo, data_inicio, data_fim, raio)
+        eventos = self.obter_eventos(
+            latitude, longitude, tipo, data_inicio, data_fim, raio
+        )
         tokens = self.token_service.tokenizar_multiplos_eventos(eventos)
 
         return tokens
 
-    def obter_evento_por_token(self, token_id: str) -> Tuple[Optional[EventoClimatico], Optional[EventoToken]]:
+    def obter_evento_por_token(
+        self, token_id: str
+    ) -> Tuple[Optional[EventoClimatico], Optional[EventoToken]]:
         """
         Obter evento e token por ID do token
 
@@ -189,14 +194,14 @@ class EventosService:
             # Simular busca do evento baseado nas informações do token
             # Em produção, isso seria uma busca no banco de dados
             evento_simulado = EventoClimatico(
-                tipo=token_info.get('event_type'),
+                tipo=token_info.get("event_type"),
                 latitude=-8.7618,  # Porto Velho como exemplo
                 longitude=-63.9039,
                 data_inicio=datetime.now() - timedelta(days=2),
                 intensidade=4.0,
                 probabilidade=0.8,
                 descricao=f"Evento {token_info.get('event_type').value} recuperado por token",
-                nivel_alerta=token_info.get('severity_level', 3)
+                nivel_alerta=token_info.get("severity_level", 3),
             )
 
             # Gerar token para o evento simulado

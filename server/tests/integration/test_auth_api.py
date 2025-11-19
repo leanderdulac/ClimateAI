@@ -1,20 +1,22 @@
 """
 Testes de integração para a API de autenticação
 """
-import pytest
+
 import asyncio
-from httpx import AsyncClient
+
+import pytest
+from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from main import app
 from config.database import get_db_session
+from main import app
 
 
 @pytest.fixture
-async def client():
-    """Fixture para cliente HTTP assíncrono"""
-    async with AsyncClient(app=app, base_url="http://testserver") as client:
-        yield client
+def client():
+    """Fixture para cliente HTTP síncrono"""
+    client = TestClient(app=app, base_url="http://testserver")
+    yield client
 
 
 @pytest.fixture
@@ -30,12 +32,9 @@ class TestAuthAPI:
     @pytest.mark.asyncio
     async def test_login_success(self, client):
         """Testa login bem-sucedido"""
-        login_data = {
-            "email": "admin@climateai.com",
-            "password": "admin123"
-        }
+        login_data = {"email": "admin@climateai.com", "password": "admin123"}
 
-        response = await client.post("/api/v1/auth/login", json=login_data)
+        response = client.post("/api/v1/auth/login", json=login_data)
 
         assert response.status_code == 200
         data = response.json()
@@ -51,12 +50,9 @@ class TestAuthAPI:
     @pytest.mark.asyncio
     async def test_login_failure_wrong_credentials(self, client):
         """Testa login com credenciais erradas"""
-        login_data = {
-            "email": "wrong@email.com",
-            "password": "wrongpass"
-        }
+        login_data = {"email": "wrong@email.com", "password": "wrongpass"}
 
-        response = await client.post("/api/v1/auth/login", json=login_data)
+        response = client.post("/api/v1/auth/login", json=login_data)
 
         assert response.status_code == 401
         data = response.json()
@@ -67,7 +63,7 @@ class TestAuthAPI:
         """Testa login com campos faltando"""
         login_data = {"email": "admin@climateai.com"}  # Senha faltando
 
-        response = await client.post("/api/v1/auth/login", json=login_data)
+        response = client.post("/api/v1/auth/login", json=login_data)
 
         assert response.status_code == 422  # Validation error
 
@@ -75,11 +71,8 @@ class TestAuthAPI:
     async def test_refresh_token_success(self, client):
         """Testa refresh token bem-sucedido"""
         # Primeiro fazer login
-        login_data = {
-            "email": "admin@climateai.com",
-            "password": "admin123"
-        }
-        login_response = await client.post("/api/v1/auth/login", json=login_data)
+        login_data = {"email": "admin@climateai.com", "password": "admin123"}
+        login_response = client.post("/api/v1/auth/login", json=login_data)
         refresh_token = login_response.json()["refresh_token"]
 
         # Agora testar refresh
@@ -98,7 +91,7 @@ class TestAuthAPI:
         """Testa refresh token com token inválido"""
         refresh_data = {"refresh_token": "invalid-token"}
 
-        response = await client.post("/api/v1/auth/refresh", json=refresh_data)
+        response = client.post("/api/v1/auth/refresh", json=refresh_data)
 
         assert response.status_code == 401
         data = response.json()
@@ -107,7 +100,7 @@ class TestAuthAPI:
     @pytest.mark.asyncio
     async def test_get_current_user_unauthorized(self, client):
         """Testa acesso a endpoint protegido sem token"""
-        response = await client.get("/api/v1/auth/me")
+        response = client.get("/api/v1/auth/me")
 
         assert response.status_code == 401
         data = response.json()
@@ -117,16 +110,13 @@ class TestAuthAPI:
     async def test_get_current_user_authorized(self, client):
         """Testa acesso a endpoint protegido com token válido"""
         # Fazer login primeiro
-        login_data = {
-            "email": "admin@climateai.com",
-            "password": "admin123"
-        }
-        login_response = await client.post("/api/v1/auth/login", json=login_data)
+        login_data = {"email": "admin@climateai.com", "password": "admin123"}
+        login_response = client.post("/api/v1/auth/login", json=login_data)
         access_token = login_response.json()["access_token"]
 
         # Acessar endpoint protegido
         headers = {"Authorization": f"Bearer {access_token}"}
-        response = await client.get("/api/v1/auth/me", headers=headers)
+        response = client.get("/api/v1/auth/me", headers=headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -137,16 +127,13 @@ class TestAuthAPI:
     async def test_get_user_permissions(self, client):
         """Testa obtenção de permissões do usuário"""
         # Fazer login primeiro
-        login_data = {
-            "email": "admin@climateai.com",
-            "password": "admin123"
-        }
-        login_response = await client.post("/api/v1/auth/login", json=login_data)
+        login_data = {"email": "admin@climateai.com", "password": "admin123"}
+        login_response = client.post("/api/v1/auth/login", json=login_data)
         access_token = login_response.json()["access_token"]
 
         # Acessar endpoint de permissões
         headers = {"Authorization": f"Bearer {access_token}"}
-        response = await client.get("/api/v1/auth/me/permissions", headers=headers)
+        response = client.get("/api/v1/auth/me/permissions", headers=headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -163,10 +150,7 @@ class TestAuthAPI:
     async def test_create_user_admin_only(self, client):
         """Testa criação de usuário (apenas admin)"""
         # Fazer login como admin
-        login_data = {
-            "email": "admin@climateai.com",
-            "password": "admin123"
-        }
+        login_data = {"email": "admin@climateai.com", "password": "admin123"}
         login_response = await client.post("/api/v1/auth/login", json=login_data)
         access_token = login_response.json()["access_token"]
 
@@ -176,11 +160,10 @@ class TestAuthAPI:
             "full_name": "New User",
             "password": "newpass123",
             "role": "user",
-            "organization": "Test Org"
+            "organization": "Test Org",
         }
 
-        headers = {"Authorization": f"Bearer {access_token}"}
-        response = await client.post("/api/v1/auth/users", json=user_data, headers=headers)
+        response = client.post("/api/v1/auth/users", json=user_data, headers=headers)
 
         # Como não temos BD real, deve falhar, mas testar autorização
         # Em implementação real, isso deveria funcionar
@@ -196,17 +179,17 @@ class TestAuthAPI:
             "email": "newuser@example.com",
             "full_name": "New User",
             "password": "newpass123",
-            "role": "user"
+            "role": "user",
         }
 
-        response = await client.post("/api/v1/auth/users", json=user_data, headers=headers)
+        response = client.post("/api/v1/auth/users", json=user_data, headers=headers)
 
         assert response.status_code == 401
 
     @pytest.mark.asyncio
     async def test_health_check(self, client):
         """Testa endpoint de health check"""
-        response = await client.get("/")
+        response = client.get("/")
 
         assert response.status_code == 200
         data = response.json()
@@ -216,19 +199,16 @@ class TestAuthAPI:
     async def test_cache_endpoints(self, client):
         """Testa endpoints de cache"""
         # Fazer login primeiro
-        login_data = {
-            "email": "admin@climateai.com",
-            "password": "admin123"
-        }
-        login_response = await client.post("/api/v1/auth/login", json=login_data)
+        login_data = {"email": "admin@climateai.com", "password": "admin123"}
+        login_response = client.post("/api/v1/auth/login", json=login_data)
         access_token = login_response.json()["access_token"]
 
         headers = {"Authorization": f"Bearer {access_token}"}
 
         # Testar stats do cache
-        response = await client.get("/api/v1/cache/stats", headers=headers)
+        response = client.get("/api/v1/cache/stats", headers=headers)
         assert response.status_code == 200
 
         # Testar limpeza do cache
-        response = await client.post("/api/v1/cache/clear", headers=headers)
+        response = client.post("/api/v1/cache/clear", headers=headers)
         assert response.status_code == 200

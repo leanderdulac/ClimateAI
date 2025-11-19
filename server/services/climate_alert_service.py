@@ -6,29 +6,35 @@ Triggers:
 - Temporary complementary coverage offer
 - Customer alert for preventive actions
 """
-import numpy as np
-from datetime import datetime, timedelta
-from typing import Dict, List, Tuple, Optional, Any
+
+import asyncio
 import logging
 from dataclasses import dataclass
-import asyncio
+from datetime import datetime, timedelta
 from enum import Enum
+from typing import Any, Dict, List, Optional, Tuple
+
+import numpy as np
 
 logger = logging.getLogger(__name__)
+
 
 class AlertType(Enum):
     MITIGATION_RECOMMENDATION = "mitigation_recommendation"
     COMPLEMENTARY_COVERAGE = "complementary_coverage"
     CUSTOMER_PREVENTIVE_ALERT = "customer_preventive_alert"
 
+
 class EventType(Enum):
     SEVERE_WEATHER = "severe_weather"
     CLIMATE_RISK_INCREASE = "climate_risk_increase"
     PREMIUM_CHANGE = "premium_change"
 
+
 @dataclass
 class ClimateAlert:
     """Structure for climate risk alerts"""
+
     alert_id: str
     alert_type: AlertType
     event_type: EventType
@@ -43,6 +49,7 @@ class ClimateAlert:
     recommendations: List[str]
     notification_sent: bool = False
 
+
 class ClimateAlertService:
     """
     Service implementing multi-channel climate risk notifications:
@@ -51,62 +58,63 @@ class ClimateAlertService:
     - Notificação_push = I{ΔPrêmio_7d > 20% OR P(evento_severo_72h) > 5%}
     Triggers mitigation recommendations, complementary coverage offers, and customer preventive alerts
     """
-    
+
     def __init__(self):
         self.active_alerts = []
         self.customer_preferences = {}  # Customer ID -> notification preferences
         self.risk_thresholds = {
-            'premium_change_threshold': 0.20,  # 20% premium change triggers alert
-            'severe_event_probability_72h': 0.05,  # 5% event probability in 72h triggers push
-            'severe_event_probability_24h': 0.15,  # 15% event probability in 24h triggers sms/email + parametric
-            'notification_delay_hours': 1,         # Delay before sending notification
+            "premium_change_threshold": 0.20,  # 20% premium change triggers alert
+            "severe_event_probability_72h": 0.05,  # 5% event probability in 72h triggers push
+            "severe_event_probability_24h": 0.15,  # 15% event probability in 24h triggers sms/email + parametric
+            "notification_delay_hours": 1,  # Delay before sending notification
         }
         self.mitigation_recommendations = {
-            'severe_weather': [
+            "severe_weather": [
                 "Review property protection measures",
                 "Secure outdoor equipment",
                 "Prepare emergency supplies",
-                "Check insurance coverage adequacy"
+                "Check insurance coverage adequacy",
             ],
-            'climate_risk_increase': [
+            "climate_risk_increase": [
                 "Consider additional climate coverage",
                 "Schedule property inspection",
                 "Update risk mitigation strategies",
-                "Review policy limits"
-            ]
+                "Review policy limits",
+            ],
         }
-    
-    def calculate_premium_change(self, 
-                               historic_premiums: List[float],
-                               current_premium: float,
-                               days: int = 7) -> float:
+
+    def calculate_premium_change(
+        self, historic_premiums: List[float], current_premium: float, days: int = 7
+    ) -> float:
         """
         Calculate percentage change in premium over the specified period
-        
+
         Args:
             historic_premiums: List of historical premium values (most recent first)
             current_premium: Current premium value
             days: Number of days to look back (default 7)
-            
+
         Returns:
             Percentage change in premium
         """
         if len(historic_premiums) < 2:
             return 0.0
-        
+
         # Take the premium from 'days' ago (assuming daily data)
-        reference_premium = historic_premiums[min(days-1, len(historic_premiums)-1)]
-        
+        reference_premium = historic_premiums[min(days - 1, len(historic_premiums) - 1)]
+
         if reference_premium <= 0:
             return 0.0
-        
+
         change_percentage = (current_premium - reference_premium) / reference_premium
         return change_percentage
-    
-    def calculate_severe_event_probability(self,
-                                         weather_forecast: List[Dict[str, Any]],
-                                         hours: int = 72,
-                                         event_thresholds: Dict[str, float] = None) -> float:
+
+    def calculate_severe_event_probability(
+        self,
+        weather_forecast: List[Dict[str, Any]],
+        hours: int = 72,
+        event_thresholds: Dict[str, float] = None,
+    ) -> float:
         """
         Calculate probability of severe climate events in the next specified hours
 
@@ -124,10 +132,10 @@ class ClimateAlertService:
 
         if event_thresholds is None:
             event_thresholds = {
-                'precipitation': 50.0,  # mm in 24h
-                'wind_speed': 25.0,     # m/s
-                'temperature': 35.0,    # Celsius
-                'pressure': 980.0       # hPa
+                "precipitation": 50.0,  # mm in 24h
+                "wind_speed": 25.0,  # m/s
+                "temperature": 35.0,  # Celsius
+                "pressure": 980.0,  # hPa
             }
 
         # Determine how many forecast entries correspond to the requested hours
@@ -144,29 +152,45 @@ class ClimateAlertService:
             is_severe = False
 
             # Check precipitation threshold
-            if 'precipitation' in forecast_item and forecast_item['precipitation'] > event_thresholds['precipitation']:
+            if (
+                "precipitation" in forecast_item
+                and forecast_item["precipitation"] > event_thresholds["precipitation"]
+            ):
                 is_severe = True
             # Check wind speed threshold
-            elif 'wind_speed' in forecast_item and forecast_item['wind_speed'] > event_thresholds['wind_speed']:
+            elif (
+                "wind_speed" in forecast_item
+                and forecast_item["wind_speed"] > event_thresholds["wind_speed"]
+            ):
                 is_severe = True
             # Check temperature threshold
-            elif 'temperature' in forecast_item and forecast_item['temperature'] > event_thresholds['temperature']:
+            elif (
+                "temperature" in forecast_item
+                and forecast_item["temperature"] > event_thresholds["temperature"]
+            ):
                 is_severe = True
             # Check pressure threshold
-            elif 'pressure' in forecast_item and forecast_item['pressure'] < event_thresholds['pressure']:
+            elif (
+                "pressure" in forecast_item
+                and forecast_item["pressure"] < event_thresholds["pressure"]
+            ):
                 is_severe = True
 
             if is_severe:
                 severe_events_count += 1
 
         # Calculate probability as ratio of severe periods to total periods
-        probability = severe_events_count / total_time_periods if total_time_periods > 0 else 0.0
+        probability = (
+            severe_events_count / total_time_periods if total_time_periods > 0 else 0.0
+        )
 
         return min(1.0, probability)  # Ensure probability doesn't exceed 1.0
 
-    def calculate_severe_event_probability_24h(self,
-                                             weather_forecast: List[Dict[str, Any]],
-                                             event_thresholds: Dict[str, float] = None) -> float:
+    def calculate_severe_event_probability_24h(
+        self,
+        weather_forecast: List[Dict[str, Any]],
+        event_thresholds: Dict[str, float] = None,
+    ) -> float:
         """
         Calculate probability of severe climate events in the next 24 hours
 
@@ -177,15 +201,19 @@ class ClimateAlertService:
         Returns:
             Probability of severe event in next 24 hours (0.0 to 1.0)
         """
-        return self.calculate_severe_event_probability(weather_forecast, 24, event_thresholds)
-    
-    def should_trigger_notification(self,
-                                  premium_change: float,
-                                  severe_event_probability_72h: float,
-                                  severe_event_probability_24h: float = 0.0,
-                                  premium_threshold: float = 0.20,
-                                  event_probability_72h_threshold: float = 0.05,
-                                  event_probability_24h_threshold: float = 0.15) -> Tuple[bool, str, str]:
+        return self.calculate_severe_event_probability(
+            weather_forecast, 24, event_thresholds
+        )
+
+    def should_trigger_notification(
+        self,
+        premium_change: float,
+        severe_event_probability_72h: float,
+        severe_event_probability_24h: float = 0.0,
+        premium_threshold: float = 0.20,
+        event_probability_72h_threshold: float = 0.05,
+        event_probability_24h_threshold: float = 0.15,
+    ) -> Tuple[bool, str, str]:
         """
         Determine if notification should be triggered with channel selection:
         - Se P(evento_severo_72h) > 5%: Push notification
@@ -221,63 +249,72 @@ class ClimateAlertService:
             channel = "sms_email"
 
         return trigger, condition, channel
-    
-    def generate_recommendations(self, 
-                               event_type: EventType,
-                               location: Dict[str, float],
-                               severity: int) -> List[str]:
+
+    def generate_recommendations(
+        self, event_type: EventType, location: Dict[str, float], severity: int
+    ) -> List[str]:
         """
         Generate appropriate recommendations based on event type and severity
-        
+
         Args:
             event_type: Type of climate event
             location: Location coordinates
             severity: Severity level (1-5)
-            
+
         Returns:
             List of recommended actions
         """
         recommendations = []
-        
+
         if event_type == EventType.SEVERE_WEATHER:
-            base_recommendations = self.mitigation_recommendations['severe_weather'].copy()
+            base_recommendations = self.mitigation_recommendations[
+                "severe_weather"
+            ].copy()
             # Add severity-specific recommendations
             if severity >= 4:
-                base_recommendations.extend([
-                    "Evacuation may be necessary",
-                    "Contact emergency services",
-                    "Activate emergency protocols"
-                ])
+                base_recommendations.extend(
+                    [
+                        "Evacuation may be necessary",
+                        "Contact emergency services",
+                        "Activate emergency protocols",
+                    ]
+                )
             elif severity >= 3:
                 base_recommendations.append("Monitor weather alerts closely")
             recommendations = base_recommendations
-            
+
         elif event_type == EventType.CLIMATE_RISK_INCREASE:
-            base_recommendations = self.mitigation_recommendations['climate_risk_increase'].copy()
+            base_recommendations = self.mitigation_recommendations[
+                "climate_risk_increase"
+            ].copy()
             # Add severity-specific recommendations
             if severity >= 4:
-                base_recommendations.extend([
-                    "Consider policy upgrade",
-                    "Contact underwriter for review",
-                    "Review risk management strategy"
-                ])
+                base_recommendations.extend(
+                    [
+                        "Consider policy upgrade",
+                        "Contact underwriter for review",
+                        "Review risk management strategy",
+                    ]
+                )
             recommendations = base_recommendations
-        
+
         elif event_type == EventType.PREMIUM_CHANGE:
             recommendations = [
                 "Review policy coverage adequacy",
                 "Check for bundling opportunities",
                 "Consider risk mitigation improvements",
-                "Contact agent for policy review"
+                "Contact agent for policy review",
             ]
-        
+
         return recommendations
 
-    def trigger_parametric_payment(self,
-                                 customer_id: str,
-                                 contract_id: str,
-                                 payment_amount: float = 2000.0,
-                                 reason: str = "Severe weather event with high probability") -> Dict[str, Any]:
+    def trigger_parametric_payment(
+        self,
+        customer_id: str,
+        contract_id: str,
+        payment_amount: float = 2000.0,
+        reason: str = "Severe weather event with high probability",
+    ) -> Dict[str, Any]:
         """
         Trigger parametric payment for emergency expenses based on the specification:
         Pre-autorized trigger for emergency expenses (R$ 2.000)
@@ -302,23 +339,25 @@ class ClimateAlertService:
             "timestamp": datetime.now().isoformat(),
             "status": "pre_authorized",
             "instructions": "Funds available for emergency expenses",
-            "validity_hours": 24  # Valid for 24 hours from trigger
+            "validity_hours": 24,  # Valid for 24 hours from trigger
         }
 
         logger.info(f"Parametric payment triggered: {trigger_result}")
         return trigger_result
 
-    def create_climate_alert(self,
-                           customer_id: str,
-                           contract_id: str,
-                           location: Dict[str, float],
-                           event_type: EventType,
-                           severity_level: int,
-                           probability: float,
-                           impact_estimate: float,
-                           triggered_condition: str,
-                           notification_channel: str = "push",
-                           custom_recommendations: Optional[List[str]] = None) -> ClimateAlert:
+    def create_climate_alert(
+        self,
+        customer_id: str,
+        contract_id: str,
+        location: Dict[str, float],
+        event_type: EventType,
+        severity_level: int,
+        probability: float,
+        impact_estimate: float,
+        triggered_condition: str,
+        notification_channel: str = "push",
+        custom_recommendations: Optional[List[str]] = None,
+    ) -> ClimateAlert:
         """
         Create a climate alert with recommendations
 
@@ -340,18 +379,24 @@ class ClimateAlertService:
         alert_id = f"CLIMATE_ALERT_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{customer_id[:8]}"
 
         if custom_recommendations is None:
-            recommendations = self.generate_recommendations(event_type, location, severity_level)
+            recommendations = self.generate_recommendations(
+                event_type, location, severity_level
+            )
         else:
             recommendations = custom_recommendations
 
         # Add channel-specific recommendations
         if notification_channel == "sms_email":
-            recommendations.extend([
-                "ALERTA VERMELHO. Evacuação recomendada.",
-                "Parametric trigger activated for emergency expenses."
-            ])
+            recommendations.extend(
+                [
+                    "ALERTA VERMELHO. Evacuação recomendada.",
+                    "Parametric trigger activated for emergency expenses.",
+                ]
+            )
         elif notification_channel == "push":
-            recommendations.append("Risco de inundação elevado. Ative plano de emergência.")
+            recommendations.append(
+                "Risco de inundação elevado. Ative plano de emergência."
+            )
 
         alert = ClimateAlert(
             alert_id=alert_id,
@@ -365,12 +410,12 @@ class ClimateAlertService:
             probability=probability,
             impact_estimate=impact_estimate,
             timestamp=datetime.now(),
-            recommendations=recommendations
+            recommendations=recommendations,
         )
 
         self.active_alerts.append(alert)
         return alert
-    
+
     def _determine_alert_type(self, event_type: EventType) -> AlertType:
         """Determine the appropriate alert type based on event type"""
         if event_type == EventType.SEVERE_WEATHER:
@@ -379,40 +424,40 @@ class ClimateAlertService:
             return AlertType.MITIGATION_RECOMMENDATION
         else:
             return AlertType.MITIGATION_RECOMMENDATION
-    
-    def generate_complementary_coverage_offer(self,
-                                            customer_id: str,
-                                            contract_id: str,
-                                            event_type: EventType,
-                                            severity: int) -> Dict[str, Any]:
+
+    def generate_complementary_coverage_offer(
+        self, customer_id: str, contract_id: str, event_type: EventType, severity: int
+    ) -> Dict[str, Any]:
         """
         Generate temporary complementary coverage offer
-        
+
         Args:
             customer_id: Customer identifier
             contract_id: Contract identifier
             event_type: Type of climate event
             severity: Severity level (1-5)
-            
+
         Returns:
             Dictionary with coverage offer details
         """
         base_coverage_amount = 10000  # Base amount for temporary coverage
-        
+
         # Adjust coverage based on severity
-        coverage_multiplier = 1.0 + (severity - 1) * 0.5  # 1.0x for level 1, 3.0x for level 5
+        coverage_multiplier = (
+            1.0 + (severity - 1) * 0.5
+        )  # 1.0x for level 1, 3.0x for level 5
         coverage_amount = base_coverage_amount * coverage_multiplier
-        
+
         # Determine coverage type based on event
         coverage_type = "all_risks"
         if event_type == EventType.SEVERE_WEATHER:
             coverage_type = "weather_related_damage"
         elif event_type == EventType.CLIMATE_RISK_INCREASE:
             coverage_type = "climate_risk_exposure"
-        
+
         # Set validity period based on severity
         validity_days = min(30, 5 + (severity * 3))  # 5-20 days depending on severity
-        
+
         offer = {
             "offer_id": f"COV_OFFER_{customer_id[:8]}_{datetime.now().strftime('%Y%m%d')}",
             "customer_id": customer_id,
@@ -420,23 +465,27 @@ class ClimateAlertService:
             "coverage_type": coverage_type,
             "coverage_amount": coverage_amount,
             "validity_period_days": validity_days,
-            "discount_rate": 0.20 if severity >= 4 else 0.10,  # Higher discount for severe risks
+            "discount_rate": (
+                0.20 if severity >= 4 else 0.10
+            ),  # Higher discount for severe risks
             "activation_required": True,
             "special_terms": [
                 "Valid for temporary protection during elevated risk period",
                 "Subject to standard exclusions and limitations",
-                f"Coverage active for {validity_days} days from activation"
-            ]
+                f"Coverage active for {validity_days} days from activation",
+            ],
         }
-        
+
         return offer
-    
-    def process_climate_notifications(self,
-                                    customer_data: Dict[str, Any],
-                                    premium_history: List[float],
-                                    current_premium: float,
-                                    weather_forecast: List[Dict[str, Any]],
-                                    event_thresholds: Dict[str, float] = None) -> List[Dict[str, Any]]:
+
+    def process_climate_notifications(
+        self,
+        customer_data: Dict[str, Any],
+        premium_history: List[float],
+        current_premium: float,
+        weather_forecast: List[Dict[str, Any]],
+        event_thresholds: Dict[str, float] = None,
+    ) -> List[Dict[str, Any]]:
         """
         Complete climate notification processing:
         - Se P(evento_severo_72h) > 5%: Push notification
@@ -456,22 +505,28 @@ class ClimateAlertService:
         """
         if event_thresholds is None:
             event_thresholds = {
-                'precipitation': 50.0,
-                'wind_speed': 25.0,
-                'temperature': 35.0,
-                'pressure': 980.0
+                "precipitation": 50.0,
+                "wind_speed": 25.0,
+                "temperature": 35.0,
+                "pressure": 980.0,
             }
 
         # Calculate premium change
         premium_change = self.calculate_premium_change(premium_history, current_premium)
 
         # Calculate severe event probability for both 72h and 24h windows
-        severe_probability_72h = self.calculate_severe_event_probability(weather_forecast, 72, event_thresholds)
-        severe_probability_24h = self.calculate_severe_event_probability(weather_forecast, 24, event_thresholds)
+        severe_probability_72h = self.calculate_severe_event_probability(
+            weather_forecast, 72, event_thresholds
+        )
+        severe_probability_24h = self.calculate_severe_event_probability(
+            weather_forecast, 24, event_thresholds
+        )
 
         # Check if notification should be triggered with channel selection
-        should_notify, triggering_condition, notification_channel = self.should_trigger_notification(
-            premium_change, severe_probability_72h, severe_probability_24h
+        should_notify, triggering_condition, notification_channel = (
+            self.should_trigger_notification(
+                premium_change, severe_probability_72h, severe_probability_24h
+            )
         )
 
         actions = []
@@ -480,7 +535,9 @@ class ClimateAlertService:
             # Determine event type based on triggering condition
             if "Premium change" in triggering_condition:
                 event_type = EventType.PREMIUM_CHANGE
-                severity = 3 if abs(premium_change) > 0.30 else 2  # Higher severity for larger changes
+                severity = (
+                    3 if abs(premium_change) > 0.30 else 2
+                )  # Higher severity for larger changes
                 probability = abs(premium_change)
             elif "evento_severo_24h" in triggering_condition:
                 event_type = EventType.SEVERE_WEATHER
@@ -488,55 +545,62 @@ class ClimateAlertService:
                 probability = severe_probability_24h
             else:  # Severe event probability (72h)
                 event_type = EventType.SEVERE_WEATHER
-                severity = 4 if severe_probability_72h > 0.15 else 3 if severe_probability_72h > 0.10 else 2
+                severity = (
+                    4
+                    if severe_probability_72h > 0.15
+                    else 3 if severe_probability_72h > 0.10 else 2
+                )
                 probability = severe_probability_72h
 
             # Create climate alert with appropriate notification channel
             climate_alert = self.create_climate_alert(
-                customer_id=customer_data['customer_id'],
-                contract_id=customer_data['contract_id'],
-                location=customer_data['location'],
+                customer_id=customer_data["customer_id"],
+                contract_id=customer_data["contract_id"],
+                location=customer_data["location"],
                 event_type=event_type,
                 severity_level=severity,
                 probability=probability,
-                impact_estimate=customer_data.get('exposure', 100000),
+                impact_estimate=customer_data.get("exposure", 100000),
                 triggered_condition=triggering_condition,
-                notification_channel=notification_channel
+                notification_channel=notification_channel,
             )
 
             # Generate complementary coverage offer
             coverage_offer = self.generate_complementary_coverage_offer(
-                customer_data['customer_id'],
-                customer_data['contract_id'],
+                customer_data["customer_id"],
+                customer_data["contract_id"],
                 event_type,
-                severity
+                severity,
             )
 
             # Check if we need to trigger parametric payment (for 24h high probability events)
             parametric_trigger = None
-            if notification_channel == "sms_email" and "evento_severo_24h" in triggering_condition:
+            if (
+                notification_channel == "sms_email"
+                and "evento_severo_24h" in triggering_condition
+            ):
                 parametric_trigger = self.trigger_parametric_payment(
-                    customer_id=customer_data['customer_id'],
-                    contract_id=customer_data['contract_id'],
+                    customer_id=customer_data["customer_id"],
+                    contract_id=customer_data["contract_id"],
                     payment_amount=2000.0,
-                    reason="ALERTA VERMELHO. Evacuação recomendada."
+                    reason="ALERTA VERMELHO. Evacuação recomendada.",
                 )
 
             # Create action record
             action = {
-                "customer_id": customer_data['customer_id'],
-                "contract_id": customer_data['contract_id'],
+                "customer_id": customer_data["customer_id"],
+                "contract_id": customer_data["contract_id"],
                 "trigger_reason": triggering_condition,
                 "notification_channel": notification_channel,
                 "alert_created": {
                     "alert_id": climate_alert.alert_id,
                     "severity": climate_alert.severity_level,
                     "timestamp": climate_alert.timestamp.isoformat(),
-                    "recommendations": climate_alert.recommendations
+                    "recommendations": climate_alert.recommendations,
                 },
                 "complementary_coverage_offered": coverage_offer,
                 "preventive_actions_sent": climate_alert.recommendations,
-                "notification_priority": "high" if severity > 3 else "medium"
+                "notification_priority": "high" if severity > 3 else "medium",
             }
 
             # Include parametric trigger if applicable
@@ -547,77 +611,113 @@ class ClimateAlertService:
 
         return actions
 
+
 # Global instance
 climate_alert_service = ClimateAlertService()
 
+
 # Convenience functions for API integration
-def calculate_premium_change(historic_premiums: List[float],
-                           current_premium: float,
-                           days: int = 7) -> float:
+def calculate_premium_change(
+    historic_premiums: List[float], current_premium: float, days: int = 7
+) -> float:
     """Calculate percentage change in premium over the specified period"""
-    return climate_alert_service.calculate_premium_change(historic_premiums, current_premium, days)
+    return climate_alert_service.calculate_premium_change(
+        historic_premiums, current_premium, days
+    )
 
-def calculate_severe_event_probability(weather_forecast: List[Dict[str, Any]],
-                                   event_thresholds: Dict[str, float] = None) -> float:
+
+def calculate_severe_event_probability(
+    weather_forecast: List[Dict[str, Any]], event_thresholds: Dict[str, float] = None
+) -> float:
     """Calculate probability of severe climate events in the next 72 hours"""
-    return climate_alert_service.calculate_severe_event_probability(weather_forecast, event_thresholds)
+    return climate_alert_service.calculate_severe_event_probability(
+        weather_forecast, event_thresholds
+    )
 
-def should_trigger_notification(premium_change: float,
-                             severe_event_probability_72h: float,
-                             severe_event_probability_24h: float = 0.0,
-                             premium_threshold: float = 0.20,
-                             event_probability_72h_threshold: float = 0.05,
-                             event_probability_24h_threshold: float = 0.15) -> Tuple[bool, str, str]:
+
+def should_trigger_notification(
+    premium_change: float,
+    severe_event_probability_72h: float,
+    severe_event_probability_24h: float = 0.0,
+    premium_threshold: float = 0.20,
+    event_probability_72h_threshold: float = 0.05,
+    event_probability_24h_threshold: float = 0.15,
+) -> Tuple[bool, str, str]:
     """Determine if notification should be triggered with channel selection"""
     return climate_alert_service.should_trigger_notification(
-        premium_change, severe_event_probability_72h, severe_event_probability_24h,
-        premium_threshold, event_probability_72h_threshold, event_probability_24h_threshold
+        premium_change,
+        severe_event_probability_72h,
+        severe_event_probability_24h,
+        premium_threshold,
+        event_probability_72h_threshold,
+        event_probability_24h_threshold,
     )
 
-def generate_recommendations(event_type: str,
-                           location: Dict[str, float],
-                           severity: int) -> List[str]:
+
+def generate_recommendations(
+    event_type: str, location: Dict[str, float], severity: int
+) -> List[str]:
     """Generate appropriate recommendations based on event type and severity"""
     from services.climate_alert_service import EventType
-    event_enum = EventType(event_type)
-    return climate_alert_service.generate_recommendations(event_enum, location, severity)
 
-def create_climate_alert(customer_id: str,
-                       contract_id: str,
-                       location: Dict[str, float],
-                       event_type: str,
-                       severity_level: int,
-                       probability: float,
-                       impact_estimate: float,
-                       triggered_condition: str,
-                       notification_channel: str = "push") -> ClimateAlert:
-    """Create a climate alert with recommendations"""
-    from services.climate_alert_service import EventType
     event_enum = EventType(event_type)
-    return climate_alert_service.create_climate_alert(
-        customer_id, contract_id, location, event_enum,
-        severity_level, probability, impact_estimate, triggered_condition,
-        notification_channel
+    return climate_alert_service.generate_recommendations(
+        event_enum, location, severity
     )
 
-def generate_complementary_coverage_offer(customer_id: str,
-                                        contract_id: str,
-                                        event_type: str,
-                                        severity: int) -> Dict[str, Any]:
+
+def create_climate_alert(
+    customer_id: str,
+    contract_id: str,
+    location: Dict[str, float],
+    event_type: str,
+    severity_level: int,
+    probability: float,
+    impact_estimate: float,
+    triggered_condition: str,
+    notification_channel: str = "push",
+) -> ClimateAlert:
+    """Create a climate alert with recommendations"""
+    from services.climate_alert_service import EventType
+
+    event_enum = EventType(event_type)
+    return climate_alert_service.create_climate_alert(
+        customer_id,
+        contract_id,
+        location,
+        event_enum,
+        severity_level,
+        probability,
+        impact_estimate,
+        triggered_condition,
+        notification_channel,
+    )
+
+
+def generate_complementary_coverage_offer(
+    customer_id: str, contract_id: str, event_type: str, severity: int
+) -> Dict[str, Any]:
     """Generate temporary complementary coverage offer"""
     from services.climate_alert_service import EventType
+
     event_enum = EventType(event_type)
     return climate_alert_service.generate_complementary_coverage_offer(
         customer_id, contract_id, event_enum, severity
     )
 
-def process_climate_notifications(customer_data: Dict[str, Any],
-                               premium_history: List[float],
-                               current_premium: float,
-                               weather_forecast: List[Dict[str, Any]],
-                               event_thresholds: Dict[str, float] = None) -> List[Dict[str, Any]]:
+
+def process_climate_notifications(
+    customer_data: Dict[str, Any],
+    premium_history: List[float],
+    current_premium: float,
+    weather_forecast: List[Dict[str, Any]],
+    event_thresholds: Dict[str, float] = None,
+) -> List[Dict[str, Any]]:
     """Complete climate notification processing: Notificação_push = I{ΔPrêmio_7d > 20% OR P(evento_severo_72h) > 5%}"""
     return climate_alert_service.process_climate_notifications(
-        customer_data, premium_history, current_premium, 
-        weather_forecast, event_thresholds
+        customer_data,
+        premium_history,
+        current_premium,
+        weather_forecast,
+        event_thresholds,
     )

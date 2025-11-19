@@ -1,14 +1,16 @@
 """
 Serviço de tokenização para eventos climáticos
 """
-from typing import Dict, List, Optional, Tuple, Any
-from datetime import datetime, timedelta
-from models.schemas import EventoClimatico, EventoClimaticoTipo
-from models.token_schemas import EventoToken, TokenAnalysis, TokenGroup
+
 import hashlib
 import json
 import math
 from dataclasses import dataclass
+from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional, Tuple
+
+from models.schemas import EventoClimatico, EventoClimaticoTipo
+from models.token_schemas import EventoToken, TokenAnalysis, TokenGroup
 
 
 class TokenizacaoEventosService:
@@ -24,15 +26,15 @@ class TokenizacaoEventosService:
             EventoClimaticoTipo.ENCHENTE: "ENC",
             EventoClimaticoTipo.ONDA_CALOR: "CAL",
             EventoClimaticoTipo.GEADA: "GEA",
-            EventoClimaticoTipo.SECA_FLASH: "SFL"
+            EventoClimaticoTipo.SECA_FLASH: "SFL",
         }
 
         # Pesos para cálculo de severidade composta
         self.severity_weights = {
-            'intensity': 0.4,
-            'probability': 0.3,
-            'duration': 0.2,
-            'spatial_extent': 0.1
+            "intensity": 0.4,
+            "probability": 0.3,
+            "duration": 0.2,
+            "spatial_extent": 0.1,
         }
 
     def gerar_token_evento(self, evento: EventoClimatico) -> EventoToken:
@@ -58,16 +60,16 @@ class TokenizacaoEventosService:
             severity_level,
             location_hash,
             temporal_hash,
-            evento.data_inicio
+            evento.data_inicio,
         )
 
         # Metadata adicional
         metadata = {
-            'original_severity': evento.nivel_alerta,
-            'description': evento.descricao,
-            'calculated_severity': severity_level,
-            'event_category': self._categorizar_evento(evento),
-            'risk_score': self._calcular_risco(evento, severity_level)
+            "original_severity": evento.nivel_alerta,
+            "description": evento.descricao,
+            "calculated_severity": severity_level,
+            "event_category": self._categorizar_evento(evento),
+            "risk_score": self._calcular_risco(evento, severity_level),
         }
 
         return EventoToken(
@@ -83,10 +85,12 @@ class TokenizacaoEventosService:
             location_hash=location_hash,
             temporal_hash=temporal_hash,
             metadata=metadata,
-            created_at=datetime.now()
+            created_at=datetime.now(),
         )
 
-    def tokenizar_multiplos_eventos(self, eventos: List[EventoClimatico]) -> List[EventoToken]:
+    def tokenizar_multiplos_eventos(
+        self, eventos: List[EventoClimatico]
+    ) -> List[EventoToken]:
         """
         Tokeniza múltiplos eventos climáticos
 
@@ -120,7 +124,7 @@ class TokenizacaoEventosService:
         """
         try:
             # Token format: TYPE-LEVEL-LOC-TEMP-TIME
-            parts = token_id.split('-')
+            parts = token_id.split("-")
             if len(parts) != 5:
                 raise ValueError("Formato de token inválido")
 
@@ -138,18 +142,20 @@ class TokenizacaoEventosService:
                     break
 
             return {
-                'event_type': event_type,
-                'severity_level': severity_level,
-                'location_hash': location_hash,
-                'temporal_hash': temporal_hash,
-                'timestamp': timestamp,
-                'token_structure': 'TYPE-LEVEL-LOC-TEMP-TIME'
+                "event_type": event_type,
+                "severity_level": severity_level,
+                "location_hash": location_hash,
+                "temporal_hash": temporal_hash,
+                "timestamp": timestamp,
+                "token_structure": "TYPE-LEVEL-LOC-TEMP-TIME",
             }
 
         except Exception as e:
             raise ValueError(f"Erro ao decodificar token: {str(e)}")
 
-    def agrupar_eventos_por_token(self, tokens: List[EventoToken]) -> Dict[str, List[EventoToken]]:
+    def agrupar_eventos_por_token(
+        self, tokens: List[EventoToken]
+    ) -> Dict[str, List[EventoToken]]:
         """
         Agrupa tokens por características similares
 
@@ -193,10 +199,10 @@ class TokenizacaoEventosService:
 
         # Cálculo ponderado
         composite_score = (
-            self.severity_weights['intensity'] * intensity_score +
-            self.severity_weights['probability'] * prob_score +
-            self.severity_weights['duration'] * duration_score +
-            self.severity_weights['spatial_extent'] * spatial_score
+            self.severity_weights["intensity"] * intensity_score
+            + self.severity_weights["probability"] * prob_score
+            + self.severity_weights["duration"] * duration_score
+            + self.severity_weights["spatial_extent"] * spatial_score
         )
 
         return round(composite_score)
@@ -212,7 +218,9 @@ class TokenizacaoEventosService:
         location_str = f"{lat_rounded:.2f},{lon_rounded:.2f}"
         return hashlib.md5(location_str.encode()).hexdigest()[:8]
 
-    def _gerar_hash_temporal(self, start_date: datetime, end_date: Optional[datetime]) -> str:
+    def _gerar_hash_temporal(
+        self, start_date: datetime, end_date: Optional[datetime]
+    ) -> str:
         """
         Gera hash único para período temporal
         """
@@ -223,8 +231,14 @@ class TokenizacaoEventosService:
 
         return hashlib.md5(temporal_str.encode()).hexdigest()[:8]
 
-    def _gerar_token_id(self, event_type: EventoClimaticoTipo, severity_level: int,
-                       location_hash: str, temporal_hash: str, timestamp: datetime) -> str:
+    def _gerar_token_id(
+        self,
+        event_type: EventoClimaticoTipo,
+        severity_level: int,
+        location_hash: str,
+        temporal_hash: str,
+        timestamp: datetime,
+    ) -> str:
         """
         Gera ID único do token
         """
@@ -237,7 +251,7 @@ class TokenizacaoEventosService:
             str(severity_level),
             location_hash[:4],  # primeiros 4 chars do hash de localização
             temporal_hash[:4],  # primeiros 4 chars do hash temporal
-            time_code
+            time_code,
         ]
 
         return "-".join(token_components)
@@ -265,7 +279,7 @@ class TokenizacaoEventosService:
             EventoClimaticoTipo.ENCHENTE: 0.9,
             EventoClimaticoTipo.ONDA_CALOR: 0.7,
             EventoClimaticoTipo.GEADA: 0.6,
-            EventoClimaticoTipo.SECA_FLASH: 0.85
+            EventoClimaticoTipo.SECA_FLASH: 0.85,
         }
 
         base_risk = risk_factors.get(evento.tipo, 0.5)
@@ -290,7 +304,7 @@ class TokenizacaoEventosService:
                 tokens_by_severity={},
                 risk_distribution={},
                 temporal_clusters=[],
-                spatial_clusters=[]
+                spatial_clusters=[],
             )
 
         # Contagem por tipo
@@ -308,9 +322,11 @@ class TokenizacaoEventosService:
         # Distribuição de risco
         risk_distribution = {}
         for token in tokens:
-            risk_score = token.metadata.get('risk_score', 0)
+            risk_score = token.metadata.get("risk_score", 0)
             risk_category = self._categorizar_risco(risk_score)
-            risk_distribution[risk_category] = risk_distribution.get(risk_category, 0) + 1
+            risk_distribution[risk_category] = (
+                risk_distribution.get(risk_category, 0) + 1
+            )
 
         # Clusters temporais (simplificado)
         temporal_clusters = self._identificar_clusters_temporais(tokens)
@@ -324,7 +340,7 @@ class TokenizacaoEventosService:
             tokens_by_severity=tokens_by_severity,
             risk_distribution=risk_distribution,
             temporal_clusters=temporal_clusters,
-            spatial_clusters=spatial_clusters
+            spatial_clusters=spatial_clusters,
         )
 
     def agrupar_tokens(self, tokens: List[EventoToken]) -> List[TokenGroup]:
@@ -351,10 +367,14 @@ class TokenizacaoEventosService:
             centroid_lon = sum(longitudes) / len(longitudes)
 
             # Severidade média
-            avg_severity = sum(t.severity_level for t in group_tokens) / len(group_tokens)
+            avg_severity = sum(t.severity_level for t in group_tokens) / len(
+                group_tokens
+            )
 
             # Score de risco médio
-            avg_risk = sum(t.metadata.get('risk_score', 0) for t in group_tokens) / len(group_tokens)
+            avg_risk = sum(t.metadata.get("risk_score", 0) for t in group_tokens) / len(
+                group_tokens
+            )
 
             grupo = TokenGroup(
                 group_id=f"GROUP_{group_key}_{hash(group_key) % 10000}",
@@ -365,8 +385,8 @@ class TokenizacaoEventosService:
                 risk_score=round(avg_risk, 3),
                 metadata={
                     "member_count": len(group_tokens),
-                    "date_range": self._calcular_range_temporal(group_tokens)
-                }
+                    "date_range": self._calcular_range_temporal(group_tokens),
+                },
             )
             grupos.append(grupo)
 
@@ -382,8 +402,8 @@ class TokenizacaoEventosService:
         Returns:
             Dict com análise de risco
         """
-        event_type = token_info.get('event_type')
-        severity_level = token_info.get('severity_level', 3)
+        event_type = token_info.get("event_type")
+        severity_level = token_info.get("severity_level", 3)
 
         # Fatores de risco por tipo de evento
         risk_factors = {
@@ -391,7 +411,7 @@ class TokenizacaoEventosService:
             EventoClimaticoTipo.ENCHENTE: 0.9,
             EventoClimaticoTipo.ONDA_CALOR: 0.7,
             EventoClimaticoTipo.GEADA: 0.6,
-            EventoClimaticoTipo.SECA_FLASH: 0.85
+            EventoClimaticoTipo.SECA_FLASH: 0.85,
         }
 
         base_risk = risk_factors.get(event_type, 0.5)
@@ -405,9 +425,9 @@ class TokenizacaoEventosService:
             "contributing_factors": {
                 "event_type_risk": base_risk,
                 "severity_multiplier": severity_multiplier,
-                "event_type": event_type.value if event_type else "unknown"
+                "event_type": event_type.value if event_type else "unknown",
             },
-            "recommendations": self._gerar_recomendacoes_risco(risk_score, event_type)
+            "recommendations": self._gerar_recomendacoes_risco(risk_score, event_type),
         }
 
     def validar_token(self, token_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -421,14 +441,14 @@ class TokenizacaoEventosService:
             Dict com resultado da validação
         """
         try:
-            token_id = token_data.get('token_id', '')
+            token_id = token_data.get("token_id", "")
 
             # Verificar formato básico
-            if not token_id or len(token_id.split('-')) != 5:
+            if not token_id or len(token_id.split("-")) != 5:
                 return {
                     "valid": False,
                     "error": "Formato de token inválido",
-                    "checks": {"format": False}
+                    "checks": {"format": False},
                 }
 
             # Tentar decodificar
@@ -436,9 +456,9 @@ class TokenizacaoEventosService:
 
             # Verificar consistência dos dados
             consistency_checks = {
-                "event_type_valid": decoded.get('event_type') is not None,
-                "severity_range": 1 <= decoded.get('severity_level', 0) <= 5,
-                "structure_complete": len(decoded) >= 5
+                "event_type_valid": decoded.get("event_type") is not None,
+                "severity_range": 1 <= decoded.get("severity_level", 0) <= 5,
+                "structure_complete": len(decoded) >= 5,
             }
 
             is_valid = all(consistency_checks.values())
@@ -447,14 +467,14 @@ class TokenizacaoEventosService:
                 "valid": is_valid,
                 "decoded_info": decoded if is_valid else None,
                 "checks": consistency_checks,
-                "error": None if is_valid else "Dados do token inconsistentes"
+                "error": None if is_valid else "Dados do token inconsistentes",
             }
 
         except Exception as e:
             return {
                 "valid": False,
                 "error": f"Erro na validação: {str(e)}",
-                "checks": {"exception": False}
+                "checks": {"exception": False},
             }
 
     def _categorizar_risco(self, risk_score: float) -> str:
@@ -470,7 +490,9 @@ class TokenizacaoEventosService:
         else:
             return "muito_baixo"
 
-    def _identificar_clusters_temporais(self, tokens: List[EventoToken]) -> List[Dict[str, Any]]:
+    def _identificar_clusters_temporais(
+        self, tokens: List[EventoToken]
+    ) -> List[Dict[str, Any]]:
         """Identifica clusters temporais simplificados"""
         # Agrupar por mês
         monthly_groups = {}
@@ -483,16 +505,23 @@ class TokenizacaoEventosService:
         clusters = []
         for month, month_tokens in monthly_groups.items():
             if len(month_tokens) >= 2:
-                clusters.append({
-                    "period": month,
-                    "event_count": len(month_tokens),
-                    "avg_severity": sum(t.severity_level for t in month_tokens) / len(month_tokens),
-                    "event_types": list(set(t.event_type.value for t in month_tokens))
-                })
+                clusters.append(
+                    {
+                        "period": month,
+                        "event_count": len(month_tokens),
+                        "avg_severity": sum(t.severity_level for t in month_tokens)
+                        / len(month_tokens),
+                        "event_types": list(
+                            set(t.event_type.value for t in month_tokens)
+                        ),
+                    }
+                )
 
         return clusters
 
-    def _identificar_clusters_espaciais(self, tokens: List[EventoToken]) -> List[Dict[str, Any]]:
+    def _identificar_clusters_espaciais(
+        self, tokens: List[EventoToken]
+    ) -> List[Dict[str, Any]]:
         """Identifica clusters espaciais simplificados"""
         # Agrupar por região aproximada (graus arredondados)
         spatial_groups = {}
@@ -505,13 +534,18 @@ class TokenizacaoEventosService:
         clusters = []
         for region, region_tokens in spatial_groups.items():
             if len(region_tokens) >= 2:
-                lat, lon = map(float, region.split(','))
-                clusters.append({
-                    "centroid": {"latitude": lat, "longitude": lon},
-                    "event_count": len(region_tokens),
-                    "avg_severity": sum(t.severity_level for t in region_tokens) / len(region_tokens),
-                    "event_types": list(set(t.event_type.value for t in region_tokens))
-                })
+                lat, lon = map(float, region.split(","))
+                clusters.append(
+                    {
+                        "centroid": {"latitude": lat, "longitude": lon},
+                        "event_count": len(region_tokens),
+                        "avg_severity": sum(t.severity_level for t in region_tokens)
+                        / len(region_tokens),
+                        "event_types": list(
+                            set(t.event_type.value for t in region_tokens)
+                        ),
+                    }
+                )
 
         return clusters
 
@@ -525,32 +559,40 @@ class TokenizacaoEventosService:
 
         return {
             "start": min(start_dates).isoformat(),
-            "end": max(end_dates).isoformat()
+            "end": max(end_dates).isoformat(),
         }
 
-    def _gerar_recomendacoes_risco(self, risk_score: float, event_type: EventoClimaticoTipo) -> List[str]:
+    def _gerar_recomendacoes_risco(
+        self, risk_score: float, event_type: EventoClimaticoTipo
+    ) -> List[str]:
         """Gera recomendações baseadas no score de risco"""
         recommendations = []
 
         if risk_score >= 0.8:
-            recommendations.extend([
-                "Implementar plano de contingência imediato",
-                "Monitorar condições meteorológicas continuamente",
-                "Preparar evacuação se necessário",
-                "Alertar autoridades locais"
-            ])
+            recommendations.extend(
+                [
+                    "Implementar plano de contingência imediato",
+                    "Monitorar condições meteorológicas continuamente",
+                    "Preparar evacuação se necessário",
+                    "Alertar autoridades locais",
+                ]
+            )
         elif risk_score >= 0.6:
-            recommendations.extend([
-                "Aumentar monitoramento da região",
-                "Preparar recursos de emergência",
-                "Comunicar risco para comunidade afetada"
-            ])
+            recommendations.extend(
+                [
+                    "Aumentar monitoramento da região",
+                    "Preparar recursos de emergência",
+                    "Comunicar risco para comunidade afetada",
+                ]
+            )
         elif risk_score >= 0.4:
-            recommendations.extend([
-                "Manter vigilância constante",
-                "Atualizar planos de resposta",
-                "Informar stakeholders sobre o risco"
-            ])
+            recommendations.extend(
+                [
+                    "Manter vigilância constante",
+                    "Atualizar planos de resposta",
+                    "Informar stakeholders sobre o risco",
+                ]
+            )
 
         # Recomendações específicas por tipo de evento
         if event_type == EventoClimaticoTipo.ENCHENTE:

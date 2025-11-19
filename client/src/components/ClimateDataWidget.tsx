@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { useEffect, useState } from 'react';
-import { embrapaApi } from '@/lib/embrapaApi';
+import { loadEmbrapaApi } from '@/lib/loadEmbrapaApi';
 import { usePeriod } from '@/lib/PeriodContext';
 import { useLocation } from '@/lib/LocationContext';
 import { Sun, Droplets, Wind, Thermometer, TrendingUp, TrendingDown, Minus, AlertTriangle, Cloud, Gauge } from 'lucide-react';
@@ -114,6 +114,7 @@ export function ClimateDataWidget() {
   useEffect(() => {
     const fetchClimateData = async () => {
       try {
+        const embrapaApi = await loadEmbrapaApi();
         console.log('[ClimateDataWidget] Iniciando fetch de dados...', { selectedLocation, isLoadingLocation });
         setLoading(true);
         setError(null);

@@ -1,14 +1,18 @@
 """
 Schemas específicos para tokenização de eventos climáticos
 """
-from pydantic import BaseModel
-from typing import Optional, Dict, Any, List
+
 from datetime import datetime
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel
+
 from models.schemas import EventoClimatico, EventoClimaticoTipo
 
 
 class EventoToken(BaseModel):
     """Modelo para tokens de eventos climáticos"""
+
     token_id: str
     event_type: EventoClimaticoTipo
     severity_level: int
@@ -26,6 +30,7 @@ class EventoToken(BaseModel):
 
 class TokenAnalysis(BaseModel):
     """Modelo para análise de tokens"""
+
     total_tokens: int
     tokens_by_type: Dict[str, int]
     tokens_by_severity: Dict[int, int]
@@ -36,6 +41,7 @@ class TokenAnalysis(BaseModel):
 
 class TokenGroup(BaseModel):
     """Modelo para grupos de tokens similares"""
+
     group_id: str
     group_type: str
     tokens: List[str]  # Lista de token_ids
@@ -47,6 +53,7 @@ class TokenGroup(BaseModel):
 
 class BlockchainToken(BaseModel):
     """Modelo para tokens blockchain de eventos climáticos"""
+
     token_uid: str
     token_data: Dict[str, Any]
     owner_address: str
@@ -56,6 +63,7 @@ class BlockchainToken(BaseModel):
 
 class BlockchainTransaction(BaseModel):
     """Modelo para transações blockchain"""
+
     tx_id: str
     type: str  # "token_mint", "token_transfer", etc.
     token_uid: Optional[str]
@@ -69,6 +77,7 @@ class BlockchainTransaction(BaseModel):
 
 class TokenMintRequest(BaseModel):
     """Modelo para requisição de mint de token"""
+
     evento: EventoClimatico
     wallet_address: str
     token_supply: int = 1000000
@@ -78,6 +87,7 @@ class TokenMintRequest(BaseModel):
 
 class TokenTransferRequest(BaseModel):
     """Modelo para requisição de transferência de token"""
+
     token_uid: str
     from_address: str
     to_address: str

@@ -1,5 +1,5 @@
-# Use PyTorch LTS base image which is pre-installed with PyTorch
-FROM pytorch/pytorch:2.1.1-cpu as base
+# Use a slim Python image for a smaller footprint
+FROM python:3.10-slim as base
 
 WORKDIR /app
 
@@ -13,11 +13,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # ===== PRODUCTION STAGE =====
 FROM base as production
 
-# PyTorch is already available from base image, install remaining dependencies only
+# Install all production dependencies, including torch
 COPY requirements-prod-ml.txt .
-# Filter out torch from requirements since it's already in base image
-RUN grep -v '^torch==' requirements-prod-ml.txt > requirements-prod-ml-no-torch.txt && \
-    pip install --no-cache-dir --timeout 1800 --retries 5 -r requirements-prod-ml-no-torch.txt
+RUN pip install --no-cache-dir --timeout 1800 --retries 5 -r requirements-prod-ml.txt
 
 # Copiar código da aplicação
 COPY . .

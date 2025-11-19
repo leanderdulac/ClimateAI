@@ -6,7 +6,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { useEffect, useState } from 'react';
-import { embrapaApi } from '@/lib/embrapaApi';
+import { loadEmbrapaApi } from '@/lib/loadEmbrapaApi';
 import { useLocation } from '@/lib/LocationContext';
 import { usePeriod } from '@/lib/PeriodContext';
 import { Sun, Droplets, Wind, Thermometer } from 'lucide-react';
@@ -46,6 +46,7 @@ export function WeatherWidget() {
   useEffect(() => {
     const fetchClimateData = async () => {
       try {
+        const embrapaApi = await loadEmbrapaApi();
         console.log('🌤️ [WeatherWidget] Iniciando busca de dados climáticos...');
         setLoading(true);
 
@@ -90,9 +91,9 @@ export function WeatherWidget() {
             startDate.toISOString().split('T')[0],
             endDate.toISOString().split('T')[0]
           );
-          
+
           console.log('📈 [WeatherWidget] Tipo de histórico:', typeof historical, '| Length:', historical?.length);
-          
+
           // Validar que histórico é um array
           if (!Array.isArray(historical)) {
             console.error('❌ [WeatherWidget] Histórico não é array:', historical);
@@ -101,9 +102,9 @@ export function WeatherWidget() {
             setLoadingHistorical(false);
             return;
           }
-          
+
           console.log(`📊 [WeatherWidget] Dados históricos recebidos: ${historical.length} pontos`);
-          
+
           // Usar dados históricos para o gráfico principal
           const adaptedHistorical: ClimateDataPoint[] = (historical || []).map(item => ({
             date: (item.date || new Date().toISOString().split('T')[0]),
@@ -112,7 +113,7 @@ export function WeatherWidget() {
             humidity: item.humidity || 60,
             windSpeed: item.windSpeed || item.wind_speed
           }));
-          
+
           console.log(`✅ [WeatherWidget] Dados adaptados: ${adaptedHistorical.length} pontos para gráfico`);
           setClimateData(adaptedHistorical);
           setHistoricalData(historical || []);

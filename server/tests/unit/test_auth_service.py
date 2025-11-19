@@ -1,13 +1,15 @@
 """
 Testes unitários para o serviço de autenticação
 """
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+
 from datetime import datetime, timedelta
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 from jose import jwt
 
+from models.schemas import User, UserCreate, UserRole
 from services.auth_service import AuthService
-from models.schemas import User, UserRole, UserCreate
 
 
 class TestAuthService:
@@ -29,10 +31,10 @@ class TestAuthService:
             is_active=True,
             organization="Test Org",
             created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
+            updated_at=datetime.utcnow(),
         )
 
-    @patch('services.auth_service.pwd_context')
+    @patch("services.auth_service.pwd_context")
     def test_verify_password(self, mock_pwd_context, auth_service):
         """Testa verificação de senha"""
         password = "testpassword"
@@ -45,7 +47,7 @@ class TestAuthService:
         mock_pwd_context.verify.return_value = False
         assert not auth_service.verify_password("wrongpassword", hashed)
 
-    @patch('services.auth_service.pwd_context')
+    @patch("services.auth_service.pwd_context")
     def test_get_password_hash(self, mock_pwd_context, auth_service):
         """Testa geração de hash de senha"""
         password = "testpassword"
@@ -57,7 +59,7 @@ class TestAuthService:
         mock_pwd_context.hash.assert_called_once()
         # Verificar que a senha foi truncada para 72 bytes
         call_args = mock_pwd_context.hash.call_args[0][0]
-        assert len(call_args.encode('utf-8')) <= 72
+        assert len(call_args.encode("utf-8")) <= 72
 
     def test_create_access_token(self, auth_service):
         """Testa criação de token de acesso"""
@@ -65,7 +67,9 @@ class TestAuthService:
         token = auth_service.create_access_token(data)
 
         # Decodificar token
-        payload = jwt.decode(token, auth_service.secret_key, algorithms=[auth_service.algorithm])
+        payload = jwt.decode(
+            token, auth_service.secret_key, algorithms=[auth_service.algorithm]
+        )
 
         assert payload["sub"] == "test-user"
         assert payload["email"] == "test@example.com"
@@ -79,7 +83,9 @@ class TestAuthService:
         token = auth_service.create_refresh_token(data)
 
         # Decodificar token
-        payload = jwt.decode(token, auth_service.secret_key, algorithms=[auth_service.algorithm])
+        payload = jwt.decode(
+            token, auth_service.secret_key, algorithms=[auth_service.algorithm]
+        )
 
         assert payload["sub"] == "test-user"
         assert payload["email"] == "test@example.com"
@@ -102,7 +108,9 @@ class TestAuthService:
         """Testa verificação de token expirado"""
         data = {"sub": "test-user", "email": "test@example.com", "role": "user"}
         # Token expirado há 1 hora
-        expired_token = auth_service.create_access_token(data, expires_delta=timedelta(hours=-1))
+        expired_token = auth_service.create_access_token(
+            data, expires_delta=timedelta(hours=-1)
+        )
 
         with pytest.raises(Exception):  # Deve lançar HTTPException
             auth_service.verify_token(expired_token)
@@ -158,7 +166,9 @@ class TestAuthService:
         mock_db = AsyncMock()
 
         # Testar usuário admin padrão
-        user = await auth_service.authenticate_user(mock_db, "admin@climateai.com", "admin123")
+        user = await auth_service.authenticate_user(
+            mock_db, "admin@climateai.com", "admin123"
+        )
 
         assert user is not None
         assert user.email == "admin@climateai.com"
@@ -170,7 +180,9 @@ class TestAuthService:
         """Testa autenticação falhada"""
         mock_db = AsyncMock()
 
-        user = await auth_service.authenticate_user(mock_db, "wrong@email.com", "wrongpass")
+        user = await auth_service.authenticate_user(
+            mock_db, "wrong@email.com", "wrongpass"
+        )
 
         assert user is None
 
@@ -179,10 +191,14 @@ class TestAuthService:
         """Testa login bem-sucedido"""
         mock_db = AsyncMock()
 
-        result = await auth_service.login(mock_db, type('LoginRequest', (), {
-            'email': 'admin@climateai.com',
-            'password': 'admin123'
-        })())
+        result = await auth_service.login(
+            mock_db,
+            type(
+                "LoginRequest",
+                (),
+                {"email": "admin@climateai.com", "password": "admin123"},
+            )(),
+        )
 
         assert result.access_token
         assert result.refresh_token
@@ -196,7 +212,11 @@ class TestAuthService:
         mock_db = AsyncMock()
 
         with pytest.raises(Exception):  # Deve lançar HTTPException
-            await auth_service.login(mock_db, type('LoginRequest', (), {
-                'email': 'wrong@email.com',
-                'password': 'wrongpass'
-            })())
+            await auth_service.login(
+                mock_db,
+                type(
+                    "LoginRequest",
+                    (),
+                    {"email": "wrong@email.com", "password": "wrongpass"},
+                )(),
+            )

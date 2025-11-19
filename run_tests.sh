@@ -51,7 +51,7 @@ check_pytest() {
 # Run unit tests
 run_unit_tests() {
     print_header "Running Unit Tests"
-    
+
     if pytest \
         "${TEST_DIR}/unit" \
         -v \
@@ -72,7 +72,7 @@ run_unit_tests() {
 # Run integration tests
 run_integration_tests() {
     print_header "Running Integration Tests"
-    
+
     if pytest \
         "${TEST_DIR}/integration" \
         -v \
@@ -90,7 +90,7 @@ run_integration_tests() {
 # Run performance tests
 run_performance_tests() {
     print_header "Running Performance Tests (Slow)"
-    
+
     if pytest \
         "${TEST_DIR}/performance" \
         -v \
@@ -108,9 +108,9 @@ run_performance_tests() {
 # Run specific test file
 run_specific_test() {
     local test_file="$1"
-    
+
     print_header "Running: $test_file"
-    
+
     if pytest "${test_file}" -v --tb=short; then
         print_success "Test passed: $test_file"
         return 0
@@ -123,7 +123,7 @@ run_specific_test() {
 # Run all tests
 run_all_tests() {
     print_header "Running All Tests"
-    
+
     if pytest \
         "${TEST_DIR}" \
         -v \
@@ -145,7 +145,7 @@ run_all_tests() {
 # Run tests without coverage
 run_fast_tests() {
     print_header "Running Fast Tests (No Coverage)"
-    
+
     if pytest \
         "${TEST_DIR}" \
         -v \
@@ -163,9 +163,9 @@ run_fast_tests() {
 # Run tests matching pattern
 run_tests_matching() {
     local pattern="$1"
-    
+
     print_header "Running tests matching: $pattern"
-    
+
     if pytest \
         "${TEST_DIR}" \
         -v \
@@ -183,7 +183,7 @@ run_tests_matching() {
 # Generate coverage report
 generate_coverage_report() {
     print_header "Generating Coverage Report"
-    
+
     if [ -d "${COVERAGE_DIR}" ]; then
         print_success "Coverage report generated in ${COVERAGE_DIR}/"
         print_info "Open with: open ${COVERAGE_DIR}/index.html"
@@ -197,16 +197,16 @@ generate_coverage_report() {
 # Display test statistics
 show_statistics() {
     print_header "Test Statistics"
-    
+
     if [ -f "${TEST_LOG}" ]; then
         local total=$(grep -c "PASSED\|FAILED" "${TEST_LOG}" || echo "0")
         local passed=$(grep -c "PASSED" "${TEST_LOG}" || echo "0")
         local failed=$(grep -c "FAILED" "${TEST_LOG}" || echo "0")
-        
+
         echo "Total Tests: ${total}"
         echo "Passed: ${GREEN}${passed}${NC}"
         echo "Failed: ${RED}${failed}${NC}"
-        
+
         if [ "$failed" -eq 0 ]; then
             print_success "All tests passed!"
         fi
@@ -251,19 +251,22 @@ EOF
 
 # Main script
 main() {
+    # Add project root to PYTHONPATH to allow for absolute imports from 'server'
+    export PYTHONPATH=$(pwd)
+
     # Clear log
     > "${TEST_LOG}"
-    
+
     # Check prerequisites
     check_pytest
-    
+
     print_info "ClimateAI Test Suite"
     print_info "Workspace: $(pwd)"
     print_info "Python: $(python --version)"
-    
+
     # Parse command
     local command="${1:-all}"
-    
+
     case "$command" in
         all)
             run_all_tests

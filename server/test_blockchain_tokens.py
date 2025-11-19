@@ -1,13 +1,17 @@
 """
 Teste da funcionalidade de tokens blockchain para eventos climáticos
 """
-import sys
+
 import os
+import sys
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from datetime import datetime, timedelta
+
 from models.schemas import EventoClimatico, EventoClimaticoTipo
 from services.blockchain_token_service import BlockchainTokenService
+
 
 def testar_blockchain_tokens():
     """Testa a funcionalidade completa de tokens blockchain"""
@@ -28,7 +32,7 @@ def testar_blockchain_tokens():
         intensidade=4.5,
         probabilidade=0.88,
         descricao="Enchente severa no Rio Madeira - Porto Velho",
-        nivel_alerta=5
+        nivel_alerta=5,
     )
 
     print("🌊 Evento de teste:")
@@ -52,8 +56,8 @@ def testar_blockchain_tokens():
             "impact_area": "Rio Madeira Basin",
             "affected_population": 500000,
             "economic_impact": "high",
-            "mitigation_required": True
-        }
+            "mitigation_required": True,
+        },
     )
 
     if resultado_mint["success"]:
@@ -64,9 +68,15 @@ def testar_blockchain_tokens():
         print(f"  Transaction ID: {tx_id}")
         print(f"  Token UID: {token_uid}")
         print(f"  Climate Token ID: {resultado_mint['climate_token_id']}")
-        print(f"  Token Symbol: {resultado_mint['blockchain_token']['token_data']['symbol']}")
-        print(f"  Token Name: {resultado_mint['blockchain_token']['token_data']['name']}")
-        print(f"  Supply: {resultado_mint['blockchain_token']['initial_supply']:,} tokens")
+        print(
+            f"  Token Symbol: {resultado_mint['blockchain_token']['token_data']['symbol']}"
+        )
+        print(
+            f"  Token Name: {resultado_mint['blockchain_token']['token_data']['name']}"
+        )
+        print(
+            f"  Supply: {resultado_mint['blockchain_token']['initial_supply']:,} tokens"
+        )
         print()
 
         # Testar busca de token
@@ -76,9 +86,13 @@ def testar_blockchain_tokens():
             print("✅ Token encontrado!")
             print(f"  Proprietário: {token_info['owner_address']}")
             print(f"  Supply inicial: {token_info['initial_supply']:,}")
-            climate_event = token_info['token_data']['climate_event']
-            print(f"  Evento climático: {climate_event['event_type']} (Severidade: {climate_event['severity_level']})")
-            print(f"  Localização: {climate_event['latitude']}, {climate_event['longitude']}")
+            climate_event = token_info["token_data"]["climate_event"]
+            print(
+                f"  Evento climático: {climate_event['event_type']} (Severidade: {climate_event['severity_level']})"
+            )
+            print(
+                f"  Localização: {climate_event['latitude']}, {climate_event['longitude']}"
+            )
         print()
 
         # Testar busca de transação
@@ -100,7 +114,7 @@ def testar_blockchain_tokens():
             token_uid=token_uid,
             from_address=wallet_address,
             to_address=recipient_address,
-            amount=50000  # 50k tokens
+            amount=50000,  # 50k tokens
         )
 
         if transfer_result["success"]:
@@ -140,7 +154,9 @@ def testar_blockchain_tokens():
 
     # Testar busca por tipo de evento
     print("🌍 Buscando tokens por tipo de evento...")
-    enchente_tokens = blockchain_service.get_climate_event_tokens(EventoClimaticoTipo.ENCHENTE)
+    enchente_tokens = blockchain_service.get_climate_event_tokens(
+        EventoClimaticoTipo.ENCHENTE
+    )
     print(f"  Tokens de enchente: {len(enchente_tokens)}")
 
     seca_tokens = blockchain_service.get_climate_event_tokens(EventoClimaticoTipo.SECA)
@@ -153,8 +169,14 @@ def testar_blockchain_tokens():
     # Estatísticas da blockchain
     print("📊 Estatísticas da blockchain ClimateAI:")
     stats = blockchain_service.blockchain_registry
-    transactions = [item for item in stats.values() if isinstance(item, dict) and 'tx_id' in item]
-    tokens = [item for item in stats.values() if isinstance(item, dict) and 'token_uid' in item]
+    transactions = [
+        item for item in stats.values() if isinstance(item, dict) and "tx_id" in item
+    ]
+    tokens = [
+        item
+        for item in stats.values()
+        if isinstance(item, dict) and "token_uid" in item
+    ]
 
     print(f"  Total de registros: {len(stats)}")
     print(f"  Transações: {len(transactions)}")
@@ -163,6 +185,7 @@ def testar_blockchain_tokens():
     print()
 
     print("🎉 Todos os testes de tokens blockchain foram concluídos!")
+
 
 if __name__ == "__main__":
     testar_blockchain_tokens()

@@ -2,11 +2,13 @@
 Serviço de tokenização blockchain para eventos climáticos
 Adaptação do conceito Hathor para o sistema ClimateAI
 """
-from typing import Dict, List, Optional, Any
-from datetime import datetime
+
 import hashlib
 import json
 import uuid
+from datetime import datetime
+from typing import Any, Dict, List, Optional
+
 from models.schemas import EventoClimatico, EventoClimaticoTipo
 from models.token_schemas import EventoToken
 from services.tokenizacao_eventos_service import TokenizacaoEventosService
@@ -29,7 +31,7 @@ class BlockchainTokenService:
         wallet_address: str,
         token_supply: int = 1000000,
         decimals: int = 0,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         Cria um token blockchain para um evento climático
@@ -54,7 +56,7 @@ class BlockchainTokenService:
                 wallet_address=wallet_address,
                 token_supply=token_supply,
                 decimals=decimals,
-                metadata=metadata or {}
+                metadata=metadata or {},
             )
 
             # Registrar na blockchain simulada
@@ -66,7 +68,7 @@ class BlockchainTokenService:
                 "token_uid": blockchain_token["token_uid"],
                 "climate_token_id": climate_token.token_id,
                 "blockchain_token": blockchain_token,
-                "transaction": transaction
+                "transaction": transaction,
             }
 
         except Exception as e:
@@ -74,7 +76,7 @@ class BlockchainTokenService:
                 "success": False,
                 "error": str(e),
                 "climate_token_id": None,
-                "transaction_id": None
+                "transaction_id": None,
             }
 
     def _create_blockchain_token(
@@ -83,7 +85,7 @@ class BlockchainTokenService:
         wallet_address: str,
         token_supply: int,
         decimals: int,
-        metadata: Dict[str, Any]
+        metadata: Dict[str, Any],
     ) -> Dict[str, Any]:
         """
         Cria estrutura do token blockchain baseada no token ClimateAI
@@ -105,15 +107,15 @@ class BlockchainTokenService:
                 "longitude": climate_token.longitude,
                 "start_date": climate_token.start_date.isoformat(),
                 "intensity": climate_token.intensity,
-                "probability": climate_token.probability
+                "probability": climate_token.probability,
             },
             "metadata": {
                 **metadata,
                 **climate_token.metadata,
                 "network": self.network,
                 "created_at": datetime.now().isoformat(),
-                "creator_address": wallet_address
-            }
+                "creator_address": wallet_address,
+            },
         }
 
         return {
@@ -121,7 +123,7 @@ class BlockchainTokenService:
             "token_data": token_data,
             "owner_address": wallet_address,
             "initial_supply": token_supply,
-            "decimals": decimals
+            "decimals": decimals,
         }
 
     def _generate_token_uid(self, climate_token: EventoToken) -> str:
@@ -140,7 +142,7 @@ class BlockchainTokenService:
             EventoClimaticoTipo.ENCHENTE: "Evento de Enchente",
             EventoClimaticoTipo.ONDA_CALOR: "Onda de Calor",
             EventoClimaticoTipo.GEADA: "Evento de Geada",
-            EventoClimaticoTipo.SECA_FLASH: "Seca Flash"
+            EventoClimaticoTipo.SECA_FLASH: "Seca Flash",
         }
 
         base_name = event_names.get(climate_token.event_type, "Evento Climático")
@@ -157,7 +159,7 @@ class BlockchainTokenService:
             EventoClimaticoTipo.ENCHENTE: "ENC",
             EventoClimaticoTipo.ONDA_CALOR: "CAL",
             EventoClimaticoTipo.GEADA: "GEA",
-            EventoClimaticoTipo.SECA_FLASH: "SFL"
+            EventoClimaticoTipo.SECA_FLASH: "SFL",
         }
 
         type_code = type_codes.get(climate_token.event_type, "CLI")
@@ -166,7 +168,9 @@ class BlockchainTokenService:
 
         return f"{type_code}{severity}{year}"
 
-    def _register_token_transaction(self, blockchain_token: Dict[str, Any]) -> Dict[str, Any]:
+    def _register_token_transaction(
+        self, blockchain_token: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """
         Registra a transação de criação do token na blockchain simulada
         """
@@ -182,12 +186,12 @@ class BlockchainTokenService:
                 {
                     "address": blockchain_token["owner_address"],
                     "value": blockchain_token["initial_supply"],
-                    "token_uid": blockchain_token["token_uid"]
+                    "token_uid": blockchain_token["token_uid"],
                 }
             ],
             "token_data": blockchain_token["token_data"],
             "network": self.network,
-            "status": "confirmed"
+            "status": "confirmed",
         }
 
         # Registrar na blockchain simulada
@@ -219,11 +223,7 @@ class BlockchainTokenService:
         return tokens
 
     def transfer_token(
-        self,
-        token_uid: str,
-        from_address: str,
-        to_address: str,
-        amount: int
+        self, token_uid: str, from_address: str, to_address: str, amount: int
     ) -> Dict[str, Any]:
         """
         Transfere tokens entre endereços
@@ -246,21 +246,13 @@ class BlockchainTokenService:
                 "token_uid": token_uid,
                 "timestamp": datetime.now().isoformat(),
                 "inputs": [
-                    {
-                        "address": from_address,
-                        "value": amount,
-                        "token_uid": token_uid
-                    }
+                    {"address": from_address, "value": amount, "token_uid": token_uid}
                 ],
                 "outputs": [
-                    {
-                        "address": to_address,
-                        "value": amount,
-                        "token_uid": token_uid
-                    }
+                    {"address": to_address, "value": amount, "token_uid": token_uid}
                 ],
                 "network": self.network,
-                "status": "confirmed"
+                "status": "confirmed",
             }
 
             # Registrar transação
@@ -272,17 +264,15 @@ class BlockchainTokenService:
             return {
                 "success": True,
                 "transaction_id": tx_id,
-                "transaction": transaction
+                "transaction": transaction,
             }
 
         except Exception as e:
-            return {
-                "success": False,
-                "error": str(e),
-                "transaction_id": None
-            }
+            return {"success": False, "error": str(e), "transaction_id": None}
 
-    def get_climate_event_tokens(self, event_type: Optional[EventoClimaticoTipo] = None) -> List[Dict[str, Any]]:
+    def get_climate_event_tokens(
+        self, event_type: Optional[EventoClimaticoTipo] = None
+    ) -> List[Dict[str, Any]]:
         """
         Lista tokens de eventos climáticos por tipo
         """
@@ -291,7 +281,10 @@ class BlockchainTokenService:
             if isinstance(item, dict) and "token_data" in item:
                 token_data = item["token_data"]
                 if "climate_event" in token_data:
-                    if event_type is None or token_data["climate_event"]["event_type"] == event_type.value:
+                    if (
+                        event_type is None
+                        or token_data["climate_event"]["event_type"] == event_type.value
+                    ):
                         tokens.append(item)
         return tokens
 
@@ -310,7 +303,7 @@ if __name__ == "__main__":
         intensidade=4.2,
         probabilidade=0.85,
         descricao="Seca severa detectada na região de Porto Velho",
-        nivel_alerta=4
+        nivel_alerta=4,
     )
 
     # Endereço da carteira (simulado)
@@ -325,8 +318,8 @@ if __name__ == "__main__":
         metadata={
             "region": "Porto Velho, RO",
             "impact_level": "high",
-            "mitigation_required": True
-        }
+            "mitigation_required": True,
+        },
     )
 
     if resultado["success"]:

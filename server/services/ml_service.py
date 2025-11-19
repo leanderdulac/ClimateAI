@@ -3,19 +3,21 @@ Machine Learning Service for Sinistrality Prediction
 Provides ML-based predictions for insurance claims frequency and severity
 """
 
-import numpy as np
-import pandas as pd
-from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-import joblib
+import logging
 import os
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Tuple, Any
-import logging
+from typing import Any, Dict, List, Optional, Tuple
+
+import joblib
+import numpy as np
+import pandas as pd
+from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 
 logger = logging.getLogger(__name__)
+
 
 class SinistralityPredictor:
     """
@@ -50,7 +52,9 @@ class SinistralityPredictor:
                 self.is_trained = True
                 logger.info("Pre-trained ML models loaded successfully")
             else:
-                logger.info("No pre-trained models found, will use rule-based predictions")
+                logger.info(
+                    "No pre-trained models found, will use rule-based predictions"
+                )
         except Exception as e:
             logger.error(f"Error loading models: {e}")
 
@@ -61,7 +65,7 @@ class SinistralityPredictor:
         np.random.seed(42)
 
         # Generate dates over the past 5 years
-        start_date = datetime.now() - timedelta(days=5*365)
+        start_date = datetime.now() - timedelta(days=5 * 365)
         dates = [start_date + timedelta(days=i) for i in range(n_samples)]
 
         data = []
@@ -70,20 +74,21 @@ class SinistralityPredictor:
             # Seasonal weather patterns
             month = date.month
             rainfall = np.random.normal(
-                loc=150 if month in [12,1,2,3] else 80,  # Higher rainfall in summer
-                scale=50
+                loc=150 if month in [12, 1, 2, 3] else 80,  # Higher rainfall in summer
+                scale=50,
             )
 
             temperature = np.random.normal(
-                loc=25 if month in [12,1,2] else 20,  # Higher temp in summer
-                scale=5
+                loc=25 if month in [12, 1, 2] else 20, scale=5  # Higher temp in summer
             )
 
             humidity = np.random.normal(loc=70, scale=15)
 
             # Economic indicators
-            inflation_rate = np.random.normal(loc=0.04, scale=0.01)  # 4% average inflation
-            gdp_growth = np.random.normal(loc=0.025, scale=0.01)    # 2.5% GDP growth
+            inflation_rate = np.random.normal(
+                loc=0.04, scale=0.01
+            )  # 4% average inflation
+            gdp_growth = np.random.normal(loc=0.025, scale=0.01)  # 2.5% GDP growth
 
             # Location factors (latitude/longitude impact)
             latitude = np.random.uniform(-33, 5)  # Brazil latitude range
@@ -104,22 +109,24 @@ class SinistralityPredictor:
             severity_noise = np.random.normal(0, 3000)
             severity = max(1000, base_severity + severity_noise)
 
-            data.append({
-                'date': date,
-                'month': month,
-                'rainfall': rainfall,
-                'temperature': temperature,
-                'humidity': humidity,
-                'inflation_rate': inflation_rate,
-                'gdp_growth': gdp_growth,
-                'latitude': latitude,
-                'longitude': longitude,
-                'weather_risk': weather_risk,
-                'economic_risk': economic_risk,
-                'location_risk': location_risk,
-                'frequency': frequency,
-                'severity': severity
-            })
+            data.append(
+                {
+                    "date": date,
+                    "month": month,
+                    "rainfall": rainfall,
+                    "temperature": temperature,
+                    "humidity": humidity,
+                    "inflation_rate": inflation_rate,
+                    "gdp_growth": gdp_growth,
+                    "latitude": latitude,
+                    "longitude": longitude,
+                    "weather_risk": weather_risk,
+                    "economic_risk": economic_risk,
+                    "location_risk": location_risk,
+                    "frequency": frequency,
+                    "severity": severity,
+                }
+            )
 
         return pd.DataFrame(data)
 
@@ -140,18 +147,26 @@ class SinistralityPredictor:
 
             # Prepare features
             feature_cols = [
-                'month', 'rainfall', 'temperature', 'humidity',
-                'inflation_rate', 'gdp_growth', 'latitude', 'longitude',
-                'weather_risk', 'economic_risk', 'location_risk'
+                "month",
+                "rainfall",
+                "temperature",
+                "humidity",
+                "inflation_rate",
+                "gdp_growth",
+                "latitude",
+                "longitude",
+                "weather_risk",
+                "economic_risk",
+                "location_risk",
             ]
 
             X = data[feature_cols]
-            y_freq = data['frequency']
-            y_sev = data['severity']
+            y_freq = data["frequency"]
+            y_sev = data["severity"]
 
             # Split data
-            X_train, X_test, y_freq_train, y_freq_test, y_sev_train, y_sev_test = train_test_split(
-                X, y_freq, y_sev, test_size=0.2, random_state=42
+            X_train, X_test, y_freq_train, y_freq_test, y_sev_train, y_sev_test = (
+                train_test_split(X, y_freq, y_sev, test_size=0.2, random_state=42)
             )
 
             # Scale features
@@ -160,19 +175,13 @@ class SinistralityPredictor:
 
             # Train frequency model
             self.frequency_model = RandomForestRegressor(
-                n_estimators=100,
-                max_depth=10,
-                random_state=42,
-                n_jobs=-1
+                n_estimators=100, max_depth=10, random_state=42, n_jobs=-1
             )
             self.frequency_model.fit(X_train_scaled, y_freq_train)
 
             # Train severity model
             self.severity_model = GradientBoostingRegressor(
-                n_estimators=100,
-                max_depth=6,
-                random_state=42,
-                learning_rate=0.1
+                n_estimators=100, max_depth=6, random_state=42, learning_rate=0.1
             )
             self.severity_model.fit(X_train_scaled, y_sev_train)
 
@@ -181,16 +190,16 @@ class SinistralityPredictor:
             sev_pred = self.severity_model.predict(X_test_scaled)
 
             metrics = {
-                'frequency': {
-                    'mae': mean_absolute_error(y_freq_test, freq_pred),
-                    'rmse': np.sqrt(mean_squared_error(y_freq_test, freq_pred)),
-                    'r2': r2_score(y_freq_test, freq_pred)
+                "frequency": {
+                    "mae": mean_absolute_error(y_freq_test, freq_pred),
+                    "rmse": np.sqrt(mean_squared_error(y_freq_test, freq_pred)),
+                    "r2": r2_score(y_freq_test, freq_pred),
                 },
-                'severity': {
-                    'mae': mean_absolute_error(y_sev_test, sev_pred),
-                    'rmse': np.sqrt(mean_squared_error(y_sev_test, sev_pred)),
-                    'r2': r2_score(y_sev_test, sev_pred)
-                }
+                "severity": {
+                    "mae": mean_absolute_error(y_sev_test, sev_pred),
+                    "rmse": np.sqrt(mean_squared_error(y_sev_test, sev_pred)),
+                    "r2": r2_score(y_sev_test, sev_pred),
+                },
             }
 
             # Save models
@@ -200,23 +209,25 @@ class SinistralityPredictor:
             logger.info(f"ML models trained successfully. Metrics: {metrics}")
 
             return {
-                'success': True,
-                'metrics': metrics,
-                'training_samples': len(X_train)
+                "success": True,
+                "metrics": metrics,
+                "training_samples": len(X_train),
             }
 
         except Exception as e:
             logger.error(f"Error training ML models: {e}")
-            return {
-                'success': False,
-                'error': str(e)
-            }
+            return {"success": False, "error": str(e)}
 
     def _save_models(self):
         """Save trained models to disk"""
         try:
-            joblib.dump(self.frequency_model, os.path.join(self.model_path, "frequency_model.pkl"))
-            joblib.dump(self.severity_model, os.path.join(self.model_path, "severity_model.pkl"))
+            joblib.dump(
+                self.frequency_model,
+                os.path.join(self.model_path, "frequency_model.pkl"),
+            )
+            joblib.dump(
+                self.severity_model, os.path.join(self.model_path, "severity_model.pkl")
+            )
             joblib.dump(self.scaler, os.path.join(self.model_path, "scaler.pkl"))
             logger.info("ML models saved successfully")
         except Exception as e:
@@ -248,24 +259,31 @@ class SinistralityPredictor:
             severity_pred = self.severity_model.predict(input_scaled)[0]
 
             # Calculate confidence intervals (simplified)
-            freq_std = np.std([tree.predict(input_scaled) for tree in self.frequency_model.estimators_])
-            sev_std = np.std([self.severity_model.predict(input_scaled) for _ in range(10)])  # Simplified
+            freq_std = np.std(
+                [
+                    tree.predict(input_scaled)
+                    for tree in self.frequency_model.estimators_
+                ]
+            )
+            sev_std = np.std(
+                [self.severity_model.predict(input_scaled) for _ in range(10)]
+            )  # Simplified
 
             return {
-                'frequency': {
-                    'prediction': max(0, frequency_pred),
-                    'confidence_lower': max(0, frequency_pred - 1.96 * freq_std),
-                    'confidence_upper': frequency_pred + 1.96 * freq_std,
-                    'unit': 'claims per 100 policies per year'
+                "frequency": {
+                    "prediction": max(0, frequency_pred),
+                    "confidence_lower": max(0, frequency_pred - 1.96 * freq_std),
+                    "confidence_upper": frequency_pred + 1.96 * freq_std,
+                    "unit": "claims per 100 policies per year",
                 },
-                'severity': {
-                    'prediction': max(0, severity_pred),
-                    'confidence_lower': max(0, severity_pred - 1.96 * sev_std),
-                    'confidence_upper': severity_pred + 1.96 * sev_std,
-                    'unit': 'BRL per claim'
+                "severity": {
+                    "prediction": max(0, severity_pred),
+                    "confidence_lower": max(0, severity_pred - 1.96 * sev_std),
+                    "confidence_upper": severity_pred + 1.96 * sev_std,
+                    "unit": "BRL per claim",
                 },
-                'method': 'machine_learning',
-                'confidence_level': '95%'
+                "method": "machine_learning",
+                "confidence_level": "95%",
             }
 
         except Exception as e:
@@ -275,14 +293,14 @@ class SinistralityPredictor:
     def _prepare_features(self, features: Dict[str, Any]) -> List[float]:
         """Prepare input features for ML model"""
         # Extract or default values
-        month = features.get('month', datetime.now().month)
-        rainfall = features.get('rainfall', 100)
-        temperature = features.get('temperature', 22)
-        humidity = features.get('humidity', 70)
-        inflation_rate = features.get('inflation_rate', 0.04)
-        gdp_growth = features.get('gdp_growth', 0.025)
-        latitude = features.get('latitude', -15)
-        longitude = features.get('longitude', -47)
+        month = features.get("month", datetime.now().month)
+        rainfall = features.get("rainfall", 100)
+        temperature = features.get("temperature", 22)
+        humidity = features.get("humidity", 70)
+        inflation_rate = features.get("inflation_rate", 0.04)
+        gdp_growth = features.get("gdp_growth", 0.025)
+        latitude = features.get("latitude", -15)
+        longitude = features.get("longitude", -47)
 
         # Calculate derived features
         weather_risk = (rainfall > 200) * 0.3 + (temperature > 30) * 0.2
@@ -290,59 +308,77 @@ class SinistralityPredictor:
         location_risk = abs(latitude) / 30 * 0.1
 
         return [
-            month, rainfall, temperature, humidity,
-            inflation_rate, gdp_growth, latitude, longitude,
-            weather_risk, economic_risk, location_risk
+            month,
+            rainfall,
+            temperature,
+            humidity,
+            inflation_rate,
+            gdp_growth,
+            latitude,
+            longitude,
+            weather_risk,
+            economic_risk,
+            location_risk,
         ]
 
     def _rule_based_prediction(self, features: Dict[str, Any]) -> Dict[str, Any]:
         """Fallback rule-based prediction when ML models are not available"""
-        rainfall = features.get('rainfall', 100)
-        temperature = features.get('temperature', 22)
-        inflation_rate = features.get('inflation_rate', 0.04)
-        gdp_growth = features.get('gdp_growth', 0.025)
-        latitude = features.get('latitude', -15)
+        rainfall = features.get("rainfall", 100)
+        temperature = features.get("temperature", 22)
+        inflation_rate = features.get("inflation_rate", 0.04)
+        gdp_growth = features.get("gdp_growth", 0.025)
+        latitude = features.get("latitude", -15)
 
         # Simple rule-based calculations
         weather_factor = (rainfall / 100) * 0.1 + (temperature / 30) * 0.05
-        economic_factor = (inflation_rate / 0.04) * 0.1 + (1 - gdp_growth / 0.025) * 0.05
+        economic_factor = (inflation_rate / 0.04) * 0.1 + (
+            1 - gdp_growth / 0.025
+        ) * 0.05
         location_factor = abs(latitude) / 30 * 0.05
 
         base_frequency = 8
         base_severity = 15000
 
-        frequency = base_frequency * (1 + weather_factor + economic_factor + location_factor)
+        frequency = base_frequency * (
+            1 + weather_factor + economic_factor + location_factor
+        )
         severity = base_severity * (1 + weather_factor + economic_factor)
 
         return {
-            'frequency': {
-                'prediction': max(0, frequency),
-                'confidence_lower': max(0, frequency * 0.8),
-                'confidence_upper': frequency * 1.2,
-                'unit': 'claims per 100 policies per year'
+            "frequency": {
+                "prediction": max(0, frequency),
+                "confidence_lower": max(0, frequency * 0.8),
+                "confidence_upper": frequency * 1.2,
+                "unit": "claims per 100 policies per year",
             },
-            'severity': {
-                'prediction': max(0, severity),
-                'confidence_lower': max(0, severity * 0.7),
-                'confidence_upper': severity * 1.3,
-                'unit': 'BRL per claim'
+            "severity": {
+                "prediction": max(0, severity),
+                "confidence_lower": max(0, severity * 0.7),
+                "confidence_upper": severity * 1.3,
+                "unit": "BRL per claim",
             },
-            'method': 'rule_based',
-            'confidence_level': 'approximate'
+            "method": "rule_based",
+            "confidence_level": "approximate",
         }
 
     def get_model_info(self) -> Dict[str, Any]:
         """Get information about the ML models"""
         return {
-            'is_trained': self.is_trained,
-            'frequency_model': type(self.frequency_model).__name__ if self.frequency_model else None,
-            'severity_model': type(self.severity_model).__name__ if self.severity_model else None,
-            'feature_count': 11,  # Number of input features
-            'last_updated': datetime.now().isoformat()
+            "is_trained": self.is_trained,
+            "frequency_model": (
+                type(self.frequency_model).__name__ if self.frequency_model else None
+            ),
+            "severity_model": (
+                type(self.severity_model).__name__ if self.severity_model else None
+            ),
+            "feature_count": 11,  # Number of input features
+            "last_updated": datetime.now().isoformat(),
         }
+
 
 # Global instance
 sinistrality_predictor = SinistralityPredictor()
+
 
 def predict_sinistrality(features: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -356,6 +392,7 @@ def predict_sinistrality(features: Dict[str, Any]) -> Dict[str, Any]:
     """
     return sinistrality_predictor.predict_sinistrality(features)
 
+
 def train_ml_models(data: Optional[pd.DataFrame] = None) -> Dict[str, Any]:
     """
     Train ML models for sinistrality prediction
@@ -367,6 +404,7 @@ def train_ml_models(data: Optional[pd.DataFrame] = None) -> Dict[str, Any]:
         Training results and metrics
     """
     return sinistrality_predictor.train_models(data)
+
 
 def get_ml_model_info() -> Dict[str, Any]:
     """Get information about ML models"""

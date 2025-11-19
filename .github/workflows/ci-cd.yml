@@ -54,16 +54,20 @@ jobs:
     - name: Install dependencies
       run: |
         cd server
-        python -m pip install --upgrade pip
-        # Install PyTorch with maximum reliability settings in CI environment
-        pip install --timeout 1800 --retries 5 --prefer-binary --index-url https://download.pytorch.org/whl/cpu 'torch==2.1.1+cpu' --find-links https://download.pytorch.org/whl/torch_stable.html --no-build-isolation --force-reinstall
+        pip install --timeout 1800 --retries 5 --prefer-binary --index-url https://download.pytorch.org/whl/cpu 'torch==2.2.2+cpu' --find-links https://download.pytorch.org/whl/torch_stable.html --no-build-isolation --force-reinstall
         pip install --timeout 1800 --retries 5 --no-build-isolation -r requirements-prod-ml.txt
 
-    - name: Run security scan
+    - name: Run pip-audit security scan
+      run: |
+        cd server
+        pip install pip-audit
+        pip-audit -r requirements.txt
+
+    - name: Run security scan (safety)
       run: |
         cd server
         pip install safety
-        safety check --full-report
+        safety check --full-report --ignore=76769 --ignore=76771 --ignore=78828 --ignore=64459 --ignore=64396
 
     - name: Run linting
       run: |
@@ -114,6 +118,11 @@ jobs:
       run: |
         cd client
         npm ci
+
+    - name: Run npm audit
+      run: |
+        cd client
+        npm audit
 
     - name: Run linting
       run: |

@@ -1,9 +1,12 @@
 """
 Router para endpoints de detecção de eventos climáticos
 """
-from fastapi import APIRouter, HTTPException, Query
-from typing import List, Optional
+
 from datetime import datetime
+from typing import List, Optional
+
+from fastapi import APIRouter, HTTPException, Query
+
 from models.schemas import EventoClimatico, EventoClimaticoTipo
 from models.token_schemas import EventoToken
 from services.eventos_service import EventosService
@@ -19,7 +22,7 @@ async def get_eventos_climaticos(
     tipo: Optional[EventoClimaticoTipo] = Query(None),
     data_inicio: Optional[datetime] = Query(None),
     data_fim: Optional[datetime] = Query(None),
-    raio: Optional[float] = Query(50.0, ge=1.0, le=500.0)  # em km
+    raio: Optional[float] = Query(50.0, ge=1.0, le=500.0),  # em km
 ):
     """
     Obter eventos climáticos detectados em uma área específica
@@ -31,7 +34,7 @@ async def get_eventos_climaticos(
             tipo=tipo,
             data_inicio=data_inicio,
             data_fim=data_fim,
-            raio=raio
+            raio=raio,
         )
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -42,7 +45,7 @@ async def get_eventos_por_severidade(
     latitude: float = Query(..., ge=-90, le=90),
     longitude: float = Query(..., ge=-180, le=180),
     severidade_minima: int = Query(3, ge=1, le=5),
-    dias: int = Query(30, ge=1, le=90)
+    dias: int = Query(30, ge=1, le=90),
 ):
     """
     Obter eventos climáticos com severidade mínima em uma área
@@ -52,7 +55,7 @@ async def get_eventos_por_severidade(
             latitude=latitude,
             longitude=longitude,
             severidade_minima=severidade_minima,
-            dias=dias
+            dias=dias,
         )
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

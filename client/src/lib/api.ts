@@ -1,4 +1,4 @@
-import { embrapaApi as embrapaApiService } from './embrapaApi';
+import { loadEmbrapaApi } from './loadEmbrapaApi';
 
 interface ClimaData {
     data: string;
@@ -31,6 +31,7 @@ export const embrapaApi = {
         dataInicio: string,
         dataFim: string
     ): Promise<ClimaData[]> {
+        const embrapaApiService = await loadEmbrapaApi();
         const dados = await embrapaApiService.getClimateData(latitude, longitude, dataInicio, dataFim);
         return dados.map((item) => ({
             data: item.date,
@@ -45,6 +46,7 @@ export const embrapaApi = {
 
     async getLocalizacao(latitude: number, longitude: number): Promise<LocalizacaoData> {
         try {
+            const embrapaApiService = await loadEmbrapaApi();
             const location = await embrapaApiService.getLocationData(latitude, longitude);
             return {
                 latitude,
@@ -66,6 +68,7 @@ export const embrapaApi = {
     },
 
     async getDadosAtuais(latitude: number, longitude: number): Promise<ClimaData> {
+        const embrapaApiService = await loadEmbrapaApi();
         const atual = await embrapaApiService.getCurrentClimate(latitude, longitude);
         return {
             data: atual.date,
@@ -83,6 +86,7 @@ export const embrapaApi = {
         longitude: number,
         dias: number = 7
     ): Promise<ClimaData[]> {
+        const embrapaApiService = await loadEmbrapaApi();
         const previsao = await embrapaApiService.getWeatherForecast(latitude, longitude, dias);
         return previsao.map((item) => ({
             data: item.date || '',
@@ -94,6 +98,7 @@ export const embrapaApi = {
     },
 
     async getLocalizacaoPorCep(cep: string): Promise<LocalizacaoData> {
+        const embrapaApiService = await loadEmbrapaApi();
         const location = await embrapaApiService.getLocationByCep(cep);
         return {
             latitude: location.latitude,
@@ -110,6 +115,7 @@ export const embrapaApi = {
     },
 
     async getLocalizacaoPorCidade(cidade: string, estado: string): Promise<LocalizacaoData> {
+        const embrapaApiService = await loadEmbrapaApi();
         const location = await embrapaApiService.getLocationByCity(cidade, estado);
         return {
             latitude: location.latitude,
@@ -123,6 +129,7 @@ export const embrapaApi = {
     },
 
     async buscarCidades(termo: string, estado?: string): Promise<LocalizacaoData[]> {
+        const embrapaApiService = await loadEmbrapaApi();
         const cidades = await embrapaApiService.searchCities(termo, estado);
         return cidades.map((location) => ({
             latitude: location.latitude,

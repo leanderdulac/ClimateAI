@@ -1,29 +1,37 @@
 """
 Endpoints de Autenticação e Gerenciamento de Usuários
 """
+
+from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List
+
+from config.database import get_db_session
+from middleware.auth_middleware import (
+    get_current_active_user,
+    get_current_user,
+    require_admin,
+)
 from models.schemas import (
-    User, UserCreate, UserUpdate, LoginRequest, Token,
-    RefreshTokenRequest, UserPermissions, UserRole
+    LoginRequest,
+    RefreshTokenRequest,
+    Token,
+    User,
+    UserCreate,
+    UserPermissions,
+    UserRole,
+    UserUpdate,
 )
 from services.auth_service import auth_service
-from middleware.auth_middleware import (
-    get_current_user, get_current_active_user, require_admin
-)
-from config.database import get_db_session
 
 router = APIRouter()
 security = HTTPBearer()
 
 
 @router.post("/login", response_model=Token)
-async def login(
-    login_data: LoginRequest,
-    db: AsyncSession = Depends(get_db_session)
-):
+async def login(login_data: LoginRequest, db: AsyncSession = Depends(get_db_session)):
     """
     Autentica usuário e retorna tokens JWT
 
@@ -35,8 +43,7 @@ async def login(
 
 @router.post("/refresh", response_model=Token)
 async def refresh_token(
-    refresh_data: RefreshTokenRequest,
-    db: AsyncSession = Depends(get_db_session)
+    refresh_data: RefreshTokenRequest, db: AsyncSession = Depends(get_db_session)
 ):
     """
     Renova token de acesso usando refresh token
@@ -55,7 +62,9 @@ async def get_current_user_info(current_user: User = Depends(get_current_active_
 
 
 @router.get("/me/permissions", response_model=UserPermissions)
-async def get_current_user_permissions(current_user: User = Depends(get_current_active_user)):
+async def get_current_user_permissions(
+    current_user: User = Depends(get_current_active_user),
+):
     """
     Retorna permissões do usuário atual
     """
@@ -66,7 +75,7 @@ async def get_current_user_permissions(current_user: User = Depends(get_current_
 async def create_user(
     user_data: UserCreate,
     current_user: User = Depends(require_admin),
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db_session),
 ):
     """
     Cria novo usuário (apenas administradores)
@@ -81,8 +90,7 @@ async def create_user(
     existing_user = await auth_service.get_user_by_email(db, user_data.email)
     if existing_user:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email já cadastrado"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Email já cadastrado"
         )
 
     return await auth_service.create_user(db, user_data)
@@ -93,7 +101,7 @@ async def list_users(
     skip: int = 0,
     limit: int = 100,
     current_user: User = Depends(require_admin),
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db_session),
 ):
     """
     Lista usuários (apenas administradores)
@@ -101,16 +109,19 @@ async def list_users(
     - **skip**: Número de registros para pular
     - **limit**: Número máximo de registros (1-1000)
     """
-    # TODO: Implementar listagem real do banco
-    # Por enquanto retorna lista vazia
-    return []
+    # Limitar o valor máximo do limit para evitar sobrecarga
+    if limit > 1000:
+        limit = 1000
+
+    users = await auth_service.list_users(db, skip=skip, limit=limit)
+    return users
 
 
 @router.get("/users/{user_id}", response_model=User)
 async def get_user(
     user_id: str,
     current_user: User = Depends(require_admin),
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db_session),
 ):
     """
     Obtém usuário por ID (apenas administradores)
@@ -118,8 +129,7 @@ async def get_user(
     user = await auth_service.get_user_by_id(db, user_id)
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Usuário não encontrado"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado"
         )
     return user
 
@@ -129,7 +139,7 @@ async def update_user(
     user_id: str,
     user_data: UserUpdate,
     current_user: User = Depends(require_admin),
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db_session),
 ):
     """
     Atualiza usuário (apenas administradores)
@@ -141,8 +151,7 @@ async def update_user(
     existing_user = await auth_service.get_user_by_id(db, user_id)
     if not existing_user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Usuário não encontrado"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado"
         )
 
     # Verificar se email já está em uso por outro usuário
@@ -150,15 +159,14 @@ async def update_user(
         email_user = await auth_service.get_user_by_email(db, user_data.email)
         if email_user and email_user.id != user_id:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Email já está em uso"
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Email já está em uso"
             )
 
     updated_user = await auth_service.update_user(db, user_id, user_data)
     if not updated_user:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Erro ao atualizar usuário"
+            detail="Erro ao atualizar usuário",
         )
 
     return updated_user
@@ -168,7 +176,7 @@ async def update_user(
 async def delete_user(
     user_id: str,
     current_user: User = Depends(require_admin),
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db_session),
 ):
     """
     Remove usuário (apenas administradores)
@@ -179,22 +187,21 @@ async def delete_user(
     if current_user.id == user_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Não é possível excluir o próprio usuário"
+            detail="Não é possível excluir o próprio usuário",
         )
 
     # Verificar se usuário existe
     existing_user = await auth_service.get_user_by_id(db, user_id)
     if not existing_user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Usuário não encontrado"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado"
         )
 
     success = await auth_service.delete_user(db, user_id)
     if not success:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Erro ao remover usuário"
+            detail="Erro ao remover usuário",
         )
 
     return {"message": "Usuário removido com sucesso"}
@@ -205,7 +212,7 @@ async def toggle_user_status(
     user_id: str,
     is_active: bool,
     current_user: User = Depends(require_admin),
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db_session),
 ):
     """
     Ativa/desativa usuário (apenas administradores)
@@ -217,15 +224,14 @@ async def toggle_user_status(
     if current_user.id == user_id and not is_active:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Não é possível desativar o próprio usuário"
+            detail="Não é possível desativar o próprio usuário",
         )
 
     # Verificar se usuário existe
     existing_user = await auth_service.get_user_by_id(db, user_id)
     if not existing_user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Usuário não encontrado"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado"
         )
 
     # Atualizar status
@@ -235,7 +241,7 @@ async def toggle_user_status(
     if not updated_user:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Erro ao atualizar status do usuário"
+            detail="Erro ao atualizar status do usuário",
         )
 
     action = "ativado" if is_active else "desativado"

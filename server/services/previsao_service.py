@@ -1,13 +1,19 @@
 """
 Serviço para previsões climáticas
 """
-from typing import List
-from datetime import datetime, timedelta
-from models.schemas import PrevisaoClima, ClimaData
-from services.clima_service import ClimaService
-from services.dynamical_climate_service import dynamical_climate_service, predict_climate_dynamics
+
 import random
+from datetime import datetime, timedelta
+from typing import List
+
 import numpy as np
+
+from models.schemas import ClimaData, PrevisaoClima
+from services.clima_service import ClimaService
+from services.dynamical_climate_service import (
+    dynamical_climate_service,
+    predict_climate_dynamics,
+)
 
 
 class PrevisaoService:
@@ -16,10 +22,7 @@ class PrevisaoService:
         self.dynamical_climate_service = dynamical_climate_service
 
     def obter_previsao_clima(
-        self,
-        latitude: float,
-        longitude: float,
-        dias: int
+        self, latitude: float, longitude: float, dias: int
     ) -> PrevisaoClima:
         """
         Obter previsão climática para uma localização específica
@@ -29,12 +32,14 @@ class PrevisaoService:
         data_fim = data_inicio + timedelta(days=dias)
 
         # Get historical data to initialize dynamical system
-        historico_inicio = data_inicio - timedelta(days=30)  # Use last 30 days for initialization
+        historico_inicio = data_inicio - timedelta(
+            days=30
+        )  # Use last 30 days for initialization
         historico = self.clima_service.obter_historico(
             latitude=latitude,
             longitude=longitude,
             data_inicio=historico_inicio,
-            data_fim=data_inicio
+            data_fim=data_inicio,
         )
 
         # Initialize dynamical system model with historical data
@@ -44,8 +49,8 @@ class PrevisaoService:
         dynamical_prediction = predict_climate_dynamics(
             initial_conditions=initial_conditions,
             n_steps=dias,
-            model_type='lorenz',
-            parameters={'sigma': 10.0, 'rho': 28.0, 'beta': 8.0/3.0}
+            model_type="lorenz",
+            parameters={"sigma": 10.0, "rho": 28.0, "beta": 8.0 / 3.0},
         )
 
         variaveis = []
@@ -56,25 +61,46 @@ class PrevisaoService:
             confianca = max(0.5, 1.0 - (i * 0.05))
 
             # Incorporate dynamical systems prediction
-            if 'trajectory' in dynamical_prediction and len(dynamical_prediction['trajectory']) > i:
-                dynamical_data = dynamical_prediction['trajectory'][i]
+            if (
+                "trajectory" in dynamical_prediction
+                and len(dynamical_prediction["trajectory"]) > i
+            ):
+                dynamical_data = dynamical_prediction["trajectory"][i]
                 # Map dynamical system outputs to climate variables
-                temperatura_dynamical = dynamical_data[0]  # First dimension represents temperature
-                precipitacao_dynamical = max(0, dynamical_data[1])  # Second dimension represents precipitation
-                pressao_dynamical = dynamical_data[2]  # Third dimension represents pressure
+                temperatura_dynamical = dynamical_data[
+                    0
+                ]  # First dimension represents temperature
+                precipitacao_dynamical = max(
+                    0, dynamical_data[1]
+                )  # Second dimension represents precipitation
+                pressao_dynamical = dynamical_data[
+                    2
+                ]  # Third dimension represents pressure
             else:
                 # Fallback to original simulation if dynamical system fails
-                temperatura_dynamical = self.clima_service._gerar_temperatura_simulada(latitude, data_atual)
-                precipitacao_dynamical = self.clima_service._gerar_precipitacao_simulada(data_atual)
+                temperatura_dynamical = self.clima_service._gerar_temperatura_simulada(
+                    latitude, data_atual
+                )
+                precipitacao_dynamical = (
+                    self.clima_service._gerar_precipitacao_simulada(data_atual)
+                )
                 pressao_dynamical = random.uniform(980, 1040)
 
             # Blend dynamical systems prediction with traditional simulation
-            temperatura_trad = self.clima_service._gerar_temperatura_simulada(latitude, data_atual)
-            precipitacao_trad = self.clima_service._gerar_precipitacao_simulada(data_atual) * confianca
+            temperatura_trad = self.clima_service._gerar_temperatura_simulada(
+                latitude, data_atual
+            )
+            precipitacao_trad = (
+                self.clima_service._gerar_precipitacao_simulada(data_atual) * confianca
+            )
             temperatura = 0.7 * temperatura_dynamical + 0.3 * temperatura_trad
-            precipitacao = 0.7 * precipitacao_dynamical + 0.3 * precipitacao_trad * confianca
+            precipitacao = (
+                0.7 * precipitacao_dynamical + 0.3 * precipitacao_trad * confianca
+            )
 
-            umidade = self.clima_service._gerar_umidade_simulada(temperatura) + random.uniform(-5, 5)
+            umidade = self.clima_service._gerar_umidade_simulada(
+                temperatura
+            ) + random.uniform(-5, 5)
 
             dado = ClimaData(
                 latitude=latitude,
@@ -87,18 +113,18 @@ class PrevisaoService:
                 vento_direcao=random.uniform(0, 360),
                 pressao=pressao_dynamical,
                 indice_spi=self.clima_service._calcular_spi(precipitacao, i),
-                fonte="previsao_dinamica_hibrida"  # Updated to indicate hybrid approach
+                fonte="previsao_dinamica_hibrida",  # Updated to indicate hybrid approach
             )
             variaveis.append(dado)
 
         # Calculate enhanced confidence based on dynamical system properties
-        lyapunov_exp = dynamical_prediction.get('max_lyapunov_exponent', 0.9)
-        chaos_level = dynamical_prediction.get('chaos_level', 'medium')
+        lyapunov_exp = dynamical_prediction.get("max_lyapunov_exponent", 0.9)
+        chaos_level = dynamical_prediction.get("chaos_level", "medium")
 
         # Lower confidence for highly chaotic systems
-        if chaos_level == 'high' and lyapunov_exp > 0.5:
+        if chaos_level == "high" and lyapunov_exp > 0.5:
             confianca_final = 0.6
-        elif chaos_level == 'medium':
+        elif chaos_level == "medium":
             confianca_final = 0.75
         else:
             confianca_final = 0.85  # Higher confidence for less chaotic systems
@@ -110,7 +136,7 @@ class PrevisaoService:
             data_fim=data_fim,
             variaveis=variaveis,
             metodo="dynamical_ensemble_hybrid",
-            confianca=confianca_final
+            confianca=confianca_final,
         )
 
     def _prepare_initial_conditions(self, historico, latitude):
@@ -134,7 +160,9 @@ class PrevisaoService:
             avg_press = np.mean(press) if press else 1013.0
         else:
             # Use simulated values based on latitude
-            avg_temp = self.clima_service._gerar_temperatura_simulada(latitude, datetime.now())
+            avg_temp = self.clima_service._gerar_temperatura_simulada(
+                latitude, datetime.now()
+            )
             avg_precip = self.clima_service._gerar_precipitacao_simulada(datetime.now())
             avg_press = random.uniform(980, 1040)
 
@@ -142,16 +170,13 @@ class PrevisaoService:
         initial_conditions = [
             avg_temp + random.uniform(-1, 1),
             avg_precip + random.uniform(-2, 2),
-            avg_press + random.uniform(-5, 5)
+            avg_press + random.uniform(-5, 5),
         ]
 
         return initial_conditions
 
     def obter_previsao_eventos(
-        self,
-        latitude: float,
-        longitude: float,
-        dias: int
+        self, latitude: float, longitude: float, dias: int
     ) -> List[str]:
         """
         Obter previsão de eventos climáticos extremos
@@ -165,7 +190,7 @@ class PrevisaoService:
             latitude=latitude,
             longitude=longitude,
             data_inicio=historico_inicio,
-            data_fim=datetime.now()
+            data_fim=datetime.now(),
         )
 
         initial_conditions = self._prepare_initial_conditions(historico, latitude)
@@ -174,16 +199,19 @@ class PrevisaoService:
         dynamical_prediction = predict_climate_dynamics(
             initial_conditions=initial_conditions,
             n_steps=dias,
-            model_type='rossler',  # Using Rössler for oscillation detection
-            parameters={'a': 0.2, 'b': 0.2, 'c': 5.7}
+            model_type="rossler",  # Using Rössler for oscillation detection
+            parameters={"a": 0.2, "b": 0.2, "c": 5.7},
         )
 
         for i in range(dias):
             data = datetime.now() + timedelta(days=i)
 
             # Get values from dynamical system prediction
-            if 'trajectory' in dynamical_prediction and len(dynamical_prediction['trajectory']) > i:
-                dyn_data = dynamical_prediction['trajectory'][i]
+            if (
+                "trajectory" in dynamical_prediction
+                and len(dynamical_prediction["trajectory"]) > i
+            ):
+                dyn_data = dynamical_prediction["trajectory"][i]
                 temp = dyn_data[0]
                 precip = max(0, dyn_data[1])
                 pressure = dyn_data[2]
@@ -199,11 +227,11 @@ class PrevisaoService:
             prob_onda_calor_trad = max(0, min(1, (temp - 30) * 0.1)) if temp > 30 else 0
 
             # Enhance probabilities based on dynamical systems properties
-            chaos_level = dynamical_prediction.get('chaos_level', 'medium')
-            lyapunov_exp = dynamical_prediction.get('max_lyapunov_exponent', 0.9)
+            chaos_level = dynamical_prediction.get("chaos_level", "medium")
+            lyapunov_exp = dynamical_prediction.get("max_lyapunov_exponent", 0.9)
 
             # Increase probability of extreme events in highly chaotic regimes
-            if chaos_level == 'high' and lyapunov_exp > 0.5:
+            if chaos_level == "high" and lyapunov_exp > 0.5:
                 prob_seca = min(1.0, prob_seca_trad * 1.5)
                 prob_enchente = min(1.0, prob_enchente_trad * 1.5)
                 prob_onda_calor = min(1.0, prob_onda_calor_trad * 1.5)
@@ -215,18 +243,30 @@ class PrevisaoService:
             # Detect extreme behavior in dynamical system trajectory
             extreme_temp = abs(temp) > 35  # Extreme temperature in dynamical system
             extreme_precip = precip > 50  # Extreme precipitation event
-            pressure_anomaly = abs(pressure - 1013) > 50  # Pressure anomaly indicating storm
+            pressure_anomaly = (
+                abs(pressure - 1013) > 50
+            )  # Pressure anomaly indicating storm
 
             # Adicionar eventos com base nas probabilidades ajustadas
-            if random.random() < prob_seca or extreme_precip < 2:  # Very low precipitation
-                eventos.append(f"Seca potencial em {data.strftime('%Y-%m-%d')} (confiança aprimorada por dinâmica)")
+            if (
+                random.random() < prob_seca or extreme_precip < 2
+            ):  # Very low precipitation
+                eventos.append(
+                    f"Seca potencial em {data.strftime('%Y-%m-%d')} (confiança aprimorada por dinâmica)"
+                )
             if random.random() < prob_enchente or extreme_precip > 40:
-                eventos.append(f"Risco de enchente em {data.strftime('%Y-%m-%d')} (confiança aprimorada por dinâmica)")
+                eventos.append(
+                    f"Risco de enchente em {data.strftime('%Y-%m-%d')} (confiança aprimorada por dinâmica)"
+                )
             if random.random() < prob_onda_calor or extreme_temp:
-                eventos.append(f"Onda de calor prevista em {data.strftime('%Y-%m-%d')} (confiança aprimorada por dinâmica)")
+                eventos.append(
+                    f"Onda de calor prevista em {data.strftime('%Y-%m-%d')} (confiança aprimorada por dinâmica)"
+                )
 
             # Add events based on pressure anomalies (storms)
             if pressure_anomaly and random.random() < 0.3:
-                eventos.append(f"Condicoes de tempestade previstas em {data.strftime('%Y-%m-%d')} (detectado por dinâmica)")
+                eventos.append(
+                    f"Condicoes de tempestade previstas em {data.strftime('%Y-%m-%d')} (detectado por dinâmica)"
+                )
 
         return eventos
