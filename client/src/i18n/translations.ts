@@ -33,7 +33,17 @@ export const translations = {
         'guide.step4.desc': 'Use nossa calculadora atuarial para simular diferentes cenários de risco.',
 
         // Footer
-        'footer.copyright': '© 2024 ClimateAI. Transformando riscos climáticos em oportunidades.'
+        'footer.copyright': '© 2024 ClimateAI. Transformando riscos climáticos em oportunidades.',
+
+        // Dashboard
+        'dashboard.badge': 'Análise Climática Avançada',
+        'dashboard.subtitle': 'Uma plataforma revolucionária para tokenização e precificação de eventos climáticos com análises avançadas e monitoramento em tempo real',
+        'dashboard.start': 'Iniciar Análise',
+        'dashboard.explore': 'Explorar Dados',
+        'dashboard.stats.growth': 'Crescimento do Mercado',
+        'dashboard.stats.monitored': 'Eventos Monitorados',
+        'dashboard.stats.value': 'Valor Tokenizado',
+        'dashboard.stats.accuracy': 'Precisão da Previsão'
     },
     'en-US': {
         // Header
@@ -68,7 +78,17 @@ export const translations = {
         'guide.step4.desc': 'Use our actuarial calculator to simulate different risk scenarios.',
 
         // Footer
-        'footer.copyright': '© 2024 ClimateAI. Transforming climate risks into opportunities.'
+        'footer.copyright': '© 2024 ClimateAI. Transforming climate risks into opportunities.',
+
+        // Dashboard
+        'dashboard.badge': 'Advanced Climate Analytics',
+        'dashboard.subtitle': 'A revolutionary platform for tokenizing and pricing climate events with advanced analytics and real-time monitoring',
+        'dashboard.start': 'Start Analysis',
+        'dashboard.explore': 'Explore Data',
+        'dashboard.stats.growth': 'Market Growth',
+        'dashboard.stats.monitored': 'Climate Events Monitored',
+        'dashboard.stats.value': 'Tokenized Value',
+        'dashboard.stats.accuracy': 'Prediction Accuracy'
     }
 };
 

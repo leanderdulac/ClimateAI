@@ -10,6 +10,7 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { LocationProvider } from "@/lib/LocationContext";
 import { PeriodProvider, usePeriod } from "@/lib/PeriodContext";
 import { Globe, TrendingUp, DollarSign, Zap, Cloud, AlertTriangle, Thermometer, Sun } from "lucide-react";
+import { useTranslation } from "@/hooks/useTranslation";
 
 function PeriodButtons() {
   const { selectedPeriod, setSelectedPeriod } = usePeriod();
@@ -42,6 +43,8 @@ function PeriodButtons() {
 }
 
 export function IndexPage() {
+  const { t } = useTranslation();
+
   return (
     <DashboardLayout>
       <LocationProvider>
@@ -52,13 +55,13 @@ export function IndexPage() {
               <div className="text-center mb-16">
                 <div className="inline-flex items-center gap-2 bg-blue-100/20 px-4 py-2 rounded-full text-sm text-blue-800 mb-6">
                   <Zap className="h-4 w-4" />
-                  Advanced Climate Analytics
+                  {t('dashboard.badge')}
                 </div>
                 <h1 className="text-5xl md:text-7xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-green-600 mb-6">
                   ClimateWise 🌍
                 </h1>
                 <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-10 text-gray-700">
-                  A revolutionary platform for tokenizing and pricing climate events with advanced analytics and real-time monitoring
+                  {t('dashboard.subtitle')}
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Button
@@ -76,7 +79,7 @@ export function IndexPage() {
                       }
                     }}
                   >
-                    Start Analysis
+                    {t('dashboard.start')}
                   </Button>
                   <Button
                     size="lg"
@@ -93,7 +96,7 @@ export function IndexPage() {
                       }
                     }}
                   >
-                    Explore Data
+                    {t('dashboard.explore')}
                   </Button>
                 </div>
               </div>
@@ -108,28 +111,28 @@ export function IndexPage() {
                   <CardContent className="p-6 text-center">
                     <TrendingUp className="h-8 w-8 text-blue-600 mx-auto mb-2" />
                     <div className="text-2xl font-bold text-blue-800">+24.5%</div>
-                    <div className="text-sm text-blue-600">Market Growth</div>
+                    <div className="text-sm text-blue-600">{t('dashboard.stats.growth')}</div>
                   </CardContent>
                 </Card>
                 <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-green-100">
                   <CardContent className="p-6 text-center">
                     <Globe className="h-8 w-8 text-green-600 mx-auto mb-2" />
                     <div className="text-2xl font-bold text-green-800">1.2M+</div>
-                    <div className="text-sm text-green-600">Climate Events Monitored</div>
+                    <div className="text-sm text-green-600">{t('dashboard.stats.monitored')}</div>
                   </CardContent>
                 </Card>
                 <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-50 to-purple-100">
                   <CardContent className="p-6 text-center">
                     <DollarSign className="h-8 w-8 text-purple-600 mx-auto mb-2" />
                     <div className="text-2xl font-bold text-purple-800">$5.2B</div>
-                    <div className="text-sm text-purple-600">Tokenized Value</div>
+                    <div className="text-sm text-purple-600">{t('dashboard.stats.value')}</div>
                   </CardContent>
                 </Card>
                 <Card className="border-0 shadow-lg bg-gradient-to-br from-orange-50 to-orange-100">
                   <CardContent className="p-6 text-center">
                     <Zap className="h-8 w-8 text-orange-600 mx-auto mb-2" />
                     <div className="text-2xl font-bold text-orange-800">99.9%</div>
-                    <div className="text-sm text-orange-600">Prediction Accuracy</div>
+                    <div className="text-sm text-orange-600">{t('dashboard.stats.accuracy')}</div>
                   </CardContent>
                 </Card>
               </div>
