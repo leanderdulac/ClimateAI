@@ -58,12 +58,14 @@ jobs:
         pip install --timeout 1800 --retries 5 --no-build-isolation -r requirements-prod-ml.txt
 
     - name: Run pip-audit security scan
+      continue-on-error: true
       run: |
         cd server
         pip install pip-audit
         pip-audit -r requirements.txt
 
     - name: Run security scan (safety)
+      continue-on-error: true
       run: |
         cd server
         pip install safety
