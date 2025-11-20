@@ -11,6 +11,7 @@ import { ExecutiveDashboard } from './ExecutiveDashboard';
 import { AuditDashboard } from './AuditDashboard';
 import { useLocation } from '@/lib/LocationContext';
 import { usePeriod } from '@/lib/PeriodContext';
+import { useTranslation } from '@/hooks/useTranslation';
 import {
   DollarSign,
   Calculator,
@@ -579,6 +580,7 @@ const generatePolicySimulations = async (
 };
 
 export function PricingSimulator() {
+  const { t } = useTranslation();
   const { selectedPeriod } = usePeriod();
   const [assetValue, setAssetValue] = useState<number>(100000); // Valor do bem/serviço
   const [selectedEvent, setSelectedEvent] = useState<ClimateEvent | null>(null);
@@ -604,11 +606,11 @@ export function PricingSimulator() {
 
   const handleCalculate = async () => {
     if (assetValue <= 0) {
-      alert('Por favor, insira um valor válido para o bem ou serviço.');
+      alert(t('pricing.errors.invalidAsset'));
       return;
     }
     if (!selectedEvent) {
-      alert('Por favor, selecione um evento climático.');
+      alert(t('pricing.errors.selectEvent'));
       return;
     }
 
@@ -681,7 +683,7 @@ export function PricingSimulator() {
 
     } catch (error) {
       console.error('Erro no cálculo:', error);
-      alert('Erro no cálculo avançado. Usando método simplificado.');
+      alert(t('pricing.errors.calculationError'));
     } finally {
       setCalculating(false);
     }
@@ -696,9 +698,9 @@ export function PricingSimulator() {
               <Calculator className="h-6 w-6 text-white" />
             </div>
             <div>
-              <CardTitle className="text-xl font-bold text-white">Simulador de Preços</CardTitle>
+              <CardTitle className="text-xl font-bold text-white">{t('pricing.simulator.title')}</CardTitle>
               <CardDescription className="text-primary-100">
-                Cálculo de seguros contra eventos climáticos
+                {t('pricing.simulator.subtitle')}
               </CardDescription>
             </div>
           </div>
@@ -707,13 +709,13 @@ export function PricingSimulator() {
               <DollarSign className="h-5 w-5 text-primary-100" />
               <div>
                 <div className="text-sm text-primary-100">
-                  Seguro Total ({coveragePeriod} {coveragePeriod === 1 ? 'ano' : 'anos'})
+                  {t('pricing.labels.totalInsurance')} ({coveragePeriod} {coveragePeriod === 1 ? t('pricing.labels.year') : t('pricing.labels.years')})
                 </div>
                 <div className="text-lg font-semibold text-white">
                   R$ {premium.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                 </div>
                 <div className="text-xs text-primary-200">
-                  R$ {(premium / coveragePeriod).toLocaleString(undefined, { maximumFractionDigits: 2 })}/ano
+                  R$ {(premium / coveragePeriod).toLocaleString(undefined, { maximumFractionDigits: 2 })}/{t('pricing.labels.year')}
                 </div>
               </div>
             </div>
@@ -731,7 +733,7 @@ export function PricingSimulator() {
               : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
           >
-            Simulador de Preços
+            {t('pricing.tabs.simulator')}
           </button>
           <button
             onClick={() => setActiveTab('dashboard')}
@@ -740,7 +742,7 @@ export function PricingSimulator() {
               : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
           >
-            Dashboard Executivo
+            {t('pricing.tabs.dashboard')}
           </button>
           <button
             onClick={() => setActiveTab('audit')}
@@ -749,7 +751,7 @@ export function PricingSimulator() {
               : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
           >
-            Auditoria & Compliance
+            {t('pricing.tabs.audit')}
           </button>
         </div>
 
@@ -761,11 +763,11 @@ export function PricingSimulator() {
                 <div className="flex items-center justify-between">
                   <Label className="flex items-center gap-2 text-sm font-medium text-neutral-700">
                     <Cloud className="h-4 w-4 text-primary-500" />
-                    Evento Climático
+                    {t('pricing.labels.climateEvent')}
                   </Label>
                   {selectedEvent && (
                     <Badge variant="default" className="px-2 py-1">
-                      {selectedEvent.name}
+                      {t(`pricing.events.${selectedEvent.id}`)}
                     </Badge>
                   )}
                 </div>
@@ -781,7 +783,7 @@ export function PricingSimulator() {
                       onClick={() => handleEventSelect(event)}
                     >
                       {event.icon}
-                      {event.name}
+                      {t(`pricing.events.${event.id}`)}
                     </Button>
                   ))}
                 </div>
@@ -795,7 +797,7 @@ export function PricingSimulator() {
                     className="flex items-center gap-2 text-sm font-medium text-neutral-700"
                   >
                     <DollarSign className="h-4 w-4 text-primary-500" />
-                    Valor do Bem
+                    {t('pricing.labels.assetValue')}
                   </Label>
                   <Badge variant="default" className="px-2 py-1">
                     ${assetValue.toLocaleString()}

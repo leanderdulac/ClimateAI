@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MapPin, Locate, Clock, Search } from 'lucide-react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { embrapaApi } from '@/lib/api';
 import type { LocalizacaoData } from '@/lib/api';
 import { useLocation } from '@/lib/LocationContext';
@@ -51,6 +52,7 @@ interface LocationSelectorProps {
 }
 
 export function LocationSelector({ onLocationSelected }: LocationSelectorProps) {
+  const { t } = useTranslation();
   const [location, setLocation] = useState<LocalizacaoData | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -118,7 +120,7 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
 
   const handleLocationData = async (lat: number, lon: number, locationName?: string) => {
     if (!isWithinBrazil(lat, lon)) {
-      setError('As coordenadas fornecidas estão fora do território brasileiro');
+      setError(t('location.errors.outside'));
       setLoading(false);
       return;
     }
@@ -148,7 +150,7 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
       setRecentLocations(getRecentLocations());
     } catch (err) {
       console.error('Erro ao obter dados da localização:', err);
-      setError('Não foi possível obter os dados desta localização');
+      setError(t('location.errors.notFound'));
     } finally {
       setLoading(false);
       setIsLoadingLocation(false);
@@ -160,7 +162,7 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
     setError(null);
 
     if (!navigator.geolocation) {
-      setError('Geolocalização não é suportada pelo seu navegador');
+      setError(t('location.errors.geolocation'));
       setLoading(false);
       return;
     }
@@ -186,14 +188,14 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
 
   const searchLocationByCity = async () => {
     if (!city || !state) {
-      setError('Por favor, informe cidade e estado');
+      setError(t('location.errors.cityState'));
       return;
     }
 
     // Validar se o estado é válido
     const estadoValido = ESTADOS_BRASILEIROS.find(est => est.uf === state.toUpperCase());
     if (!estadoValido) {
-      setError(`Estado "${state}" não é válido. Use uma UF válida (ex: SP, RJ, MG)`);
+      setError(`Estado "${state}" ${t('location.errors.invalidState')}`);
       return;
     }
 
@@ -215,7 +217,7 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
       );
     } catch (err) {
       console.error('Erro ao buscar coordenadas:', err);
-      setError(`Cidade "${city}" não encontrada no estado ${estadoValido.nome} (${state.toUpperCase()}). Verifique o nome da cidade e estado.`);
+      setError(`Cidade "${city}" ${t('location.errors.cityNotFound')} ${estadoValido.nome} (${state.toUpperCase()}). Verifique o nome da cidade e estado.`);
       setLoading(false);
     }
   };
@@ -223,7 +225,7 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
   const searchLocationByCEP = async () => {
     const sanitizedCep = cep.replace(/\D/g, '');
     if (!sanitizedCep || !/^\d{8}$/.test(sanitizedCep)) {
-      setError('Por favor, insira um CEP válido');
+      setError(t('location.errors.invalidCep'));
       return;
     }
 
@@ -233,7 +235,7 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
     try {
       const locationData = await embrapaApi.getLocalizacaoPorCep(sanitizedCep);
       if (!locationData.latitude || !locationData.longitude) {
-        setError('CEP não encontrado');
+        setError(t('location.errors.cepNotFound'));
         setLoading(false);
         return;
       }
@@ -255,7 +257,7 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
       );
     } catch (err) {
       console.error('Erro ao buscar CEP:', err);
-      setError('Falha ao buscar CEP. Por favor, tente novamente.');
+      setError(t('location.errors.cepFailed'));
       setLoading(false);
     }
   };
@@ -268,7 +270,7 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
     const lng = parseFloat(lngInput.value);
 
     if (isNaN(lat) || isNaN(lng)) {
-      setError('Por favor, insira coordenadas válidas');
+      setError(t('location.errors.invalidCoords'));
       return;
     }
 
@@ -292,10 +294,10 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <MapPin className="h-5 w-5" />
-          Localização
+          {t('location.title')}
         </CardTitle>
         <CardDescription>
-          Selecione sua localização para obter dados climáticos precisos
+          {t('location.subtitle')}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -305,7 +307,7 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
             {location ? (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-medium">Localização Atual</h3>
+                  <h3 className="font-medium">{t('location.current')}</h3>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -335,7 +337,7 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
                   size="lg"
                 >
                   <Locate className="h-5 w-5 mr-2" />
-                  {loading ? "Detectando..." : "Detectar Minha Localização"}
+                  {loading ? t('location.detecting') : t('location.detect')}
                 </Button>
               </div>
             )}
@@ -346,9 +348,9 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
             <div className="grid grid-cols-2 gap-2">
               {/* Busca por cidade */}
               <div className="space-y-2 relative">
-                <Label>Cidade</Label>
+                <Label>{t('location.city')}</Label>
                 <Input
-                  placeholder="Digite o nome da cidade"
+                  placeholder={t('location.cityPlaceholder')}
                   value={city}
                   onChange={(e) => handleCityChange(e.target.value)}
                   onFocus={() => city.length >= 2 && setShowSuggestions(citySuggestions.length > 0)}
@@ -370,9 +372,9 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
                 )}
               </div>
               <div className="space-y-2">
-                <Label>UF</Label>
+                <Label>{t('location.state')}</Label>
                 <Input
-                  placeholder="UF"
+                  placeholder={t('location.state')}
                   value={state}
                   onChange={(e) => setState(e.target.value.toUpperCase())}
                   maxLength={2}
@@ -387,15 +389,15 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
               disabled={loading}
             >
               <Search className="h-4 w-4 mr-2" />
-              Buscar por Cidade
+              {t('location.searchByCity')}
             </Button>
 
             {/* Busca por CEP */}
             <div className="space-y-2">
-              <Label>CEP</Label>
+              <Label>{t('location.cep')}</Label>
               <div className="flex gap-2">
                 <Input
-                  placeholder="00000-000"
+                  placeholder={t('location.cepPlaceholder')}
                   value={cep}
                   onChange={(e) => setCep(e.target.value)}
                   maxLength={9}
@@ -412,10 +414,10 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
 
             {/* Coordenadas manuais */}
             <div className="space-y-2 pt-2 border-t border-neutral-200">
-              <Label>Coordenadas Precisas</Label>
+              <Label>{t('location.coordinates')}</Label>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <Label className="text-xs text-neutral-500">Latitude</Label>
+                  <Label className="text-xs text-neutral-500">{t('location.latitude')}</Label>
                   <Input
                     id="manual-lat"
                     placeholder="-23.5505"
@@ -424,7 +426,7 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
                   />
                 </div>
                 <div>
-                  <Label className="text-xs text-neutral-500">Longitude</Label>
+                  <Label className="text-xs text-neutral-500">{t('location.longitude')}</Label>
                   <Input
                     id="manual-lng"
                     placeholder="-46.6333"
@@ -440,7 +442,7 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
                 disabled={loading}
               >
                 <MapPin className="h-4 w-4 mr-2" />
-                Usar Coordenadas
+                {t('location.useCoordinates')}
               </Button>
             </div>
           </div>
@@ -450,7 +452,7 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
             <div className="space-y-2 pt-2 border-t border-neutral-200">
               <Label className="flex items-center gap-2">
                 <Clock className="h-4 w-4" />
-                Localizações Recentes
+                {t('location.recent')}
               </Label>
               <div className="space-y-1">
                 {recentLocations.map((loc, index) => (
