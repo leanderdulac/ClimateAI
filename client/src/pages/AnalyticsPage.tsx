@@ -2,6 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DashboardLayout } from "@/components/DashboardLayout";
+import { useTranslation } from '@/hooks/useTranslation';
 import {
   BarChart3,
   TrendingUp,
@@ -18,16 +19,17 @@ import {
 } from "lucide-react";
 
 export function AnalyticsPage() {
+  const { t } = useTranslation();
   return (
     <DashboardLayout
-      title="Analytics Avançados"
-      subtitle="Insights profundos sobre dados climáticos e performance de tokens"
+      title={t('analytics.title')}
+      subtitle={t('analytics.subtitle')}
     >
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Volume Total</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('analytics.metrics.totalVolume')}</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -37,14 +39,14 @@ export function AnalyticsPage() {
                 <TrendingUp className="h-3 w-3" />
                 +12.5%
               </span>
-              em relação ao mês passado
+              {t('analytics.metrics.lastMonth')}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tokens Ativos</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('analytics.metrics.activeTokens')}</CardTitle>
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -54,14 +56,14 @@ export function AnalyticsPage() {
                 <TrendingUp className="h-3 w-3" />
                 +8.2%
               </span>
-              novos tokens este mês
+              {t('analytics.metrics.newTokensMonth')}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Usuários Ativos</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('analytics.metrics.activeUsers')}</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -71,20 +73,20 @@ export function AnalyticsPage() {
                 <TrendingDown className="h-3 w-3" />
                 -2.1%
               </span>
-              em relação à semana passada
+              {t('analytics.metrics.lastWeek')}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Eventos Climáticos</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('analytics.metrics.climateEvents')}</CardTitle>
             <Cloud className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">156</div>
             <p className="text-xs text-muted-foreground">
-              Monitorados hoje
+              {t('analytics.metrics.monitoredToday')}
             </p>
           </CardContent>
         </Card>
@@ -94,9 +96,9 @@ export function AnalyticsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <Card>
           <CardHeader>
-            <CardTitle>Performance de Tokens</CardTitle>
+            <CardTitle>{t('analytics.performance.title')}</CardTitle>
             <CardDescription>
-              Evolução do valor dos tokens nos últimos 30 dias
+              {t('analytics.performance.subtitle')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -112,9 +114,9 @@ export function AnalyticsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Distribuição por Região</CardTitle>
+            <CardTitle>{t('analytics.distribution.title')}</CardTitle>
             <CardDescription>
-              Eventos climáticos por localização geográfica
+              {t('analytics.distribution.subtitle')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -165,9 +167,9 @@ export function AnalyticsPage() {
       {/* Recent Activity */}
       <Card>
         <CardHeader>
-          <CardTitle>Atividades Recentes</CardTitle>
+          <CardTitle>{t('analytics.recentActivity.title')}</CardTitle>
           <CardDescription>
-            Últimas transações e eventos da plataforma
+            {t('analytics.recentActivity.subtitle')}
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -10,6 +10,7 @@ import { ClimateEventTokenizer } from "@/components/ClimateEventTokenizer";
 import { TokenWalletMonitor } from "@/components/TokenWalletMonitor";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useTranslation } from '@/hooks/useTranslation';
 import {
   Zap,
   Package,
@@ -28,12 +29,13 @@ import {
 } from "lucide-react";
 
 export function TokenizationPage() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("create");
 
   return (
     <DashboardLayout
-      title="Tokenização Climática"
-      subtitle="Transforme eventos climáticos em ativos tokenizados"
+      title={t('tokenization.title')}
+      subtitle={t('tokenization.subtitle')}
     >
       {/* Stats Cards */}
       <div className="bg-gradient-to-r from-blue-900 via-purple-900 to-green-900 text-white">
@@ -42,37 +44,37 @@ export function TokenizationPage() {
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6">
               <div className="flex items-center gap-3 mb-3">
                 <CloudRain className="h-8 w-8 text-blue-300" />
-                <h3 className="text-lg font-semibold">Eventos</h3>
+                <h3 className="text-lg font-semibold">{t('tokenization.stats.events')}</h3>
               </div>
               <p className="text-3xl font-bold">1,247</p>
-              <p className="text-blue-200 text-sm">Eventos monitorados</p>
+              <p className="text-blue-200 text-sm">{t('tokenization.stats.eventsMonitored')}</p>
             </div>
 
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6">
               <div className="flex items-center gap-3 mb-3">
                 <Coins className="h-8 w-8 text-yellow-300" />
-                <h3 className="text-lg font-semibold">Tokens</h3>
+                <h3 className="text-lg font-semibold">{t('tokenization.stats.tokens')}</h3>
               </div>
               <p className="text-3xl font-bold">89</p>
-              <p className="text-blue-200 text-sm">Tokens criados</p>
+              <p className="text-blue-200 text-sm">{t('tokenization.stats.tokensCreated')}</p>
             </div>
 
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6">
               <div className="flex items-center gap-3 mb-3">
                 <TrendingUp className="h-8 w-8 text-green-300" />
-                <h3 className="text-lg font-semibold">Volume</h3>
+                <h3 className="text-lg font-semibold">{t('tokenization.stats.volume')}</h3>
               </div>
               <p className="text-3xl font-bold">R$ 2.4M</p>
-              <p className="text-blue-200 text-sm">Valor tokenizado</p>
+              <p className="text-blue-200 text-sm">{t('tokenization.stats.tokenizedValue')}</p>
             </div>
 
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6">
               <div className="flex items-center gap-3 mb-3">
                 <BarChart3 className="h-8 w-8 text-purple-300" />
-                <h3 className="text-lg font-semibold">Ativos</h3>
+                <h3 className="text-lg font-semibold">{t('tokenization.stats.assets')}</h3>
               </div>
               <p className="text-3xl font-bold">156</p>
-              <p className="text-blue-200 text-sm">Carteiras ativas</p>
+              <p className="text-blue-200 text-sm">{t('tokenization.stats.activeWallets')}</p>
             </div>
           </div>
         </div>
@@ -84,15 +86,15 @@ export function TokenizationPage() {
           <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:grid-cols-none lg:flex">
             <TabsTrigger value="create" className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
-              Criar Token
+              {t('tokenization.tabs.create')}
             </TabsTrigger>
             <TabsTrigger value="portfolio" className="flex items-center gap-2">
               <Package className="h-4 w-4" />
-              Meu Portfólio
+              {t('tokenization.tabs.portfolio')}
             </TabsTrigger>
             <TabsTrigger value="market" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
-              Mercado
+              {t('tokenization.tabs.market')}
             </TabsTrigger>
           </TabsList>
 
@@ -108,7 +110,7 @@ export function TokenizationPage() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Zap className="h-5 w-5 text-yellow-600" />
-                      Estatísticas Rápidas
+                      {t('tokenization.quickStats.title')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -132,7 +134,7 @@ export function TokenizationPage() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <AlertTriangle className="h-5 w-5 text-orange-600" />
-                      Tipos de Eventos
+                      {t('tokenization.eventTypes.title')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
@@ -183,10 +185,10 @@ export function TokenizationPage() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <BarChart3 className="h-5 w-5" />
-                    Mercado de Tokens Climáticos
+                    {t('tokenization.market.title')}
                   </CardTitle>
                   <CardDescription>
-                    Tokens disponíveis para negociação
+                    {t('tokenization.market.subtitle')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -231,7 +233,7 @@ export function TokenizationPage() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <History className="h-5 w-5" />
-                    Atividade Recente
+                    {t('tokenization.activity.title')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
