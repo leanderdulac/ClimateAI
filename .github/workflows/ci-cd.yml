@@ -137,7 +137,7 @@ jobs:
     - name: Run tests
       run: |
         cd client
-        npm test -- --coverage --watchAll=false
+        npm run test:run -- --coverage
 
     - name: Upload coverage reports
       uses: codecov/codecov-action@v3

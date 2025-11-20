@@ -27,7 +27,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
     const t = (key: string): string => {
         const keys = key.split('.');
-        let value: any = translations[language];
+        const value: any = translations[language];
 
         // Simple lookup for flat keys, could be extended for nested keys if needed
         // But our translations structure is currently flat/simple

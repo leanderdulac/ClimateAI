@@ -1,6 +1,6 @@
-import { render, screen, act } from '@testing-library/react';
+import { render, screen, act, waitFor } from '@testing-library/react';
 import { AuthProvider, useAuth } from './AuthContext';
-import {-after-|-before-|-context-|-case-sensitive-|-no-ignore-|-fixed-strings-|-include-|-before-|-after-|-context-|-case-sensitive-|-no-ignore-|-fixed-strings-|-include-} from 'react';
+import React from 'react';
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -49,9 +49,17 @@ describe('AuthContext', () => {
       screen.getByText('Register').click();
     });
 
+    await waitFor(() => {
+      expect(screen.getByTestId('user-name')).toHaveTextContent('Test User');
+    }, { timeout: 2000 });
+
     // Logout
     await act(async () => {
       screen.getByText('Logout').click();
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('user-name')).not.toBeInTheDocument();
     });
 
     // Login
@@ -59,6 +67,8 @@ describe('AuthContext', () => {
       screen.getByText('Login').click();
     });
 
-    expect(screen.getByTestId('user-name')).toHaveTextContent('Test User');
+    await waitFor(() => {
+      expect(screen.getByTestId('user-name')).toHaveTextContent('Test User');
+    }, { timeout: 2000 });
   });
 });

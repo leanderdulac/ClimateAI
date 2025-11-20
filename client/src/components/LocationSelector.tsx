@@ -277,7 +277,7 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
     await handleLocationData(lat, lng);
   };
 
-  const useRecentLocation = (recentLocation: SavedLocation) => {
+  const handleSelectRecentLocation = (recentLocation: SavedLocation) => {
     setLoading(true);
     setError(null);
     handleLocationData(
@@ -363,7 +363,7 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
                         onClick={() => selectCitySuggestion(suggestion)}
                       >
                         <div className="font-medium">{suggestion.cidade}</div>
-                        <div className="text-gray-500 text-xs">{suggestion.stateName || suggestion.estado} - {suggestion.estado}</div>
+                        <div className="text-gray-500 text-xs">{suggestion.estado} - {suggestion.estado}</div>
                       </div>
                     ))}
                   </div>
@@ -458,7 +458,7 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
                     key={index}
                     variant="ghost"
                     className="w-full justify-start text-left h-auto py-2"
-                    onClick={() => useRecentLocation(loc)}
+                    onClick={() => handleSelectRecentLocation(loc)}
                   >
                     <div className="flex flex-col items-start">
                       <span className="text-sm font-medium">{loc.name}</span>
