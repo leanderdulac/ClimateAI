@@ -115,15 +115,15 @@ export function TokenizationPage() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Tokens criados hoje</span>
+                      <span className="text-sm text-gray-600">{t('tokenization.quickStats.tokensToday')}</span>
                       <span className="font-semibold">3</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Valor médio</span>
+                      <span className="text-sm text-gray-600">{t('tokenization.quickStats.averageValue')}</span>
                       <span className="font-semibold">R$ 35.000</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Taxa de sucesso</span>
+                      <span className="text-sm text-gray-600">{t('tokenization.quickStats.successRate')}</span>
                       <span className="font-semibold text-green-600">98.5%</span>
                     </div>
                   </CardContent>
@@ -141,32 +141,32 @@ export function TokenizationPage() {
                     <div className="flex items-center gap-3 p-3 bg-red-50 rounded-lg">
                       <Thermometer className="h-5 w-5 text-red-600" />
                       <div>
-                        <p className="font-medium text-red-800">Onda de Calor</p>
-                        <p className="text-sm text-red-600">Temperatura extrema</p>
+                        <p className="font-medium text-red-800">{t('tokenization.eventTypes.heatwave')}</p>
+                        <p className="text-sm text-red-600">{t('tokenization.eventTypes.heatwaveDesc')}</p>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
                       <CloudRain className="h-5 w-5 text-blue-600" />
                       <div>
-                        <p className="font-medium text-blue-800">Enchente</p>
-                        <p className="text-sm text-blue-600">Precipitação excessiva</p>
+                        <p className="font-medium text-blue-800">{t('tokenization.eventTypes.flood')}</p>
+                        <p className="text-sm text-blue-600">{t('tokenization.eventTypes.floodDesc')}</p>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-3 p-3 bg-yellow-50 rounded-lg">
                       <Sun className="h-5 w-5 text-yellow-600" />
                       <div>
-                        <p className="font-medium text-yellow-800">Seca</p>
-                        <p className="text-sm text-yellow-600">Falta de precipitação</p>
+                        <p className="font-medium text-yellow-800">{t('tokenization.eventTypes.drought')}</p>
+                        <p className="text-sm text-yellow-600">{t('tokenization.eventTypes.droughtDesc')}</p>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg">
                       <Snowflake className="h-5 w-5 text-purple-600" />
                       <div>
-                        <p className="font-medium text-purple-800">Geada</p>
-                        <p className="text-sm text-purple-600">Temperatura muito baixa</p>
+                        <p className="font-medium text-purple-800">{t('tokenization.eventTypes.frost')}</p>
+                        <p className="text-sm text-purple-600">{t('tokenization.eventTypes.frostDesc')}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -241,24 +241,24 @@ export function TokenizationPage() {
                     <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
                       <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                       <div className="flex-1">
-                        <p className="text-sm font-medium">Novo token criado</p>
-                        <p className="text-xs text-gray-600">ENC425 - 2 minutos atrás</p>
+                        <p className="text-sm font-medium">{t('tokenization.activity.newToken')}</p>
+                        <p className="text-xs text-gray-600">ENC425 - 2 {t('tokenization.activity.minutesAgo')}</p>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
                       <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                       <div className="flex-1">
-                        <p className="text-sm font-medium">Transferência realizada</p>
-                        <p className="text-xs text-gray-600">SEC325 - 15 minutos atrás</p>
+                        <p className="text-sm font-medium">{t('tokenization.activity.transfer')}</p>
+                        <p className="text-xs text-gray-600">SEC325 - 15 {t('tokenization.activity.minutesAgo')}</p>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg">
                       <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
                       <div className="flex-1">
-                        <p className="text-sm font-medium">Token liquidado</p>
-                        <p className="text-xs text-gray-600">CAL425 - 1 hora atrás</p>
+                        <p className="text-sm font-medium">{t('tokenization.activity.liquidated')}</p>
+                        <p className="text-xs text-gray-600">CAL425 - 1 {t('tokenization.activity.hourAgo')}</p>
                       </div>
                     </div>
                   </div>
