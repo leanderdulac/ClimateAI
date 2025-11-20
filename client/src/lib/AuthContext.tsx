@@ -115,7 +115,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         id: Date.now(),
         name: userData.name,
         email: userData.email,
-        // ❌ REMOVIDO: password: userData.password,
+        password: userData.password,
         company: userData.company || '',
         createdAt: new Date().toISOString()
       };
