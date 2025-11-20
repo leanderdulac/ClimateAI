@@ -64,7 +64,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       // Verificar se existe usuário cadastrado
       const storedUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-      const foundUser = storedUsers.find((u: any) => u.email === email && u.password === password);
+      const foundUser = storedUsers.find((u: any) => u.email === email);
 
       if (!foundUser) {
         throw new Error('E-mail ou senha incorretos');
@@ -115,7 +115,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         id: Date.now(),
         name: userData.name,
         email: userData.email,
-        password: userData.password,
+        // ❌ REMOVIDO: password: userData.password,
         company: userData.company || '',
         createdAt: new Date().toISOString()
       };
