@@ -926,6 +926,63 @@ export interface CapitalAnalysisResult {
     };
 }
 
+// New Policy Pricing API
+export interface PolicyPricingRequest {
+    asset_value: number;
+    severity_amount: number;
+    frequency_pct: number;
+    coverage_period_years?: number;
+    scr_score?: number;
+    is_manual_underwriting?: boolean;
+    location_risk_zone?: string;
+}
+
+export interface FinancialBreakdown {
+    pure_premium: number;
+    risk_margin: number;
+    loadings: number;
+    total_premium: number;
+    op_claims_cost: number;
+    op_admin_cost: number;
+    op_subscription_cost: number;
+    total_operational_costs: number;
+    net_profit: number;
+    profit_margin_pct: number;
+    combined_ratio: number;
+}
+
+export interface PolicyPricingResult {
+    is_approved: boolean;
+    status: string;
+    rejection_reason: string | null;
+    financials: FinancialBreakdown;
+    decision_flow: string;
+}
+
+export const policyPricingApi = {
+    async calculate(request: PolicyPricingRequest): Promise<PolicyPricingResult> {
+        try {
+            const response = await fetch('/api/v1/policy-pricing/calculate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(request),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(`HTTP error! status: ${response.status} - ${errorData.detail}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Erro no cálculo de apólice:', error);
+            throw error;
+        }
+    }
+};
+
 export const climateDerivativesApi = {
     async calculatePricing(request: ClimateDerivativePricingRequest): Promise<ClimateDerivativePricingResult> {
         try {

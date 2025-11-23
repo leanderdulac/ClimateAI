@@ -220,7 +220,7 @@ def calculate_simple_portfolio_scr(
 
 
 def calculate_peril_specific_scr(
-    peril_losses: Dict[str, Dict[str, float]]
+    peril_losses: Dict[str, Dict[str, float]],
 ) -> ClimateSCR:
     """Calculate SCR from peril-specific data with default correlations"""
     return climate_scr_service.calculate_peril_specific_scr(peril_losses)

@@ -393,7 +393,7 @@ def bayesian_bootstrap_premium(
 
 
 def calculate_contract_uncertainty_ranges(
-    contracts_data: Dict[str, Dict[str, Any]]
+    contracts_data: Dict[str, Dict[str, Any]],
 ) -> Dict[str, BayesianBootstrapResult]:
     """Calculate uncertainty ranges for multiple contracts"""
     return bayesian_bootstrap_service.calculate_contract_uncertainty_ranges(

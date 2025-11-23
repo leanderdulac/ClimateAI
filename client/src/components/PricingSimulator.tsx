@@ -1,4 +1,4 @@
-import { mlApi, MLPredictionFeatures, MLPredictionResult, externalApi, climateDerivativesApi } from '@/lib/api';
+import { mlApi, MLPredictionFeatures, MLPredictionResult, externalApi, climateDerivativesApi, policyPricingApi, PolicyPricingRequest, PolicyPricingResult } from '@/lib/api';
 import { loadEmbrapaApi } from '@/lib/loadEmbrapaApi';
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,6 +28,87 @@ import {
   BarChart3,
   Brain
 } from "lucide-react";
+
+// Financial analysis function to properly calculate viability
+const analyzeFinancialViability = (
+  premium: number,
+  totalExpectedLoss: number,
+  operatingCosts: number,
+  assetValue: number,
+  frequency: number,
+  severity: number,
+  coveragePeriod: number = 1
+) => {
+  // Calculate operating costs breakdown if not provided
+  const subscriptionCost = 150; // Default automated subscription cost
+  const claimsProcessingCost = premium * 0.08; // 8% of premium
+  const adminCost = premium * 0.12; // 12% of premium
+  const totalOperatingCosts = operatingCosts || (subscriptionCost + claimsProcessingCost + adminCost);
+
+  // Calculate annual values
+  const annualExpectedLoss = (frequency / 100) * Math.min(severity, assetValue);
+  const annualOperatingCosts = totalOperatingCosts / coveragePeriod;
+
+  // Correctly calculate net profit: Premium - (Expected Loss + Operating Costs)
+  const netProfit = premium - totalExpectedLoss - totalOperatingCosts;
+  const isProfitableForInsurer = netProfit > 0;
+
+  // Calculate profitability metrics
+  const profitMarginPercentage = (netProfit / premium) * 100;
+  const lossRatio = (totalExpectedLoss / premium) * 100;
+  const expenseRatio = (totalOperatingCosts / premium) * 100;
+  const combinedRatio = lossRatio + expenseRatio;
+
+  // Determine profitability status based on margin
+  let profitabilityStatus = "NO_PROFITABILITY_DATA";
+  if (profitMarginPercentage > 5) {
+    profitabilityStatus = "HIGHLY_PROFITABLE";
+  } else if (profitMarginPercentage > 2) {
+    profitabilityStatus = "PROFITABLE";
+  } else if (profitMarginPercentage > -2) {
+    profitabilityStatus = "BREAK_EVEN";
+  } else if (profitMarginPercentage > -5) {
+    profitabilityStatus = "MINOR_LOSS";
+  } else {
+    profitabilityStatus = "SIGNIFICANT_LOSS";
+  }
+
+  return {
+    insurerAnalysis: {
+      isProfitable: isProfitableForInsurer,
+      netProfit,
+      profitMarginPercentage,
+      expectedLoss: totalExpectedLoss,
+      operatingCosts: totalOperatingCosts,
+      annualNetProfit: netProfit / coveragePeriod,
+      annualExpectedLoss,
+      annualOperatingCosts,
+      lossRatio,
+      expenseRatio,
+      combinedRatio,
+      profitabilityStatus,
+    },
+    customerAnalysis: {
+      protectionValue: assetValue,
+      costBenefitRatio: assetValue / (premium / coveragePeriod),
+      premiumToAssetRatio: ((premium / coveragePeriod) / assetValue) * 100,
+      isAffordable: (((premium / coveragePeriod) / assetValue) * 100) < 5,
+      valueRating: 'N/A',
+      annualCostPercentage: ((premium / coveragePeriod) / assetValue) * 100,
+    },
+    riskAnalysis: {
+      stressTests: [],
+      worstCaseScenario: null,
+      catastropheProbability: null,
+      reinsuranceNeed: null,
+    },
+    overallAssessment: {
+      isViable: isProfitableForInsurer,
+      recommendation: isProfitableForInsurer ? "APPROVED" : "REJECTED",
+      rejectionReason: isProfitableForInsurer ? null : `Financial unviability: Net profit of ${netProfit.toFixed(2)} is negative`,
+    }
+  };
+};
 
 type ClimateEvent = {
   id: string;
@@ -82,503 +163,6 @@ const climateEvents: ClimateEvent[] = [
   }
 ];
 
-// Advanced actuarial calculation using backend API
-const calculateAdvancedPremium = async (
-  frequency: number,
-  severity: number,
-  confidence: number,
-  assetValue: number
-) => {
-  try {
-    // Use current location if available, otherwise default to São Paulo
-    // Location parameters are handled by the backend based on scenario
-
-    const response = await climateDerivativesApi.calculatePricing({
-      target_year: new Date().getFullYear() + 1, // Next year as default
-      iam_adjustment: 0.5, // Moderate climate adjustment
-      scenario_name: 'Pricing Simulation',
-      months_to_expiry: 12
-    });
-
-    // Transform climate derivatives response to expected format
-    return {
-      premio_total: response.pricing.ask_price,
-      premio_puro: response.risk_metrics.expected_payout,
-      carregamentos: response.pricing.spread * 0.7, // 70% of spread goes to loadings
-      margem_risco: response.pricing.spread * 0.3, // 30% of spread goes to risk margin
-      intervalo_confianca: {
-        inferior: response.pricing.bid_price,
-        superior: response.pricing.ask_price
-      },
-      analise_fractal: {
-        dimensao_fractal: 1.5,
-        lacunaaridade: 1.0,
-        persistencia: 0.5
-      },
-      risco_fuzzy: {
-        muito_baixo: response.risk_metrics.var_95 < response.pricing.ask_price * 0.1 ? 0.3 : 0.1,
-        baixo: response.risk_metrics.var_95 < response.pricing.ask_price * 0.2 ? 0.3 : 0.2,
-        medio: 0.2,
-        alto: response.risk_metrics.var_95 > response.pricing.ask_price * 0.3 ? 0.3 : 0.2,
-        muito_alto: response.risk_metrics.var_95 > response.pricing.ask_price * 0.5 ? 0.3 : 0.1
-      },
-      metodologia: {
-        iteracoes_monte_carlo: 10000, // From our backend implementation
-        tecnicas_utilizadas: ['Gaussian Process Regression', 'Monte Carlo Simulation', 'VaR/CVaR Analysis', 'INMET Integration']
-      },
-      // Add climate derivatives specific data
-      climate_derivatives: {
-        cdd_projetado: response.cdd_analysis.average_cdd,
-        temperatura_media: response.temperature_projection.mean,
-        var_95: response.risk_metrics.var_95,
-        cvar_95: response.risk_metrics.cvar_95
-      }
-    };
-  } catch (error) {
-    console.error('Erro no cálculo avançado:', error);
-    // Fallback para cálculo simplificado
-    const simulations = 10000;
-    let totalLoss = 0;
-    const maxSeverity = Math.min(severity, assetValue);
-
-    for (let i = 0; i < simulations; i++) {
-      if (Math.random() < frequency / 100) {
-        const lossPercentage = Math.pow(Math.random(), 2);
-        totalLoss += lossPercentage * maxSeverity;
-      }
-    }
-
-    const averageLoss = totalLoss / simulations;
-    const riskFactor = 1 + Math.log10(assetValue) / 20;
-    const fallbackPremium = averageLoss * riskFactor * (1 + (100 - confidence) / 100);
-
-    return {
-      premio_total: fallbackPremium,
-      premio_puro: averageLoss,
-      carregamentos: fallbackPremium * 0.35,
-      margem_risco: fallbackPremium * 0.15,
-      intervalo_confianca: {
-        inferior: fallbackPremium * 0.8,
-        superior: fallbackPremium * 1.2
-      },
-      analise_fractal: {
-        dimensao_fractal: 1.5,
-        lacunaaridade: 1.0,
-        persistencia: 0.5
-      },
-      risco_fuzzy: {
-        muito_baixo: 0.1,
-        baixo: 0.2,
-        medio: 0.4,
-        alto: 0.2,
-        muito_alto: 0.1
-      },
-      metodologia: {
-        iteracoes_monte_carlo: simulations,
-        tecnicas_utilizadas: ['Fallback - Monte Carlo Básico']
-      }
-    };
-  }
-};
-
-// Financial analysis function for profit/loss assessment
-const analyzeFinancialViability = (
-  premium: number,
-  loadings: number,
-  riskMargin: number,
-  assetValue: number,
-  frequency: number,
-  severity: number,
-  coveragePeriod: number = 1
-) => {
-  // Expected loss calculation (annual)
-  const annualExpectedLoss = (frequency / 100) * Math.min(severity, assetValue);
-  const totalExpectedLoss = annualExpectedLoss * coveragePeriod;
-
-  // Insurer's profit margins
-  const insurerTotalMargin = loadings + riskMargin;
-  const insurerMarginPercentage = (insurerTotalMargin / premium) * 100;
-
-  // Customer's value analysis
-  const protectionValue = assetValue;
-  const annualPremium = premium / coveragePeriod; // Premium anual
-  const costBenefitRatio = (protectionValue / annualPremium);
-  const premiumToAssetRatio = (annualPremium / assetValue) * 100;
-
-  // Profitability assessment (total período)
-  const isProfitableForInsurer = premium > totalExpectedLoss;
-  const totalProfitMargin = premium - totalExpectedLoss;
-  const profitMargin = totalProfitMargin / coveragePeriod; // Margem anual média
-  const profitMarginPercentage = (profitMargin / annualPremium) * 100;
-
-  // Customer affordability assessment (baseada no premium anual)
-  const isAffordableForCustomer = premiumToAssetRatio < 5; // Less than 5% of asset value per year
-  const valueRating = costBenefitRatio > 10 ? 'Excelente' :
-    costBenefitRatio > 5 ? 'Bom' :
-      costBenefitRatio > 2 ? 'Razoável' : 'Questionável';
-
-  // Advanced risk metrics
-  const var95 = calculateVaR(frequency, severity, assetValue, 95);
-  const var99 = calculateVaR(frequency, severity, assetValue, 99);
-  const expectedShortfall95 = calculateExpectedShortfall(frequency, severity, assetValue, 95);
-  const expectedShortfall99 = calculateExpectedShortfall(frequency, severity, assetValue, 99);
-
-  // Stress test scenarios
-  const stressTests = calculateStressTestScenarios(premium, frequency, severity, assetValue);
-
-  // Risk-adjusted metrics
-  const riskAdjustedPremium = premium / (1 + (var95 / premium));
-  const capitalRequirement = Math.max(var99, expectedShortfall99) * 1.1; // 10% buffer
-
-  return {
-    annualExpectedLoss,
-    totalExpectedLoss,
-    insurerAnalysis: {
-      totalMargin: insurerTotalMargin,
-      marginPercentage: insurerMarginPercentage,
-      isProfitable: isProfitableForInsurer,
-      profitMargin,
-      profitMarginPercentage,
-      riskAdjustedReturn: riskAdjustedPremium,
-      var95,
-      var99,
-      expectedShortfall95,
-      expectedShortfall99,
-      capitalRequirement,
-      riskAdjustedPremium
-    },
-    customerAnalysis: {
-      protectionValue,
-      costBenefitRatio,
-      premiumToAssetRatio,
-      isAffordable: isAffordableForCustomer,
-      valueRating,
-      annualCostPercentage: premiumToAssetRatio
-    },
-    riskAnalysis: {
-      stressTests,
-      worstCaseScenario: stressTests[stressTests.length - 1],
-      catastropheProbability: (frequency / 100) * 0.1, // Simplified catastrophe probability
-      reinsuranceNeed: capitalRequirement > premium * 0.5
-    },
-    overallAssessment: {
-      isViable: isProfitableForInsurer && isAffordableForCustomer,
-      recommendation: isProfitableForInsurer && isAffordableForCustomer ? 'Aprovada' :
-        !isProfitableForInsurer ? 'Rejeitada - Não Lucrativa' :
-          'Rejeitada - Muito Cara para Cliente'
-    }
-  };
-};
-
-// Advanced Risk Metrics Functions
-const calculateVaR = (
-  frequency: number,
-  severity: number,
-  assetValue: number,
-  confidenceLevel: number = 95,
-  simulations: number = 10000
-): number => {
-  // Value at Risk calculation using Monte Carlo simulation
-  const losses: number[] = [];
-
-  for (let i = 0; i < simulations; i++) {
-    let totalLoss = 0;
-    // Simulate events for one year
-    for (let month = 0; month < 12; month++) {
-      if (Math.random() < frequency / 100) {
-        const lossSeverity = Math.min(severity * (0.5 + Math.random()), assetValue);
-        totalLoss += lossSeverity;
-      }
-    }
-    losses.push(Math.min(totalLoss, assetValue));
-  }
-
-  // Sort losses and find VaR at specified confidence level
-  losses.sort((a, b) => a - b);
-  const index = Math.floor((1 - confidenceLevel / 100) * simulations);
-  return losses[index];
-};
-
-const calculateExpectedShortfall = (
-  frequency: number,
-  severity: number,
-  assetValue: number,
-  confidenceLevel: number = 95,
-  simulations: number = 10000
-): number => {
-  // Expected Shortfall (Conditional VaR) - average loss beyond VaR
-  const losses: number[] = [];
-
-  for (let i = 0; i < simulations; i++) {
-    let totalLoss = 0;
-    for (let month = 0; month < 12; month++) {
-      if (Math.random() < frequency / 100) {
-        const lossSeverity = Math.min(severity * (0.5 + Math.random()), assetValue);
-        totalLoss += lossSeverity;
-      }
-    }
-    losses.push(Math.min(totalLoss, assetValue));
-  }
-
-  losses.sort((a, b) => a - b);
-  const varIndex = Math.floor((1 - confidenceLevel / 100) * simulations);
-
-  // Calculate average of losses beyond VaR
-  const tailLosses = losses.slice(varIndex);
-  const expectedShortfall = tailLosses.reduce((sum, loss) => sum + loss, 0) / tailLosses.length;
-
-  return expectedShortfall;
-};
-
-const calculateStressTestScenarios = (
-  premium: number,
-  frequency: number,
-  severity: number,
-  assetValue: number
-) => {
-  // Stress test scenarios for extreme events
-  const scenarios = [
-    { name: 'Cenário Normal', frequencyMultiplier: 1.0, severityMultiplier: 1.0 },
-    { name: 'Evento Extremo Leve', frequencyMultiplier: 1.5, severityMultiplier: 1.3 },
-    { name: 'Evento Extremo Moderado', frequencyMultiplier: 2.0, severityMultiplier: 1.8 },
-    { name: 'Evento Extremo Severo', frequencyMultiplier: 3.0, severityMultiplier: 2.5 },
-    { name: 'Cenário Catastrófico', frequencyMultiplier: 5.0, severityMultiplier: 4.0 }
-  ];
-
-  return scenarios.map(scenario => {
-    const stressedFrequency = frequency * scenario.frequencyMultiplier;
-    const stressedSeverity = severity * scenario.severityMultiplier;
-
-    const expectedLoss = (stressedFrequency / 100) * Math.min(stressedSeverity, assetValue);
-    const profitMargin = premium - expectedLoss;
-    const isSustainable = profitMargin > 0;
-
-    return {
-      scenario: scenario.name,
-      expectedLoss,
-      profitMargin,
-      isSustainable,
-      riskLevel: scenario.frequencyMultiplier > 2 ? 'Alto' :
-        scenario.frequencyMultiplier > 1.5 ? 'Médio' : 'Baixo'
-    };
-  });
-};
-
-// Dynamic risk adjustment functions
-const getHistoricalRiskFactor = async (latitude: number, longitude: number, selectedPeriod: number): Promise<number> => {
-  try {
-    // Use real historical climate analysis instead of simulated data
-    const embrapaApi = await loadEmbrapaApi();
-    const analysis = await embrapaApi.getHistoricalClimateAnalysis(latitude, longitude, selectedPeriod);
-
-    // Calculate risk factor based on historical event probabilities and volatility
-    const eventRisk = (
-      analysis.eventProbabilities.drought +
-      analysis.eventProbabilities.flood +
-      analysis.eventProbabilities.heatwave +
-      analysis.eventProbabilities.storm
-    ) / 4;
-
-    // Combine with volatility index for comprehensive risk assessment
-    const riskFactor = (eventRisk * 0.7) + (analysis.riskMetrics.volatilityIndex * 0.3);
-
-    // Adjust based on trend direction
-    const trendMultiplier = analysis.riskMetrics.trendDirection === 'increasing' ? 1.2 :
-      analysis.riskMetrics.trendDirection === 'decreasing' ? 0.8 : 1.0;
-
-    return Math.min(riskFactor * trendMultiplier, 0.5); // Cap at 50%
-  } catch (error) {
-    console.warn('Erro ao calcular risco histórico, usando fallback:', error);
-    // Fallback to location-based simulation if API fails
-    const baseRisk = Math.abs(latitude) * 0.01;
-    const longitudeRisk = Math.abs(longitude + 50) * 0.005;
-    return Math.min(baseRisk + longitudeRisk + 0.1, 0.3);
-  }
-};
-
-const getRegionalRiskPremium = (latitude: number, longitude: number): number => {
-  // Regional risk premium based on climate zones
-  if (latitude > -10 && latitude < 10) return 0.25; // Tropical high risk
-  if (latitude > 10 && latitude < 30) return 0.15; // Subtropical medium-high risk
-  if (longitude < -35) return 0.20; // Coastal areas higher risk
-  return 0.10; // Default moderate risk
-};
-
-const getSeasonalRiskFactor = (): number => {
-  // Seasonal adjustment based on current month
-  const currentMonth = new Date().getMonth() + 1;
-  // Higher risk during rainy seasons (typically Dec-Mar in Brazil)
-  if (currentMonth >= 12 || currentMonth <= 3) return 0.15;
-  if (currentMonth >= 4 && currentMonth <= 5) return 0.05; // Transition period
-  return 0.08; // Dry season moderate risk
-};
-
-const getAdaptiveConfidenceBuffer = (
-  baseConfidence: number,
-  assetValue: number,
-  location: any,
-  selectedPeriod: number
-): number => {
-  // Adaptive confidence buffer based on asset value, location volatility, and base confidence
-  const assetRisk = Math.log10(assetValue) * 0.02;
-  // Simplified calculation based on period (shorter periods have higher volatility)
-  const periodMultiplier = selectedPeriod <= 7 ? 1.5 : selectedPeriod <= 30 ? 1.2 : 1.0;
-  const locationVolatility = location ? 0.2 * periodMultiplier : 0.1; // Simplified for now
-  const confidenceAdjustment = (100 - baseConfidence) * 0.01; // Lower confidence needs more buffer
-  const adaptiveBuffer = (assetRisk + locationVolatility + confidenceAdjustment) * 5;
-  return Math.min(adaptiveBuffer, 15); // Max 15% buffer
-};
-
-// Function to generate policy configuration simulations
-const generatePolicySimulations = async (
-  baseAssetValue: number,
-  baseFrequency: number,
-  baseSeverity: number,
-  baseConfidence: number,
-  coveragePeriod: number,
-  selectedLocation: any,
-  selectedPeriod: number
-) => {
-
-  // Calculate dynamic factors (simplified for now)
-  const historicalRiskFactor = selectedLocation ? 0.2 : 0.15; // Simplified calculation
-  const regionalRiskPremium = selectedLocation ?
-    getRegionalRiskPremium(selectedLocation.latitude, selectedLocation.longitude) : 0.15;
-  const seasonalRiskFactor = getSeasonalRiskFactor();
-
-  const simulations = [
-    {
-      name: 'Configuração Conservadora Otimizada',
-      description: 'Menor risco para o emissor com fatores dinâmicos adaptativos',
-      frequency: baseFrequency * (1.2 + historicalRiskFactor + seasonalRiskFactor),
-      severity: baseSeverity * (1.1 + regionalRiskPremium),
-      confidence: Math.min(baseConfidence + getAdaptiveConfidenceBuffer(baseConfidence, baseAssetValue, selectedLocation, selectedPeriod), 99.5),
-      riskProfile: 'Conservador Otimizado',
-      dynamicFactors: {
-        historicalRisk: historicalRiskFactor,
-        regionalPremium: regionalRiskPremium,
-        seasonalAdjustment: seasonalRiskFactor
-      }
-    },
-    {
-      name: 'Configuração Equilibrada Inteligente',
-      description: 'Balanço otimizado entre risco e competitividade com ajustes dinâmicos',
-      frequency: baseFrequency * (1 + historicalRiskFactor * 0.5),
-      severity: baseSeverity * (1 + regionalRiskPremium * 0.7),
-      confidence: baseConfidence + getAdaptiveConfidenceBuffer(baseConfidence, baseAssetValue, selectedLocation, selectedPeriod) * 0.6,
-      riskProfile: 'Equilibrado Inteligente',
-      dynamicFactors: {
-        historicalRisk: historicalRiskFactor * 0.5,
-        regionalPremium: regionalRiskPremium * 0.7,
-        seasonalAdjustment: seasonalRiskFactor * 0.3
-      }
-    },
-    {
-      name: 'Configuração Agressiva Controlada',
-      description: 'Competitiva com limites de risco inteligentes',
-      frequency: baseFrequency * Math.max(0.7, (0.8 - historicalRiskFactor * 0.3)),
-      severity: baseSeverity * Math.max(0.8, (0.9 - regionalRiskPremium * 0.4)),
-      confidence: Math.max(baseConfidence - 3, 80),
-      riskProfile: 'Agressiva Controlada',
-      dynamicFactors: {
-        historicalRisk: -historicalRiskFactor * 0.3,
-        regionalPremium: -regionalRiskPremium * 0.4,
-        seasonalAdjustment: -seasonalRiskFactor * 0.2
-      }
-    },
-    {
-      name: 'Configuração Premium Avançada',
-      description: 'Foco em clientes de alto valor com análise de risco sofisticada',
-      frequency: baseFrequency * (0.85 + historicalRiskFactor * 0.3),
-      severity: baseSeverity * (0.9 + regionalRiskPremium * 0.5),
-      confidence: baseConfidence + getAdaptiveConfidenceBuffer(baseConfidence, baseAssetValue * 2, selectedLocation, selectedPeriod),
-      riskProfile: 'Premium Avançado',
-      assetMultiplier: 2.0,
-      dynamicFactors: {
-        historicalRisk: historicalRiskFactor * 0.3,
-        regionalPremium: regionalRiskPremium * 0.5,
-        seasonalAdjustment: seasonalRiskFactor * 0.4
-      }
-    }
-  ];
-
-  const results = await Promise.all(
-    simulations.map(async (sim) => {
-      const assetValue = sim.assetMultiplier ? baseAssetValue * sim.assetMultiplier : baseAssetValue;
-
-      try {
-        const premiumResult = await calculateAdvancedPremium(
-          sim.frequency,
-          sim.severity,
-          sim.confidence,
-          assetValue
-        );
-
-        const analysis = analyzeFinancialViability(
-          premiumResult.premio_total,
-          premiumResult.carregamentos || 0,
-          premiumResult.margem_risco || 0,
-          assetValue,
-          sim.frequency,
-          sim.severity,
-          coveragePeriod
-        );
-
-        return {
-          ...sim,
-          assetValue,
-          premium: premiumResult.premio_total,
-          expectedLoss: analysis.annualExpectedLoss,
-          profitMargin: analysis.insurerAnalysis.profitMargin,
-          profitMarginPercentage: analysis.insurerAnalysis.profitMarginPercentage,
-          riskAdjustedReturn: analysis.insurerAnalysis.riskAdjustedReturn,
-          customerCostPercentage: analysis.customerAnalysis.premiumToAssetRatio,
-          isViable: analysis.overallAssessment.isViable,
-          recommendation: analysis.overallAssessment.recommendation
-        };
-      } catch (error) {
-        // Fallback calculation
-        const expectedLoss = (sim.frequency / 100) * Math.min(sim.severity, assetValue);
-        const riskFactor = 1 + Math.log10(assetValue) / 20;
-        const fallbackPremium = expectedLoss * riskFactor * (1 + (100 - sim.confidence) / 100);
-
-        const analysis = analyzeFinancialViability(
-          fallbackPremium,
-          fallbackPremium * 0.35,
-          fallbackPremium * 0.15,
-          assetValue,
-          sim.frequency,
-          sim.severity,
-          coveragePeriod
-        );
-
-        return {
-          ...sim,
-          assetValue,
-          premium: fallbackPremium,
-          expectedLoss: analysis.annualExpectedLoss,
-          profitMargin: analysis.insurerAnalysis.profitMargin,
-          profitMarginPercentage: analysis.insurerAnalysis.profitMarginPercentage,
-          riskAdjustedReturn: analysis.insurerAnalysis.riskAdjustedReturn,
-          customerCostPercentage: analysis.customerAnalysis.premiumToAssetRatio,
-          isViable: analysis.overallAssessment.isViable,
-          recommendation: analysis.overallAssessment.recommendation
-        };
-      }
-    })
-  );
-
-  // Rank simulations by profitability and viability
-  return results.sort((a, b) => {
-    // Primary sort: viability (viable first)
-    if (a.isViable !== b.isViable) {
-      return a.isViable ? -1 : 1;
-    }
-    // Secondary sort: profit margin percentage
-    return b.profitMarginPercentage - a.profitMarginPercentage;
-  });
-};
-
 export function PricingSimulator() {
   const { t } = useTranslation();
   const { selectedPeriod } = usePeriod();
@@ -616,43 +200,90 @@ export function PricingSimulator() {
 
     setCalculating(true);
     try {
-      const results = await calculateAdvancedPremium(
-        frequency,
-        severity,
-        confidence,
-        assetValue
-      );
+      const request: PolicyPricingRequest = {
+        asset_value: assetValue,
+        severity_amount: severity,
+        frequency_pct: frequency,
+        coverage_period_years: coveragePeriod,
+        scr_score: 450, // Default value as it's not in the UI
+        is_manual_underwriting: false,
+      };
 
-      setPremium(results.premio_total);
-      setAdvancedResults(results);
+      const result: PolicyPricingResult = await policyPricingApi.calculate(request);
 
-      // Perform financial analysis
-      const analysis = analyzeFinancialViability(
-        results.premio_total,
-        results.carregamentos || 0,
-        results.margem_risco || 0,
+      // --- Map new result to old state structure ---
+
+      setPremium(result.financials.total_premium);
+
+      // Map to advancedResults
+      const newAdvancedResults = {
+        premio_total: result.financials.total_premium,
+        premio_puro: result.financials.pure_premium,
+        carregamentos: result.financials.loadings,
+        margem_risco: result.financials.risk_margin,
+        intervalo_confianca: null,
+        analise_fractal: null,
+        risco_fuzzy: null,
+        metodologia: {
+          tecnicas_utilizadas: ['Backend Pricing Service']
+        },
+      };
+      setAdvancedResults(newAdvancedResults);
+
+      // Analyze financial viability using the correct methodology
+      const financialAnalysisResult = analyzeFinancialViability(
+        result.financials.total_premium,
+        result.financials.pure_premium, // This is the total expected loss
+        result.financials.total_operational_costs,
         assetValue,
         frequency,
         severity,
         coveragePeriod
       );
-      setFinancialAnalysis(analysis);
 
-      // Generate policy configuration simulations
-      const simulations = await generatePolicySimulations(
-        assetValue,
-        frequency,
-        severity,
-        confidence,
-        coveragePeriod,
-        selectedLocation,
-        selectedPeriod
-      );
-      setPolicySimulations(simulations);
+      // Update the analysis with backend results to ensure accuracy
+      const newFinancialAnalysis = {
+        ...financialAnalysisResult,
+        annualExpectedLoss: result.financials.pure_premium / coveragePeriod,
+        totalExpectedLoss: result.financials.pure_premium,
+        insurerAnalysis: {
+          ...financialAnalysisResult.insurerAnalysis,
+          // Override with precise backend values
+          isProfitable: result.financials.net_profit > 0,
+          netProfit: result.financials.net_profit,
+          profitMargin: result.financials.net_profit / coveragePeriod,
+          profitMarginPercentage: result.financials.profit_margin_pct,
+          profitabilityStatus: result.status,
+          operatingCosts: {
+            subscription: result.financials.op_subscription_cost,
+            claimsProcessing: result.financials.op_claims_cost,
+            administrative: result.financials.op_admin_cost,
+            total: result.financials.total_operational_costs,
+            annual: result.financials.total_operational_costs / coveragePeriod
+          },
+          lossRatio: (result.financials.pure_premium / result.financials.total_premium) * 100,
+          expenseRatio: (result.financials.total_operational_costs / result.financials.total_premium) * 100,
+          combinedRatio: result.financials.combined_ratio,
+          var95: null,
+          var99: null,
+          expectedShortfall95: null,
+          expectedShortfall99: null,
+          capitalRequirement: null,
+          riskAdjustedReturn: null,
+        },
+        overallAssessment: {
+          isViable: result.is_approved,
+          recommendation: result.status,
+          rejectionReason: result.rejection_reason,
+        }
+      };
+      setFinancialAnalysis(newFinancialAnalysis);
 
-      // Get ML predictions for sinistrality
+      // Policy simulations are not generated by the new service, so we can clear it.
+      setPolicySimulations([]);
+
+      // Get ML predictions for sinistrality (can remain as is)
       try {
-        // Try to get real-time data first
         let realTimeData = null;
         try {
           realTimeData = await externalApi.getRealTimeData(
@@ -1243,9 +874,14 @@ export function PricingSimulator() {
                           Análise Financeira da Apólice
                         </h3>
                       </div>
-                      <Badge variant={financialAnalysis.overallAssessment.isViable ? "default" : "danger"} className="px-3 py-1">
-                        {financialAnalysis.overallAssessment.recommendation}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={financialAnalysis.overallAssessment.isViable ? "default" : "danger"} className="px-3 py-1">
+                          {financialAnalysis.overallAssessment.recommendation}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          {financialAnalysis.insurerAnalysis.profitabilityStatus}
+                        </Badge>
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -1257,7 +893,7 @@ export function PricingSimulator() {
                           {financialAnalysis.insurerAnalysis.profitMarginPercentage.toFixed(1)}%
                         </div>
                         <div className="text-xs text-neutral-500">
-                          R$ {financialAnalysis.insurerAnalysis.profitMargin.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                          R$ {financialAnalysis.insurerAnalysis.netProfit.toLocaleString(undefined, { maximumFractionDigits: 0 })} lucro líquido
                         </div>
                       </div>
 
@@ -1275,13 +911,44 @@ export function PricingSimulator() {
 
                       {/* Retorno Ajustado ao Risco */}
                       <div className="rounded-lg bg-white p-6 shadow-sm">
-                        <div className="text-sm font-medium text-neutral-700 mb-2">🎯 Retorno vs Risco</div>
-                        <div className={`text-2xl font-bold mb-1 ${financialAnalysis.insurerAnalysis.riskAdjustedReturn > 1 ? 'text-green-600' : 'text-red-600'
+                        <div className="text-sm font-medium text-neutral-700 mb-2">📊 Métricas de Risco</div>
+                        <div className={`text-2xl font-bold mb-1 ${financialAnalysis.insurerAnalysis.combinedRatio <= 105 ? 'text-green-600' : 'text-orange-600'
                           }`}>
-                          {financialAnalysis.insurerAnalysis.riskAdjustedReturn.toFixed(2)}x
+                          {financialAnalysis.insurerAnalysis.combinedRatio.toFixed(1)}%
                         </div>
                         <div className="text-xs text-neutral-500">
-                          retorno esperado
+                          Combined Ratio
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Financial Transparency Section */}
+                    <div className="mt-4 p-4 bg-white/50 rounded-lg border border-blue-100">
+                      <div className="text-xs font-medium text-blue-800 mb-2">Cálculo de Viabilidade:</div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                        <div className="text-center">
+                          <div className="text-neutral-600">Prêmio Bruto</div>
+                          <div className="font-medium text-green-600">
+                            R$ {premium.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                          </div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-neutral-600">(-) Perda Esperada</div>
+                          <div className="font-medium text-red-600">
+                            R$ {financialAnalysis.totalExpectedLoss.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                          </div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-neutral-600">(-) Custos Operacionais</div>
+                          <div className="font-medium text-orange-600">
+                            R$ {financialAnalysis.insurerAnalysis.operatingCosts.total.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                          </div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-neutral-600">= Lucro Líquido</div>
+                          <div className={`font-medium ${financialAnalysis.insurerAnalysis.isProfitable ? 'text-green-600' : 'text-red-600'}`}>
+                            R$ {financialAnalysis.insurerAnalysis.netProfit.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1321,17 +988,55 @@ export function PricingSimulator() {
                             R$ {premium.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                           </span>
                         </div>
+                        {/* Operating Costs Breakdown */}
+                        <div className="border-t pt-3 space-y-2">
+                          <div className="text-xs font-semibold text-blue-700">Custos Operacionais:</div>
+                          <div className="space-y-1 pl-2">
+                            <div className="flex justify-between text-xs">
+                              <span className="text-neutral-600">Subscrição:</span>
+                              <span className="text-neutral-800">
+                                R$ {financialAnalysis.insurerAnalysis.operatingCosts.subscription.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                              </span>
+                            </div>
+                            <div className="flex justify-between text-xs">
+                              <span className="text-neutral-600">Processamento de Sinistros (8%):</span>
+                              <span className="text-neutral-800">
+                                R$ {financialAnalysis.insurerAnalysis.operatingCosts.claimsProcessing.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                              </span>
+                            </div>
+                            <div className="flex justify-between text-xs">
+                              <span className="text-neutral-600">Administrativo (12%):</span>
+                              <span className="text-neutral-800">
+                                R$ {financialAnalysis.insurerAnalysis.operatingCosts.administrative.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                              </span>
+                            </div>
+                            <div className="flex justify-between font-medium pt-1 border-t">
+                              <span className="text-neutral-700">Total de Custos:</span>
+                              <span className="text-blue-700">
+                                R$ {financialAnalysis.insurerAnalysis.operatingCosts.total.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
                         <div className="flex justify-between items-center border-t pt-2">
                           <span className="text-sm font-medium text-neutral-700">Lucro Líquido Total:</span>
                           <span className={`font-bold ${financialAnalysis.insurerAnalysis.isProfitable ? 'text-green-600' : 'text-red-600'
                             }`}>
-                            R$ {(financialAnalysis.insurerAnalysis.profitMargin * coveragePeriod).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                            R$ {financialAnalysis.insurerAnalysis.netProfit.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                           </span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-sm text-neutral-600">Margem Anual:</span>
-                          <span className="font-medium text-blue-600">
+                          <span className="text-sm text-neutral-600">Margem Líquida:</span>
+                          <span className={`font-medium ${financialAnalysis.insurerAnalysis.isProfitable ? 'text-blue-600' : 'text-red-600'
+                            }`}>
                             {financialAnalysis.insurerAnalysis.profitMarginPercentage.toFixed(1)}%
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-neutral-600">Razão de Combinação (Combined Ratio):</span>
+                          <span className={`font-medium ${financialAnalysis.insurerAnalysis.combinedRatio <= 105 ? 'text-green-600' : 'text-orange-600'
+                            }`}>
+                            {financialAnalysis.insurerAnalysis.combinedRatio.toFixed(1)}%
                           </span>
                         </div>
                       </div>

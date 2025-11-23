@@ -214,7 +214,7 @@ async def calculate_simple_portfolio_scr_endpoint(
 
 @router.post("/climate-scr/peril-specific-scr")
 async def calculate_peril_specific_scr_endpoint(
-    peril_losses: Dict[str, Dict[str, float]]
+    peril_losses: Dict[str, Dict[str, float]],
 ):
     """
     Calculate SCR from peril-specific data with default correlations

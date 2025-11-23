@@ -645,7 +645,7 @@ def regime_switching_model(
 
 
 def multivariate_climate_modeling(
-    climate_vars: Dict[str, List[float]]
+    climate_vars: Dict[str, List[float]],
 ) -> Dict[str, Any]:
     """Perform multivariate climate modeling using copulas and ARIMA"""
     return stochastic_process_service.multivariate_climate_modeling(climate_vars)

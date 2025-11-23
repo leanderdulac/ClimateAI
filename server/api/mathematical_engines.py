@@ -600,7 +600,7 @@ async def regime_switching_model_endpoint(
 
 @router.post("/stochastic-processes/multivariate-modeling")
 async def multivariate_climate_modeling_endpoint(
-    climate_variables: Dict[str, List[float]]
+    climate_variables: Dict[str, List[float]],
 ):
     """
     Perform multivariate climate modeling using copulas and ARIMA

@@ -147,6 +147,7 @@ from api.operating_costs import router as operating_costs_router
 from api.parametric_insurance import router as parametric_insurance_router
 from api.performance_testing import router as performance_testing_router
 from api.physical_risk import router as physical_risk_router
+from api.policy_pricing import router as policy_pricing_router
 from api.policy_uncertainty import router as policy_uncertainty_router
 from api.policy_valuation import router as policy_valuation_router
 from api.previsao import router as previsao_router
@@ -1120,6 +1121,11 @@ try:
         policy_valuation_router,
         prefix=f"{API_PREFIX}/policy-valuation",
         tags=["policy-valuation"],
+    )
+    app.include_router(
+        policy_pricing_router,
+        prefix=f"{API_PREFIX}/policy-pricing",
+        tags=["policy-pricing"],
     )
     app.include_router(i18n_router, prefix=f"{API_PREFIX}/i18n", tags=["i18n"])
     app.include_router(

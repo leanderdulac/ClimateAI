@@ -244,7 +244,7 @@ async def bayesian_bootstrap_premium_endpoint(
 
 @router.post("/bayesian-bootstrap/contract-uncertainty-ranges")
 async def calculate_contract_uncertainty_ranges_endpoint(
-    contracts_data: Dict[str, Dict[str, Any]]
+    contracts_data: Dict[str, Dict[str, Any]],
 ):
     """
     Calculate uncertainty ranges for multiple contracts
