@@ -24,6 +24,8 @@ class Settings(BaseSettings):
     EMBRAPA_API_KEY: Optional[str] = None
     EMBRAPA_API_URL: Optional[str] = None
     EMBRAPA_API_VERSION: Optional[str] = None
+    GEMINI_API_KEY: Optional[str] = None
+    OPENMETEO_API_KEY: Optional[str] = None
 
     # Configurações OpenMeteo
     OPENMETEO_CACHE_DIR: str = ".cache"
@@ -49,7 +51,13 @@ class Settings(BaseSettings):
     DOMAIN: Optional[str] = None
     PROMETHEUS_METRICS_ENABLED: bool = False
     GRAFANA_ADMIN_PASSWORD: Optional[str] = None
-    OPENMETEO_API_KEY: Optional[str] = None
+
+    # Configurações adicionais
+    ENVIRONMENT: str = "development"
+    MAX_FILE_SIZE: int = 10485760
+    ALLOWED_FILE_EXTENSIONS: str = "csv,json,xlsx,pdf"
+    LOG_LEVEL: str = "INFO"
+    SENTRY_DSN: Optional[str] = None
 
     class Config:
         env_file = ".env"
