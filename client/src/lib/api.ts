@@ -989,15 +989,15 @@ export const policyPricingApi = {
 
             if (!response.ok) {
                 let errorMessage = `HTTP error! status: ${response.status}`;
+                const text = await response.text();
                 try {
-                    const errorData = await response.json();
+                    const errorData = JSON.parse(text);
                     if (errorData.detail) {
                         errorMessage += ` - ${errorData.detail}`;
                     } else {
                         errorMessage += ` - ${JSON.stringify(errorData)}`;
                     }
                 } catch (e) {
-                    const text = await response.text();
                     errorMessage += ` - ${text.substring(0, 200)}`;
                 }
                 throw new Error(errorMessage);
