@@ -978,7 +978,8 @@ export interface PolicyPricingResult {
 export const policyPricingApi = {
     async calculate(request: PolicyPricingRequest): Promise<PolicyPricingResult> {
         try {
-            const response = await fetch('/api/v1/policy-pricing/calculate', {
+            const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
+            const response = await fetch(`${baseUrl}/api/v1/policy-pricing/calculate`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -987,8 +988,19 @@ export const policyPricingApi = {
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(`HTTP error! status: ${response.status} - ${errorData.detail}`);
+                let errorMessage = `HTTP error! status: ${response.status}`;
+                try {
+                    const errorData = await response.json();
+                    if (errorData.detail) {
+                        errorMessage += ` - ${errorData.detail}`;
+                    } else {
+                        errorMessage += ` - ${JSON.stringify(errorData)}`;
+                    }
+                } catch (e) {
+                    const text = await response.text();
+                    errorMessage += ` - ${text.substring(0, 200)}`;
+                }
+                throw new Error(errorMessage);
             }
 
             return await response.json();
