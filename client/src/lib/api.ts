@@ -1014,7 +1014,8 @@ export const policyPricingApi = {
 export const climateDerivativesApi = {
     async calculatePricing(request: ClimateDerivativePricingRequest): Promise<ClimateDerivativePricingResult> {
         try {
-            const response = await fetch('/api/v1/modelagem/derivativos-climaticos/preco', {
+            const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
+            const response = await fetch(`${baseUrl}/api/v1/modelagem/derivativos-climaticos/preco`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1035,7 +1036,8 @@ export const climateDerivativesApi = {
 
     async compareScenarios(request: ScenarioComparisonRequest): Promise<ScenarioComparisonResult> {
         try {
-            const response = await fetch('/api/v1/modelagem/derivativos-climaticos/comparar-cenarios', {
+            const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
+            const response = await fetch(`${baseUrl}/api/v1/modelagem/derivativos-climaticos/comparar-cenarios`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1061,7 +1063,8 @@ export const climateDerivativesApi = {
                 confidence_level: (request.confidence_level || 0.95).toString(),
             });
 
-            const response = await fetch(`/api/v1/modelagem/derivativos-climaticos/analise-risco?${params}`, {
+            const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
+            const response = await fetch(`${baseUrl}/api/v1/modelagem/derivativos-climaticos/analise-risco?${params}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1087,7 +1090,8 @@ export const climateDerivativesApi = {
                 end_date: request.end_date,
             });
 
-            const response = await fetch(`/api/v1/modelagem/derivativos-climaticos/validacao-inmet?${params}`, {
+            const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
+            const response = await fetch(`${baseUrl}/api/v1/modelagem/derivativos-climaticos/validacao-inmet?${params}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1107,7 +1111,8 @@ export const climateDerivativesApi = {
 
     async analyzeCapitalRequirements(request: CapitalAnalysisRequest): Promise<CapitalAnalysisResult> {
         try {
-            const response = await fetch('/api/v1/modelagem/derivativos-climaticos/analise-capital', {
+            const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
+            const response = await fetch(`${baseUrl}/api/v1/modelagem/derivativos-climaticos/analise-capital`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
