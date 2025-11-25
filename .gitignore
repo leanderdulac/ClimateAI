@@ -44,3 +44,9 @@ Thumbs.dbvenv/
 test_results.log
 tests.log
 coverage.json
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+server/.cache.sqlite
