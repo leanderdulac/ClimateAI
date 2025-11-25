@@ -322,7 +322,7 @@ export function ClimateDataWidget() {
             <div>
               <CardTitle className="text-xl font-bold text-white">Climate Analytics</CardTitle>
               <CardDescription className="text-primary-100">
-                {currentWeather ? `${getWeatherDescription(currentWeather.weatherCode || 0)} in São Paulo` : 'Loading weather data...'}
+                {currentWeather ? `${getWeatherDescription(currentWeather.weatherCode || 0)} in ${selectedLocation?.cidade || 'your location'}` : 'Loading weather data...'}
               </CardDescription>
             </div>
           </div>
@@ -528,7 +528,16 @@ export function ClimateDataWidget() {
                 </h4>
                 <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                   <div className="rounded-lg bg-neutral-50 p-4">
-                    <div className="text-sm text-neutral-600">Hot Days
+                    <div className="text-sm text-neutral-600">Hot Days</div>
+                    <div className="mt-1 text-2xl font-semibold text-red-500">
+                      {climateTrends.extremeEvents.hotDays}
+                    </div>
+                    <div className="text-xs text-neutral-500">Above 30°C</div>
+                  </div>
+                  <div className="rounded-lg bg-neutral-50 p-4">
+                    <div className="text-sm text-neutral-600">Cold Days</div>
+                    <div className="mt-1 text-2xl font-semibold text-blue-500">
+                      {climateTrends.extremeEvents.coldDays}
                     </div>
                     <div className="text-xs text-neutral-500">Below 15°C</div>
                   </div>

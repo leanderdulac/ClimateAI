@@ -63,11 +63,10 @@ export function WeatherWidget() {
           locationName = `${selectedLocation.cidade || 'Localização'}, ${selectedLocation.estado || ''}`;
           console.log('✅ [WeatherWidget] Usando localização selecionada:', locationName, { latitude, longitude });
         } else {
-          // Fallback para São Paulo
-          latitude = -23.5505;
-          longitude = -46.6333;
-          locationName = 'São Paulo, SP';
-          console.log('⚠️ [WeatherWidget] Usando localização padrão (São Paulo)');
+          // Não buscar dados se nenhuma localização estiver selecionada
+          console.log('ℹ️ [WeatherWidget] Nenhuma localização selecionada, aguardando seleção...');
+          setLoading(false);
+          return;
         }
 
         // Validar coordenadas

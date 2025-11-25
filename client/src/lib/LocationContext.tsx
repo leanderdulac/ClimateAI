@@ -11,17 +11,8 @@ interface LocationContextType {
 const LocationContext = createContext<LocationContextType | undefined>(undefined);
 
 export function LocationProvider({ children }: { children: ReactNode }) {
-    // Localização padrão: São Paulo
-    const defaultLocation: LocalizacaoData = {
-        latitude: -23.5505,
-        longitude: -46.6333,
-        cidade: 'São Paulo',
-        estado: 'SP',
-        estado_nome: 'São Paulo',
-        formattedAddress: 'São Paulo, SP, Brasil'
-    };
-
-    const [selectedLocation, setSelectedLocation] = useState<LocalizacaoData | null>(defaultLocation);
+    // Inicialmente sem localização - o usuário deve selecionar
+    const [selectedLocation, setSelectedLocation] = useState<LocalizacaoData | null>(null);
     const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
     return (

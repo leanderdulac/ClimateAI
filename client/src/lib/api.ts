@@ -317,6 +317,22 @@ export const externalApi = {
         }
     },
 
+    async getXWeatherForecast(latitude: number, longitude: number, days: number = 7): Promise<any[]> {
+        try {
+            const response = await fetch(`/api/v1/xweather/brazil-forecast?latitude=${latitude}&longitude=${longitude}&days=${days}`);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            return result.forecast_data || [];
+        } catch (error) {
+            console.error('Erro ao obter previsão da API xWeather:', error);
+            throw error;
+        }
+    },
+
     async getRealTimeData(latitude: number, longitude: number, commodities?: string[]): Promise<RealTimeData> {
         try {
             const params = new URLSearchParams({

@@ -102,12 +102,12 @@ const mockForecastData = (days: number = 7): ForecastData[] => {
   return data;
 };
 
-const mockLocationData = (lat: number, lon: number): LocationData => ({
+const mockLocationData = (lat: number, lon: number, city?: string, state?: string): LocationData => ({
   latitude: lat,
   longitude: lon,
-  city: 'Cidade de Exemplo',
-  state: 'SP',
-  stateName: 'São Paulo',
+  city: city || undefined,
+  state: state || undefined,
+  stateName: state,
   country: 'Brasil',
   formattedAddress: `Lat: ${lat.toFixed(4)}, Lon: ${lon.toFixed(4)}`
 });
@@ -258,9 +258,9 @@ class EmbrapaApiService {
       console.log('✅ [API] CEP encontrado via API');
       return this.normalizeLocation(location);
     } catch (error) {
-      // Fallback para dados mock
-      console.warn(`⚠️ [API] CEP não encontrado, usando mock (São Paulo)`);
-      return mockLocationData(-23.5505, -46.6333);
+      // Fallback para dados mock - não usar São Paulo como padrão
+      console.warn(`⚠️ [API] CEP não encontrado`);
+      throw new Error('CEP não encontrado');
     }
   }
 
@@ -347,8 +347,9 @@ class EmbrapaApiService {
       };
     }
 
-    console.warn(`⚠️ [MOCK] Cidade não encontrada em mock, usando padrão (São Paulo)`);
-    return { ...mockLocationData(-23.5505, -46.6333), city, state: state.toUpperCase() };
+    // Não usar São Paulo como fallback - lançar erro para que o componente trate adequadamente
+    console.warn(`⚠️ [MOCK] Cidade não encontrada em mock: ${city}, ${state}`);
+    throw new Error(`Cidade não encontrada em dados mock: ${city}, ${state}`);
   }
 
   private getMockCitySearch(term: string, state?: string): LocationData[] {
@@ -448,7 +449,13 @@ class EmbrapaApiService {
     if (this.useMockData) {
       // Usar dados mock diretamente
       console.log(`🔍 [MOCK] Buscando cidade mock: ${city}, ${state}`);
-      return this.getMockLocationData(city, state);
+      try {
+        return this.getMockLocationData(city, state);
+      } catch (error) {
+        // Se mock falhar, lançar o erro em vez de usar fallback
+        console.warn(`⚠️ [MOCK] Busca de cidade mock falhou para: ${city}, ${state}`, error);
+        throw error;
+      }
     }
 
     try {
@@ -478,9 +485,14 @@ class EmbrapaApiService {
       throw new Error('Cidade não encontrada');
     } catch (error) {
       console.warn(`⚠️ [NOMINATIM] Geocoding falhou para: ${city}, ${state}`, error);
-      // Fallback para dados mock se geocoding falhar
-      console.log('🔄 Fallback para dados mock');
-      return this.getMockLocationData(city, state);
+      // Se Nominatim falhar, tentar mock, mas sem fallback automático para São Paulo
+      try {
+        return this.getMockLocationData(city, state);
+      } catch (mockError) {
+        // Se ambos falharem, lançar o erro original
+        console.warn(`⚠️ [MOCK] Busca de cidade mock também falhou para: ${city}, ${state}`, mockError);
+        throw error;
+      }
     }
   }
 
@@ -551,7 +563,29 @@ class EmbrapaApiService {
       return Array.isArray(forecastArray) ? forecastArray : [];
     } catch (error) {
       console.error('❌ API previsão real falhou:', error);
-      // Em produção, sem mock configurado, devemos falhar graciosamente
+      // Tenta fallback para xWeather API
+      try {
+        console.log('🌤️ Tentando fallback para API xWeather...');
+        const xweatherResponse = await fetch(`${baseUrl}/xweather/brazil-forecast?latitude=${latitude}&longitude=${longitude}&days=${days}`);
+        if (xweatherResponse.ok) {
+          const xweatherData = await xweatherResponse.json();
+          const forecastData = xweatherData.forecast_data || [];
+
+          // Converter dados da xWeather para o formato esperado
+          return forecastData.map((item: any) => ({
+            date: item.data ? new Date(item.data).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            temperature: item.temperatura || item.temp || 25,
+            precipitation: item.precipitacao || item.precip || 0,
+            humidity: item.umidade || 60,
+            windSpeed: item.vento_velocidade || item.wind_speed || 5,
+            cloudCover: 50 // Valor padrão
+          }));
+        }
+      } catch (xweatherError) {
+        console.warn('⚠️ xWeather fallback falhou:', xweatherError);
+      }
+
+      // Se tudo falhar, usa dados mock como último recurso
       console.warn('⚠️ Fallback para previsão mock (emergência)');
       return mockForecastData(Math.min(days, 30));
     }

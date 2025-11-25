@@ -2,7 +2,7 @@
 Configurações do Framework Integrado de Modelagem Climático-Econômica (FIMCE)
 """
 
-from typing import Optional
+from typing import List, Optional
 
 from pydantic_settings import BaseSettings
 
@@ -15,10 +15,22 @@ class Settings(BaseSettings):
     API_HOST: str = "localhost"
     API_PORT: int = 8000
     SECRET_KEY: str = ""  # Must be set via environment variables
-    ALLOW_ORIGINS: list = [
-        "http://localhost:3000",
-        "http://localhost:5173",
-    ]  # Whitelist de origem
+    ALLOW_ORIGINS_INPUT: str = (
+        "http://localhost:3000,http://localhost:5173"  # Input as string from env
+    )
+
+    # We'll compute this property based on the input
+    @property
+    def ALLOW_ORIGINS(self) -> List[str]:
+        """Parse ALLOW_ORIGINS from the input string."""
+        if self.ALLOW_ORIGINS_INPUT:
+            # Split by comma and strip whitespace
+            return [
+                origin.strip()
+                for origin in self.ALLOW_ORIGINS_INPUT.split(",")
+                if origin.strip()
+            ]
+        return ["http://localhost:3000", "http://localhost:5173"]
 
     # Configurações de API
     EMBRAPA_API_KEY: Optional[str] = None

@@ -128,23 +128,32 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
     try {
       setIsLoadingLocation(true);
       const locationData = await embrapaApi.getLocalizacao(lat, lon);
-      setLocation(locationData);
-      setSelectedLocation(locationData); // Atualizar contexto global
 
-      if (locationData.cidade) {
-        setCity(locationData.cidade);
+      // Combine API data with any provided location name from suggestions
+      const combinedLocationData = {
+        ...locationData,
+        cidade: locationData.cidade || (locationName ? locationName.split(',')[0].trim() : undefined),
+        estado: locationData.estado || (locationName && locationName.includes(',') ?
+          locationName.split(',')[1].split('-')[0].trim() : undefined)
+      };
+
+      setLocation(combinedLocationData);
+      setSelectedLocation(combinedLocationData); // Atualizar contexto global
+
+      if (combinedLocationData.cidade) {
+        setCity(combinedLocationData.cidade);
       }
-      if (locationData.estado) {
-        setState(locationData.estado);
+      if (combinedLocationData.estado) {
+        setState(combinedLocationData.estado);
       }
-      onLocationSelected?.(locationData);
+      onLocationSelected?.(combinedLocationData);
 
       // Salvar nas localizações recentes
       saveRecentLocation({
         latitude: lat,
         longitude: lon,
-        name: locationName || locationData.cidade || formatCoordinates(lat, lon),
-        state: locationData.estado,
+        name: locationName || combinedLocationData.cidade || formatCoordinates(lat, lon),
+        state: combinedLocationData.estado,
         timestamp: Date.now()
       });
       setRecentLocations(getRecentLocations());

@@ -156,6 +156,7 @@ from api.smart_exclusions import router as smart_exclusions_router
 from api.tcfd_issb import router as tcfd_issb_router
 from api.tokenizacao import router as tokenizacao_router
 from api.transition_risk import router as transition_risk_router
+from api.xweather_forecast import router as xweather_forecast_router
 from config.config import settings
 from config.database import close_db, init_db
 from services.audit_service import (
@@ -948,6 +949,11 @@ try:
     app.include_router(clima_router, prefix=f"{API_PREFIX}/clima", tags=["clima"])
     app.include_router(
         previsao_router, prefix=f"{API_PREFIX}/previsao", tags=["previsao"]
+    )
+    app.include_router(
+        xweather_forecast_router,
+        prefix=f"{API_PREFIX}/xweather",
+        tags=["xweather-forecast"],
     )
     app.include_router(eventos_router, prefix=f"{API_PREFIX}/eventos", tags=["eventos"])
     app.include_router(

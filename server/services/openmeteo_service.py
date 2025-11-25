@@ -285,3 +285,19 @@ class OpenMeteoService:
             raise HTTPException(
                 status_code=500, detail=f"Erro ao obter previsão do tempo: {str(e)}"
             )
+
+    def get_forecast(
+        self, latitude: float, longitude: float, days: int = 7
+    ) -> List[ClimaData]:
+        """
+        Wrapper para obter_previsao com nome compatível com o endpoint da API
+
+        Args:
+            latitude: Latitude do local
+            longitude: Longitude do local
+            days: Número de dias para previsão (máximo 16)
+
+        Returns:
+            Lista de objetos ClimaData com as previsões diárias
+        """
+        return self.obter_previsao(latitude, longitude, days)
