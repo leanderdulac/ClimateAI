@@ -343,9 +343,10 @@ export function PricingSimulator() {
         setMlPredictions(null);
       }
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro no cálculo:', error);
-      alert(t('pricing.errors.calculationError'));
+      const errorMessage = error?.message || error?.detail || t('pricing.errors.calculationError');
+      alert(`${t('pricing.errors.calculationError')}\n\nDetalhes: ${errorMessage}`);
     } finally {
       setCalculating(false);
     }
