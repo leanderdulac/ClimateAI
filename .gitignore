@@ -50,3 +50,11 @@ coverage.json
 *.sqlite
 *.sqlite3
 server/.cache.sqlite
+
+# Log files
+*.log
+server/*.log
+
+# Large files
+*.pdf
+*.cache

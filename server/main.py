@@ -332,6 +332,20 @@ app = FastAPI(
     version="1.0.0",
 )
 
+# Configuração de CORS
+# Em produção, ALLOW_ORIGINS deve ser configurado com a URL do frontend (ex: https://meu-app.netlify.app)
+# Se não configurado, permite todas as origens (*) por padrão para facilitar deploy inicial
+allow_origins_str = os.getenv("ALLOW_ORIGINS", "*")
+allow_origins = allow_origins_str.split(",") if allow_origins_str != "*" else ["*"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allow_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Registrar os handlers de exceção customizados
 register_handlers(app)
 
