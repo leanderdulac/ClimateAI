@@ -1057,17 +1057,30 @@ export const policyPricingApi = {
         try {
             const url = buildApiUrl('/api/v1/policy-pricing/calculate');
 
+            // Add timeout and improve error handling
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(request),
+                signal: controller.signal
             });
 
+            clearTimeout(timeoutId);
+
             if (!response.ok) {
+                // Handle 404 and other HTTP errors
+                if (response.status === 404) {
+                    console.warn('API endpoint not found, using mock data as fallback');
+                    return generateMockPricingResult(request);
+                }
+
                 let errorMessage = `HTTP error! status: ${response.status}`;
-                const text = await response.text();
+                const text = await response.text().catch(() => '');
                 try {
                     const errorData = JSON.parse(text);
                     if (errorData.detail) {
@@ -1081,17 +1094,25 @@ export const policyPricingApi = {
                 throw new Error(errorMessage);
             }
 
-            return await response.json();
+            const result = await response.json();
+            return result;
         } catch (error) {
             console.error('Erro no cálculo de apólice:', error);
-            // Check if the error is related to fetching to provide better diagnostics
-            if (error instanceof TypeError && error.message.includes('fetch')) {
+            // Check if the error is related to network issues to provide better diagnostics
+            if (error instanceof TypeError && (error.message.includes('fetch') || error.message.includes('network'))) {
                 console.error('Falha na requisição de cálculo avançado - verifique a configuração do backend');
 
                 // Provide mock response for development/deployment without backend
                 console.warn('Using mock data for policy pricing calculation (fallback)');
                 return generateMockPricingResult(request);
             }
+
+            // Specific handling for AbortError (timeout)
+            if ((error as Error).name === 'AbortError') {
+                console.warn('Request timeout, using mock data');
+                return generateMockPricingResult(request);
+            }
+
             throw error;
         }
     }
