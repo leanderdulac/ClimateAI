@@ -35,6 +35,10 @@
         }
       ]
     }
-  ]
+  ],
+  "functions": {
+    "api/proxy/[...path].js": {
+      "includeFiles": "server/**"
+    }
+  }
 }
-

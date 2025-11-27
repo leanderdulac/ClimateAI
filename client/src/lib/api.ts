@@ -2,6 +2,14 @@ import { loadEmbrapaApi } from './loadEmbrapaApi';
 
 // Helper function to build API URLs properly
 function buildApiUrl(path: string): string {
+    // Check if we're using mock data or real API
+    const useMockData = import.meta.env.VITE_USE_MOCK_DATA === 'true';
+
+    if (useMockData) {
+        // Return a mock API route when using mock data
+        return `/mock${path}`;
+    }
+
     const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
     // Ensure proper path joining: if baseUrl is empty, return just the path
     // If baseUrl is provided, ensure it ends with a slash and then append the path
@@ -12,6 +20,36 @@ function buildApiUrl(path: string): string {
     const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
     const normalizedPath = path.startsWith('/') ? path.substring(1) : path;
     return `${normalizedBaseUrl}${normalizedPath}`;
+}
+
+// Mock data generator functions
+function generateMockPricingResult(request: PolicyPricingRequest): PolicyPricingResult {
+    const assetValue = request.asset_value || 100000;
+    const severityAmount = request.severity_amount || 10000;
+    const frequencyPct = request.frequency_pct || 10;
+
+    const purePremium = severityAmount * (frequencyPct / 100) * 1.1; // Factor in exposure
+    const totalPremium = purePremium * 1.35; // Add loadings and margins
+
+    return {
+        is_approved: true,
+        status: 'APPROVED_MOCK',
+        rejection_reason: null,
+        financials: {
+            pure_premium: purePremium,
+            risk_margin: assetValue * 0.05,
+            loadings: totalPremium * 0.15,
+            total_premium: totalPremium,
+            op_claims_cost: totalPremium * 0.08,
+            op_admin_cost: totalPremium * 0.12,
+            op_subscription_cost: 150,
+            total_operational_costs: totalPremium * 0.2 + 150,
+            net_profit: totalPremium * 0.05,
+            profit_margin_pct: 5,
+            combined_ratio: 95
+        },
+        decision_flow: 'mock_calculated'
+    };
 }
 
 interface ClimaData {
@@ -1009,6 +1047,13 @@ export interface PolicyPricingResult {
 
 export const policyPricingApi = {
     async calculate(request: PolicyPricingRequest): Promise<PolicyPricingResult> {
+        const useMockData = import.meta.env.VITE_USE_MOCK_DATA === 'true';
+
+        if (useMockData) {
+            console.warn('Using mock data for policy pricing calculation');
+            return generateMockPricingResult(request);
+        }
+
         try {
             const url = buildApiUrl('/api/v1/policy-pricing/calculate');
 
@@ -1044,28 +1089,8 @@ export const policyPricingApi = {
                 console.error('Falha na requisição de cálculo avançado - verifique a configuração do backend');
 
                 // Provide mock response for development/deployment without backend
-                if (import.meta.env.VITE_USE_MOCK_DATA !== 'false') {
-                    console.warn('Using mock data for policy pricing calculation');
-                    return {
-                        is_approved: true,
-                        status: 'APPROVED_MOCK',
-                        rejection_reason: null,
-                        financials: {
-                            pure_premium: request.severity_amount * (request.frequency_pct / 100) * 1.1,
-                            risk_margin: request.asset_value * 0.05,
-                            loadings: request.asset_value * 0.15,
-                            total_premium: request.asset_value * 0.2,
-                            op_claims_cost: request.asset_value * 0.02,
-                            op_admin_cost: request.asset_value * 0.01,
-                            op_subscription_cost: 150,
-                            total_operational_costs: request.asset_value * 0.03 + 150,
-                            net_profit: request.asset_value * 0.02,
-                            profit_margin_pct: 10,
-                            combined_ratio: 85
-                        },
-                        decision_flow: 'mock_calculation'
-                    };
-                }
+                console.warn('Using mock data for policy pricing calculation (fallback)');
+                return generateMockPricingResult(request);
             }
             throw error;
         }
