@@ -409,8 +409,7 @@ export function PricingSimulator() {
           </button>
         </div>
 
-        {activeTab === 'simulator' ? (
-          <div className="grid gap-8 sm:grid-cols-2">
+        <div className="grid gap-8 sm:grid-cols-2">
             <div className="space-y-6">
               {/* Climate Events Selection */}
               <div className="space-y-4">
@@ -1609,7 +1608,6 @@ export function PricingSimulator() {
               </div>
             )}
           </div>
-        )}
       </CardContent>
     </Card>
   );
