@@ -1487,13 +1487,13 @@ export function PricingSimulator() {
                     <h4 className="font-medium text-gray-800 mb-3">Ações Rápidas</h4>
                     <div className="flex flex-wrap gap-2">
                       <Button
-                        onClick={() => setActiveTab('dashboard')}
+                        onClick={() => window.location.href = '/tokenization'}
                         variant="outline"
                         size="sm"
                         className="bg-white/50"
                       >
-                        <BarChart3 className="h-4 w-4 mr-2" />
-                        Ver Dashboard Executivo
+                        <Zap className="h-4 w-4 mr-2" />
+                        Painel de Tokenização
                       </Button>
                       <Button
                         onClick={() => {
