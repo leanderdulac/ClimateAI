@@ -5,8 +5,8 @@
   "framework": null,
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "https://your-backend-domain.com/api/$1"
+      "source": "/api/:path*",
+      "destination": "https://climateai-backend-f7a8.onrender.com/api/:path*"
     }
   ],
   "headers": [
@@ -20,8 +20,21 @@
         {
           "key": "X-Content-Type-Options",
           "value": "nosniff"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "X-Requested-With, Content-Type, Accept, Origin, Authorization"
         }
       ]
     }
   ]
 }
+
