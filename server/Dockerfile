@@ -15,6 +15,7 @@ FROM base as production
 
 # Install all production dependencies, including torch
 COPY requirements-prod-ml.txt .
+RUN pip install --no-cache-dir --timeout 1800 --retries 5 --no-cache-dir "numpy<2.0.0"
 RUN pip install --no-cache-dir --timeout 1800 --retries 5 --prefer-binary --index-url https://download.pytorch.org/whl/cpu 'torch==2.1.1+cpu' --find-links https://download.pytorch.org/whl/torch_stable.html --no-build-isolation --force-reinstall
 RUN pip install --no-cache-dir --timeout 1800 --retries 5 --no-build-isolation -r requirements-prod-ml.txt
 

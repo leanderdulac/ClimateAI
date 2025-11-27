@@ -41,7 +41,7 @@ httpx==0.27.0
 
 # === DADOS E ML ESSENCIAIS (PRODUÇÃO) ===
 pandas==2.2.3
-numpy>=1.26.0,<2.1.0
+numpy>=1.26.0,<2.0.0  # Versão < 2.0 para compatibilidade com PyTorch
 scikit-learn==1.5.2
 scipy>=1.11.0,<1.14.0
 statsmodels>=0.14.0

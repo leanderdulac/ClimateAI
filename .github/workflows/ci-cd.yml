@@ -55,6 +55,8 @@ jobs:
     - name: Install dependencies
       run: |
         cd server
+        # Install NumPy first with a compatible version for PyTorch
+        pip install --timeout 1800 --retries 5 --no-cache-dir "numpy<2.0.0"
         pip install --timeout 1800 --retries 5 --prefer-binary --index-url https://download.pytorch.org/whl/cpu 'torch==2.1.1+cpu' --find-links https://download.pytorch.org/whl/torch_stable.html --no-build-isolation --force-reinstall
         pip install --timeout 1800 --retries 5 --no-build-isolation -r requirements-prod-ml.txt
 
@@ -224,6 +226,8 @@ jobs:
     - name: Install dependencies
       run: |
         cd server
+        # Install NumPy first with a compatible version for PyTorch
+        pip install --timeout 1800 --retries 5 --no-cache-dir "numpy<2.0.0"
         # Install PyTorch with maximum reliability settings in CI environment
         pip install --timeout 1800 --retries 5 --prefer-binary --index-url https://download.pytorch.org/whl/cpu 'torch==2.1.1+cpu' --find-links https://download.pytorch.org/whl/torch_stable.html --no-build-isolation --force-reinstall
         pip install --timeout 1800 --retries 5 --no-build-isolation -r requirements-prod-ml.txt
@@ -343,6 +347,8 @@ jobs:
     - name: Generate API docs
       run: |
         cd server
+        # Install NumPy first with a compatible version for PyTorch
+        pip install --timeout 1800 --retries 5 --no-cache-dir "numpy<2.0.0"
         # Install PyTorch with maximum reliability settings in CI environment
         pip install --timeout 1800 --retries 5 --prefer-binary --index-url https://download.pytorch.org/whl/cpu 'torch==2.1.1+cpu' --find-links https://download.pytorch.org/whl/torch_stable.html --no-build-isolation --force-reinstall
         pip install --timeout 1800 --retries 5 --no-build-isolation -r requirements-prod-ml.txt
