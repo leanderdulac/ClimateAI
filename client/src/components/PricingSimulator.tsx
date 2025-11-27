@@ -177,7 +177,7 @@ export function PricingSimulator() {
   const [calculating, setCalculating] = useState<boolean>(false);
   const [policySimulations, setPolicySimulations] = useState<any[]>([]);
   const [coveragePeriod, setCoveragePeriod] = useState<number>(1); // Período de cobertura em anos
-  const [activeTab, setActiveTab] = useState<'simulator' | 'dashboard' | 'audit'>('simulator');
+  const [activeTab, setActiveTab] = useState<'simulator' | 'tokenization'>('simulator');
   const [mlPredictions, setMlPredictions] = useState<MLPredictionResult | null>(null);
 
   const { selectedLocation } = useLocation();
@@ -399,22 +399,13 @@ export function PricingSimulator() {
             {t('pricing.tabs.simulator')}
           </button>
           <button
-            onClick={() => setActiveTab('dashboard')}
-            className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'dashboard'
+            onClick={() => window.location.href = '/tokenization'}
+            className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'tokenization'
               ? 'border-primary-500 text-primary-600'
               : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
           >
-            {t('pricing.tabs.dashboard')}
-          </button>
-          <button
-            onClick={() => setActiveTab('audit')}
-            className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'audit'
-              ? 'border-primary-500 text-primary-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-          >
-            {t('pricing.tabs.audit')}
+            {t('pricing.tabs.tokenization')}
           </button>
         </div>
 
@@ -1618,13 +1609,6 @@ export function PricingSimulator() {
               </div>
             )}
           </div>
-        ) : activeTab === 'dashboard' ? (
-          <ExecutiveDashboard
-            policySimulations={policySimulations}
-            financialAnalysis={financialAnalysis}
-          />
-        ) : (
-          <AuditDashboard />
         )}
       </CardContent>
     </Card>

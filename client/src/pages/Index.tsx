@@ -4,8 +4,6 @@ import { LocationSelector } from "@/components/LocationSelector";
 import { WeatherWidget } from "@/components/WeatherWidget";
 import { ClimateDataWidget } from "@/components/ClimateDataWidget";
 import { PricingSimulator } from "@/components/PricingSimulator";
-import { SmartContractMonitor } from "@/components/SmartContractMonitor";
-import { TokenWalletMonitor } from "@/components/TokenWalletMonitor";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { LocationProvider } from "@/lib/LocationContext";
 import { PeriodProvider, usePeriod } from "@/lib/PeriodContext";
@@ -162,91 +160,24 @@ export function IndexPage() {
                 </div>
               </div>
 
-              {/* Smart Contract Monitor Section */}
-              <div className="mb-12">
-                <div className="flex items-center gap-3 mb-8">
-                  <Zap className="h-8 w-8 text-green-600" />
-                  <h2 className="text-3xl font-bold text-gray-800">Smart Contract Monitor</h2>
-                </div>
-                <SmartContractMonitor />
-              </div>
-
-              {/* Tokenization Section */}
+              {/* Aviso de Tokenização e Smart Contracts */}
               <div className="mb-12" id="tokenization-section">
-                <div className="flex items-center gap-3 mb-8">
-                  <Zap className="h-8 w-8 text-yellow-600" />
-                  <h2 className="text-3xl font-bold text-gray-800">Tokenização</h2>
-                  <Button
-                    variant="outline"
-                    className="ml-auto"
-                    onClick={() => window.location.href = '/tokenization'}
-                  >
-                    Ver Tudo
-                  </Button>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-                  {/* Token Stats Cards */}
-                  <Card className="border-0 shadow-lg bg-gradient-to-br from-yellow-50 to-orange-50">
-                    <CardContent className="p-6">
-                      <div className="flex items-center gap-3 mb-4">
-                        <Zap className="h-6 w-6 text-yellow-600" />
-                        <h3 className="font-semibold text-gray-800">Eventos Tokenizados</h3>
-                      </div>
-                      <div className="text-2xl font-bold text-gray-800">89</div>
-                      <div className="text-sm text-gray-600">Tokens criados este mês</div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-cyan-50">
-                    <CardContent className="p-6">
-                      <div className="flex items-center gap-3 mb-4">
-                        <DollarSign className="h-6 w-6 text-blue-600" />
-                        <h3 className="font-semibold text-gray-800">Volume Tokenizado</h3>
-                      </div>
-                      <div className="text-2xl font-bold text-gray-800">R$ 2.4M</div>
-                      <div className="text-sm text-gray-600">Valor total de tokens</div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-emerald-50">
-                    <CardContent className="p-6">
-                      <div className="flex items-center gap-3 mb-4">
-                        <TrendingUp className="h-6 w-6 text-green-600" />
-                        <h3 className="font-semibold text-gray-800">Carteiras Ativas</h3>
-                      </div>
-                      <div className="text-2xl font-bold text-gray-800">156</div>
-                      <div className="text-sm text-gray-600">Portfólios monitorados</div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  <TokenWalletMonitor />
-                  <div>
-                    <h3 className="text-lg font-semibold mb-4">Eventos Recentes</h3>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
-                        <div className="flex items-center gap-2">
-                          <AlertTriangle className="h-4 w-4 text-red-600" />
-                          <span className="font-medium">Enchente - SP</span>
-                        </div>
-                        <span className="text-sm text-red-600">R$ 150K</span>
-                      </div>
-                      <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                        <div className="flex items-center gap-2">
-                          <Thermometer className="h-4 w-4 text-blue-600" />
-                          <span className="font-medium">Onda Calor - RJ</span>
-                        </div>
-                        <span className="text-sm text-blue-600">R$ 200K</span>
-                      </div>
-                      <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
-                        <div className="flex items-center gap-2">
-                          <Sun className="h-4 w-4 text-yellow-600" />
-                          <span className="font-medium">Seca - MG</span>
-                        </div>
-                        <span className="text-sm text-yellow-600">R$ 180K</span>
-                      </div>
+                <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-8 border border-purple-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-800 mb-3">Tokenização & Smart Contracts</h2>
+                      <p className="text-gray-600 mb-4">
+                        Sistema avançado de tokenização de eventos climáticos e execução de contratos inteligentes
+                      </p>
+                      <Button
+                        onClick={() => window.location.href = '/tokenization'}
+                        className="bg-gradient-to-r from-purple-500 to-blue-500 text-white hover:from-purple-600 hover:to-blue-600"
+                      >
+                        Acessar Tokenização e Contratos
+                      </Button>
+                    </div>
+                    <div className="hidden md:block">
+                      <Zap className="h-16 w-16 text-purple-400 opacity-50" />
                     </div>
                   </div>
                 </div>
