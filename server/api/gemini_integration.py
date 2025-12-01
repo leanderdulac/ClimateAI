@@ -9,11 +9,13 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException, Query
+from pydantic import BaseModel
 
 from services.gemini_integration_service import (
     GeminiAnalysisResult,
     analyze_climate_report,
     analyze_policy_language,
+    chat_with_assistant,
     explain_actuarial_decision,
     gemini_integration_service,
     generate_mitigation_suggestions,
@@ -23,7 +25,31 @@ from services.gemini_integration_service import (
 router = APIRouter()
 
 
-@router.post("/gemini/analyze-climate-report")
+class ChatRequest(BaseModel):
+    message: str
+    context: Optional[Dict[str, Any]] = {}
+    history: Optional[List[Dict[str, str]]] = []
+
+
+@router.post("/chat")
+async def chat_endpoint(request: ChatRequest):
+    """
+    Interactive chat with Climate Assistant
+    """
+    try:
+        result = await chat_with_assistant(
+            request.message, request.context, request.history
+        )
+        return {
+            "response": result.analysis_text,
+            "status": "completed",
+            "timestamp": datetime.now().isoformat(),
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/analyze-climate-report")
 async def analyze_climate_report_endpoint(
     report_text: str = Query(
         ..., description="Text of the technical climate report to analyze"
@@ -63,7 +89,7 @@ async def analyze_climate_report_endpoint(
         )
 
 
-@router.post("/gemini/explain-actuarial-decision")
+@router.post("/explain-actuarial-decision")
 async def explain_actuarial_decision_endpoint(
     decision_type: str = Query(
         "premium_calculation",
@@ -115,7 +141,7 @@ async def explain_actuarial_decision_endpoint(
         )
 
 
-@router.post("/gemini/generate-mitigation-suggestions")
+@router.post("/generate-mitigation-suggestions")
 async def generate_mitigation_suggestions_endpoint(
     asset_type: str = Query(
         "property",
@@ -165,7 +191,7 @@ async def generate_mitigation_suggestions_endpoint(
         )
 
 
-@router.post("/gemini/analyze-policy-language")
+@router.post("/analyze-policy-language")
 async def analyze_policy_language_endpoint(
     focus_on: str = Query(
         "climate_exclusions",
@@ -206,7 +232,7 @@ async def analyze_policy_language_endpoint(
         )
 
 
-@router.post("/gemini/summarize-climate-data")
+@router.post("/summarize-climate-data")
 async def summarize_climate_data_endpoint(
     analysis_period: str = Query(
         "12_months",
@@ -258,7 +284,7 @@ async def summarize_climate_data_endpoint(
         )
 
 
-@router.get("/gemini/capabilities")
+@router.get("/capabilities")
 async def get_gemini_capabilities():
     """
     Get information about Gemini integration capabilities
@@ -287,7 +313,7 @@ async def get_gemini_capabilities():
     }
 
 
-@router.get("/gemini/configuration-status")
+@router.get("/configuration-status")
 async def get_gemini_configuration_status():
     """
     Check if Gemini API is properly configured

@@ -4,6 +4,7 @@ import { LocationSelector } from "@/components/LocationSelector";
 import { MapDisplay } from "@/components/MapDisplay";
 import { WeatherWidget } from "@/components/WeatherWidget";
 import { ClimateDataWidget } from "@/components/ClimateDataWidget";
+import { InsuranceRecommendation } from "@/components/InsuranceRecommendation";
 import { PricingSimulator } from "@/components/PricingSimulator";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { LocationProvider } from "@/lib/LocationContext";
@@ -185,6 +186,11 @@ export function IndexPage() {
                 {/* Interactive Map Section */}
                 <div className="mb-12 hover-lift">
                   <MapDisplay />
+                </div>
+
+                {/* AI Insurance Recommendation */}
+                <div className="mb-12 hover-lift">
+                  <InsuranceRecommendation />
                 </div>
 
                 {/* Climate Data Analysis */}

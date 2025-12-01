@@ -1238,3 +1238,123 @@ export const climateDerivativesApi = {
         }
     }
 };
+
+// Gemini AI Assistant API
+export interface GeminiChatRequest {
+    message: string;
+    context?: any;
+}
+
+export interface GeminiAnalysisResult {
+    analysis_text: string;
+    confidence_level: number;
+    processing_timestamp: string;
+    analysis_type: string;
+    sources_considered: string[];
+    complementary_to: string;
+}
+
+export const geminiApi = {
+    async chat(message: string, context?: any, history?: any[]): Promise<{ response: string; status: string; timestamp: string }> {
+        try {
+            const url = buildApiUrl('/api/v1/gemini/chat');
+
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message, context, history }),
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                return await response.json();
+            } catch (error) {
+                clearTimeout(timeoutId);
+                throw error;
+            }
+        } catch (error) {
+            console.error('Erro no chat com Gemini:', error);
+            if ((error as Error).name === 'AbortError') {
+                throw new Error('O servidor demorou muito para responder. Por favor, tente novamente.');
+            }
+            throw error;
+        }
+    },
+
+    async analyzeReport(reportText: string, focusArea: string = 'climate_risk'): Promise<{ analysis_result: GeminiAnalysisResult }> {
+        try {
+            const params = new URLSearchParams({
+                report_text: reportText,
+                focus_area: focusArea,
+            });
+            const url = buildApiUrl(`/api/v1/gemini/analyze-climate-report?${params}`);
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Erro na análise de relatório:', error);
+            throw error;
+        }
+    },
+
+    async explainDecision(decisionFactors: any, decisionType: string = 'premium_calculation'): Promise<{ explanation_result: GeminiAnalysisResult }> {
+        try {
+            const params = new URLSearchParams({
+                decision_type: decisionType,
+                decision_factors_json: JSON.stringify(decisionFactors),
+            });
+            const url = buildApiUrl(`/api/v1/gemini/explain-actuarial-decision?${params}`);
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Erro na explicação de decisão:', error);
+            throw error;
+        }
+    },
+
+    async getCapabilities(): Promise<any> {
+        try {
+            const url = buildApiUrl('/api/v1/gemini/capabilities');
+            const response = await fetch(url);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Erro ao obter capacidades do Gemini:', error);
+            throw error;
+        }
+    }
+};

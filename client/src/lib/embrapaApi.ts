@@ -496,49 +496,46 @@ class EmbrapaApiService {
     }
   }
 
+  // IBGE API for Brazilian municipalities
+  private IBGE_API_BASE_URL = 'https://servicodados.ibge.gov.br/api/v1/localidades/municipios';
+
   async searchCities(term: string, state?: string): Promise<LocationData[]> {
     if (this.useMockData) {
-      // Fallback para dados mock de cidades
       console.log('🌍 Usando busca de cidades mock');
       return this.getMockCitySearch(term, state);
     }
 
     try {
-      // Busca real usando Nominatim
-      console.log(`🔍 [NOMINATIM] Buscando cidades reais: "${term}"${state ? `, ${state}` : ''}`);
-      const query = state ? `${term}, ${state}, Brasil` : `${term}, Brasil`;
-      const results = await this.nominatimSearch(query, 20);
+      // Use the backend endpoint that has all 5570 Brazilian cities
+      console.log(`🔍 [BACKEND] Buscando cidades: "${term}"${state ? `, ${state}` : ''}`);
 
-      if (results && results.length > 0) {
-        const cities: LocationData[] = results
-          .filter((result: any) => {
-            // Filtrar apenas cidades, vilas, towns
-            const address = result.address || {};
-            return address.city || address.town || address.village || address.municipality;
-          })
-          .map((result: any) => {
-            const address = result.address || {};
+      const params: Record<string, string> = { termo: term };
+      if (state) {
+        params.estado = state.toUpperCase();
+      }
 
-            return {
-              latitude: parseFloat(result.lat),
-              longitude: parseFloat(result.lon),
-              city: address.city || address.town || address.village || address.municipality,
-              state: address.state,
-              stateName: address.state,
-              country: address.country || 'Brasil',
-              formattedAddress: result.display_name,
-              postcode: address.postcode
-            };
-          });
+      const cities = await this.apiGet<any[]>('/localizacao/cidade/busca', params);
 
-        console.log(`✅ [NOMINATIM] Encontradas ${cities.length} cidades reais`);
-        return cities;
+      if (cities && cities.length > 0) {
+        const locationData: LocationData[] = cities.map((city: any) => ({
+          latitude: city.latitude,
+          longitude: city.longitude,
+          city: city.cidade || city.city,
+          state: city.estado || city.state,
+          stateName: city.estado_nome || city.state_name,
+          country: city.pais || city.country || 'Brasil',
+          formattedAddress: city.formatted_address || `${city.cidade || city.city} - ${city.estado || city.state}, Brasil`,
+          postcode: city.cep || city.postcode
+        }));
+
+        console.log(`✅ [BACKEND] Encontradas ${locationData.length} cidades`);
+        return locationData;
       }
 
       return [];
+
     } catch (error) {
-      console.warn(`⚠️ [NOMINATIM] Busca falhou para: "${term}"`, error);
-      // Fallback para dados mock se geocoding falhar
+      console.warn(`⚠️ [BACKEND] Busca falhou para: "${term}"`, error);
       console.log('🔄 Fallback para busca mock');
       return this.getMockCitySearch(term, state);
     }

@@ -5,6 +5,7 @@ import './index.css'
 import 'leaflet/dist/leaflet.css';
 import { setupErrorHandlers, logError } from '@/lib/error-handler'
 import { LanguageProvider } from './contexts/LanguageContext';
+import { LocationProvider } from './lib/LocationContext';
 
 // Setup global error handlers
 setupErrorHandlers();
@@ -54,7 +55,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ErrorBoundary>
       <LanguageProvider>
-        <App />
+        <LocationProvider>
+          <App />
+        </LocationProvider>
       </LanguageProvider>
     </ErrorBoundary>
   </React.StrictMode>,
