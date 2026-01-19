@@ -203,7 +203,7 @@ ClimateAI/
 
 ### Pré-requisitos
 - Python 3.8+
-- Node.js 16+
+- Node.js 18+
 - Google Chrome (para geração de PDF)
 
 ### Instalação
@@ -212,9 +212,12 @@ ClimateAI/
 git clone https://github.com/leanderdulac/ClimateAI.git
 cd ClimateAI
 
-# Instalar dependências do backend
+# Instalar dependências do backend (perfil padrão: produção com PyTorch, sem TensorFlow)
 cd server
-pip install -r requirements.txt
+pip install -r requirements-prod-ml.txt
+# Opções:
+#   - Leve, sem ML pesado: pip install -r requirements-base.txt
+#   - Desenvolvimento com TensorFlow: pip install -r requirements-base.txt -r requirements-ml.txt
 
 # Instalar dependências do frontend
 cd ../client

@@ -1,44 +1,44 @@
-fastapi==0.121.2
-uvicorn[standard]==0.32.0
+## Perfil padrão recomendado: use server/requirements-prod-ml.txt (PyTorch sem TensorFlow).
+## Este arquivo é mantido por compatibilidade e inclui utilitários extras (psutil, pynamicalsys).
+fastapi==0.128.0
+uvicorn[standard]==0.40.0
 pydantic==2.9.2
 pydantic-settings==2.6.0
 requests==2.32.5
-python-multipart==0.0.20
+python-multipart==0.0.21
 python-dotenv==1.0.1
-redis==5.2.0
+redis==7.1.0
 sqlalchemy==2.0.36
-psycopg2-binary==2.9.10
+psycopg2-binary==2.9.11
 pandas==2.2.3
-numpy>=1.26.0,<2.1.0
+numpy>=1.26.0,<2.0.0
 scipy>=1.11.0,<1.14.0
 scikit-learn==1.5.2
-torch==2.2.2  # PyTorch for LSTM attention mechanisms (aligned with prod ML)
-python-json-logger==2.0.7  # For structured JSON logging
+torch==2.8.0  # PyTorch for LSTM attention mechanisms (aligned with prod ML) - Updated for security
+python-json-logger==4.0.0  # For structured JSON logging - Updated for security
 # ⚠️ REMOVIDO: tensorflow==2.18.0
 # Usar requirements-ml.txt para desenvolvimento com TensorFlow
 statsmodels>=0.14.0
-pytz==2024.2
-httpx==0.27.0
+pytz==2025.2
+httpx==0.28.1
 openmeteo-requests
 google-generativeai>=0.4.0
 requests-cache
 retry-requests
 geopy==2.4.1
-pycep-correios==5.1.0
-aiosqlite==0.21.0
+pycep-correios==5.2.0
+aiosqlite==0.22.1
 # Authentication dependencies
-python-jose[cryptography]==3.5.0
+pyjwt[crypto]>=2.8.0
 passlib[bcrypt]==1.7.4
 # Database migration
-alembic==1.13.3
+alembic==1.18.1
 psutil
 pynamicalsys
-asyncpg
+asyncpg==0.29.0
 
 # NOTA IMPORTANTE:
-# Este arquivo inclui PyTorch necessário para LSTM attention (produção)
-# Para instalar com suporte a ML completo (desenvolvimento):
-#   pip install -r requirements-base.txt -r requirements-ml.txt
-#
-# Para instalar produção com ML essencial (recomendado para Docker):
-#   pip install -r requirements-prod-ml.txt
+# Perfil padrão (produção com ML essencial):
+#   pip install -r server/requirements-prod-ml.txt
+# Para desenvolvimento com TensorFlow:
+#   pip install -r server/requirements-base.txt -r server/requirements-ml.txt

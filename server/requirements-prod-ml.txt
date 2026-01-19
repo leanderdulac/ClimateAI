@@ -3,9 +3,9 @@
 # Use this for production services that need PyTorch but not TensorFlow
 
 # === FRAMEWORK WEB ===
-fastapi==0.121.2
-uvicorn[standard]==0.32.0
-python-multipart==0.0.20
+fastapi==0.128.0
+uvicorn[standard]==0.40.0
+python-multipart==0.0.21
 
 # === CONFIGURAÇÃO E VALIDAÇÃO ===
 pydantic==2.9.2
@@ -14,30 +14,30 @@ python-dotenv==1.0.1
 
 # === BANCO DE DADOS ===
 sqlalchemy==2.0.36
-psycopg2-binary==2.9.10
+psycopg2-binary==2.9.11
 asyncpg==0.29.0
-aiosqlite==0.21.0
-alembic==1.13.3
+aiosqlite==0.22.1
+alembic==1.18.1
 
 # === CACHE ===
-redis==5.2.0
+redis==7.1.0
 
 # === APIs EXTERNAS ===
 requests==2.32.5
 requests-cache
 geopy==2.4.1
-pycep-correios==5.1.0
+pycep-correios==5.2.0
 openmeteo-requests
 retry-requests
 
 # === AUTENTICAÇÃO E SEGURANÇA ===
-python-jose[cryptography]==3.5.0
+pyjwt[crypto]>=2.8.0
 passlib[bcrypt]==1.7.4
 
 # === UTILITÁRIOS ===
-pytz==2024.2
+pytz==2025.2
 google-generativeai>=0.4.0
-httpx==0.27.0
+httpx==0.28.1
 
 # === DADOS E ML ESSENCIAIS (PRODUÇÃO) ===
 pandas==2.2.3
@@ -45,8 +45,8 @@ numpy>=1.26.0,<2.0.0  # Versão < 2.0 para compatibilidade com PyTorch
 scikit-learn==1.5.2
 scipy>=1.11.0,<1.14.0
 statsmodels>=0.14.0
-torch==2.2.2  # PyTorch for LSTM attention mechanisms - CPU version installed via base image in Docker, separately in CI/CD
-python-json-logger==2.0.7  # For structured JSON logging
+torch==2.8.0  # PyTorch for LSTM attention mechanisms - CPU version installed via base image in Docker, separately in CI/CD - Updated for security
+python-json-logger==4.0.0  # For structured JSON logging - Updated for security
 # NOTA: TensorFlow NÃO incluído em produção (~500MB)
 
 # ===== TAMANHO COMPARATIVO =====

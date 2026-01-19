@@ -39,7 +39,7 @@ google-generativeai>=0.4.0
 
 # === DADOS (versão leve) ===
 pandas==2.2.3
-numpy>=1.26.0,<2.1.0
+numpy>=1.26.0,<2.0.0
 
 # NOTA: TensorFlow removido da produção
 # Usar requirements-ml.txt para desenvolvimento e treinamento de modelos

@@ -322,6 +322,7 @@ for var, description in required_env_vars:
 
 # (Imports e código inicial)
 from lib.exception_handlers import register_handlers
+from middleware.error_handling import setup_error_middleware
 
 # (Código omitido para brevidade)
 
@@ -331,6 +332,9 @@ app = FastAPI(
     description="API do Framework Integrado de Modelagem Climático-Econômica",
     version="1.0.0",
 )
+
+# Setup advanced error handling middleware
+setup_error_middleware(app)
 
 # Configuração de CORS
 # Em produção, ALLOW_ORIGINS deve ser configurado com a URL do frontend (ex: https://meu-app.netlify.app)

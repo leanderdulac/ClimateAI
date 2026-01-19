@@ -4,7 +4,7 @@ Provides multilingual support for the ClimateAI system
 """
 
 from datetime import datetime
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from fastapi import APIRouter, HTTPException, Query
 
@@ -19,23 +19,90 @@ router = APIRouter()
 async def translate_term_endpoint(
     key: str = Query(..., description="Term or concept to translate"),
     language: str = Query("en-US", description="Target language (en-US or pt-BR)"),
+    params: str = Query(
+        "", description="JSON string with parameters for dynamic translation"
+    ),
 ):
     """
-    Translate a specific term to the requested language
+    Translate a specific term to the requested language with optional parameters
     """
     try:
+        import json
+
         lang_enum = Language.EN_US if language == "en-US" else Language.PT_BR
-        translated = i18n_service.translate(key, lang_enum)
+
+        # Parse parameters if provided
+        params_dict = {}
+        if params:
+            try:
+                params_dict = json.loads(params)
+            except json.JSONDecodeError:
+                raise HTTPException(
+                    status_code=400, detail="Invalid JSON format for parameters"
+                )
+
+        translated = i18n_service.translate(key, lang_enum, **params_dict)
 
         return {
             "original_term": key,
             "translated_term": translated,
             "target_language": language,
+            "parameters": params_dict,
             "translation_timestamp": datetime.now().isoformat(),
             "status": "success",
         }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Translation failed: {str(e)}")
+
+
+@router.post("/i18n/translate-batch")
+async def translate_batch_endpoint(translations: List[Dict[str, Any]]):
+    """
+    Translate multiple terms in batch with parameters
+
+    Request body should contain a list of objects with:
+    - key: string (the term to translate)
+    - language: string (optional, defaults to en-US)
+    - params: dict (optional parameters for the translation)
+    """
+    try:
+        results = []
+
+        for item in translations:
+            key = item.get("key")
+            if not key:
+                results.append({"error": "Missing key", "item": item})
+                continue
+
+            language = item.get("language", "en-US")
+            params = item.get("params", {})
+
+            lang_enum = Language.EN_US if language == "en-US" else Language.PT_BR
+
+            translated = i18n_service.translate(key, lang_enum, **params)
+
+            results.append(
+                {
+                    "original_term": key,
+                    "translated_term": translated,
+                    "target_language": language,
+                    "parameters": params,
+                    "status": "success",
+                }
+            )
+
+        return {
+            "translations": results,
+            "total_processed": len(results),
+            "timestamp": datetime.now().isoformat(),
+            "status": "success",
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Batch translation failed: {str(e)}"
+        )
 
 
 @router.get("/i18n/translations")
@@ -92,9 +159,8 @@ async def get_bilingual_terms_map():
     Get a mapping of terms between English and Portuguese
     """
     try:
-        i18n_serv = I18nService()
-        en_translations = i18n_serv.get_translations_for_language(Language.EN_US)
-        pt_translations = i18n_serv.get_translations_for_language(Language.PT_BR)
+        en_translations = i18n_service.get_translations_for_language(Language.EN_US)
+        pt_translations = i18n_service.get_translations_for_language(Language.PT_BR)
 
         bilingual_map = {}
         all_keys = set(en_translations.keys()) | set(pt_translations.keys())
@@ -122,7 +188,6 @@ async def get_translation_service_info():
     """
     Get information about the translation service
     """
-    i18n_serv = I18nService()
 
     return {
         "service_name": "ClimateAI Internationalization Service",
@@ -132,14 +197,14 @@ async def get_translation_service_info():
                 "code": "en-US",
                 "name": "English (United States)",
                 "terms_count": len(
-                    i18n_serv.get_translations_for_language(Language.EN_US)
+                    i18n_service.get_translations_for_language(Language.EN_US)
                 ),
             },
             {
                 "code": "pt-BR",
                 "name": "Português (Brasil)",
                 "terms_count": len(
-                    i18n_serv.get_translations_for_language(Language.PT_BR)
+                    i18n_service.get_translations_for_language(Language.PT_BR)
                 ),
             },
         ],
@@ -150,6 +215,8 @@ async def get_translation_service_info():
             "TCFD/ISSB reporting terminology",
             "Bilingual API responses",
             "Dynamic language switching",
+            "Parameterized translations",
+            "Batch translation support",
         ],
         "domains_covered": [
             "Climate risk modeling",

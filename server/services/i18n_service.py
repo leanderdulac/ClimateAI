@@ -5,9 +5,10 @@ Provides language translations and localization for English and Portuguese
 
 import json
 import os
+import re
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional  # Add List import
+from typing import Any, Dict, List, Optional, Union  # Add List import
 
 
 class Language(Enum):
@@ -177,6 +178,20 @@ class I18nService:
                 "policy_valuation_service": "Serviço de Avaliação de Apólices",
                 "smart_exclusions_service": "Serviço de Exclusões Inteligentes",
                 "sips_analytics_service": "Serviço de Análise SIPS-Climate",
+                # Dynamic messages with parameters
+                "user_not_found_with_id": "Usuário com ID {user_id} não encontrado",
+                "resource_created_successfully": "Recurso '{resource_type}' criado com sucesso",
+                "access_denied_for_user": "Acesso negado para o usuário {username}",
+                "calculation_completed_in_time": "Cálculo concluído em {time_taken:.2f} segundos",
+                "data_refreshed_at_time": "Dados atualizados às {timestamp}",
+                "error_processing_request": "Erro ao processar requisição: {error_message}",
+                "welcome_user_to_climateai": "Bem-vindo ao ClimateAI, {username}!",
+                "premium_calculated_for_coverage": "Prêmio calculado para cobertura de R$ {amount:,.2f}",
+                "risk_assessment_generated": "Avaliação de risco gerada para localização {location}",
+                "report_generated_successfully": "Relatório '{report_type}' gerado com sucesso",
+                "notification_sent_to_user": "Notificação enviada para o usuário {username}",
+                "model_training_started": "Treinamento do modelo '{model_name}' iniciado",
+                "data_export_completed": "Exportação de dados concluída. {record_count} registros exportados",
             },
             Language.EN_US: {
                 # Climate risk terms
@@ -332,25 +347,78 @@ class I18nService:
                 "policy_valuation_service": "Policy Valuation Service",
                 "smart_exclusions_service": "Smart Exclusions Service",
                 "sips_analytics_service": "SIPS-Climate Analytics Service",
+                # Dynamic messages with parameters
+                "user_not_found_with_id": "User with ID {user_id} not found",
+                "resource_created_successfully": "Resource '{resource_type}' created successfully",
+                "access_denied_for_user": "Access denied for user {username}",
+                "calculation_completed_in_time": "Calculation completed in {time_taken:.2f} seconds",
+                "data_refreshed_at_time": "Data refreshed at {timestamp}",
+                "error_processing_request": "Error processing request: {error_message}",
+                "welcome_user_to_climateai": "Welcome to ClimateAI, {username}!",
+                "premium_calculated_for_coverage": "Premium calculated for coverage of ${amount:,.2f}",
+                "risk_assessment_generated": "Risk assessment generated for location {location}",
+                "report_generated_successfully": "Report '{report_type}' generated successfully",
+                "notification_sent_to_user": "Notification sent to user {username}",
+                "model_training_started": "Model '{model_name}' training started",
+                "data_export_completed": "Data export completed. {record_count} records exported",
             },
         }
 
-    def translate(self, key: str, language: Language = Language.EN_US) -> str:
+    def translate(self, key: str, language: Language = Language.EN_US, **params) -> str:
         """
-        Translate a key to the specified language
+        Translate a key to the specified language with optional parameters
 
         Args:
             key: The term to translate
             language: Target language (default EN_US)
+            **params: Optional parameters to format the translated string
 
         Returns:
-            Translated term or original key if not found
+            Translated term or original key if not found, with parameters applied if provided
         """
         if language in self.translations and key in self.translations[language]:
-            return self.translations[language][key]
+            translated_text = self.translations[language][key]
+            if params:
+                try:
+                    # Apply parameters to the translated text
+                    return translated_text.format(**params)
+                except KeyError:
+                    # If there's an issue with formatting, return the original translated text
+                    return translated_text
+            return translated_text
         else:
             # Return the key as is if translation not found
+            if params:
+                try:
+                    # Try to format the key with parameters if provided
+                    return key.format(**params)
+                except KeyError:
+                    return key
             return key
+
+    def translate_plural(
+        self,
+        singular_key: str,
+        plural_key: str,
+        count: int,
+        language: Language = Language.EN_US,
+        **params,
+    ) -> str:
+        """
+        Translate a term with pluralization support
+
+        Args:
+            singular_key: Key for the singular form
+            plural_key: Key for the plural form
+            count: Number to determine if singular or plural form should be used
+            language: Target language
+            **params: Optional parameters to format the translated string
+
+        Returns:
+            Appropriate singular or plural translation
+        """
+        key = singular_key if count == 1 else plural_key
+        return self.translate(key, language, count=count, **params)
 
     def get_translations_for_language(self, language: Language) -> Dict[str, str]:
         """

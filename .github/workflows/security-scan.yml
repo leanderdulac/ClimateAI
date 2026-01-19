@@ -1,0 +1,116 @@
+name: Security Scan
+
+on:
+  schedule:
+    - cron: '0 2 * * 1'  # Runs weekly on Monday at 2 AM
+  push:
+    branches: [ main, develop ]
+    paths:
+      - '**/package.json'
+      - '**/package-lock.json'
+      - '**/requirements.txt'
+      - '**/requirements-dev.txt'
+      - '**/Pipfile'
+      - '**/Gemfile'
+      - '**/Gemfile.lock'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - '**/package.json'
+      - '**/package-lock.json'
+      - '**/requirements.txt'
+      - '**/requirements-dev.txt'
+      - '**/Pipfile'
+      - '**/Gemfile'
+      - '**/Gemfile.lock'
+  workflow_dispatch:
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Backend security scan
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install pip-audit
+        run: pip install pip-audit
+
+      - name: Run pip-audit on requirements.txt
+        run: |
+          cd server
+          pip-audit -r requirements.txt || echo "Security scan completed with findings (non-fatal)"
+
+      - name: Run pip-audit on production requirements
+        run: |
+          cd server
+          pip-audit -r requirements-prod-ml.txt || echo "Security scan completed with findings (non-fatal)"
+
+      # Frontend security scan
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install client dependencies
+        run: |
+          cd client
+          npm ci
+
+      - name: Run npm audit
+        run: |
+          cd client
+          npm audit --audit-level high || echo "Security scan completed with findings (non-fatal)"
+
+      - name: Run npm audit for root
+        run: |
+          npm audit --audit-level high || echo "Security scan completed with findings (non-fatal)"
+
+      # Run Snyk scan if token is available
+      - name: Snyk scan
+        uses: snyk/actions/node@master
+        if: env.SNYK_TOKEN != null
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --all-projects --fail-on=high
+
+      - name: Snyk scan for Python
+        uses: snyk/actions/python-3.11@master
+        if: env.SNYK_TOKEN != null
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --file=server/requirements.txt --fail-on=high
+
+      # Run Trivy scan
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      # Run CodeQL analysis
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: python,javascript
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3

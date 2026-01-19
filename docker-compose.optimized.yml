@@ -1,0 +1,120 @@
+# Optimized Docker Compose Configuration for ClimateAI
+version: '3.8'
+
+services:
+  # Optimized backend service
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile.optimized
+      target: production  # Use production stage by default
+    container_name: climateai-backend
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-postgresql://climateai:climateai123@db:5432/climateai}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
+      - ALLOW_ORIGINS=${ALLOW_ORIGINS:-*}
+      - ENVIRONMENT=production
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./server/uploads:/app/uploads:rw  # For file uploads
+      - ./server/logs:/app/logs:rw       # For logs
+    networks:
+      - climateai-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optimized frontend service
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.client.optimized
+    container_name: climateai-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    depends_on:
+      - backend
+    networks:
+      - climateai-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+  # Optimized database service
+  db:
+    image: postgres:13-alpine
+    container_name: climateai-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-climateai}
+      - POSTGRES_USER=${POSTGRES_USER:-climateai}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-climateai123}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - climateai-db-volume:/var/lib/postgresql/data
+      - ./server/init.sql:/docker-entrypoint-initdb.d/init.sql:ro  # Initialization script
+    networks:
+      - climateai-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Optimized Redis service
+  redis:
+    image: redis:6-alpine
+    container_name: climateai-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - climateai-redis-volume:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    networks:
+      - climateai-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  climateai-db-volume:
+    driver: local
+  climateai-redis-volume:
+    driver: local
+
+networks:
+  climateai-network:
+    driver: bridge
+
+# Resource limits for production
+x-common-opts: &common-opts
+  logging:
+    driver: "json-file"
+    options:
+      max-size: "10m"
+      max-file: "3"
+  restart: unless-stopped
+
+# Apply common options to services
+services.backend.labels:
+  - "traefik.enable=true"
+  - "traefik.http.routers.backend.rule=Host(`${DOMAIN:-localhost}`) && PathPrefix(`/api`)"
+  - "traefik.http.services.backend.loadbalancer.server.port=8000"

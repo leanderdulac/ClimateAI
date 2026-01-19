@@ -10,21 +10,31 @@ from typing import Any, AsyncGenerator, Generator
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
+
+# Ensure project root on sys.path so `import server.*` works in tests
+SERVER_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = SERVER_ROOT.parent
+for path in (SERVER_ROOT, PROJECT_ROOT):
+    if str(path) not in sys.path:
+        sys.path.insert(0, str(path))
+
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, event
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
 from api.health import HealthChecker, HealthCheckResult, ServiceStatus
 from api.logging import LogContext, get_logger, init_logging
+from config import database as db_config
 from config.database import (
     _create_engine_and_session_maker,
     async_session_maker,
-    engine,
     get_db_session,
 )
 from lib.security import SecurityManager
+
+# Import FastAPI app after path fix
+from main import app  # noqa: E402
 from models.sqlalchemy_models import Base, User
 from services.scr_module_service import ClimateData
 
@@ -34,41 +44,46 @@ from services.scr_module_service import ClimateData
 
 
 @pytest.fixture(scope="session")
-async def engine():
+async def test_engine():
     """Create test database engine and tables"""
-    # Configura o DATABASE_URL para o teste
     os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
 
-    # Cria o engine e o session maker para o teste
     _create_engine_and_session_maker(os.environ["DATABASE_URL"])
+    db_engine = db_config.engine
 
-    # Cria todas as tabelas
-    async with engine.begin() as conn:
+    async with db_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-    yield engine
+    yield db_engine
 
-    # Limpeza
-    async with engine.begin() as conn:
+    async with db_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
+    await db_engine.dispose()
+
+
+@pytest.fixture(scope="session")
+async def engine(test_engine):
+    """Compatibility alias for tests expecting 'engine' fixture."""
+    return test_engine
 
 
 @pytest.fixture(scope="function")
 async def db_session(engine) -> AsyncGenerator[AsyncSession, None]:
     """Create a fresh database session for each test"""
     async with async_session_maker() as session:
-        # Configura o app para usar a sessão de teste
-        app.dependency_overrides[get_db_session] = lambda: session
-        yield session
-        # Limpeza após o teste
-        await session.close()
 
-    # Limpa o override da dependência
+        async def override_get_db():
+            return session
+
+        app.dependency_overrides[get_db_session] = override_get_db
+        yield session
+        await session.rollback()
+
     app.dependency_overrides.clear()
 
 
 @pytest.fixture
-def sample_user(db_session: Session) -> User:
+async def sample_user(db_session: AsyncSession) -> User:
     """Create a sample user for testing"""
     from datetime import datetime
 
@@ -83,13 +98,15 @@ def sample_user(db_session: Session) -> User:
         updated_at=datetime.utcnow(),
     )
     db_session.add(user)
-    db_session.commit()
-    db_session.refresh(user)
+    await db_session.commit()
+    await db_session.refresh(user)
     return user
 
 
 @pytest.fixture
-def sample_climate_data(db_session: Session, sample_user: User) -> ClimateData:
+async def sample_climate_data(
+    db_session: AsyncSession, sample_user: User
+) -> ClimateData:
     """Create sample climate data for testing"""
     from datetime import datetime
 
@@ -105,8 +122,8 @@ def sample_climate_data(db_session: Session, sample_user: User) -> ClimateData:
         timestamp=datetime.utcnow(),
     )
     db_session.add(data)
-    db_session.commit()
-    db_session.refresh(data)
+    await db_session.commit()
+    await db_session.refresh(data)
     return data
 
 
@@ -116,7 +133,7 @@ def sample_climate_data(db_session: Session, sample_user: User) -> ClimateData:
 
 
 @pytest.fixture
-def client(db_session: Session) -> TestClient:
+def client(db_session: AsyncSession) -> TestClient:
     """FastAPI test client"""
     return TestClient(app)
 
