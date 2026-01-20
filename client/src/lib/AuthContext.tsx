@@ -1,20 +1,33 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+/**
+ * AuthContext with Supabase Authentication
+ * Provides authentication state and methods for the entire app
+ */
 
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase, isSupabaseConfigured } from './supabase';
+import type { User as SupabaseUser, Session } from '@supabase/supabase-js';
+
+// User type for the app
 interface User {
-  id: number;
-  name: string;
+  id: string;
   email: string;
+  name?: string;
   company?: string;
   avatar?: string;
+  role?: string;
 }
 
 interface AuthContextType {
   user: User | null;
+  session: Session | null;
   login: (email: string, password: string) => Promise<void>;
   register: (userData: RegisterData) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  updateProfile: (data: Partial<User>) => Promise<void>;
   isLoading: boolean;
   isAuthenticated: boolean;
+  error: string | null;
 }
 
 interface RegisterData {
@@ -40,50 +53,119 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    // Verificar se há usuário no localStorage ao carregar
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (error) {
-        console.error('Erro ao parsear usuário do localStorage:', error);
-        localStorage.removeItem('user');
+  // Convert Supabase user to app user
+  const mapSupabaseUser = async (supabaseUser: SupabaseUser): Promise<User> => {
+    // Get profile from profiles table
+    if (supabase) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', supabaseUser.id)
+        .single();
+
+      if (profile) {
+        return {
+          id: supabaseUser.id,
+          email: supabaseUser.email || '',
+          name: profile.full_name || supabaseUser.user_metadata?.full_name || '',
+          company: profile.company_name || '',
+          avatar: profile.avatar_url || '',
+          role: profile.role || 'user',
+        };
       }
     }
-    setIsLoading(false);
+
+    // Fallback to basic user info
+    return {
+      id: supabaseUser.id,
+      email: supabaseUser.email || '',
+      name: supabaseUser.user_metadata?.full_name || '',
+    };
+  };
+
+  // Initialize auth state
+  useEffect(() => {
+    if (!isSupabaseConfigured() || !supabase) {
+      console.warn('Supabase not configured, using fallback auth');
+      setIsLoading(false);
+      return;
+    }
+
+    // Get initial session
+    const initAuth = async () => {
+      try {
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+
+        if (currentSession?.user) {
+          setSession(currentSession);
+          const mappedUser = await mapSupabaseUser(currentSession.user);
+          setUser(mappedUser);
+        }
+      } catch (err) {
+        console.error('Error initializing auth:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, newSession) => {
+        console.log('Auth state changed:', event);
+
+        if (newSession?.user) {
+          setSession(newSession);
+          const mappedUser = await mapSupabaseUser(newSession.user);
+          setUser(mappedUser);
+        } else {
+          setSession(null);
+          setUser(null);
+        }
+
+        setIsLoading(false);
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
+    setError(null);
+
     try {
-      // Simulação de chamada para API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Verificar se existe usuário cadastrado
-      const storedUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-      const foundUser = storedUsers.find((u: any) => u.email === email);
-
-      if (!foundUser) {
-        throw new Error('E-mail ou senha incorretos');
+      if (!supabase) {
+        throw new Error('Supabase não configurado');
       }
 
-      // Login bem-sucedido
-      const userData: User = {
-        id: foundUser.id,
-        name: foundUser.name,
-        email: foundUser.email,
-        company: foundUser.company
-      };
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-      setUser(userData);
-      localStorage.setItem('user', JSON.stringify(userData));
-    } catch (error) {
-      setUser(null);
-      localStorage.removeItem('user');
-      throw error instanceof Error ? error : new Error('Falha no login. Verifique suas credenciais.');
+      if (authError) {
+        throw new Error(authError.message === 'Invalid login credentials'
+          ? 'E-mail ou senha incorretos'
+          : authError.message);
+      }
+
+      if (data.user) {
+        const mappedUser = await mapSupabaseUser(data.user);
+        setUser(mappedUser);
+        setSession(data.session);
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Falha no login';
+      setError(message);
+      throw new Error(message);
     } finally {
       setIsLoading(false);
     }
@@ -91,70 +173,147 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const register = async (userData: RegisterData) => {
     setIsLoading(true);
+    setError(null);
+
     try {
-      // Validação básica
+      if (!supabase) {
+        throw new Error('Supabase não configurado');
+      }
+
+      // Validate input
       if (!userData.name || !userData.email || !userData.password) {
         throw new Error('Todos os campos obrigatórios devem ser preenchidos');
       }
 
-      // Simulação de chamada para API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Verificar se e-mail já existe
-      const storedUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-      const existingUser = storedUsers.find((u: any) => u.email === userData.email);
-
-      if (existingUser) {
-        throw new Error('Este e-mail já está cadastrado');
+      if (userData.password.length < 6) {
+        throw new Error('A senha deve ter pelo menos 6 caracteres');
       }
 
-      // ✅ SEGURANÇA: Não armazenar senha em localStorage
-      // A senha é enviada apenas uma vez para o servidor via HTTPS
-      // O servidor faz hash com bcrypt
-      const newUser = {
-        id: Date.now(),
-        name: userData.name,
+      // Sign up with Supabase
+      const { data, error: authError } = await supabase.auth.signUp({
         email: userData.email,
-        // ❌ REMOVIDO: password: userData.password,
-        company: userData.company || '',
-        createdAt: new Date().toISOString()
-      };
+        password: userData.password,
+        options: {
+          data: {
+            full_name: userData.name,
+            company_name: userData.company || '',
+          },
+        },
+      });
 
-      // Salvar na lista de usuários cadastrados (sem senha!)
-      const updatedUsers = [...storedUsers, newUser];
-      localStorage.setItem('registeredUsers', JSON.stringify(updatedUsers));
+      if (authError) {
+        if (authError.message.includes('already registered')) {
+          throw new Error('Este e-mail já está cadastrado');
+        }
+        throw new Error(authError.message);
+      }
 
-      // Fazer login automático após cadastro
-      const userSession: User = {
-        id: newUser.id,
-        name: newUser.name,
-        email: newUser.email,
-        company: newUser.company
-      };
+      // Update profile with additional info
+      if (data.user) {
+        await supabase.from('profiles').upsert({
+          id: data.user.id,
+          email: userData.email,
+          full_name: userData.name,
+          company_name: userData.company || '',
+        });
 
-      setUser(userSession);
-      localStorage.setItem('user', JSON.stringify(userSession));
-    } catch (error) {
-      setUser(null);
-      localStorage.removeItem('user');
-      throw error instanceof Error ? error : new Error('Falha no cadastro. Tente novamente.');
+        const mappedUser = await mapSupabaseUser(data.user);
+        setUser(mappedUser);
+        setSession(data.session);
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Falha no cadastro';
+      setError(message);
+      throw new Error(message);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('user');
+  const logout = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      if (supabase) {
+        const { error: authError } = await supabase.auth.signOut();
+        if (authError) {
+          console.error('Logout error:', authError);
+        }
+      }
+
+      setUser(null);
+      setSession(null);
+    } catch (err) {
+      console.error('Logout error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resetPassword = async (email: string) => {
+    setError(null);
+
+    try {
+      if (!supabase) {
+        throw new Error('Supabase não configurado');
+      }
+
+      const { error: authError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (authError) {
+        throw new Error(authError.message);
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Falha ao enviar e-mail';
+      setError(message);
+      throw new Error(message);
+    }
+  };
+
+  const updateProfile = async (data: Partial<User>) => {
+    setError(null);
+
+    try {
+      if (!supabase || !user) {
+        throw new Error('Usuário não autenticado');
+      }
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          full_name: data.name,
+          company_name: data.company,
+          avatar_url: data.avatar,
+        })
+        .eq('id', user.id);
+
+      if (updateError) {
+        throw new Error(updateError.message);
+      }
+
+      // Update local state
+      setUser(prev => prev ? { ...prev, ...data } : null);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Falha ao atualizar perfil';
+      setError(message);
+      throw new Error(message);
+    }
   };
 
   const value: AuthContextType = {
     user,
+    session,
     login,
     register,
     logout,
+    resetPassword,
+    updateProfile,
     isLoading,
-    isAuthenticated: !!user
+    isAuthenticated: !!user,
+    error,
   };
 
   return (
@@ -163,3 +322,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     </AuthContext.Provider>
   );
 }
+
+// Export for backwards compatibility
+export { AuthContext };
