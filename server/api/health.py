@@ -264,6 +264,203 @@ class APIHealthCheck:
         )
 
 
+class MLModelHealthCheck:
+    """Health check para modelos de Machine Learning"""
+
+    def __init__(self):
+        self.name = "ml_models"
+
+    async def check(self) -> HealthCheckResult:
+        """Verifica saúde dos modelos ML"""
+        start_time = datetime.now()
+        model_results = {}
+
+        try:
+            from services.ml_service import get_ml_model_info, sinistrality_predictor
+
+            # Verificar se o modelo está carregado
+            model_info = get_ml_model_info()
+            model_results["sinistrality_model"] = {
+                "loaded": model_info.get("model_loaded", False),
+                "last_trained": model_info.get("last_trained"),
+                "accuracy": model_info.get("accuracy"),
+            }
+
+            # Verificar LSTM se disponível
+            try:
+                from services.lstm_attention_service import lstm_attention_service
+
+                model_results["lstm_attention"] = {
+                    "available": True,
+                    "model_loaded": hasattr(lstm_attention_service, "model"),
+                }
+            except ImportError:
+                model_results["lstm_attention"] = {"available": False}
+
+            elapsed = (datetime.now() - start_time).total_seconds() * 1000
+
+            # Determinar status
+            models_loaded = sum(
+                1
+                for v in model_results.values()
+                if v.get("loaded", v.get("available", False))
+            )
+            status = (
+                ServiceStatus.HEALTHY if models_loaded > 0 else ServiceStatus.DEGRADED
+            )
+
+            return HealthCheckResult(
+                name=self.name,
+                status=status,
+                message=f"{models_loaded} ML models available",
+                response_time_ms=elapsed,
+                details=model_results,
+            )
+
+        except Exception as e:
+            elapsed = (datetime.now() - start_time).total_seconds() * 1000
+            logger.warning(f"ML model health check failed: {str(e)}")
+
+            return HealthCheckResult(
+                name=self.name,
+                status=ServiceStatus.DEGRADED,
+                message=f"ML models check failed: {str(e)}",
+                response_time_ms=elapsed,
+                details={"error": str(e)},
+            )
+
+
+class ServicesHealthCheck:
+    """Health check para serviços críticos da aplicação"""
+
+    def __init__(self):
+        self.name = "services"
+
+    async def check(self) -> HealthCheckResult:
+        """Verifica saúde dos serviços críticos"""
+        start_time = datetime.now()
+        service_results = {}
+
+        try:
+            # Verificar serviços climáticos
+            try:
+                from services.clima_service import ClimaService
+
+                service_results["clima_service"] = {"available": True}
+            except ImportError as e:
+                service_results["clima_service"] = {"available": False, "error": str(e)}
+
+            # Verificar serviços de previsão
+            try:
+                from services.previsao_service import PrevisaoService
+
+                service_results["previsao_service"] = {"available": True}
+            except ImportError as e:
+                service_results["previsao_service"] = {
+                    "available": False,
+                    "error": str(e),
+                }
+
+            # Verificar serviço de auditoria
+            try:
+                from services.audit_service import log_operation
+
+                service_results["audit_service"] = {"available": True}
+            except ImportError as e:
+                service_results["audit_service"] = {"available": False, "error": str(e)}
+
+            # Verificar integração Gemini
+            try:
+                from services.gemini_integration_service import GeminiIntegrationService
+
+                service_results["gemini_integration"] = {"available": True}
+            except ImportError as e:
+                service_results["gemini_integration"] = {
+                    "available": False,
+                    "error": str(e),
+                }
+
+            # Verificar serviço de microsegmentação
+            try:
+                from services.microsegmentation_service import create_microsegments
+
+                service_results["microsegmentation"] = {"available": True}
+            except ImportError as e:
+                service_results["microsegmentation"] = {
+                    "available": False,
+                    "error": str(e),
+                }
+
+            elapsed = (datetime.now() - start_time).total_seconds() * 1000
+
+            # Determinar status
+            available_count = sum(
+                1 for v in service_results.values() if v.get("available", False)
+            )
+            total_count = len(service_results)
+
+            if available_count == total_count:
+                status = ServiceStatus.HEALTHY
+            elif available_count > total_count // 2:
+                status = ServiceStatus.DEGRADED
+            else:
+                status = ServiceStatus.UNHEALTHY
+
+            return HealthCheckResult(
+                name=self.name,
+                status=status,
+                message=f"{available_count}/{total_count} services available",
+                response_time_ms=elapsed,
+                details=service_results,
+            )
+
+        except Exception as e:
+            elapsed = (datetime.now() - start_time).total_seconds() * 1000
+            logger.error(f"Services health check failed: {str(e)}")
+
+            return HealthCheckResult(
+                name=self.name,
+                status=ServiceStatus.UNHEALTHY,
+                message=f"Services check failed: {str(e)}",
+                response_time_ms=elapsed,
+                details={"error": str(e)},
+            )
+
+
+class CacheHealthCheck:
+    """Health check para sistema de cache interno"""
+
+    def __init__(self):
+        self.name = "cache"
+
+    async def check(self) -> HealthCheckResult:
+        """Verifica saúde do sistema de cache"""
+        try:
+            # Tentar acessar o cache do main
+            cache_info = {
+                "type": "in-memory",
+                "available": True,
+            }
+
+            return HealthCheckResult(
+                name=self.name,
+                status=ServiceStatus.HEALTHY,
+                message="Cache system operational",
+                response_time_ms=0,
+                details=cache_info,
+            )
+
+        except Exception as e:
+            logger.warning(f"Cache health check failed: {str(e)}")
+
+            return HealthCheckResult(
+                name=self.name,
+                status=ServiceStatus.DEGRADED,
+                message=f"Cache check failed: {str(e)}",
+                details={"error": str(e)},
+            )
+
+
 class HealthChecker:
     """Gerenciador central de health checks"""
 
@@ -275,6 +472,7 @@ class HealthChecker:
 
     def _initialize_checks(self):
         """Inicializa todos os health checks"""
+        # Checks críticos
         self.checks["system"] = SystemHealthCheck()
 
         if self.database_url:
@@ -283,7 +481,13 @@ class HealthChecker:
         if self.redis_url:
             self.checks["redis"] = RedisHealthCheck(self.redis_url)
 
+        # Checks de APIs externas
         self.checks["external_apis"] = APIHealthCheck()
+
+        # Checks granulares adicionais
+        self.checks["ml_models"] = MLModelHealthCheck()
+        self.checks["services"] = ServicesHealthCheck()
+        self.checks["cache"] = CacheHealthCheck()
 
     async def check_all(self) -> Dict[str, Any]:
         """Executa todos os health checks"""

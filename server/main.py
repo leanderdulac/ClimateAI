@@ -108,6 +108,8 @@ from api.alertas import router as alertas_router
 from api.auth import router as auth_router
 from api.bayesian_bootstrap import router as bayesian_bootstrap_router
 from api.blockchain_tokens import router as blockchain_tokens_router
+from api.cache import router as cache_router
+from api.cache import set_cache_instance
 
 # Importar routers e configurações
 # Obs: Logging será inicializado após a criação do app FastAPI
@@ -128,6 +130,7 @@ from api.english_api import router as english_api_router
 from api.english_climateai import router as english_climateai_router
 from api.ensemble_pricing import router as ensemble_pricing_router
 from api.eventos import router as eventos_router
+from api.external import router as external_router
 from api.gemini_integration import router as gemini_integration_router
 from api.i18n import router as i18n_router
 from api.ia_analytics_agent import router as ia_analytics_agent_router
@@ -141,7 +144,9 @@ from api.loading_margin import router as loading_margin_router
 from api.localizacao import router as localizacao_router
 from api.lstm_attention import router as lstm_attention_router
 from api.mathematical_engines import router as mathematical_engines_router
+from api.microsegmentation import router as microsegmentation_router
 from api.mitigation_measures import router as mitigation_measures_router
+from api.ml import router as ml_router
 from api.modelagem import router as modelagem_router
 from api.operating_costs import router as operating_costs_router
 from api.parametric_insurance import router as parametric_insurance_router
@@ -151,6 +156,7 @@ from api.policy_pricing import router as policy_pricing_router
 from api.policy_uncertainty import router as policy_uncertainty_router
 from api.policy_valuation import router as policy_valuation_router
 from api.previsao import router as previsao_router
+from api.pricing import router as pricing_router
 from api.sips_performance_analytics import router as sips_performance_analytics_router
 from api.smart_exclusions import router as smart_exclusions_router
 from api.tcfd_issb import router as tcfd_issb_router
@@ -1160,6 +1166,18 @@ try:
         prefix=f"{API_PREFIX}/english-climateai",
         tags=["english-climateai"],
     )
+    # New refactored routers
+    app.include_router(cache_router, prefix=f"{API_PREFIX}/cache", tags=["cache"])
+    app.include_router(ml_router, prefix=f"{API_PREFIX}/ml", tags=["ml"])
+    app.include_router(
+        external_router, prefix=f"{API_PREFIX}/external", tags=["external"]
+    )
+    app.include_router(
+        microsegmentation_router,
+        prefix=f"{API_PREFIX}/microsegmentation",
+        tags=["microsegmentation"],
+    )
+    app.include_router(pricing_router, prefix=f"{API_PREFIX}/pricing", tags=["pricing"])
     # app.include_router(audit_router, prefix=f"{API_PREFIX}/audit", tags=["audit"])
 except Exception as e:
     logger.error(f"Erro ao incluir routers: {str(e)}")
