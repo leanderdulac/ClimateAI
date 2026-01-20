@@ -123,5 +123,5 @@ resolve: {
 
 ---
 
-**Última atualização:** 14 de outubro de 2025  
+**Última atualização:** 14 de outubro de 2025
 **Status:** Aguardando clear cache e redeploy no Netlify

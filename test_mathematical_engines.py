@@ -156,21 +156,21 @@ def test_spatial_statistics_engine():
 def test_stochastic_processes_engine():
     """Test the stochastic processes engine"""
     print("🧪 Testing Stochastic Processes Engine...")
-    
+
     # Generate synthetic climate variables
     np.random.seed(42)
     time_periods = 200
     temperature = 20 + np.cumsum(np.random.normal(0, 0.5, time_periods)) + 5 * np.sin(np.arange(time_periods) * 2 * np.pi / 365)
     precipitation = np.abs(np.random.normal(10, 8, time_periods)) * np.random.random(time_periods) * 10  # Skewed distribution
-    
+
     climate_vars = {
         'temperature': temperature.tolist(),
         'precipitation': precipitation.tolist()
     }
-    
+
     # Perform multivariate climate modeling
     result = multivariate_climate_modeling(climate_vars)
-    
+
     print(f"  ✓ Analyzed {result['n_observations']} time periods")
     print(f"  ✓ Variables: {result['variables']}")
     print(f"  ✓ Univariate models: {list(result['univariate_models'].keys())}")
@@ -179,15 +179,15 @@ def test_stochastic_processes_engine():
 
 def main():
     print("🔬 ClimateAI: Advanced Mathematical Engines Test Suite\n")
-    
+
     test_extreme_value_engine()
-    test_spatial_statistics_engine() 
+    test_spatial_statistics_engine()
     test_stochastic_processes_engine()
-    
+
     print("🎉 All mathematical engines are working correctly!")
     print("\n📋 Next Steps:")
     print("   - Integrate with real climate data sources")
-    print("   - Expand with CMIP6 and SSP-RCP scenarios") 
+    print("   - Expand with CMIP6 and SSP-RCP scenarios")
     print("   - Implement civil liability modeling")
     print("   - Deploy to production environment")
 

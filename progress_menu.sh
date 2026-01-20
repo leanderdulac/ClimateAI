@@ -116,7 +116,7 @@ case $choice in
             # Aqui você iniciaria o código da Etapa 8
         fi
         ;;
-    
+
     2)
         echo ""
         echo -e "${BLUE}📚 DOCUMENTAÇÃO DISPONÍVEL:${NC}\n"
@@ -125,7 +125,7 @@ case $choice in
         echo ""
         read -p "Pressione ENTER para continuar..."
         ;;
-    
+
     3)
         echo ""
         echo -e "${BLUE}🧪 SCRIPTS DE TESTE DISPONÍVEIS:${NC}\n"
@@ -137,7 +137,7 @@ case $choice in
         echo ""
         read -p "Pressione ENTER para continuar..."
         ;;
-    
+
     4)
         echo ""
         echo -e "${BLUE}📁 ARQUIVOS CRIADOS/MODIFICADOS:${NC}\n"
@@ -152,7 +152,7 @@ case $choice in
         echo ""
         read -p "Pressione ENTER para continuar..."
         ;;
-    
+
     5)
         echo ""
         echo -e "${BLUE}📊 SUMÁRIO COMPLETO DO PROJETO:${NC}\n"
@@ -162,7 +162,7 @@ case $choice in
         echo ""
         read -p "Pressione ENTER para continuar..."
         ;;
-    
+
     6)
         echo ""
         echo -e "${BLUE}🚀 INSTRUÇÕES DE DEPLOY:${NC}\n"
@@ -187,14 +187,14 @@ case $choice in
         echo ""
         read -p "Pressione ENTER para continuar..."
         ;;
-    
+
     0)
         echo ""
         echo -e "${GREEN}✅ Até logo! 👋${NC}"
         echo ""
         exit 0
         ;;
-    
+
     *)
         echo -e "${RED}Opção inválida!${NC}"
         ;;

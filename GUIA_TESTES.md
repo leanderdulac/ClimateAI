@@ -332,6 +332,6 @@ Passos: 1. Carrega página 2. Clica 30D 3. Gráfico fica branco
 
 ---
 
-**Teste Data:** 16 de Outubro de 2025  
-**Versão:** 1.0  
+**Teste Data:** 16 de Outubro de 2025
+**Versão:** 1.0
 **Commit:** 62b0914

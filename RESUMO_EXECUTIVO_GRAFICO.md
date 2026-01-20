@@ -167,7 +167,7 @@ Sem erros de compilação
 
 ```
 89d09128 fix: Adicionar try/catch e logs detalhados para diagnóstico
-62b0914a fix: Adicionar selectedPeriod à dependência do useEffect  
+62b0914a fix: Adicionar selectedPeriod à dependência do useEffect
 43ace2d6 fix: Adicionar try/catch em getWeatherForecast (anteriormente)
 ```
 

@@ -49,7 +49,7 @@
 
 **Bundle Analysis (gzipped):**
 - vendor-react: 64.86 KB
-- vendor-charts: 97.79 KB  
+- vendor-charts: 97.79 KB
 - vendor-ui: 35.02 KB
 - Index page: 43.25 KB (lazy loaded)
 - CSS: 11.30 KB

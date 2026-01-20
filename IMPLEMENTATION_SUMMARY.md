@@ -5,7 +5,7 @@
 I have successfully implemented a comprehensive climate risk modeling system with **15 sophisticated mathematical engines** that address your requirements, including the advanced features for:
 
 1. **Climate backtesting** against historical events (Hurricane Ian 2022, RS Floods 2024)
-2. **Stress testing** with 200% of worst CMIP6 scenario + Black Swan climate events  
+2. **Stress testing** with 200% of worst CMIP6 scenario + Black Swan climate events
 3. **Robustness analysis** with 20% parameter perturbation → ΔPrêmio < 10%
 4. **Bayesian bootstrap methodology** with parameter posterior sampling
 5. **Monte Carlo simulation** of 10,000+ scenarios
@@ -19,7 +19,7 @@ I have successfully implemented a comprehensive climate risk modeling system wit
 - **Purpose**: Extreme climate event modeling and risk assessment
 
 ### 2. Spatial Statistics and Geospatial Modeling
-- **Location**: `services/spatial_statistics_service.py`  
+- **Location**: `services/spatial_statistics_service.py`
 - **Purpose**: Spatial exposure modeling and geospatial risk assessment
 
 ### 3. Stochastic Processes and Climate Modeling
@@ -79,7 +79,7 @@ I have successfully implemented a comprehensive climate risk modeling system wit
 
 ### Regularized Loss Function
 ```
-L(θ) = Σ_i l(y_i, ŷ_i) + Ω(f) 
+L(θ) = Σ_i l(y_i, ŷ_i) + Ω(f)
 where Ω(f) = γT + ½λ||w||²
 ```
 
@@ -107,7 +107,7 @@ Prêmio = R$ 1.200 ± [R$ 900 (P10) - R$ 2.100 (P90)]
 - Hurricane Ian (2022), RS Floods (2024) validation
 - Accuracy and directional correctness metrics
 
-### Stress Testing  
+### Stress Testing
 - 200% of worst CMIP6 scenario + Black Swan events
 - Extreme climate scenario analysis
 - Tail risk assessment (VaR, CVaR)

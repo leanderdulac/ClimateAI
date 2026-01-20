@@ -20,9 +20,9 @@ NC='\033[0m' # No Color
 build_image() {
     local stage=$1
     local target_tag="$REGISTRY:$stage-v$VERSION"
-    
+
     echo -e "${YELLOW}Building $stage image...${NC}"
-    
+
     docker build \
         --target=$stage \
         --tag "$target_tag" \
@@ -30,7 +30,7 @@ build_image() {
         --label "stage=$stage" \
         --progress=plain \
         ./server
-    
+
     echo -e "${GREEN}✓ $stage image built successfully!${NC}"
     echo "   Image: $target_tag"
     echo "   Size: $(docker images $target_tag --format='{{.Size}}')"

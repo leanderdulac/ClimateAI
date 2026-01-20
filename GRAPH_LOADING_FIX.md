@@ -7,7 +7,7 @@
 
 **Sintoma:** Os gráficos de temperatura e precipitação **não apareciam** no WeatherWidget após fazer deploy no Netlify, mesmo com os dados sendo carregados.
 
-**Causa Raiz:** 
+**Causa Raiz:**
 O `useEffect` no `WeatherWidget.tsx` estava **faltando `selectedPeriod` nas dependências**, então:
 1. Quando você clicava em 7D, 30D ou 90D para mudar o período
 2. O efeito **NÃO reexecutava**
@@ -35,7 +35,7 @@ useEffect(() => {
     console.log(`Buscando dados históricos de ${selectedPeriod} dias...`);
     const historical = await embrapaApi.getClimateData(...);
     // ...
-    
+
     // Mas busca previsão HARDCODED para 7 dias:
     const forecastData = await embrapaApi.getWeatherForecast(latitude, longitude, 7);
     // Adapta para climateData
@@ -79,20 +79,20 @@ Adicionar `selectedPeriod` às dependências do `useEffect`:
 useEffect(() => {
   const fetchClimateData = async () => {
     // ... (código igual ao anterior)
-    
+
     // Agora busca com o período correto:
     console.log(`Buscando dados históricos de ${selectedPeriod} dias...`);
     const endDate = new Date();
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - selectedPeriod); // ✅ Usa selectedPeriod
-    
+
     const historical = await embrapaApi.getClimateData(
       latitude,
       longitude,
       startDate.toISOString().split('T')[0],
       endDate.toISOString().split('T')[0]
     );
-    
+
     // Adapta dados históricos para climateData
     const adaptedHistorical: ClimateDataPoint[] = (historical || []).map(item => ({
       date: (item.date || new Date().toISOString().split('T')[0]),
@@ -102,7 +102,7 @@ useEffect(() => {
       windSpeed: item.windSpeed || item.wind_speed,
       cloudCover: item.cloudCover || 0
     }));
-    
+
     setClimateData(adaptedHistorical); // ✅ Dados adaptados
     setHistoricalData(historical || []);
   };
@@ -115,11 +115,11 @@ useEffect(() => {
 
 ### Mudanças Específicas:
 
-1. **Line 138:** 
+1. **Line 138:**
    ```tsx
    // ANTES:
    }, [selectedLocation, isLoadingLocation]);
-   
+
    // DEPOIS:
    }, [selectedLocation, isLoadingLocation, selectedPeriod]);
    ```
@@ -230,7 +230,7 @@ npm run dev
 useEffect(() => {
   // Usamos selectedPeriod aqui:
   const days = selectedPeriod; // ❌ Variável usada
-  
+
   // Mas não está nas dependências:
 }, [selectedLocation]); // ❌ selectedPeriod não declarado
 // Resultado: Efeito não reroda quando selectedPeriod muda
@@ -241,7 +241,7 @@ useEffect(() => {
 useEffect(() => {
   // Usamos selectedPeriod aqui:
   const days = selectedPeriod; // ✅ Variável usada
-  
+
   // E está nas dependências:
 }, [selectedLocation, selectedPeriod]); // ✅ selectedPeriod declarado
 // Resultado: Efeito reroda quando selectedPeriod muda
@@ -295,7 +295,7 @@ Author: ...
 Date:   16 de outubro de 2025
 
     fix: Adicionar selectedPeriod à dependência do useEffect no WeatherWidget
-    
+
     - Fix: climateData não era atualizado quando o período mudava
     - Adicionar selectedPeriod ao array de dependências do useEffect
     - Dados históricos agora usam o período selecionado

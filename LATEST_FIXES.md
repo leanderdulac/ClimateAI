@@ -63,7 +63,7 @@ Resultado: Landing page HTML completa ✅
 ### Dashboard
 ```
 URL: https://seu-site.netlify.app/welcome
-Resultado: 
+Resultado:
 - Banner amarelo "Modo Demo" ✅
 - São Paulo já selecionado ✅
 - Dados climáticos carregam automaticamente ✅
@@ -159,6 +159,6 @@ NÃO deve ter:
 
 ---
 
-**Status:** ✅ Correções aplicadas e deployadas  
-**Ação:** Aguardar 3-5 minutos e testar conforme guia acima  
+**Status:** ✅ Correções aplicadas e deployadas
+**Ação:** Aguardar 3-5 minutos e testar conforme guia acima
 **Reportar:** Resultados dos testes (funcionou ou não)

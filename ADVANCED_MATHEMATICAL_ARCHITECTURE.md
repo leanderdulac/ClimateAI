@@ -9,14 +9,14 @@ The ClimateAI system implements a sophisticated architecture with 7 data layers 
 ### Layer 1: Real-time Climate Data
 - **Current Status**: ✅ Implemented
 - **Sources**: OpenWeatherMap API, OpenMeteo, simulated IoT sensors
-- **Features**: 
+- **Features**:
   - Real-time weather data (temperature, precipitation, humidity, wind)
   - Basic satellite data integration
   - IoT sensor simulation for structural monitoring
 
 ### Layer 2: Probabilistic Climate Scenarios
 - **Current Status**: ⚠️ Partially Implemented
-- **Features**: 
+- **Features**:
   - Basic forecasting with confidence decay
   - Seasonal adjustment factors
   - **Missing**: SSP-RCP combinations, CMIP6 ensemble models
@@ -37,7 +37,7 @@ The ClimateAI system implements a sophisticated architecture with 7 data layers 
   - Return period calculations for rare events (T=50, 100, 200 years)
   - Value at Risk (VaR) and Expected Shortfall (ES) calculations
 
-### Layer 5: Macroeconomic Indicators  
+### Layer 5: Macroeconomic Indicators
 - **Current Status**: ✅ Implemented
 - **Sources**: Federal Reserve Economic Data (FRED), simulated economic indicators
 - **Features**: Inflation rates, GDP growth, market volatility
@@ -102,7 +102,7 @@ combined_results = combined_gev_gpd_analysis(time_series, threshold)
 # KDE for exposure modeling
 kde_values = calculate_kernel_density_estimation(coordinates, values)
 
-# Spatial correlation analysis  
+# Spatial correlation analysis
 spatial_corr = calculate_spatial_correlation(coordinates, values)
 
 # Risk zone identification

@@ -11,7 +11,7 @@
 
 ✅ SOLUÇÃO IMPLEMENTADA
   └─ Adicionar 'selectedPeriod' à lista de dependências do useEffect
-     
+
      ANTES: }, [selectedLocation, isLoadingLocation]);
      DEPOIS: }, [selectedLocation, isLoadingLocation, selectedPeriod]);
 

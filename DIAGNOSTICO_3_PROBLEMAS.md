@@ -206,7 +206,7 @@ async getLocationByCity(city: string, state: string): Promise<LocationData> {
   } catch (error) {
     // Usar dados mock de cidades conhecidas
     console.warn('⚠️ API falhou, usando mock data para:', city, state);
-    
+
     const cityMocks: { [key: string]: { lat: number, lon: number } } = {
       'rio_de_janeiro': { lat: -22.9068, lon: -43.1729 },
       'belo_horizonte': { lat: -19.9167, lon: -43.9345 },
@@ -215,10 +215,10 @@ async getLocationByCity(city: string, state: string): Promise<LocationData> {
       'salvador': { lat: -12.9714, lon: -38.5014 },
       // ... mais cidades
     };
-    
+
     const key = city.toLowerCase().replace(/\s+/g, '_');
     const coords = cityMocks[key] || { lat: -23.5505, lon: -46.6333 }; // Default: SP
-    
+
     return {
       ...mockLocationData(coords.lat, coords.lon),
       city,
@@ -267,7 +267,7 @@ if (historical.length === 0) {
 ## 📋 Checklist de Testes
 
 - [ ] Fix 1 aplicado: `stateName` correto em searchCities
-- [ ] Fix 2 aplicado: Mock data melhorado em getLocationByCity  
+- [ ] Fix 2 aplicado: Mock data melhorado em getLocationByCity
 - [ ] Fix 3 aplicado: Logs e validação em WeatherWidget
 - [ ] Build sem erros: `npm run build`
 - [ ] Console limpo (F12): Sem erros vermelhos

@@ -42,7 +42,7 @@ spec:
             secretKeyRef:
               name: climateai-secrets
               key: redis-url
-        
+
         # Liveness probe - detecta se o container está vivo
         livenessProbe:
           httpGet:
@@ -52,7 +52,7 @@ spec:
           periodSeconds: 10
           timeoutSeconds: 5
           failureThreshold: 3
-        
+
         # Readiness probe - detecta se está pronto para receber tráfego
         readinessProbe:
           httpGet:
@@ -62,7 +62,7 @@ spec:
           periodSeconds: 5
           timeoutSeconds: 3
           failureThreshold: 2
-        
+
         # Startup probe - aguarda inicialização completa
         startupProbe:
           httpGet:
@@ -115,7 +115,7 @@ services:
       retries: 3
       start_period: 40s
     restart: unless-stopped
-  
+
   db:
     image: postgres:15-alpine
     environment:
@@ -129,7 +129,7 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
-  
+
   redis:
     image: redis:7-alpine
     healthcheck:
@@ -171,7 +171,7 @@ upstream climateai_backend {
     server localhost:8001;
     server localhost:8002;
     server localhost:8003;
-    
+
     # Active health checking (requer módulo nginx_http_upstream_module)
     check interval=3000 rise=2 fall=5 timeout=1000 type=http;
     check_http_send "GET /health HTTP/1.0\\r\\n\\r\\n";
@@ -181,7 +181,7 @@ upstream climateai_backend {
 server {
     listen 80;
     server_name api.climateai.local;
-    
+
     location / {
         proxy_pass http://climateai_backend;
         proxy_set_header Host $host;
@@ -192,7 +192,7 @@ server {
         proxy_send_timeout 30s;
         proxy_read_timeout 30s;
     }
-    
+
     # Endpoint de status dos upstreams
     location /upstream_health {
         access_log off;
@@ -217,7 +217,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     services:
       postgres:
         image: postgres:15-alpine
@@ -229,7 +229,7 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-      
+
       redis:
         image: redis:7-alpine
         options: >-
@@ -237,19 +237,19 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-    
+
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
-    
+
     - name: Install dependencies
       run: |
         pip install -r server/requirements.txt
-    
+
     - name: Start API server
       env:
         DATABASE_URL: postgresql://postgres:password@localhost:5432/climateai
@@ -258,19 +258,19 @@ jobs:
         cd server
         uvicorn main:app &
         sleep 5
-    
+
     - name: Health Check Simple
       run: |
         curl -f http://localhost:8000/health || exit 1
-    
+
     - name: Health Check Full
       run: |
         curl -f http://localhost:8000/api/v1/health/full || exit 1
-    
+
     - name: Health Check Critical
       run: |
         curl -f http://localhost:8000/api/v1/health/critical || exit 1
-    
+
     - name: Parse Health Status
       run: |
         STATUS=$(curl -s http://localhost:8000/api/v1/health/full | jq -r '.status')
@@ -284,15 +284,15 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    
+
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Deploy to Kubernetes
       run: |
         kubectl apply -f k8s/deployment.yaml
         kubectl rollout status deployment/climateai-api -n production
-    
+
     - name: Verify Deployment Health
       run: |
         kubectl get pods -n production -l app=climateai
@@ -324,7 +324,7 @@ class HealthMonitor:
             'memory': 80,
             'disk': 90,
         }
-    
+
     async def check_health(self) -> Dict[str, Any]:
         \"\"\"Fazer health check da API\"\"\"
         async with aiohttp.ClientSession() as session:
@@ -336,47 +336,47 @@ class HealthMonitor:
                     return await resp.json()
             except Exception as e:
                 return {"error": str(e), "status": "unhealthy"}
-    
+
     def check_thresholds(self, data: Dict[str, Any]) -> list:
         \"\"\"Verificar se há violações de thresholds\"\"\"
         alerts = []
-        
+
         if 'checks' in data and 'system' in data['checks']:
             system = data['checks']['system']
-            
+
             if system.get('cpu_percent', 0) > self.threshold_alerts['cpu']:
                 alerts.append(
                     f"⚠️  CPU alto: {system['cpu_percent']}%"
                 )
-            
+
             if system.get('memory_percent', 0) > self.threshold_alerts['memory']:
                 alerts.append(
                     f"⚠️  Memória alta: {system['memory_percent']}%"
                 )
-            
+
             if system.get('disk_percent', 0) > self.threshold_alerts['disk']:
                 alerts.append(
                     f"⚠️  Disco alto: {system['disk_percent']}%"
                 )
-        
+
         return alerts
-    
+
     async def run(self, interval: int = 30):
         \"\"\"Rodar monitor continuamente\"\"\"
         print(f"🔍 Iniciando monitoramento de health checks")
         print(f"📍 API URL: {self.api_url}")
         print(f"⏱️  Intervalo: {interval}s\\n")
-        
+
         try:
             while True:
                 data = await self.check_health()
                 timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                
+
                 # Exibir status
                 status = data.get('status', 'unknown').upper()
                 status_emoji = "✅" if status == "HEALTHY" else "⚠️" if status == "DEGRADED" else "❌"
                 print(f"{status_emoji} [{timestamp}] Status: {status}")
-                
+
                 # Exibir checks
                 if 'checks' in data:
                     for check_name, check_data in data['checks'].items():
@@ -384,16 +384,16 @@ class HealthMonitor:
                         check_emoji = "✓" if check_status == "HEALTHY" else "⚠" if check_status == "DEGRADED" else "✗"
                         response_time = check_data.get('response_time_ms', 0)
                         print(f"  {check_emoji} {check_name:15} {check_status:10} ({response_time:.1f}ms)")
-                
+
                 # Verificar alertas
                 alerts = self.check_thresholds(data)
                 for alert in alerts:
                     print(f"  {alert}")
-                
+
                 print()  # Linha em branco
-                
+
                 await asyncio.sleep(interval)
-        
+
         except KeyboardInterrupt:
             print("\\n👋 Monitoramento encerrado")
             sys.exit(0)
@@ -426,13 +426,13 @@ class AlertLevel(Enum):
 
 async def send_slack_alert(webhook_url: str, status: str, health_data: dict):
     \"\"\"Enviar alerta para Slack\"\"\"
-    
+
     color = {
         "healthy": "#36a64f",
         "degraded": "#ff9800",
         "unhealthy": "#f44336",
     }.get(status, "#9e9e9e")
-    
+
     payload = {
         "attachments": [
             {
@@ -464,17 +464,17 @@ async def send_slack_alert(webhook_url: str, status: str, health_data: dict):
             }
         ]
     }
-    
+
     async with aiohttp.ClientSession() as session:
         async with session.post(webhook_url, json=payload) as resp:
             return resp.status == 200
 
 async def send_pagerduty_alert(integration_key: str, health_data: dict):
     \"\"\"Enviar alerta para PagerDuty\"\"\"
-    
+
     status = health_data.get('status', 'unknown')
     severity = "critical" if status == "unhealthy" else "warning" if status == "degraded" else "info"
-    
+
     payload = {
         "routing_key": integration_key,
         "event_action": "trigger",
@@ -486,7 +486,7 @@ async def send_pagerduty_alert(integration_key: str, health_data: dict):
             "custom_details": health_data
         }
     }
-    
+
     async with aiohttp.ClientSession() as session:
         async with session.post(
             "https://events.pagerduty.com/v2/enqueue",
@@ -527,17 +527,17 @@ async def test_health_endpoint_full():
         async with session.get("http://localhost:8000/api/v1/health/full") as resp:
             assert resp.status == 200
             data = await resp.json()
-            
+
             # Validar estrutura
             assert "status" in data
             assert "timestamp" in data
             assert "checks" in data
-            
+
             # Validar checks
             checks = data["checks"]
             assert "database" in checks
             assert "system" in checks
-            
+
             # Validar que cada check tem as propriedades esperadas
             for check_name, check_data in checks.items():
                 assert "status" in check_data
@@ -557,7 +557,7 @@ async def test_health_response_time():
     async with aiohttp.ClientSession() as session:
         async with session.get("http://localhost:8000/api/v1/health/critical") as resp:
             data = await resp.json()
-            
+
             # Health check crítico deve ser rápido (<100ms)
             total_time = data.get('response_time_ms', 0)
             assert total_time < 100, f"Health check levou {total_time}ms"

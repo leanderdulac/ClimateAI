@@ -233,10 +233,10 @@ Para rodar em CI/CD (GitHub Actions, GitLab CI, etc.):
 test('should do something', async ({ page }) => {
   // Navigate to page
   await page.goto('/some-page');
-  
+
   // Interact with element
   await page.locator('button').click();
-  
+
   // Assert outcome
   await expect(page.locator('text=Success')).toBeVisible();
 });

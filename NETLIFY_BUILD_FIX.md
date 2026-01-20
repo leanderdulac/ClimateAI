@@ -191,6 +191,6 @@ Histórico de fixes:
 
 ---
 
-**Data:** 14 de outubro de 2025  
-**Status:** ✅ Corrigido e testado localmente (2 commits)  
+**Data:** 14 de outubro de 2025
+**Status:** ✅ Corrigido e testado localmente (2 commits)
 **Aguardando:** Redeploy automático Netlify

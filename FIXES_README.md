@@ -34,7 +34,7 @@ The CI/CD pipeline was failing on the main branch (commit cb9532ae) due to missi
 
 ## Files Modified
 - `/server/Dockerfile` - Updated to use production ML requirements
-- `/server/requirements-prod-ml.txt` - New file with production ML dependencies  
+- `/server/requirements-prod-ml.txt` - New file with production ML dependencies
 - `/server/requirements.txt` - Added PyTorch and python-json-logger
 - `/.github/workflows/ci-cd.yml` - Updated dependency installation
 - Added import for `sinistrality_predictor` in main.py (from recent commit)

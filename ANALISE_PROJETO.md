@@ -229,11 +229,11 @@ async def get_forecast(
 ) -> ClimateForecasting:
     """
     Obtém previsão climática para localização específica.
-    
+
     ### Parâmetros
     - **location**: Coordenadas geográficas (ex: "-23.5505,-46.6333")
     - **days**: Período de previsão em dias
-    
+
     ### Retorno
     Objeto contendo:
     - Temperatura máxima e mínima
@@ -288,26 +288,26 @@ import { test, expect } from '@playwright/test';
 test('complete auth flow', async ({ page }) => {
   // 1. Ir para página de auth
   await page.goto('http://localhost:3000/auth');
-  
+
   // 2. Registrar novo usuário
   await page.fill('input[placeholder="Seu nome completo"]', 'João Silva');
   await page.fill('input[placeholder="seu@email.com"]', 'joao@test.com');
   await page.fill('input[type="password"]', 'Senha123!');
   await page.click('button:has-text("Criar conta")');
-  
+
   // 3. Validar redirecionamento
   await expect(page).toHaveURL('http://localhost:3000/dashboard');
-  
+
   // 4. Fazer logout
   await page.click('button:has-text("João Silva")');
   await page.click('button:has-text("Sair")');
-  
+
   // 5. Login novamente
   await expect(page).toHaveURL('http://localhost:3000/auth');
   await page.fill('input[placeholder="seu@email.com"]', 'joao@test.com');
   await page.fill('input[type="password"]', 'Senha123!');
   await page.click('button:has-text("Entrar")');
-  
+
   // 6. Validar acesso ao dashboard
   await expect(page).toHaveURL('http://localhost:3000/dashboard');
 });
@@ -442,7 +442,7 @@ async def health_check():
 // contexts/ThemeContext.tsx
 export function ThemeProvider({ children }) {
   const [isDark, setIsDark] = useState(false);
-  
+
   return (
     <div className={isDark ? 'dark' : 'light'}>
       {children}

@@ -234,8 +234,8 @@ Após o Netlify completar o deploy (3-5 min), o dashboard deve estar 100% funcio
 
 ---
 
-**Data:** 16 de outubro de 2025  
-**Repositório:** github.com/leanderdulac/ClimateAI  
-**Branch:** main  
-**Deploy:** Netlify (automático)  
+**Data:** 16 de outubro de 2025
+**Repositório:** github.com/leanderdulac/ClimateAI
+**Branch:** main
+**Deploy:** Netlify (automático)
 **Status:** ✅ COMPLETO

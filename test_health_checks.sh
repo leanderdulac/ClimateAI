@@ -22,21 +22,21 @@ test_endpoint() {
     local name=$1
     local endpoint=$2
     local expected_status=$3
-    
+
     echo -ne "${YELLOW}Testing ${name}...${NC} "
-    
+
     if ! command -v curl &> /dev/null; then
         echo -e "${RED}❌ curl não está instalado${NC}"
         return 1
     fi
-    
+
     response=$(curl -s -w "\n%{http_code}" -m $TIMEOUT "$API_URL$endpoint" 2>/dev/null || echo "000")
     http_code=$(echo "$response" | tail -n1)
     body=$(echo "$response" | head -n-1)
-    
+
     if [ "$http_code" = "$expected_status" ]; then
         echo -e "${GREEN}✓${NC}"
-        
+
         # Tentar fazer parse JSON
         if command -v jq &> /dev/null && [ ! -z "$body" ]; then
             echo "  Status: $(echo "$body" | jq -r '.status' 2>/dev/null || echo 'N/A')"
@@ -44,7 +44,7 @@ test_endpoint() {
                 echo "  Checks found: $(echo "$body" | jq '.checks | keys[]' 2>/dev/null | wc -l)"
             fi
         fi
-        
+
         return 0
     else
         echo -e "${RED}✗ (HTTP $http_code, esperado $expected_status)${NC}"
@@ -56,7 +56,7 @@ test_endpoint() {
 # Função para verificar se a API está rodando
 check_api_running() {
     echo -e "${YELLOW}Verificando se a API está rodando em $API_URL...${NC}"
-    
+
     if curl -s -m 2 "$API_URL/health" &>/dev/null; then
         echo -e "${GREEN}✓ API está rodando${NC}\n"
         return 0

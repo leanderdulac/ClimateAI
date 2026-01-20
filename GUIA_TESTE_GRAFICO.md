@@ -161,6 +161,6 @@ Se problema persistir, preciso de:
 
 ---
 
-🎯 **OBJETIVO:** Gráficos carregando com dados do últimos 7/30/90 dias  
-✅ **ESPERADO:** Línea verde (temperatura) + Barras azuis (precipitação)  
+🎯 **OBJETIVO:** Gráficos carregando com dados do últimos 7/30/90 dias
+✅ **ESPERADO:** Línea verde (temperatura) + Barras azuis (precipitação)
 ⏱️ **TIMING:** Deploy agora, testes em 3-5 min

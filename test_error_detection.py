@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'server'))
 def test_imports():
     """Test importing all services without errors"""
     print("🧪 Testing module imports...")
-    
+
     # Test imports for all services
     services_to_test = [
         ('services.extreme_value_service', 'extreme_value_service'),
@@ -28,7 +28,7 @@ def test_imports():
         ('services.climate_alert_service', 'climate_alert_service'),
         ('services.performance_testing_service', 'climate_performance_testing_service'),
     ]
-    
+
     failed_imports = []
     for module_path, service_name in services_to_test:
         try:
@@ -38,7 +38,7 @@ def test_imports():
         except Exception as e:
             print(f"  ❌ Failed to import {module_path}.{service_name}: {str(e)}")
             failed_imports.append((module_path, str(e)))
-    
+
     if failed_imports:
         print(f"\n❌ {len(failed_imports)} services failed to import:")
         for module_path, error in failed_imports:
@@ -51,7 +51,7 @@ def test_imports():
 def test_basic_functionality():
     """Test basic functionality without errors"""
     print("🧪 Testing basic service functionality...")
-    
+
     try:
         from services.extreme_value_service import extreme_value_service
         # Test basic GEV calculation - use the correct method name
@@ -99,46 +99,46 @@ def test_basic_functionality():
         print(f"  ✓ Severe event probability: {prob:.3f}")
     except Exception as e:
         print(f"  ❌ Severe event probability calculation failed: {str(e)}")
-    
+
     print("  ✅ Basic service functionality tests completed!\n")
 
 def test_api_endpoints_syntax():
     """Test that API endpoints can be imported without syntax errors"""
     print("🧪 Testing API endpoint imports...")
-    
+
     api_endpoints = [
         'api.mathematical_engines',
-        'api.climate_risk_analysis', 
+        'api.climate_risk_analysis',
         'api.climate_premium',
         'api.bayesian_bootstrap',
         'api.climate_alert',
         'api.performance_testing'
     ]
-    
+
     for endpoint_module in api_endpoints:
         try:
             module = __import__(endpoint_module, fromlist=['router'])
             print(f"  ✓ API endpoint {endpoint_module} imported successfully")
         except Exception as e:
             print(f"  ❌ API endpoint {endpoint_module} import failed: {str(e)}")
-    
+
     print("  ✅ API endpoint import tests completed!\n")
 
 def main():
     print("🔍 ClimateAI: Comprehensive Error Detection and Verification\n")
-    
+
     success = True
     success &= test_imports()
-    test_basic_functionality() 
+    test_basic_functionality()
     test_api_endpoints_syntax()
-    
+
     if success:
         print("🎉 All services and functionality verified successfully!")
         print("✅ No syntax or import errors detected in the ClimateAI system")
     else:
         print("❌ Some errors were detected in the ClimateAI system")
         return 1
-    
+
     return 0
 
 if __name__ == "__main__":

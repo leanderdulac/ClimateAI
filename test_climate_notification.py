@@ -15,7 +15,7 @@ def test_climate_notification_system():
 
     # Import necessary enums
     from services.climate_alert_service import EventType, AlertType
-    
+
     # Simulate customer data
     customer_data = {
         'customer_id': 'CUST_TEST_001',
@@ -23,15 +23,15 @@ def test_climate_notification_system():
         'location': {'latitude': -23.5505, 'longitude': -46.6333},
         'exposure': 100000.0
     }
-    
+
     # Simulate premium history (7 days)
     premium_history = [1000.0, 1020.0, 980.0, 1100.0, 1200.0, 1150.0, 1250.0]
     current_premium = 1500.0  # Significant increase (20%+)
-    
+
     print(f"  ✓ Customer ID: {customer_data['customer_id']}")
     print(f"  ✓ Premium 7-day change: {(current_premium - premium_history[-1])/premium_history[-1]*100:.1f}%")
     print(f"  ✓ Exposure: ${customer_data['exposure']:,.2f}")
-    
+
     # Simulate weather forecast for next 72 hours
     weather_forecast = []
     for hour in range(72):
@@ -45,33 +45,33 @@ def test_climate_notification_system():
             'pressure': 1013 - severity_factor * 33      # Down to 980 hPa
         }
         weather_forecast.append(weather_entry)
-    
+
     print(f"  ✓ Weather forecast: {len(weather_forecast)} hourly entries")
-    
+
     # Calculate premium change
     premium_change = climate_alert_service.calculate_premium_change(premium_history, current_premium, 7)
     print(f"  ✓ Calculated premium change: {premium_change:.3f}")
-    
+
     # Calculate severe event probability
     event_prob = climate_alert_service.calculate_severe_event_probability(
-        weather_forecast, 
+        weather_forecast,
         {'precipitation': 50.0, 'wind_speed': 25.0, 'temperature': 35.0, 'pressure': 980.0}
     )
     print(f"  ✓ Severe event probability (72h): {event_prob:.3f}")
-    
+
     # Check notification trigger
     should_notify, condition = climate_alert_service.should_trigger_notification(
         premium_change, event_prob
     )
     print(f"  ✓ Notification trigger: {should_notify} (condition: {condition})")
-    
+
     if should_notify:
         # Generate recommendations
         recommendations = climate_alert_service.generate_recommendations(
             'severe_weather', customer_data['location'], severity=4
         )
         print(f"  ✓ Generated {len(recommendations)} recommendations")
-        
+
         # Create climate alert
         climate_alert = climate_alert_service.create_climate_alert(
             customer_data['customer_id'],
@@ -98,13 +98,13 @@ def test_climate_notification_system():
 
 def main():
     print("🔬 ClimateAI: Complete System Verification Test\n")
-    
+
     test_climate_notification_system()
-    
+
     print("\n📋 Complete ClimateAI System Status:")
     print("   - 14 sophisticated mathematical engines implemented")
     print("   - Climate risk push notifications: Notificação_push = I{ΔPrêmio_7d > 20% OR P(evento_severo_72h) > 5%}")
-    print("   - Immediate mitigation recommendations") 
+    print("   - Immediate mitigation recommendations")
     print("   - Temporary complementary coverage offers")
     print("   - Customer preventive action alerts")
     print("   - All services integrated with API endpoints")

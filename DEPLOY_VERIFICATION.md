@@ -1,6 +1,6 @@
 # Guia de Verificação - Deploy Netlify
 
-**Data:** 15 de outubro de 2025  
+**Data:** 15 de outubro de 2025
 **Commit:** `2ca69f5`
 
 ## 🔍 Como Verificar se Está Funcionando

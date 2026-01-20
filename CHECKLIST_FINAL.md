@@ -331,7 +331,7 @@ Se tiver problema:
 
 ---
 
-**Data:** 16 de outubro de 2025  
-**Tempo de Teste:** 5-10 minutos  
-**Tempo de Ação se Erro:** 2-3 minutos  
+**Data:** 16 de outubro de 2025
+**Tempo de Teste:** 5-10 minutos
+**Tempo de Ação se Erro:** 2-3 minutos
 **Status:** ✅ PRONTO PARA TESTE

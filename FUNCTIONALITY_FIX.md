@@ -1,6 +1,6 @@
 # Correções de Funcionalidade - Deploy Netlify
 
-**Data:** 15 de outubro de 2025  
+**Data:** 15 de outubro de 2025
 **Commit:** `592cb59`
 
 ## 🎯 Problemas Resolvidos
@@ -204,6 +204,6 @@ Após deploy no Netlify:
 
 ---
 
-**Status:** ✅ Pronto para deploy  
-**Compatibilidade:** Frontend standalone (sem backend)  
+**Status:** ✅ Pronto para deploy
+**Compatibilidade:** Frontend standalone (sem backend)
 **Preparado para:** Integração futura com backend

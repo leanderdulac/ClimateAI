@@ -7,7 +7,7 @@
 
 **Sintoma:** Dados climáticos não carregavam no dashboard, mesmo com a localização padrão (São Paulo) configurada.
 
-**Causa Raiz:** 
+**Causa Raiz:**
 Múltiplos `<LocationProvider>` aninhados criavam **contextos React separados** para cada componente. Cada componente tinha seu próprio estado de localização isolado, impedindo o compartilhamento da localização padrão.
 
 ### Estrutura Problemática (ANTES):
@@ -19,11 +19,11 @@ Múltiplos `<LocationProvider>` aninhados criavam **contextos React separados** 
       <LocationSelector />
       <WeatherWidget />
     </LocationProvider>
-    
+
     <LocationProvider>  ← Contexto 2 (SEPARADO!)
       <PricingSimulator />
     </LocationProvider>
-    
+
     <LocationProvider>  ← Contexto 3 (SEPARADO!)
       <ClimateEventTokenizer />
     </LocationProvider>
@@ -66,11 +66,11 @@ export function IndexPage() {
           <LocationSelector />
           <WeatherWidget />
         </LocationProvider>
-        
+
         <LocationProvider>
           <PricingSimulator />
         </LocationProvider>
-        
+
         <LocationProvider>
           <ClimateEventTokenizer />
         </LocationProvider>

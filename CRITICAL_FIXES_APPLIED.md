@@ -7,7 +7,7 @@
 
 ### 1. ✅ Landing Page Não Carregava
 **Problema:** Conflito entre React Router e Netlify _redirects
-**Solução:** 
+**Solução:**
 - Simplificado `client/public/_redirects`:
   ```
   /  /landing.html  200
@@ -15,7 +15,7 @@
   ```
   - A rota `/` serve o arquivo estático `landing.html`
   - Todas as outras rotas (`/*`) vão para o React app (`index.html`)
-  
+
 - Atualizado `client/src/routes.tsx`:
   - `/` e `/welcome` → `WelcomePage` (página de boas-vindas React)
   - `/dashboard` → `IndexPage` (dashboard principal)

@@ -1,7 +1,7 @@
 # 📊 Etapa 6: JSON Logging Estruturado
 
-**Status:** ✅ CONCLUÍDO  
-**Data:** 20 de outubro de 2025  
+**Status:** ✅ CONCLUÍDO
+**Data:** 20 de outubro de 2025
 **Impacto:** Observabilidade em produção, integração ELK Stack, debugging distribuído
 
 ## 🎯 Objetivos Alcançados
@@ -191,7 +191,7 @@ filter {
   json {
     source => "message"
   }
-  
+
   # Extrair informações de performance
   if [response_time_ms] {
     mutate {
@@ -205,7 +205,7 @@ output {
     hosts => ["elasticsearch:9200"]
     index => "fimce-logs-%{+YYYY.MM.dd}"
   }
-  
+
   # Também para stdout para debug
   stdout {
     codec => rubydebug
@@ -404,6 +404,6 @@ filter {
 
 ---
 
-**Tempo Total de Implementação:** ~2 horas  
-**Complexidade:** ⭐⭐⭐⭐ (Média-Alta)  
+**Tempo Total de Implementação:** ~2 horas
+**Complexidade:** ⭐⭐⭐⭐ (Média-Alta)
 **Manutenibilidade:** ⭐⭐⭐⭐⭐ (Excelente)

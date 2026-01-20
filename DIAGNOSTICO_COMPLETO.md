@@ -131,7 +131,7 @@ setClimateData(adaptedHistorical); // Dados corretos com período correto
      windSpeed: item.windSpeed || item.wind_speed,
      cloudCover: item.cloudCover || 0
    }));
-   
+
    setClimateData(adaptedHistorical);
    ```
 
@@ -139,7 +139,7 @@ setClimateData(adaptedHistorical); // Dados corretos com período correto
    ```tsx
    // Linha 138 - ANTES:
    }, [selectedLocation, isLoadingLocation]);
-   
+
    // DEPOIS:
    }, [selectedLocation, isLoadingLocation, selectedPeriod]);
    ```
@@ -272,7 +272,7 @@ Se após deploy os gráficos **ainda não carregarem**:
 
 ---
 
-**Versão:** 1.0  
-**Data:** 16 de Outubro de 2025  
-**Commit:** 62b0914, 659849c  
+**Versão:** 1.0
+**Data:** 16 de Outubro de 2025
+**Commit:** 62b0914, 659849c
 **Status:** ✅ Resolvido

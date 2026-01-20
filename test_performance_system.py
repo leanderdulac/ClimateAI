@@ -13,16 +13,16 @@ from services.performance_testing_service import climate_performance_testing_ser
 def test_climate_performance_system():
     """Test the complete climate performance testing system"""
     print("🧪 Testing ClimateAI Performance Testing System...")
-    
+
     # Simulate historical event data for backtesting
     np.random.seed(42)
     n_events = 20
-    
+
     historical_predictions = np.random.normal(1200, 300, n_events).tolist()
     actual_historical_losses = [p * np.random.uniform(0.8, 1.3) for p in historical_predictions]  # Add correlation
     event_dates = [f"202{i:02d}-05-15" for i in range(4, 24)]  # 2024-2043
     event_types = ['hurricane', 'flood', 'drought', 'heatwave', 'hailstorm'] * 4  # Cycle through types
-    
+
     print(f"  ✓ Generated {n_events} historical events for backtesting")
     print(f"  ✓ Predictions range: ${min(historical_predictions):,.2f} - ${max(historical_predictions):,.2f}")
     print(f"  ✓ Actual losses range: ${min(actual_historical_losses):,.2f} - ${max(actual_historical_losses):,.2f}")
@@ -104,9 +104,9 @@ def test_climate_performance_system():
 
 def main():
     print("🔬 ClimateAI: Performance Testing & Validation System Test\n")
-    
+
     test_climate_performance_system()
-    
+
     print("\n📋 ClimateAI Performance Testing Implementation Status:")
     print("   - Climate backtesting: Validation against historical events (Ian, RS floods)")
     print("   - Stress testing: 200% of worst CMIP6 scenario + Black Swan events")
