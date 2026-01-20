@@ -12,7 +12,7 @@ sqlalchemy==2.0.36
 psycopg2-binary==2.9.11
 pandas==2.2.3
 numpy>=1.26.0,<2.0.0
-scipy>=1.11.0,<1.14.0
+scipy>=1.11.0,<1.18.0
 scikit-learn==1.5.2
 torch==2.8.0  # PyTorch for LSTM attention mechanisms (aligned with prod ML) - Updated for security
 python-json-logger==4.0.0  # For structured JSON logging - Updated for security
