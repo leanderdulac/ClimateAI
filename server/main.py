@@ -162,6 +162,7 @@ from api.smart_exclusions import router as smart_exclusions_router
 from api.tcfd_issb import router as tcfd_issb_router
 from api.tokenizacao import router as tokenizacao_router
 from api.transition_risk import router as transition_risk_router
+from api.unified_pricing import router as unified_pricing_router
 from api.xweather_forecast import router as xweather_forecast_router
 from config.config import settings
 from config.database import close_db, init_db
@@ -1178,6 +1179,11 @@ try:
         tags=["microsegmentation"],
     )
     app.include_router(pricing_router, prefix=f"{API_PREFIX}/pricing", tags=["pricing"])
+    app.include_router(
+        unified_pricing_router,
+        prefix=f"{API_PREFIX}/unified-pricing",
+        tags=["unified-pricing"],
+    )
     # app.include_router(audit_router, prefix=f"{API_PREFIX}/audit", tags=["audit"])
 except Exception as e:
     logger.error(f"Erro ao incluir routers: {str(e)}")
