@@ -71,6 +71,12 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"
     SENTRY_DSN: Optional[str] = None
 
+    # Configurações Blockchain
+    BLOCKCHAIN_ENABLED: bool = False
+    BC_NODE_URL: Optional[str] = None
+    ADMIN_WALLET_ADDRESS: Optional[str] = None
+    MIN_BALANCE_THRESHOLD_ETHER: float = 0.05  # 0.05 ETH como um limite razoável para testes/operação
+
     class Config:
         env_file = ".env"
         extra = "ignore"

@@ -461,6 +461,73 @@ class CacheHealthCheck:
             )
 
 
+class BlockchainBalanceHealthCheck:
+    """Health check para o saldo da carteira da Blockchain"""
+
+    def __init__(
+        self,
+        bc_node_url: str,
+        admin_wallet_address: str,
+        min_balance_threshold_ether: float,
+    ):
+        self.name = "blockchain_balance"
+        self.bc_node_url = bc_node_url
+        self.admin_wallet_address = admin_wallet_address
+        self.min_balance_threshold_ether = min_balance_threshold_ether
+
+    async def check(self) -> HealthCheckResult:
+        """Verifica o saldo da carteira do administrador na blockchain"""
+        start_time = datetime.now()
+        
+        try:
+            from web3 import Web3
+
+            w3 = Web3(Web3.HTTPProvider(self.bc_node_url))
+            if not w3.is_connected():
+                raise ConnectionError(f"Não foi possível conectar ao nó: {self.bc_node_url}")
+
+            balance_wei = w3.eth.get_balance(self.admin_wallet_address)
+            balance_ether = w3.from_wei(balance_wei, "ether")
+
+            status = ServiceStatus.HEALTHY
+            message = "Saldo da carteira blockchain OK."
+            if balance_ether < self.min_balance_threshold_ether:
+                status = ServiceStatus.UNHEALTHY
+                message = "ALERTA: Saldo da carteira blockchain abaixo do limite!"
+                logger.error(f"{message} Saldo atual: {balance_ether} ETH, Mínimo: {self.min_balance_threshold_ether} ETH")
+            elif balance_ether < self.min_balance_threshold_ether * 2: # Ex: Aviso se estiver entre 1 e 2x o mínimo
+                 status = ServiceStatus.DEGRADED
+                 message = "AVISO: Saldo da carteira blockchain está baixo."
+                 logger.warning(f"{message} Saldo atual: {balance_ether} ETH, Mínimo: {self.min_balance_threshold_ether} ETH")
+
+            elapsed = (datetime.now() - start_time).total_seconds() * 1000
+
+            return HealthCheckResult(
+                name=self.name,
+                status=status,
+                message=message,
+                response_time_ms=elapsed,
+                details={
+                    "wallet_address": self.admin_wallet_address,
+                    "current_balance_ether": float(f"{balance_ether:.4f}"),
+                    "min_balance_threshold_ether": self.min_balance_threshold_ether,
+                    "blockchain_network": w3.eth.chain_id, # Retorna o chain_id da rede
+                },
+            )
+
+        except Exception as e:
+            elapsed = (datetime.now() - start_time).total_seconds() * 1000
+            logger.error(f"Blockchain balance health check failed: {str(e)}")
+
+            return HealthCheckResult(
+                name=self.name,
+                status=ServiceStatus.UNHEALTHY,
+                message=f"Blockchain check failed: {str(e)}",
+                response_time_ms=elapsed,
+                details={"error": str(e)},
+            )
+
+
 class HealthChecker:
     """Gerenciador central de health checks"""
 
@@ -472,14 +539,27 @@ class HealthChecker:
 
     def _initialize_checks(self):
         """Inicializa todos os health checks"""
+        from config.config import settings # Importar settings aqui para pegar as configs atualizadas
+
         # Checks críticos
         self.checks["system"] = SystemHealthCheck()
 
-        if self.database_url:
+        if settings.DATABASE_ENABLED and self.database_url:
             self.checks["database"] = DatabaseHealthCheck(self.database_url)
 
-        if self.redis_url:
+        if settings.REDIS_ENABLED and self.redis_url:
             self.checks["redis"] = RedisHealthCheck(self.redis_url)
+
+        if (
+            settings.BLOCKCHAIN_ENABLED
+            and settings.BC_NODE_URL
+            and settings.ADMIN_WALLET_ADDRESS
+        ):
+            self.checks["blockchain_balance"] = BlockchainBalanceHealthCheck(
+                bc_node_url=settings.BC_NODE_URL,
+                admin_wallet_address=settings.ADMIN_WALLET_ADDRESS,
+                min_balance_threshold_ether=settings.MIN_BALANCE_THRESHOLD_ETHER,
+            )
 
         # Checks de APIs externas
         self.checks["external_apis"] = APIHealthCheck()
@@ -501,6 +581,8 @@ class HealthChecker:
         for i, result in enumerate(check_results):
             if isinstance(result, Exception):
                 logger.error(f"Health check error: {result}")
+                results[f"check_{i}_error"] = {"status": ServiceStatus.UNHEALTHY.value, "message": str(result)}
+                overall_status = ServiceStatus.UNHEALTHY # Propaga o erro para o status geral
                 continue
 
             results[result.name] = result.to_dict()
@@ -533,8 +615,14 @@ class HealthChecker:
     async def check_critical(self) -> Dict[str, Any]:
         """Executa apenas checks críticos (database, system)"""
         results = {}
+        
+        critical_checks = ["system"]
+        if "database" in self.checks:
+            critical_checks.append("database")
+        if "blockchain_balance" in self.checks: # Adicionar blockchain ao critical se habilitado
+            critical_checks.append("blockchain_balance")
 
-        for name in ["database", "system"]:
+        for name in critical_checks:
             if name in self.checks:
                 result = await self.checks[name].check()
                 results[name] = result.to_dict()
