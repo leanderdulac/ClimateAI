@@ -60,7 +60,7 @@ class EnvironmentalScenario:
     baseline_year: int = 2020
 
 
-class TransitionRiskCalculator:
+class TransitionRiskService:
     """
     Calculates transition risk using the specified formula:
     R_transição = β₁·CarbonTax + β₂·StrandedAsset + β₃·Litígio
@@ -443,7 +443,7 @@ class TransitionRiskCalculator:
 
 
 # Global instance
-transition_risk_service = TransitionRiskCalculator()
+transition_risk_service = TransitionRiskService()
 
 
 def calculate_transition_risk(
