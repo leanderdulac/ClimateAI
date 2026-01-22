@@ -3,18 +3,16 @@ Serviço de tokenização para eventos climáticos
 """
 
 import hashlib
-import json
-import math
 import logging
-from dataclasses import dataclass
-from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Tuple
+from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 from models.schemas import EventoClimatico, EventoClimaticoTipo
 from models.token_schemas import EventoToken, TokenAnalysis, TokenGroup
 from services.tokenization_service import TokenizationService
 
 logger = logging.getLogger(__name__)
+
 
 class TokenizacaoEventosService:
     """
@@ -40,7 +38,7 @@ class TokenizacaoEventosService:
             "duration": 0.2,
             "spatial_extent": 0.1,
         }
-        
+
         # Inicializa o serviço de blockchain (pode ser Mock ou Real)
         try:
             self.blockchain_service = TokenizationService()
@@ -82,7 +80,7 @@ class TokenizacaoEventosService:
             "event_category": self._categorizar_evento(evento),
             "risk_score": self._calcular_risco(evento, severity_level),
             "on_chain_status": "pending",
-            "tx_hash": None
+            "tx_hash": None,
         }
 
         return EventoToken(
@@ -101,32 +99,42 @@ class TokenizacaoEventosService:
             created_at=datetime.now(),
         )
 
-    def mint_token_on_chain(self, token: EventoToken, destination_address: str) -> Dict[str, Any]:
+    def mint_token_on_chain(
+        self, token: EventoToken, destination_address: str
+    ) -> Dict[str, Any]:
         """
         Realiza a emissão (mint) do token na blockchain.
-        
+
         Args:
             token: O objeto EventoToken gerado
             destination_address: Endereço da carteira Ethereum para receber o token
-            
+
         Returns:
             Dict com o status da transação e hash
         """
         if not self.blockchain_service:
-            logger.warning("Serviço de blockchain indisponível. Token não será mintado on-chain.")
+            logger.warning(
+                "Serviço de blockchain indisponível. Token não será mintado on-chain."
+            )
             return {"status": "error", "message": "Blockchain service unavailable"}
 
         try:
             # A quantidade de tokens pode ser baseada na severidade ou risco
             # Ex: Severidade 5 = 50 tokens, Severidade 1 = 10 tokens
             amount = token.severity_level * 10
-            
-            logger.info(f"Iniciando mintagem on-chain para token {token.token_id} -> {destination_address}")
+
+            logger.info(
+                f"Iniciando mintagem on-chain para token {token.token_id} -> {destination_address}"
+            )
             receipt = self.blockchain_service.mint(destination_address, amount)
-            
+
             # Extrair hash da transação
-            tx_hash = receipt.get("transactionHash") if isinstance(receipt, dict) else receipt.transactionHash
-            if hasattr(tx_hash, 'hex'):
+            tx_hash = (
+                receipt.get("transactionHash")
+                if isinstance(receipt, dict)
+                else receipt.transactionHash
+            )
+            if hasattr(tx_hash, "hex"):
                 tx_hash = tx_hash.hex()
             elif isinstance(tx_hash, bytes):
                 tx_hash = tx_hash.hex()
@@ -135,14 +143,14 @@ class TokenizacaoEventosService:
             token.metadata["on_chain_status"] = "minted"
             token.metadata["tx_hash"] = tx_hash
             token.metadata["minted_amount"] = amount
-            
+
             return {
                 "status": "success",
                 "tx_hash": tx_hash,
                 "amount": amount,
-                "token_id": token.token_id
+                "token_id": token.token_id,
             }
-            
+
         except Exception as e:
             logger.error(f"Erro ao mintar token on-chain: {e}")
             token.metadata["on_chain_status"] = "failed"

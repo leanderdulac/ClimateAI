@@ -5,10 +5,9 @@ Verifica status de Database, Redis, APIs externas e componentes críticos
 
 import asyncio
 import logging
-import socket
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 import psutil
 
@@ -276,7 +275,11 @@ class MLModelHealthCheck:
         model_results = {}
 
         try:
-            from services.ml_service import get_ml_model_info, sinistrality_predictor
+            # noqa: F401
+            from services.ml_service import (  # noqa: F401
+                get_ml_model_info,
+                sinistrality_predictor,
+            )
 
             # Verificar se o modelo está carregado
             model_info = get_ml_model_info()
@@ -344,7 +347,7 @@ class ServicesHealthCheck:
         try:
             # Verificar serviços climáticos
             try:
-                from services.clima_service import ClimaService
+                from services.clima_service import ClimaService  # noqa: F401
 
                 service_results["clima_service"] = {"available": True}
             except ImportError as e:
@@ -352,7 +355,7 @@ class ServicesHealthCheck:
 
             # Verificar serviços de previsão
             try:
-                from services.previsao_service import PrevisaoService
+                from services.previsao_service import PrevisaoService  # noqa: F401
 
                 service_results["previsao_service"] = {"available": True}
             except ImportError as e:
@@ -363,7 +366,7 @@ class ServicesHealthCheck:
 
             # Verificar serviço de auditoria
             try:
-                from services.audit_service import log_operation
+                from services.audit_service import log_operation  # noqa: F401
 
                 service_results["audit_service"] = {"available": True}
             except ImportError as e:
@@ -371,7 +374,10 @@ class ServicesHealthCheck:
 
             # Verificar integração Gemini
             try:
-                from services.gemini_integration_service import GeminiIntegrationService
+                # noqa: F401
+                from services.gemini_integration_service import (  # noqa: F401
+                    GeminiIntegrationService,
+                )
 
                 service_results["gemini_integration"] = {"available": True}
             except ImportError as e:
@@ -382,7 +388,10 @@ class ServicesHealthCheck:
 
             # Verificar serviço de microsegmentação
             try:
-                from services.microsegmentation_service import create_microsegments
+                # noqa: F401
+                from services.microsegmentation_service import (  # noqa: F401
+                    create_microsegments,
+                )
 
                 service_results["microsegmentation"] = {"available": True}
             except ImportError as e:
@@ -478,13 +487,15 @@ class BlockchainBalanceHealthCheck:
     async def check(self) -> HealthCheckResult:
         """Verifica o saldo da carteira do administrador na blockchain"""
         start_time = datetime.now()
-        
+
         try:
             from web3 import Web3
 
             w3 = Web3(Web3.HTTPProvider(self.bc_node_url))
             if not w3.is_connected():
-                raise ConnectionError(f"Não foi possível conectar ao nó: {self.bc_node_url}")
+                raise ConnectionError(
+                    f"Não foi possível conectar ao nó: {self.bc_node_url}"
+                )
 
             balance_wei = w3.eth.get_balance(self.admin_wallet_address)
             balance_ether = w3.from_wei(balance_wei, "ether")
@@ -494,11 +505,17 @@ class BlockchainBalanceHealthCheck:
             if balance_ether < self.min_balance_threshold_ether:
                 status = ServiceStatus.UNHEALTHY
                 message = "ALERTA: Saldo da carteira blockchain abaixo do limite!"
-                logger.error(f"{message} Saldo atual: {balance_ether} ETH, Mínimo: {self.min_balance_threshold_ether} ETH")
-            elif balance_ether < self.min_balance_threshold_ether * 2: # Ex: Aviso se estiver entre 1 e 2x o mínimo
-                 status = ServiceStatus.DEGRADED
-                 message = "AVISO: Saldo da carteira blockchain está baixo."
-                 logger.warning(f"{message} Saldo atual: {balance_ether} ETH, Mínimo: {self.min_balance_threshold_ether} ETH")
+                logger.error(
+                    f"{message} Saldo atual: {balance_ether} ETH, Mínimo: {self.min_balance_threshold_ether} ETH"
+                )
+            elif (
+                balance_ether < self.min_balance_threshold_ether * 2
+            ):  # Ex: Aviso se estiver entre 1 e 2x o mínimo
+                status = ServiceStatus.DEGRADED
+                message = "AVISO: Saldo da carteira blockchain está baixo."
+                logger.warning(
+                    f"{message} Saldo atual: {balance_ether} ETH, Mínimo: {self.min_balance_threshold_ether} ETH"
+                )
 
             elapsed = (datetime.now() - start_time).total_seconds() * 1000
 
@@ -511,7 +528,7 @@ class BlockchainBalanceHealthCheck:
                     "wallet_address": self.admin_wallet_address,
                     "current_balance_ether": float(f"{balance_ether:.4f}"),
                     "min_balance_threshold_ether": self.min_balance_threshold_ether,
-                    "blockchain_network": w3.eth.chain_id, # Retorna o chain_id da rede
+                    "blockchain_network": w3.eth.chain_id,  # Retorna o chain_id da rede
                 },
             )
 
@@ -539,7 +556,9 @@ class HealthChecker:
 
     def _initialize_checks(self):
         """Inicializa todos os health checks"""
-        from config.config import settings # Importar settings aqui para pegar as configs atualizadas
+        from config.config import (
+            settings,
+        )  # Importar settings aqui para pegar as configs atualizadas
 
         # Checks críticos
         self.checks["system"] = SystemHealthCheck()
@@ -581,8 +600,13 @@ class HealthChecker:
         for i, result in enumerate(check_results):
             if isinstance(result, Exception):
                 logger.error(f"Health check error: {result}")
-                results[f"check_{i}_error"] = {"status": ServiceStatus.UNHEALTHY.value, "message": str(result)}
-                overall_status = ServiceStatus.UNHEALTHY # Propaga o erro para o status geral
+                results[f"check_{i}_error"] = {
+                    "status": ServiceStatus.UNHEALTHY.value,
+                    "message": str(result),
+                }
+                overall_status = (
+                    ServiceStatus.UNHEALTHY
+                )  # Propaga o erro para o status geral
                 continue
 
             results[result.name] = result.to_dict()
@@ -615,11 +639,13 @@ class HealthChecker:
     async def check_critical(self) -> Dict[str, Any]:
         """Executa apenas checks críticos (database, system)"""
         results = {}
-        
+
         critical_checks = ["system"]
         if "database" in self.checks:
             critical_checks.append("database")
-        if "blockchain_balance" in self.checks: # Adicionar blockchain ao critical se habilitado
+        if (
+            "blockchain_balance" in self.checks
+        ):  # Adicionar blockchain ao critical se habilitado
             critical_checks.append("blockchain_balance")
 
         for name in critical_checks:
@@ -637,6 +663,16 @@ class HealthChecker:
             "status": overall_status.value,
             "timestamp": datetime.utcnow().isoformat(),
             "checks": results,
+            "summary": {
+                "total_checks": len(results),
+                "healthy": sum(1 for r in results.values() if r["status"] == "healthy"),
+                "degraded": sum(
+                    1 for r in results.values() if r["status"] == "degraded"
+                ),
+                "unhealthy": sum(
+                    1 for r in results.values() if r["status"] == "unhealthy"
+                ),
+            },
         }
 
 
