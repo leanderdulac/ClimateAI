@@ -63,7 +63,7 @@ class NeighborhoodDefinition:
     climate_event_buffer: float = 0.5  # Buffer for climate event overlap in km
 
 
-class ConcentrationRiskCalculator:
+class ConcentrationRiskService:
     """
     Calculates concentration risk using the specified formula:
     R_concentração = √[Σ_i (x_i - x̄)² / n] · ρ_climático
@@ -483,7 +483,7 @@ class ConcentrationRiskCalculator:
 
 
 # Global instance
-concentration_risk_service = ConcentrationRiskCalculator()
+concentration_risk_service = ConcentrationRiskService()
 
 
 def calculate_concentration_risk(

@@ -57,7 +57,7 @@ class ClimateData:
     asset_value: float
 
 
-class SCRRiskScoringEngine:
+class SCRModuleService:
     """
     Core engine for calculating climate risk scores based on multiple factors:
     - Historical climate data analysis
@@ -462,7 +462,7 @@ class SCRRiskScoringEngine:
 
 
 # Global instance
-scr_engine = SCRRiskScoringEngine()
+scr_module_service = SCRModuleService()
 
 
 def calculate_climate_risk_score(climate_data: ClimateData) -> ClimateRiskScore:

@@ -57,7 +57,7 @@ class ClimateScenario:
     baseline_year: int = 2020
 
 
-class PhysicalRiskCalculator:
+class PhysicalRiskService:
     """
     Calculates physical risk using GEV model approach:
     R_físico = Σ_{perigo∈{inundação, vento, fogo, granizo}} p_perigo · λ_perigo · v_perigo
@@ -395,7 +395,7 @@ class PhysicalRiskCalculator:
 
 
 # Global instance
-physical_risk_service = PhysicalRiskCalculator()
+physical_risk_service = PhysicalRiskService()
 
 
 def calculate_physical_risk(

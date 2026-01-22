@@ -54,7 +54,7 @@ class ClimateRiskParameters:
     climate_sensitivity_factor: float = 0.001  # Factor for climate sensitivity
 
 
-class CapitalSurplusCalculator:
+class CapitalSurplusService:
     """
     Calculates Capital Surplus using the specified formula:
     CS = z_α × √Var(Loss) / E[Loss]
@@ -499,7 +499,7 @@ class CapitalSurplusCalculator:
 
 
 # Global instance
-cs_calculator = CapitalSurplusCalculator()
+capital_surplus_service = CapitalSurplusService()
 
 
 def calculate_capital_surplus_from_risks(
@@ -512,7 +512,7 @@ def calculate_capital_surplus_from_risks(
     confidence_level: float = 0.95,
 ) -> CapitalSurplusResult:
     """Convenience function to calculate capital surplus from risk components"""
-    return cs_calculator.calculate_capital_surplus_from_risks(
+    return capital_surplus_service.calculate_capital_surplus_from_risks(
         physical_risk,
         transition_risk,
         concentration_risk,
@@ -532,7 +532,7 @@ def calculate_portfolio_capital_surplus(
     confidence_level: float = 0.95,
 ) -> Dict[str, Any]:
     """Convenience function to calculate portfolio capital surplus"""
-    return cs_calculator.calculate_portfolio_capital_surplus(
+    return capital_surplus_service.calculate_portfolio_capital_surplus(
         portfolio_risks,
         portfolio_scr_scores,
         portfolio_mitigation_effects,
@@ -552,7 +552,7 @@ def optimize_capital_efficiency(
     confidence_level: float = 0.95,
 ) -> Dict[str, float]:
     """Convenience function to optimize capital efficiency"""
-    return cs_calculator.optimize_capital_efficiency(
+    return capital_surplus_service.optimize_capital_efficiency(
         target_capital_surplus,
         physical_risk,
         transition_risk,

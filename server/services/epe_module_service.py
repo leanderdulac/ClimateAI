@@ -77,7 +77,7 @@ class RiskAdjustedPremium:
     risk_components: Dict[str, float]
 
 
-class CommercialPricingEngine:
+class EPEModuleService:
     """
     Commercial pricing engine that adjusts actuarial premiums based on:
     - Market conditions
@@ -564,7 +564,7 @@ class CommercialPricingEngine:
 
 
 # Global instance
-epe_engine = CommercialPricingEngine()
+epe_module_service = EPEModuleService()
 
 
 def calculate_commercial_pricing(
@@ -573,7 +573,7 @@ def calculate_commercial_pricing(
     pricing_strategy: PricingStrategy = PricingStrategy.MARKET_MATCHING,
 ) -> CommercialPricingResult:
     """Convenience function to calculate commercial pricing"""
-    return epe_engine.calculate_commercial_pricing(
+    return epe_module_service.calculate_commercial_pricing(
         risk_adjusted_premium, market_data, pricing_strategy
     )
 
@@ -582,14 +582,14 @@ def optimize_pricing_for_volume(
     risk_adjusted_premium: RiskAdjustedPremium, market_data: MarketData
 ) -> float:
     """Convenience function to optimize pricing for volume"""
-    return epe_engine.optimize_pricing_for_volume(risk_adjusted_premium, market_data)
+    return epe_module_service.optimize_pricing_for_volume(risk_adjusted_premium, market_data)
 
 
 def calculate_dynamic_pricing_factors(
     customer_profile: Dict[str, Any], policy_features: Dict[str, Any]
 ) -> Dict[str, float]:
     """Convenience function to calculate dynamic pricing factors"""
-    return epe_engine.calculate_dynamic_pricing_factors(
+    return epe_module_service.calculate_dynamic_pricing_factors(
         customer_profile, policy_features
     )
 
@@ -598,6 +598,6 @@ def get_pricing_strategy_recommendation(
     market_data: MarketData, portfolio_metrics: Dict[str, float]
 ) -> PricingStrategy:
     """Convenience function to get pricing strategy recommendation"""
-    return epe_engine.get_pricing_strategy_recommendation(
+    return epe_module_service.get_pricing_strategy_recommendation(
         market_data, portfolio_metrics
     )

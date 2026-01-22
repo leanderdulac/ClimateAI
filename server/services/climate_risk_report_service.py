@@ -86,7 +86,7 @@ class PremiumBreakdown:
     capacity_adjustment: float
 
 
-class ClimateRiskReportGenerator:
+class ClimateRiskReportService:
     """
     Generates comprehensive climate risk analysis reports in the specified format
     """
@@ -588,7 +588,7 @@ class ClimateRiskReportGenerator:
 
 
 # Global instance
-climate_report_generator = ClimateRiskReportGenerator()
+climate_report_generator = ClimateRiskReportService()
 
 
 def generate_policy_analysis_report(

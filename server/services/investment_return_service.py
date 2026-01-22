@@ -68,7 +68,7 @@ class InvestmentPortfolioAnalysis:
     calculation_timestamp: datetime
 
 
-class InvestmentReturnCalculator:
+class InvestmentReturnService:
     """
     Calculator for investment returns using the specified formula:
     TR = E[Retorno_investimento] × f_tempo_apólice
@@ -445,7 +445,7 @@ class InvestmentReturnCalculator:
 
 
 # Global instance
-investment_return_service = InvestmentReturnCalculator()
+investment_return_service = InvestmentReturnService()
 
 
 def calculate_investment_return(

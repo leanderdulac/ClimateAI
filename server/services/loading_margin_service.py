@@ -84,7 +84,7 @@ class RiskBasedCapitalFactors:
     critical_risk_factor: float = 4.0  # Heavy penalty for critical risk
 
 
-class LoadingMarginCalculator:
+class LoadingMarginService:
     """
     Calculates Loading Margin using the specified formula:
     ML = ROE_target × Capital_alocado / Volume_prêmios
@@ -529,7 +529,7 @@ class LoadingMarginCalculator:
 
 
 # Global instance
-loading_margin_service = LoadingMarginCalculator()
+loading_margin_service = LoadingMarginService()
 
 
 def calculate_loading_margin(

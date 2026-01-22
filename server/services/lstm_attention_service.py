@@ -137,7 +137,7 @@ class ClimateAttentionLSTM(nn.Module):
         return output, attention_weights
 
 
-class ClimateAttentionService:
+class LSTMAttentionService:
     """
     Service for LSTM attention-based climate prediction
     Implements: h_t = LSTM(x_t, h_{t-1}), α_t = softmax(v^T tanh(W_h h_t + W_c c_t)), ŷ = Σ_t α_t · h_t
@@ -488,7 +488,7 @@ class ClimateAttentionService:
 
 
 # Global instance
-climate_attention_service = ClimateAttentionService()
+climate_attention_service = LSTMAttentionService()
 
 
 # Convenience functions for API integration

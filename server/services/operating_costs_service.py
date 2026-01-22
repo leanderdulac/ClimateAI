@@ -61,7 +61,7 @@ class PortfolioOperatingCosts:
     calculation_timestamp: datetime
 
 
-class OperatingCostCalculator:
+class OperatingCostsService:
     """
     Calculator for Operating Costs (CO) using the specified formula:
     CO = (Custo_subscrição + Custo_sinistros + Custo_admin) / Prêmio_emitido
@@ -428,19 +428,19 @@ class OperatingCostCalculator:
 
 
 # Global instance
-operating_cost_service = OperatingCostCalculator()
+operating_costs_service = OperatingCostsService()
 
 
 def calculate_operating_costs(policy_details: PolicyDetails) -> OperatingCostResult:
     """Convenience function to calculate operating costs for a single policy"""
-    return operating_cost_service.calculate_operating_costs(policy_details)
+    return operating_costs_service.calculate_operating_costs(policy_details)
 
 
 def calculate_portfolio_operating_costs(
     policies: List[PolicyDetails],
 ) -> PortfolioOperatingCosts:
     """Convenience function to calculate operating costs for a portfolio"""
-    return operating_cost_service.calculate_portfolio_operating_costs(policies)
+    return operating_costs_service.calculate_portfolio_operating_costs(policies)
 
 
 def calculate_cost_efficiency_improvement(
@@ -449,7 +449,7 @@ def calculate_cost_efficiency_improvement(
     improvement_timeline_months: int = 12,
 ) -> Dict[str, Any]:
     """Convenience function to calculate cost efficiency improvement plan"""
-    return operating_cost_service.calculate_cost_efficiency_improvement(
+    return operating_costs_service.calculate_cost_efficiency_improvement(
         current_operating_cost, target_operating_cost, improvement_timeline_months
     )
 
@@ -458,6 +458,6 @@ def calculate_breakeven_premium(
     risk_assessment: Dict[str, float], target_operating_margin: float = 0.10
 ) -> float:
     """Convenience function to calculate breakeven premium with operating costs"""
-    return operating_cost_service.calculate_breakeven_premium(
+    return operating_costs_service.calculate_breakeven_premium(
         risk_assessment, target_operating_margin
     )

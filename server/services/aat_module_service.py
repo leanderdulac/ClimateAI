@@ -64,7 +64,7 @@ class HistoricalLossData:
     coverage_period_years: float
 
 
-class TraditionalActuarialEngine:
+class AATModuleService:
     """
     Traditional actuarial engine implementing classical methods:
     - Frequency-severity analysis
@@ -476,21 +476,21 @@ class TraditionalActuarialEngine:
 
 
 # Global instance
-aat_engine = TraditionalActuarialEngine()
+aat_module_service = AATModuleService()
 
 
 def perform_actuarial_analysis(
     loss_data: HistoricalLossData,
 ) -> ActuarialAnalysisResult:
     """Convenience function to perform actuarial analysis"""
-    return aat_engine.perform_actuarial_analysis(loss_data)
+    return aat_module_service.perform_actuarial_analysis(loss_data)
 
 
 def perform_experience_rating(
     policy_id: str, historical_premiums: List[float], historical_losses: List[float]
 ) -> float:
     """Convenience function to calculate experience rating"""
-    return aat_engine.perform_experience_rating(
+    return aat_module_service.perform_experience_rating(
         policy_id, historical_premiums, historical_losses
     )
 
@@ -499,11 +499,11 @@ def calculate_reinsurance_requirements(
     expected_loss: float, std_dev: float
 ) -> Dict[str, float]:
     """Convenience function to calculate reinsurance requirements"""
-    return aat_engine.calculate_reinsurance_requirements(expected_loss, std_dev)
+    return aat_module_service.calculate_reinsurance_requirements(expected_loss, std_dev)
 
 
 def get_tariff_classification(
     risk_factors: Dict[str, float], coverage_type: RiskCategory
 ) -> str:
     """Convenience function to get tariff classification"""
-    return aat_engine.get_tariff_classification(risk_factors, coverage_type)
+    return aat_module_service.get_tariff_classification(risk_factors, coverage_type)

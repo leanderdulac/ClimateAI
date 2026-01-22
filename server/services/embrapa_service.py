@@ -17,7 +17,7 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 
-class EmbrapaAPIService:
+class EmbrapaService:
     def __init__(self):
         self.api_key = os.getenv("EMBRAPA_API_KEY")
         self.base_url = os.getenv("EMBRAPA_API_URL", "https://api.cnptia.embrapa.br")
@@ -243,4 +243,4 @@ class EmbrapaAPIService:
 
 
 # Instância única do serviço
-embrapa_service = EmbrapaAPIService()
+embrapa_service = EmbrapaService()

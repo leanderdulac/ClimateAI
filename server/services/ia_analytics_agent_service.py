@@ -78,7 +78,7 @@ class SystemEvaluation:
     improvement_areas: List[str]
 
 
-class ClimateAnalyticsAgent:
+class IAAnalyticsAgentService:
     """
     Intelligent agent for climate risk analysis, premium calculation, and system evaluation.
     Uses machine learning to analyze all system data and provide intelligent assessments.
@@ -841,7 +841,7 @@ class ClimateAnalyticsAgent:
 
 
 # Global instance
-climate_analytics_agent = ClimateAnalyticsAgent()
+climate_analytics_agent = IAAnalyticsAgentService()
 
 
 def analyze_climate_risks(factors: ClimateRiskFactors) -> Dict[str, float]:

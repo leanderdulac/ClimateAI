@@ -72,7 +72,7 @@ class PolicyClimateRisk:
     climate_scenario_impact: float  # Impact of climate scenario on this policy
 
 
-class ClimateCapitalChargeCalculator:
+class ClimateCapitalChargeService:
     """
     Calculator for Climate Capital Charge (CCC) with unmodeled events reserve:
     CCC = max(0, VaR_99%(Portfólio|evento_climático) - (Reservas_climáticas + Reserva_adicional))
@@ -564,7 +564,7 @@ class ClimateCapitalChargeCalculator:
 
 
 # Global instance
-ccc_calculator = ClimateCapitalChargeCalculator()
+ccc_calculator = ClimateCapitalChargeService()
 
 
 def calculate_climate_capital_charge(

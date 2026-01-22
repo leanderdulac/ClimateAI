@@ -82,7 +82,7 @@ class PremiumBreakdown:
     administrative_cost: float
 
 
-class ComprehensivePricingCalculator:
+class ComprehensivePricingService:
     """
     Calculator for comprehensive pricing using the specified formula:
     Prêmio = PTP × (1 + ML) × (1 + TR) × (1 + CC) × Ajuste_oferta_demanda
@@ -443,7 +443,7 @@ class ComprehensivePricingCalculator:
 
 
 # Global instance
-comprehensive_pricing_service = ComprehensivePricingCalculator()
+comprehensive_pricing_service = ComprehensivePricingService()
 
 
 def calculate_comprehensive_premium(

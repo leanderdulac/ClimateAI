@@ -80,7 +80,7 @@ class ModuleInputs:
     pricing_strategy: str
 
 
-class UnderwritingDecisionEngine:
+class MDSModuleService:
     """
     Underwriting decision engine that synthesizes inputs from all modules
     to make informed underwriting decisions with appropriate conditions.
@@ -606,32 +606,32 @@ class UnderwritingDecisionEngine:
 
 
 # Global instance
-mds_engine = UnderwritingDecisionEngine()
+mds_module_service = MDSModuleService()
 
 
 def make_underwriting_decision(
     application: ApplicationData, module_inputs: ModuleInputs
 ) -> UnderwritingDecision:
     """Convenience function to make underwriting decision"""
-    return mds_engine.make_underwriting_decision(application, module_inputs)
+    return mds_module_service.make_underwriting_decision(application, module_inputs)
 
 
 def apply_policy_rules(
     application: ApplicationData, module_inputs: ModuleInputs
 ) -> Dict[str, Any]:
     """Convenience function to apply policy rules"""
-    return mds_engine.apply_policy_rules(application, module_inputs)
+    return mds_module_service.apply_policy_rules(application, module_inputs)
 
 
 def calculate_risk_tolerances(
     applicant_profile: Dict[str, Any], coverage_type: str
 ) -> Dict[str, float]:
     """Convenience function to calculate risk tolerances"""
-    return mds_engine.calculate_risk_tolerances(applicant_profile, coverage_type)
+    return mds_module_service.calculate_risk_tolerances(applicant_profile, coverage_type)
 
 
 def get_decision_tree_path(
     risk_score: float, profit_margin: float, coverage_amount: float
 ) -> List[str]:
     """Convenience function to get decision tree path"""
-    return mds_engine.get_decision_tree_path(risk_score, profit_margin, coverage_amount)
+    return mds_module_service.get_decision_tree_path(risk_score, profit_margin, coverage_amount)
