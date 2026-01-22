@@ -32,6 +32,7 @@ openmeteo-requests
 retry-requests
 web3>=6.0.0
 google-cloud-secret-manager>=2.0.0
+py-solc-x>=2.0.0
 
 # === AUTENTICAÇÃO E SEGURANÇA ===
 pyjwt[crypto]>=2.8.0
