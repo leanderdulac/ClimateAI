@@ -627,11 +627,15 @@ def calculate_risk_tolerances(
     applicant_profile: Dict[str, Any], coverage_type: str
 ) -> Dict[str, float]:
     """Convenience function to calculate risk tolerances"""
-    return mds_module_service.calculate_risk_tolerances(applicant_profile, coverage_type)
+    return mds_module_service.calculate_risk_tolerances(
+        applicant_profile, coverage_type
+    )
 
 
 def get_decision_tree_path(
     risk_score: float, profit_margin: float, coverage_amount: float
 ) -> List[str]:
     """Convenience function to get decision tree path"""
-    return mds_module_service.get_decision_tree_path(risk_score, profit_margin, coverage_amount)
+    return mds_module_service.get_decision_tree_path(
+        risk_score, profit_margin, coverage_amount
+    )

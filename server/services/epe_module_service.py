@@ -582,7 +582,9 @@ def optimize_pricing_for_volume(
     risk_adjusted_premium: RiskAdjustedPremium, market_data: MarketData
 ) -> float:
     """Convenience function to optimize pricing for volume"""
-    return epe_module_service.optimize_pricing_for_volume(risk_adjusted_premium, market_data)
+    return epe_module_service.optimize_pricing_for_volume(
+        risk_adjusted_premium, market_data
+    )
 
 
 def calculate_dynamic_pricing_factors(
