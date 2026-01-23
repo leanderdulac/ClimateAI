@@ -2,20 +2,20 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
   workflow_dispatch:
 
 env:
-  PYTHON_VERSION: '3.11'
-  NODE_VERSION: '18'
+  PYTHON_VERSION: "3.11"
+  NODE_VERSION: "18"
 
 jobs:
   # Backend Tests and Build
   backend:
     runs-on: ubuntu-latest
-    continue-on-error: true  # Temporarily non-blocking while debugging
+    continue-on-error: true # Temporarily non-blocking while debugging
     services:
       postgres:
         image: postgres:13
@@ -36,165 +36,165 @@ jobs:
           - 6379:6379
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
 
-    - name: Cache pip dependencies
-      uses: actions/cache@v3
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('server/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('server/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
 
-    - name: Install dependencies
-      run: |
-        cd server
-        # Install NumPy first with a compatible version for PyTorch
-        pip install --timeout 1800 --retries 5 --no-cache-dir "numpy<2.0.0"
-        pip install --timeout 1800 --retries 5 --prefer-binary --index-url https://download.pytorch.org/whl/cpu 'torch==2.1.1+cpu' --find-links https://download.pytorch.org/whl/torch_stable.html --no-build-isolation --force-reinstall
-        pip install --timeout 1800 --retries 5 --no-build-isolation -r requirements-prod-ml.txt
+      - name: Install dependencies
+        run: |
+          cd server
+          # Install NumPy first with a compatible version for PyTorch
+          pip install --timeout 1800 --retries 5 --no-cache-dir "numpy<2.0.0"
+          pip install --timeout 1800 --retries 5 --prefer-binary --index-url https://download.pytorch.org/whl/cpu 'torch==2.1.1+cpu' --find-links https://download.pytorch.org/whl/torch_stable.html --no-build-isolation --force-reinstall
+          pip install --timeout 1800 --retries 5 --no-build-isolation -r requirements-prod-ml.txt
 
-    - name: Run pip-audit security scan
-      continue-on-error: true
-      run: |
-        cd server
-        pip install pip-audit
-        pip-audit -r requirements.txt
+      - name: Run pip-audit security scan
+        continue-on-error: true
+        run: |
+          cd server
+          pip install pip-audit
+          pip-audit -r requirements.txt
 
-    - name: Run security scan (safety)
-      continue-on-error: true
-      run: |
-        cd server
-        pip install safety
-        safety check --full-report --ignore=76769 --ignore=76771 --ignore=78828 --ignore=64459 --ignore=64396
+      - name: Run security scan (safety)
+        continue-on-error: true
+        run: |
+          cd server
+          pip install safety
+          safety check --full-report --ignore=76769 --ignore=76771 --ignore=78828 --ignore=64459 --ignore=64396
 
-    - name: Run linting
-      run: |
-        cd server
-        pip install flake8 black isort
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        black --check --diff .
-        isort --check-only --diff .
+      - name: Run linting
+        run: |
+          cd server
+          pip install flake8 black isort
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          black --check --diff .
+          isort --check-only --diff .
 
-    - name: Run tests
-      env:
-        DATABASE_URL: postgresql://climateai:climateai123@localhost:5432/climateai
-        REDIS_URL: redis://localhost:6379
-        SECRET_KEY: test-secret-key-for-ci
-      run: |
-        cd server
-        pip install pytest pytest-asyncio pytest-cov
-        pytest --cov=. --cov-report=xml --cov-report=term-missing
+      - name: Run tests
+        env:
+          DATABASE_URL: postgresql://climateai:climateai123@localhost:5432/climateai
+          REDIS_URL: redis://localhost:6379
+          SECRET_KEY: test-secret-key-for-ci
+        run: |
+          cd server
+          pip install pytest pytest-asyncio pytest-cov
+          pytest --cov=. --cov-report=xml --cov-report=term-missing
 
-    - name: Upload coverage reports
-      uses: codecov/codecov-action@v4
-      with:
-        file: ./server/coverage.xml
-        flags: backend
-        name: Backend Coverage
-        token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./server/coverage.xml
+          flags: backend
+          name: Backend Coverage
+          token: ${{ secrets.CODECOV_TOKEN }}
 
-    - name: Build Docker image
-      run: |
-        cd server
-        docker build -t climateai-backend:${{ github.sha }} .
+      - name: Build Docker image
+        run: |
+          cd server
+          docker build -t climateai-backend:${{ github.sha }} .
 
   # Frontend Tests and Build
   frontend:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        cache-dependency-path: client/package-lock.json
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: client/package-lock.json
 
-    - name: Install dependencies
-      run: |
-        cd client
-        npm ci
+      - name: Install dependencies
+        run: |
+          cd client
+          npm ci
 
-    - name: Run npm audit
-      run: |
-        cd client
-        npm audit
+      - name: Run npm audit
+        run: |
+          cd client
+          npm audit --audit-level=high
 
-    - name: Run linting
-      run: |
-        cd client
-        npm run lint
+      - name: Run linting
+        run: |
+          cd client
+          npm run lint
 
-    - name: Run type checking
-      run: |
-        cd client
-        npm run type-check
+      - name: Run type checking
+        run: |
+          cd client
+          npm run type-check
 
-    - name: Run tests
-      run: |
-        cd client
-        npm run test:run -- --coverage
+      - name: Run tests
+        run: |
+          cd client
+          npm run test:run -- --coverage
 
-    - name: Upload coverage reports
-      uses: codecov/codecov-action@v4
-      with:
-        file: ./client/coverage/lcov.info
-        flags: frontend
-        name: Frontend Coverage
-        token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./client/coverage/lcov.info
+          flags: frontend
+          name: Frontend Coverage
+          token: ${{ secrets.CODECOV_TOKEN }}
 
-    - name: Build application
-      run: |
-        cd client
-        npm run build
+      - name: Build application
+        run: |
+          cd client
+          npm run build
 
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: frontend-build
-        path: client/dist/
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: client/dist/
 
   # Security Scanning
   security:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Run Trivy vulnerability scanner
-      uses: aquasecurity/trivy-action@master
-      with:
-        scan-type: 'fs'
-        scan-ref: '.'
-        format: 'sarif'
-        output: 'trivy-results.sarif'
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "sarif"
+          output: "trivy-results.sarif"
 
-    - name: Upload Trivy scan results
-      uses: github/codeql-action/upload-sarif@v3
-      if: always()
-      with:
-        sarif_file: 'trivy-results.sarif'
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: "trivy-results.sarif"
 
-    - name: Dependency Review
-      uses: actions/dependency-review-action@v3
-      if: github.event_name == 'pull_request'
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v3
+        if: github.event_name == 'pull_request'
 
   # Integration Tests
   integration:
     runs-on: ubuntu-latest
     needs: [backend, frontend]
-    if: success() || failure()  # Run even if backend failed
+    if: success() || failure() # Run even if backend failed
     services:
       postgres:
         image: postgres:13
@@ -215,47 +215,47 @@ jobs:
           - 6379:6379
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
 
-    - name: Install dependencies
-      run: |
-        cd server
-        # Install NumPy first with a compatible version for PyTorch
-        pip install --timeout 1800 --retries 5 --no-cache-dir "numpy<2.0.0"
-        # Install PyTorch with maximum reliability settings in CI environment
-        pip install --timeout 1800 --retries 5 --prefer-binary --index-url https://download.pytorch.org/whl/cpu 'torch==2.1.1+cpu' --find-links https://download.pytorch.org/whl/torch_stable.html --no-build-isolation --force-reinstall
-        pip install --timeout 1800 --retries 5 --no-build-isolation -r requirements-prod-ml.txt
+      - name: Install dependencies
+        run: |
+          cd server
+          # Install NumPy first with a compatible version for PyTorch
+          pip install --timeout 1800 --retries 5 --no-cache-dir "numpy<2.0.0"
+          # Install PyTorch with maximum reliability settings in CI environment
+          pip install --timeout 1800 --retries 5 --prefer-binary --index-url https://download.pytorch.org/whl/cpu 'torch==2.1.1+cpu' --find-links https://download.pytorch.org/whl/torch_stable.html --no-build-isolation --force-reinstall
+          pip install --timeout 1800 --retries 5 --no-build-isolation -r requirements-prod-ml.txt
 
-    - name: Start services
-      run: |
-        cd server
-        docker-compose up -d db redis
+      - name: Start services
+        run: |
+          cd server
+          docker-compose up -d db redis
 
-    - name: Wait for services
-      run: |
-        timeout 60 bash -c 'until docker-compose exec -T db pg_isready; do sleep 1; done'
+      - name: Wait for services
+        run: |
+          timeout 60 bash -c 'until docker-compose exec -T db pg_isready; do sleep 1; done'
 
-    - name: Run integration tests
-      env:
-        DATABASE_URL: postgresql://climateai:climateai123@localhost:5432/climateai
-        REDIS_URL: redis://localhost:6379
-        SECRET_KEY: test-secret-key-for-ci
-      run: |
-        cd server
-        pip install pytest pytest-asyncio requests
-        pytest tests/integration/ -v --tb=short
+      - name: Run integration tests
+        env:
+          DATABASE_URL: postgresql://climateai:climateai123@localhost:5432/climateai
+          REDIS_URL: redis://localhost:6379
+          SECRET_KEY: test-secret-key-for-ci
+        run: |
+          cd server
+          pip install pytest pytest-asyncio requests
+          pytest tests/integration/ -v --tb=short
 
-    - name: Clean up
-      if: always()
-      run: |
-        cd server
-        docker-compose down -v
+      - name: Clean up
+        if: always()
+        run: |
+          cd server
+          docker-compose down -v
 
   # Docker Build and Push
   docker:
@@ -264,35 +264,35 @@ jobs:
     if: github.ref == 'refs/heads/main'
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    - name: Log in to Docker Hub
-      uses: docker/login-action@v3
-      with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: Build and push backend
-      uses: docker/build-push-action@v5
-      with:
-        context: ./server
-        push: true
-        tags: leanderdulac/climateai-backend:latest,leanderdulac/climateai-backend:${{ github.sha }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+      - name: Build and push backend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./server
+          push: true
+          tags: leanderdulac/climateai-backend:latest,leanderdulac/climateai-backend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-    - name: Build and push frontend
-      uses: docker/build-push-action@v5
-      with:
-        context: ./client
-        push: true
-        tags: leanderdulac/climateai-frontend:latest,leanderdulac/climateai-frontend:${{ github.sha }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+      - name: Build and push frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./client
+          push: true
+          tags: leanderdulac/climateai-frontend:latest,leanderdulac/climateai-frontend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   # Deploy to Staging (optional)
   deploy-staging:
@@ -302,14 +302,14 @@ jobs:
     environment: staging
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Deploy to staging
-      run: |
-        echo "Deploying to staging environment..."
-        # Add your deployment commands here
-        # Example: kubectl apply -f k8s/staging/
+      - name: Deploy to staging
+        run: |
+          echo "Deploying to staging environment..."
+          # Add your deployment commands here
+          # Example: kubectl apply -f k8s/staging/
 
   # Performance Tests
   performance:
@@ -318,22 +318,22 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
 
-    - name: Install Locust
-      run: pip install locust
+      - name: Install Locust
+        run: pip install locust
 
-    - name: Run performance tests
-      run: |
-        # Add performance test commands here
-        echo "Running performance tests..."
-        # locust -f tests/performance/locustfile.py --headless --users 100 --spawn-rate 10 --run-time 1m
+      - name: Run performance tests
+        run: |
+          # Add performance test commands here
+          echo "Running performance tests..."
+          # locust -f tests/performance/locustfile.py --headless --users 100 --spawn-rate 10 --run-time 1m
 
   # Documentation
   docs:
@@ -341,21 +341,21 @@ jobs:
     needs: [backend]
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Generate API docs
-      run: |
-        cd server
-        # Install NumPy first with a compatible version for PyTorch
-        pip install --timeout 1800 --retries 5 --no-cache-dir "numpy<2.0.0"
-        # Install PyTorch with maximum reliability settings in CI environment
-        pip install --timeout 1800 --retries 5 --prefer-binary --index-url https://download.pytorch.org/whl/cpu 'torch==2.1.1+cpu' --find-links https://download.pytorch.org/whl/torch_stable.html --no-build-isolation --force-reinstall
-        pip install --timeout 1800 --retries 5 --no-build-isolation -r requirements-prod-ml.txt
-        python -c "from main import app; print('API docs generated')"
+      - name: Generate API docs
+        run: |
+          cd server
+          # Install NumPy first with a compatible version for PyTorch
+          pip install --timeout 1800 --retries 5 --no-cache-dir "numpy<2.0.0"
+          # Install PyTorch with maximum reliability settings in CI environment
+          pip install --timeout 1800 --retries 5 --prefer-binary --index-url https://download.pytorch.org/whl/cpu 'torch==2.1.1+cpu' --find-links https://download.pytorch.org/whl/torch_stable.html --no-build-isolation --force-reinstall
+          pip install --timeout 1800 --retries 5 --no-build-isolation -r requirements-prod-ml.txt
+          python -c "from main import app; print('API docs generated')"
 
-    - name: Upload docs
-      uses: actions/upload-artifact@v4
-      with:
-        name: api-docs
-        path: docs/
+      - name: Upload docs
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-docs
+          path: docs/
