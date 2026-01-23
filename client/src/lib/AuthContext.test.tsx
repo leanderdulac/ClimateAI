@@ -1,6 +1,30 @@
 import { render, screen, act, waitFor } from '@testing-library/react';
 import { AuthProvider, useAuth } from './AuthContext';
 import React from 'react';
+import { vi } from 'vitest';
+
+// Mock Supabase client
+const mockSupabase = {
+  auth: {
+    getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
+    onAuthStateChange: vi.fn().mockReturnValue({ data: { subscription: { unsubscribe: vi.fn() } } }),
+    signInWithPassword: vi.fn(),
+    signUp: vi.fn(),
+    signOut: vi.fn(),
+    resetPasswordForEmail: vi.fn(),
+  },
+  from: vi.fn().mockReturnThis(),
+  select: vi.fn().mockReturnThis(),
+  eq: vi.fn().mockReturnThis(),
+  single: vi.fn().mockResolvedValue({ data: null, error: null }),
+  upsert: vi.fn().mockResolvedValue({ error: null }),
+  update: vi.fn().mockResolvedValue({ error: null }),
+};
+
+vi.mock('./supabase', () => ({
+  supabase: mockSupabase,
+  isSupabaseConfigured: () => true,
+}));
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -38,6 +62,24 @@ describe('AuthContext', () => {
   });
 
   it('should allow a user to register and login', async () => {
+    // Setup successful registration mock
+    mockSupabase.auth.signUp.mockResolvedValueOnce({
+      data: {
+        user: { id: '123', email: 'test@test.com', user_metadata: { full_name: 'Test User' } },
+        session: { user: { id: '123', email: 'test@test.com' } }
+      },
+      error: null
+    });
+
+    // Setup successful login mock
+    mockSupabase.auth.signInWithPassword.mockResolvedValueOnce({
+      data: {
+        user: { id: '123', email: 'test@test.com', user_metadata: { full_name: 'Test User' } },
+        session: { user: { id: '123', email: 'test@test.com' } }
+      },
+      error: null
+    });
+
     render(
       <AuthProvider>
         <TestConsumer />
