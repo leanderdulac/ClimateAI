@@ -1,19 +1,25 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import App from './App';
-
-import { MemoryRouter } from 'react-router-dom';
+import { LocationProvider } from './lib/LocationContext';
+import { LanguageProvider } from './contexts/LanguageContext';
 
 describe('App', () => {
   it('renders the App component', async () => {
     render(
-      <MemoryRouter>
-        <App />
-      </MemoryRouter>
+      <LanguageProvider>
+        <LocationProvider>
+          <App />
+        </LocationProvider>
+      </LanguageProvider>
     );
-    // You can add more specific assertions here if needed
-    // For example, checking for a specific element that should be present
+    // Find and click the assistant button
     await waitFor(() => {
-      expect(screen.getByText(/ClimateAI/i)).toBeInTheDocument();
+      screen.getByTestId('climate-assistant-trigger').click();
+    });
+
+    // Now the title should be visible
+    await waitFor(() => {
+      expect(screen.getByText(/Climate Assistant/i)).toBeInTheDocument();
     }, { timeout: 5000 });
   });
 });

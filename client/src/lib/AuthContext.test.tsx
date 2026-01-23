@@ -4,22 +4,39 @@ import React from 'react';
 import { vi } from 'vitest';
 
 // Mock Supabase client
-const mockSupabase = {
-  auth: {
-    getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
-    onAuthStateChange: vi.fn().mockReturnValue({ data: { subscription: { unsubscribe: vi.fn() } } }),
-    signInWithPassword: vi.fn(),
-    signUp: vi.fn(),
-    signOut: vi.fn(),
-    resetPasswordForEmail: vi.fn(),
-  },
-  from: vi.fn().mockReturnThis(),
-  select: vi.fn().mockReturnThis(),
-  eq: vi.fn().mockReturnThis(),
-  single: vi.fn().mockResolvedValue({ data: null, error: null }),
-  upsert: vi.fn().mockResolvedValue({ error: null }),
-  update: vi.fn().mockResolvedValue({ error: null }),
-};
+const { mockSupabase } = vi.hoisted(() => {
+  const mock = {
+    auth: {
+      getSession: vi.fn(),
+      onAuthStateChange: vi.fn(),
+      signInWithPassword: vi.fn(),
+      signUp: vi.fn(),
+      signOut: vi.fn(),
+      resetPasswordForEmail: vi.fn(),
+    },
+    from: vi.fn().mockReturnThis(),
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    single: vi.fn(),
+    upsert: vi.fn(),
+    update: vi.fn(),
+  };
+
+  // Default implementations
+  mock.auth.getSession.mockResolvedValue({ data: { session: null }, error: null });
+  mock.auth.onAuthStateChange.mockReturnValue({ data: { subscription: { unsubscribe: vi.fn() } } });
+  mock.auth.signInWithPassword.mockResolvedValue({ data: { user: null, session: null }, error: null });
+  mock.auth.signUp.mockResolvedValue({ data: { user: null, session: null }, error: null });
+  mock.auth.signOut.mockResolvedValue({ error: null });
+  mock.from.mockReturnThis();
+  mock.select.mockReturnThis();
+  mock.eq.mockReturnThis();
+  mock.single.mockResolvedValue({ data: null, error: null });
+  mock.upsert.mockResolvedValue({ error: null });
+  mock.update.mockResolvedValue({ error: null });
+
+  return { mockSupabase: mock };
+});
 
 vi.mock('./supabase', () => ({
   supabase: mockSupabase,

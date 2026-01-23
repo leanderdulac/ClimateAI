@@ -48,7 +48,7 @@ export function ClimateAssistant() {
                     const startDate = new Date();
                     startDate.setDate(startDate.getDate() - 365);
 
-                    const historicalData = await embrapaApi.getClimateData(
+                    const historicalData = await embrapaApi.getDadosHistoricos(
                         selectedLocation.latitude,
                         selectedLocation.longitude,
                         startDate.toISOString().split('T')[0],
@@ -56,10 +56,10 @@ export function ClimateAssistant() {
                     );
 
                     // Analyze historical data for microclimate patterns
-                    const totalRainfall = historicalData.reduce((sum, d) => sum + d.precipitation, 0);
-                    const heavyRainDays = historicalData.filter(d => d.precipitation > 30).length;
-                    const dryDays = historicalData.filter(d => d.precipitation < 1).length;
-                    const hotDays = historicalData.filter(d => d.temperature > 30).length;
+                    const totalRainfall = historicalData.reduce((sum, d) => sum + d.precipitacao, 0);
+                    const heavyRainDays = historicalData.filter(d => d.precipitacao > 30).length;
+                    const dryDays = historicalData.filter(d => d.precipitacao < 1).length;
+                    const hotDays = historicalData.filter(d => d.temperatura > 30).length;
                     const windyDays = historicalData.filter(d => (d.vento_velocidade || 0) > 20).length;
 
                     // Determine microclimate type based on historical patterns
@@ -71,8 +71,8 @@ export function ClimateAssistant() {
                     } else if (windyDays > 30) {
                         microclimateType = 'windy';
                     } else if (selectedLocation.cidade?.toLowerCase().includes('serra') ||
-                               selectedLocation.cidade?.toLowerCase().includes('alto') ||
-                               (selectedLocation.latitude && Math.abs(selectedLocation.latitude) > 1000)) { // High altitude indicator
+                        selectedLocation.cidade?.toLowerCase().includes('alto') ||
+                        (selectedLocation.latitude && Math.abs(selectedLocation.latitude) > 1000)) { // High altitude indicator
                         microclimateType = 'montanha';
                     }
 
@@ -85,9 +85,9 @@ export function ClimateAssistant() {
                         hotDays,
                         windyDays,
                         temperatureRange: {
-                            min: Math.min(...historicalData.map(d => d.temperature)),
-                            max: Math.max(...historicalData.map(d => d.temperature)),
-                            avg: historicalData.reduce((sum, d) => sum + d.temperature, 0) / historicalData.length,
+                            min: Math.min(...historicalData.map(d => d.temperatura)),
+                            max: Math.max(...historicalData.map(d => d.temperatura)),
+                            avg: historicalData.reduce((sum, d) => sum + d.temperatura, 0) / historicalData.length,
                         }
                     };
 
@@ -154,7 +154,7 @@ export function ClimateAssistant() {
 
     // Helper function to get microclimate descriptions
     const getMicroclimateDescription = (type: string) => {
-        switch(type) {
+        switch (type) {
             case 'arid': return 'Zona árida com alta frequência de dias sem chuva e temperaturas elevadas';
             case 'humid': return 'Zona úmida com alta precipitação e risco de alagamentos';
             case 'windy': return 'Zona com ventos fortes frequentes';
@@ -165,7 +165,7 @@ export function ClimateAssistant() {
 
     // Helper function to get microclimate characteristics
     const getMicroclimateCharacteristics = (type: string) => {
-        switch(type) {
+        switch (type) {
             case 'arid':
                 return ['Alta evapotranspiração', 'Risco de estiagem', 'Necessidade de irrigação', 'Maior variabilidade térmica'];
             case 'humid':
@@ -261,6 +261,7 @@ export function ClimateAssistant() {
             <Button
                 className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50 bg-primary hover:bg-primary/90 transition-all duration-300 hover:scale-110"
                 onClick={() => setIsOpen(true)}
+                data-testid="climate-assistant-trigger"
             >
                 <MessageCircle className="h-8 w-8 text-white" />
             </Button>
