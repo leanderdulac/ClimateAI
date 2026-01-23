@@ -58,3 +58,4 @@ server/*.log
 # Large files
 *.pdf
 *.cache
+ci_check_env/
