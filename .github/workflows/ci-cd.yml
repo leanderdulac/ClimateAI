@@ -288,7 +288,8 @@ jobs:
       - name: Build and push frontend
         uses: docker/build-push-action@v5
         with:
-          context: ./client
+          context: .
+          file: Dockerfile.client
           push: true
           tags: leanderdulac/climateai-frontend:latest,leanderdulac/climateai-frontend:${{ github.sha }}
           cache-from: type=gha
