@@ -11,7 +11,27 @@ const FALLBACK_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3M
 
 // Get Supabase credentials from environment variables with fallback
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || FALLBACK_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || FALLBACK_SUPABASE_ANON_KEY;
+const FALLBACK_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR5em15d2h2cG1kZmVweGR0eWVzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4NzAzNjcsImV4cCI6MjA4NDQ0NjM2N30.14R4jz5hzgx6u3pPnMDrnBEUmgorb0Iqlb8spQRgzaI';
+
+// Helper to validate JWT format (header.payload.signature)
+const isValidJWT = (key: string | undefined): boolean => {
+    if (!key) return false;
+    const parts = key.split('.');
+    return parts.length === 3 && parts[2].length > 0;
+};
+
+// Get Supabase credentials - prefer Env Var IF valid, otherwise use Fallback
+const envKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || FALLBACK_SUPABASE_URL;
+
+// If Env Var is truncated (common Vercel issue), use fallback
+const supabaseAnonKey = isValidJWT(envKey) ? envKey : FALLBACK_SUPABASE_ANON_KEY;
+
+console.log('Supabase Config:', {
+    url: supabaseUrl,
+    keyLength: supabaseAnonKey?.length,
+    isFallback: supabaseAnonKey === FALLBACK_SUPABASE_ANON_KEY
+});
 
 // Validate configuration
 export const isSupabaseConfigured = (): boolean => {
