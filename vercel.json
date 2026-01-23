@@ -40,7 +40,7 @@
       "headers": [
         {
           "key": "Access-Control-Allow-Origin",
-          "value": "https://climate-ai.vercel.app"
+          "value": "https://climate-ai-rho.vercel.app"
         },
         {
           "key": "Access-Control-Allow-Methods",

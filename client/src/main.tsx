@@ -51,6 +51,9 @@ class ErrorBoundary extends React.Component<
   }
 }
 
+const timestamp = '2026-01-23T00:15:00';
+console.log(`Frontend Version: ${timestamp}`);
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ErrorBoundary>
