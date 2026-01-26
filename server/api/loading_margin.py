@@ -98,7 +98,7 @@ async def policy_loading_analysis_endpoint(
     Calculate loading margin for an individual policy
     """
     try:
-        result = calculate_policy_loading_margin(
+        result = calculate_policy_loading_info(
             exposure_value, scr_score, premium_amount
         )
 

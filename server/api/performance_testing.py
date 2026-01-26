@@ -166,7 +166,7 @@ async def robustness_analysis_endpoint(request: RobustnessAnalysisRequest):
             "parameters": result.parameters,
             "results": result.results,
             "error_message": result.error_message,
-            "methodology": f"{parameter_perturbation*100:.0f}% parameter perturbation → ΔPrêmio < 10%",
+            "methodology": f"{request.parameter_perturbation*100:.0f}% parameter perturbation → ΔPrêmio < 10%",
             "perturbation_target": 0.10,  # 10% premium change threshold
         }
     except Exception as e:
@@ -211,8 +211,8 @@ async def comprehensive_performance_evaluation_endpoint(
             "comprehensive_evaluation": result,
             "methodologies_applied": [
                 "Climate backtesting against historical events",
-                f"Stress testing: {stress_multiplier*100:.0f}% CMIP6 + Black Swan (P={black_swan_probability}, impact×{black_swan_impact_factor})",
-                f"Robustness: {parameter_perturbation*100:.0f}% parameter perturbation → ΔPrêmio < 10%",
+                f"Stress testing: {request.stress_multiplier*100:.0f}% CMIP6 + Black Swan (P={request.black_swan_probability}, impact×{request.black_swan_impact_factor})",
+                f"Robustness: {request.parameter_perturbation*100:.0f}% parameter perturbation → ΔPrêmio < 10%",
             ],
             "timestamp": datetime.now().isoformat(),
         }

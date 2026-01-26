@@ -6,7 +6,7 @@ Adaptação do conceito Hathor para o sistema ClimateAI
 import hashlib
 import json
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
 from models.schemas import EventoClimatico, EventoClimaticoTipo

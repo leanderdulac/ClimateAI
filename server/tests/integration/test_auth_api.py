@@ -163,6 +163,7 @@ class TestAuthAPI:
             "organization": "Test Org",
         }
 
+        headers = {"Authorization": f"Bearer {access_token}"}
         response = client.post("/api/v1/auth/users", json=user_data, headers=headers)
 
         # Como não temos BD real, deve falhar, mas testar autorização

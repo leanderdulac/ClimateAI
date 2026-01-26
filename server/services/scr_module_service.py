@@ -467,4 +467,4 @@ scr_module_service = SCRModuleService()
 
 def calculate_climate_risk_score(climate_data: ClimateData) -> ClimateRiskScore:
     """Convenience function to calculate climate risk score"""
-    return scr_engine.calculate_climate_risk_score(climate_data)
+    return scr_module_service.calculate_climate_risk_score(climate_data)
