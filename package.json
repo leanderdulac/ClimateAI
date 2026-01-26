@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "postinstall": "cd client && npm install",
     "dev": "cd client && npm run dev",
     "build": "cd client && npm run build",
     "lint": "cd client && npm run lint",
