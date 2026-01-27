@@ -14,13 +14,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 FROM base as production
 
 # Install all production dependencies, including torch
-COPY requirements-prod-ml.txt .
+COPY server/requirements-prod-ml.txt .
 RUN pip install --no-cache-dir --timeout 1800 --retries 5 --no-cache-dir "numpy<2.0.0"
 RUN pip install --no-cache-dir --timeout 1800 --retries 5 --prefer-binary --index-url https://download.pytorch.org/whl/cpu 'torch==2.1.1+cpu' --find-links https://download.pytorch.org/whl/torch_stable.html --no-build-isolation --force-reinstall
 RUN pip install --no-cache-dir --timeout 1800 --retries 5 --no-build-isolation -r requirements-prod-ml.txt
 
 # Copiar código da aplicação
-COPY . .
+COPY server/ .
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
@@ -45,12 +45,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Instalar dependências de desenvolvimento (com TensorFlow)
-COPY requirements-base.txt .
-COPY requirements-ml.txt .
+COPY server/requirements-base.txt .
+COPY server/requirements-ml.txt .
 RUN pip install --no-cache-dir -r requirements-base.txt -r requirements-ml.txt
 
 # Copiar código da aplicação
-COPY . .
+COPY server/ .
 
 EXPOSE 8000
 
