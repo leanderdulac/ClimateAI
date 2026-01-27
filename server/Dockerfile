@@ -1,5 +1,5 @@
 # Use PyTorch base image to ensure compatibility
-FROM pytorch/pytorch:2.1.1-cpu as base
+FROM python:3.10-slim as base
 
 WORKDIR /app
 
@@ -35,7 +35,7 @@ USER appuser
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
 
 # ===== DEVELOPMENT STAGE =====
-FROM pytorch/pytorch:2.1.1-cpu as development
+FROM python:3.10-slim as development
 
 # Install system dependencies needed for development
 RUN apt-get update && apt-get install -y --no-install-recommends \
