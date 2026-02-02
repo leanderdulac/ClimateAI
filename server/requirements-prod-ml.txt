@@ -5,19 +5,19 @@
 # === FRAMEWORK WEB ===
 fastapi==0.128.0
 uvicorn[standard]==0.40.0
-python-multipart==0.0.21
+python-multipart==0.0.22
 
 # === CONFIGURAÇÃO E VALIDAÇÃO ===
-pydantic==2.9.2
-pydantic-settings==2.6.0
-python-dotenv==1.0.1
+pydantic==2.12.5
+pydantic-settings==2.12.0
+python-dotenv==1.2.1
 
 # === BANCO DE DADOS ===
-sqlalchemy==2.0.36
+sqlalchemy==2.0.46
 psycopg2-binary==2.9.11
-asyncpg==0.29.0
+asyncpg==0.31.0
 aiosqlite==0.22.1
-alembic==1.18.1
+alembic==1.18.3
 
 # === CACHE ===
 redis==7.1.0
@@ -42,10 +42,10 @@ httpx==0.28.1
 # === DADOS E ML ESSENCIAIS (PRODUÇÃO) ===
 pandas==2.2.3
 numpy>=1.26.0,<2.0.0  # Versão < 2.0 para compatibilidade com PyTorch
-scikit-learn==1.5.2
+scikit-learn==1.8.0
 scipy>=1.11.0,<1.14.0
 statsmodels>=0.14.0
-torch==2.8.0  # PyTorch for LSTM attention mechanisms - CPU version installed via base image in Docker, separately in CI/CD - Updated for security
+torch==2.10.0  # PyTorch for LSTM attention mechanisms - CPU version installed via base image in Docker, separately in CI/CD - Updated for security
 python-json-logger==4.0.0  # For structured JSON logging - Updated for security
 # NOTA: TensorFlow NÃO incluído em produção (~500MB)
 
