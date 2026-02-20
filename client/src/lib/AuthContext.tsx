@@ -140,11 +140,32 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setIsLoading(true);
     setError(null);
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw new Error(error.message || 'Falha no login');
-      if (!data.session || !data.user) throw new Error('Sessão inválida');
-      setUser(await mapSupabaseUser(data.user));
-      setSession(data.session);
+      if (supabase) {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw new Error(error.message || 'Falha no login');
+        if (!data.session || !data.user) throw new Error('Sessão inválida');
+        setUser(await mapSupabaseUser(data.user));
+        setSession(data.session);
+      } else {
+        // Fallback: backend API auth when Supabase is not configured
+        const apiUrl = baseUrl || 'http://localhost:8000';
+        const res = await fetch(`${apiUrl}/api/v1/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Falha no login');
+        localStorage.setItem('access_token', data.access_token || 'local-token');
+        localStorage.setItem('refresh_token', data.refresh_token || 'local-refresh');
+        setUser({
+          id: data.user?.id || 'local-user',
+          email: email,
+          name: data.user?.name || email.split('@')[0],
+          role: data.user?.role || 'user',
+        });
+        setSession({ access_token: data.access_token, refresh_token: data.refresh_token } as any);
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Falha no login';
       setError(message);
@@ -161,18 +182,30 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (!userData.name || !userData.email || !userData.password) {
         throw new Error('Todos os campos obrigatórios devem ser preenchidos');
       }
-      const { data, error } = await supabase.auth.signUp({
-        email: userData.email,
-        password: userData.password,
-        options: {
-          data: {
-            full_name: userData.name,
-            company_name: userData.company || '',
-            role: 'user',
+      if (supabase) {
+        const { data, error } = await supabase.auth.signUp({
+          email: userData.email,
+          password: userData.password,
+          options: {
+            data: {
+              full_name: userData.name,
+              company_name: userData.company || '',
+              role: 'user',
+            },
           },
-        },
-      });
-      if (error) throw new Error(error.message || 'Falha no cadastro');
+        });
+        if (error) throw new Error(error.message || 'Falha no cadastro');
+      } else {
+        // Fallback: backend API register
+        const apiUrl = baseUrl || 'http://localhost:8000';
+        const res = await fetch(`${apiUrl}/api/v1/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(userData),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Falha no cadastro');
+      }
       setError('Cadastro realizado com sucesso! Verifique seu e-mail para ativar a conta.');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Falha no cadastro';
