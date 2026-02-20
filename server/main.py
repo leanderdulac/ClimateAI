@@ -1232,10 +1232,12 @@ async def health_check() -> Dict[str, str]:
     response = {
         "status": status,
         "version": "1.0.0",
+        "api_prefix": API_PREFIX,
     }
 
     if missing_vars:
         response["warnings"] = f"Configurações ausentes: {', '.join(missing_vars)}"
+        response["missing_vars"] = missing_vars # Added this line based on the instruction's intent
 
     return response
 
