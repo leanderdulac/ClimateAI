@@ -44,6 +44,7 @@ email-validator>=2.0.0  # Required by Pydantic's EmailStr
 nolds>=0.5.2  # Nonlinear dynamics analysis
 tenacity>=9.0.0  # Retry library with circuit breaker pattern
 hvac==2.3.0  # HashiCorp Vault secrets manager
+feedparser>=6.0.0  # RSS/Atom feed parser for INMET alerts
 
 # === DADOS E ML ESSENCIAIS (PRODUÇÃO) ===
 pandas==2.2.3
