@@ -1,5 +1,7 @@
 ## Perfil padrão recomendado: use server/requirements-prod-ml.txt (PyTorch sem TensorFlow).
 ## Este arquivo é mantido por compatibilidade e inclui utilitários extras (psutil, pynamicalsys).
+
+--extra-index-url https://download.pytorch.org/whl/cpu
 fastapi==0.128.0
 uvicorn[standard]==0.40.0
 pydantic==2.9.2
@@ -14,7 +16,7 @@ pandas==2.2.3
 numpy>=1.26.0,<2.0.0
 scipy>=1.11.0,<1.14.0
 scikit-learn==1.5.2
-torch==2.8.0  # PyTorch for LSTM attention mechanisms (aligned with prod ML) - Updated for security
+torch==2.1.1+cpu  # PyTorch for LSTM attention mechanisms (aligned with prod ML) - Updated for security
 nolds>=0.5.2
 python-json-logger==4.0.0  # For structured JSON logging - Updated for security
 # ⚠️ REMOVIDO: tensorflow==2.18.0

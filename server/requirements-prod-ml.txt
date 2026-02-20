@@ -2,6 +2,7 @@
 # Production requirements including essential ML libraries (but not heavy TensorFlow)
 # Use this for production services that need PyTorch but not TensorFlow
 
+--extra-index-url https://download.pytorch.org/whl/cpu
 # === FRAMEWORK WEB ===
 fastapi==0.128.0
 uvicorn[standard]==0.40.0
@@ -46,7 +47,7 @@ numpy>=1.26.0,<2.0.0  # Versão < 2.0 para compatibilidade com PyTorch
 scikit-learn==1.5.2
 scipy>=1.11.0,<1.14.0
 statsmodels>=0.14.0
-torch==2.8.0  # PyTorch for LSTM attention mechanisms - CPU version installed via base image in Docker, separately in CI/CD - Updated for security
+torch==2.1.1+cpu  # PyTorch for LSTM attention mechanisms - CPU version explicitly specified
 python-json-logger==4.0.0  # For structured JSON logging - Updated for security
 # NOTA: TensorFlow NÃO incluído em produção (~500MB)
 
