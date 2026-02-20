@@ -9,7 +9,8 @@ from datetime import datetime, timedelta
 from typing import Dict, Optional
 
 from fastapi import HTTPException, status
-from jose import JWTError, jwt
+import jwt
+from jwt.exceptions import InvalidTokenError as JWTError
 from passlib.context import CryptContext
 
 # Configurações de segurança
