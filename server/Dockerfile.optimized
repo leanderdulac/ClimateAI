@@ -1,6 +1,6 @@
 # Use multi-stage build to optimize image size
 # Base stage with common dependencies
-FROM python:3.11-slim as base
+FROM python:3.14-slim as base
 
 WORKDIR /app
 

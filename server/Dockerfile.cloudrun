@@ -1,6 +1,6 @@
 # Use official lightweight Python image
 # Python 3.11 is stable and performant
-FROM python:3.11-slim as builder
+FROM python:3.14-slim as builder
 
 WORKDIR /app
 
@@ -22,7 +22,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
 
 # ===== RUNNER STAGE =====
 # Start fresh to keep the image small
-FROM python:3.11-slim
+FROM python:3.14-slim
 
 WORKDIR /app
 
