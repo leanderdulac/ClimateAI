@@ -60,8 +60,7 @@ export interface RiskAnalysis {
 }
 
 const baseUrl =
-  (import.meta.env.VITE_API_BASE_URL as string | undefined) ??
-  'http://localhost:8000/api/v1';
+  (import.meta.env.VITE_API_BASE_URL as string | undefined) || '';
 
 // Mock data para fallback quando API não disponível
 const mockClimateData = (days: number = 30): ClimateData[] => {
@@ -115,9 +114,7 @@ const mockLocationData = (lat: number, lon: number, city?: string, state?: strin
 
 class EmbrapaApiService {
   private isApiAvailable = true;
-  private useMockData = import.meta.env.VITE_USE_MOCK_DATA === 'true' ||
-    !import.meta.env.VITE_API_BASE_URL ||
-    import.meta.env.VITE_API_BASE_URL === '';
+  private useMockData = import.meta.env.VITE_USE_MOCK_DATA === 'true';
   private cache: Map<string, { data: any, timestamp: number }> = new Map();
   private CACHE_TTL = 1000 * 60 * 10; // 10 minutes
 
@@ -169,27 +166,84 @@ class EmbrapaApiService {
   }
 
   private async apiGet<T>(endpoint: string, params?: Record<string, any>): Promise<T> {
+    // Build the full URL: if baseUrl is empty, use relative path (Vercel proxy)
+    const url = baseUrl ? `${baseUrl}${endpoint}` : endpoint;
     try {
-      const response = await axios.get(`${baseUrl}${endpoint}`, { params, timeout: 30000 });
+      const response = await axios.get(url, { params, timeout: 15000 });
       this.isApiAvailable = true;
       return response.data;
     } catch (error) {
-      console.warn('API não disponível, usando dados mock:', error instanceof Error ? error.message : 'Unknown error');
+      console.warn('API não disponível:', error instanceof Error ? error.message : 'Unknown error');
       this.isApiAvailable = false;
       throw error;
     }
   }
 
   private async apiPost<T>(endpoint: string, data?: any): Promise<T> {
+    const url = baseUrl ? `${baseUrl}${endpoint}` : endpoint;
     try {
-      const response = await axios.post(`${baseUrl}${endpoint}`, data, { timeout: 30000 });
+      const response = await axios.post(url, data, { timeout: 15000 });
       this.isApiAvailable = true;
       return response.data;
     } catch (error) {
-      console.warn('API não disponível, usando dados mock:', error instanceof Error ? error.message : 'Unknown error');
+      console.warn('API não disponível:', error instanceof Error ? error.message : 'Unknown error');
       this.isApiAvailable = false;
       throw error;
     }
+  }
+
+  // ─── OpenMeteo Direct Fallback (free, CORS-enabled) ─────────────
+
+  private async openMeteoCurrentWeather(lat: number, lon: number): Promise<ClimateData> {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,precipitation,weather_code,wind_speed_10m,surface_pressure&timezone=auto`;
+    const res = await axios.get(url, { timeout: 8000 });
+    const c = res.data.current;
+    return {
+      date: new Date().toISOString().split('T')[0],
+      temperature: c.temperature_2m ?? 25,
+      humidity: c.relative_humidity_2m ?? 60,
+      precipitation: c.precipitation ?? 0,
+      windSpeed: c.wind_speed_10m ?? 5,
+      wind_speed: c.wind_speed_10m ?? 5,
+      pressure: c.surface_pressure ?? 1013,
+      weather_code: c.weather_code ?? 0,
+      weatherCode: c.weather_code ?? 0,
+    };
+  }
+
+  private async openMeteoHistorical(lat: number, lon: number, startDate: string, endDate: string): Promise<ClimateData[]> {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,temperature_2m_mean,precipitation_sum,relative_humidity_2m_mean,wind_speed_10m_max,weather_code&start_date=${startDate}&end_date=${endDate}&timezone=auto`;
+    const res = await axios.get(url, { timeout: 10000 });
+    const d = res.data.daily;
+    if (!d || !d.time) return [];
+    return d.time.map((date: string, i: number) => ({
+      date,
+      temperature: d.temperature_2m_mean?.[i] ?? 25,
+      temperature_max: d.temperature_2m_max?.[i],
+      temperature_min: d.temperature_2m_min?.[i],
+      precipitation: d.precipitation_sum?.[i] ?? 0,
+      humidity: d.relative_humidity_2m_mean?.[i] ?? 60,
+      windSpeed: d.wind_speed_10m_max?.[i] ?? 5,
+      wind_speed: d.wind_speed_10m_max?.[i] ?? 5,
+      weather_code: d.weather_code?.[i] ?? 0,
+      weatherCode: d.weather_code?.[i] ?? 0,
+      pressure: 1013,
+    }));
+  }
+
+  private async openMeteoForecast(lat: number, lon: number, days: number): Promise<ForecastData[]> {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,precipitation_sum,relative_humidity_2m_mean,wind_speed_10m_max,cloud_cover_mean&forecast_days=${Math.min(days, 16)}&timezone=auto`;
+    const res = await axios.get(url, { timeout: 8000 });
+    const d = res.data.daily;
+    if (!d || !d.time) return [];
+    return d.time.map((date: string, i: number) => ({
+      date,
+      temperature: d.temperature_2m_max?.[i] ?? 25,
+      precipitation: d.precipitation_sum?.[i] ?? 0,
+      humidity: d.relative_humidity_2m_mean?.[i] ?? 60,
+      windSpeed: d.wind_speed_10m_max?.[i] ?? 5,
+      cloudCover: d.cloud_cover_mean?.[i] ?? 50,
+    }));
   }
 
   async getClimateData(latitude: number, longitude: number, startDate: string, endDate: string): Promise<ClimateData[]> {
@@ -226,9 +280,18 @@ class EmbrapaApiService {
       this.cache.set(cacheKey, { data: normalized, timestamp: Date.now() });
       return normalized;
     } catch (error) {
-      console.error('❌ API climática real falhou:', error);
-      // Em produção, sem mock configurado, devemos falhar graciosamente
-      // mas por enquanto, usar mock como último recurso
+      console.warn('⚠️ Backend API falhou, tentando OpenMeteo direto...');
+      try {
+        const openMeteoData = await this.openMeteoHistorical(latitude, longitude, startDate, endDate);
+        if (openMeteoData.length > 0) {
+          console.log('✅ OpenMeteo fallback: dados reais obtidos');
+          this.cache.set(cacheKey, { data: openMeteoData, timestamp: Date.now() });
+          return openMeteoData;
+        }
+      } catch (omErr) {
+        console.warn('⚠️ OpenMeteo fallback falhou:', omErr);
+      }
+      // Último recurso: mock
       console.warn('⚠️ Fallback para dados climáticos mock (emergência)');
       const days = Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24));
       const mockResult = mockClimateData(Math.min(days, 365));
@@ -269,10 +332,13 @@ class EmbrapaApiService {
         longitude
       });
     } catch (error) {
-      console.error('❌ API clima atual real falhou:', error);
-      // Em produção, sem mock configurado, devemos falhar graciosamente
-      console.warn('⚠️ Fallback para clima atual mock (emergência)');
-      return mockClimateData(1)[0];
+      console.warn('⚠️ Backend clima atual falhou, tentando OpenMeteo...');
+      try {
+        return await this.openMeteoCurrentWeather(latitude, longitude);
+      } catch (omErr) {
+        console.warn('⚠️ OpenMeteo fallback falhou:', omErr);
+        return mockClimateData(1)[0];
+      }
     }
   }
 
@@ -616,30 +682,17 @@ class EmbrapaApiService {
       const forecastArray = response.forecast || response.previsao || response;
       return Array.isArray(forecastArray) ? forecastArray : [];
     } catch (error) {
-      console.error('❌ API previsão real falhou:', error);
-      // Tenta fallback para xWeather API
+      console.warn('⚠️ Backend previsão falhou, tentando OpenMeteo...');
       try {
-        console.log('🌤️ Tentando fallback para API xWeather...');
-        const xweatherResponse = await fetch(`${baseUrl}/api/v1/xweather/brazil-forecast?latitude=${latitude}&longitude=${longitude}&days=${days}`);
-        if (xweatherResponse.ok) {
-          const xweatherData = await xweatherResponse.json();
-          const forecastData = xweatherData.forecast_data || [];
-
-          // Converter dados da xWeather para o formato esperado
-          return forecastData.map((item: any) => ({
-            date: item.data ? new Date(item.data).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-            temperature: item.temperatura || item.temp || 25,
-            precipitation: item.precipitacao || item.precip || 0,
-            humidity: item.umidade || 60,
-            windSpeed: item.vento_velocidade || item.wind_speed || 5,
-            cloudCover: 50 // Valor padrão
-          }));
+        const openMeteoForecast = await this.openMeteoForecast(latitude, longitude, days);
+        if (openMeteoForecast.length > 0) {
+          console.log('✅ OpenMeteo forecast fallback: dados reais obtidos');
+          return openMeteoForecast;
         }
-      } catch (xweatherError) {
-        console.warn('⚠️ xWeather fallback falhou:', xweatherError);
+      } catch (omErr) {
+        console.warn('⚠️ OpenMeteo forecast fallback falhou:', omErr);
       }
-
-      // Se tudo falhar, usa dados mock como último recurso
+      // Último recurso: mock
       console.warn('⚠️ Fallback para previsão mock (emergência)');
       return mockForecastData(Math.min(days, 30));
     }
