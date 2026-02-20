@@ -15,8 +15,8 @@ const isValidJWT = (key: string | undefined): boolean => {
 };
 
 // Get Supabase credentials from env vars (no hardcoded fallbacks)
-const envKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const envKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim();
+const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || '').trim();
 const supabaseAnonKey = isValidJWT(envKey) ? envKey : '';
 
 if (!supabaseUrl || !supabaseAnonKey) {
