@@ -24,7 +24,13 @@ import numpy as np
 import pandas as pd
 from pydantic import BaseModel, Field
 from scipy.stats import genextreme, genpareto, norm
-import nolds
+
+try:
+    import nolds
+    NOLDS_AVAILABLE = True
+except (ImportError, TypeError):
+    nolds = None  # type: ignore
+    NOLDS_AVAILABLE = False
 
 # Configuração de logging
 logger = logging.getLogger(__name__)
@@ -305,8 +311,39 @@ class FractalRiskEngine:
              return 0.5
             
         try:
-            # nolds.hurst_rs implementa o método clássico R/S
-            hurst = nolds.hurst_rs(clean_series)
+            if NOLDS_AVAILABLE and nolds is not None:
+                # nolds.hurst_rs implementa o método clássico R/S
+                hurst = nolds.hurst_rs(clean_series)
+            else:
+                # Manual R/S Hurst exponent fallback
+                n = len(clean_series)
+                max_k = min(n // 2, 512)
+                if max_k < 8:
+                    return 0.5
+                rs_values = []
+                ns = []
+                for k in [8, 16, 32, 64, 128, 256, 512]:
+                    if k > max_k:
+                        break
+                    num_blocks = n // k
+                    rs_block = []
+                    for i in range(num_blocks):
+                        block = clean_series[i*k:(i+1)*k]
+                        mean_block = np.mean(block)
+                        deviations = block - mean_block
+                        cumsum = np.cumsum(deviations)
+                        R = np.max(cumsum) - np.min(cumsum)
+                        S = np.std(block, ddof=1)
+                        if S > 0:
+                            rs_block.append(R / S)
+                    if rs_block:
+                        rs_values.append(np.log(np.mean(rs_block)))
+                        ns.append(np.log(k))
+                if len(ns) >= 2:
+                    slope, _ = np.polyfit(ns, rs_values, 1)
+                    hurst = float(slope)
+                else:
+                    hurst = 0.5
             
             # Clip para manter limites físicos [0, 1]
             return max(0.0, min(1.0, float(hurst)))
