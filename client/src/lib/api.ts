@@ -1,7 +1,8 @@
 import { loadEmbrapaApi } from './loadEmbrapaApi';
+import { getDefaultHeaders } from './requestId';
 
 // Helper function to build API URLs properly
-function buildApiUrl(path: string): string {
+export function buildApiUrl(path: string): string {
     // Check if we're using mock data or real API
     const useMockData = import.meta.env.VITE_USE_MOCK_DATA === 'true';
 
@@ -76,6 +77,24 @@ export interface LocalizacaoData {
     distanceKm?: number;
 }
 
+export interface ClimateInsight {
+    predominant_climate: string;
+    risk_level: string;
+    extreme_events: Array<{
+        type: string;
+        severity: string;
+        description: string;
+        icon: string;
+    }>;
+    insight_text: string;
+    stats: {
+        avg_temp: number;
+        annual_precip_est: number;
+        max_temp: number;
+        min_temp: number;
+    };
+}
+
 export const embrapaApi = {
     async getDadosHistoricos(
         latitude: number,
@@ -100,11 +119,22 @@ export const embrapaApi = {
         try {
             const embrapaApiService = await loadEmbrapaApi();
             const location = await embrapaApiService.getLocationData(latitude, longitude);
+            // Fallback: try to ensure cidade/estado are set
+            let cidade = location.city;
+            let estado = location.state;
+            if (!cidade || !estado) {
+                // Try to parse from formattedAddress if available
+                if (location.formattedAddress) {
+                    const parts = location.formattedAddress.split(',');
+                    if (!cidade && parts.length > 0) cidade = parts[0].trim();
+                    if (!estado && parts.length > 1) estado = parts[1].replace(/[^A-Za-zÀ-ÿ]/g, '').trim();
+                }
+            }
             return {
                 latitude,
                 longitude,
-                cidade: location.city,
-                estado: location.state,
+                cidade,
+                estado,
                 estado_nome: location.stateName,
                 formattedAddress: location.formattedAddress,
                 cep: location.postcode,
@@ -192,6 +222,22 @@ export const embrapaApi = {
             formattedAddress: location.formattedAddress,
             pais: location.country
         }));
+    },
+
+    async getClimateInsights(latitude: number, longitude: number): Promise<ClimateInsight> {
+        try {
+            const url = buildApiUrl(`/api/v1/clima/insights?latitude=${latitude}&longitude=${longitude}`);
+            const response = await fetch(url, { headers: getDefaultHeaders() });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Erro ao buscar insights climáticos:', error);
+            throw error;
+        }
     }
 };
 
@@ -231,6 +277,8 @@ export const mlApi = {
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {
+                    ...getDefaultHeaders(),
+                    ...getDefaultHeaders(),
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(features),
@@ -254,6 +302,8 @@ export const mlApi = {
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {
+                    ...getDefaultHeaders(),
+                    ...getDefaultHeaders(),
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(data || null),
@@ -273,7 +323,9 @@ export const mlApi = {
     async getModelInfo(): Promise<any> {
         try {
             const url = buildApiUrl('/api/v1/ml/model-info');
-            const response = await fetch(url);
+            const response = await fetch(url, {
+                headers: getDefaultHeaders(),
+            });
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -329,7 +381,9 @@ export const externalApi = {
     async getWeatherData(latitude: number, longitude: number): Promise<WeatherData> {
         try {
             const url = buildApiUrl(`/api/v1/external/weather?latitude=${latitude}&longitude=${longitude}`);
-            const response = await fetch(url);
+            const response = await fetch(url, {
+                headers: getDefaultHeaders(),
+            });
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -345,7 +399,9 @@ export const externalApi = {
     async getEconomicIndicators(): Promise<EconomicData> {
         try {
             const url = buildApiUrl('/api/v1/external/economic-indicators');
-            const response = await fetch(url);
+            const response = await fetch(url, {
+                headers: getDefaultHeaders(),
+            });
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -362,7 +418,9 @@ export const externalApi = {
         try {
             const symbolsParam = symbols.join(',');
             const url = buildApiUrl(`/api/v1/external/commodity-prices?symbols=${symbolsParam}`);
-            const response = await fetch(url);
+            const response = await fetch(url, {
+                headers: getDefaultHeaders(),
+            });
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -378,7 +436,9 @@ export const externalApi = {
     async getXWeatherForecast(latitude: number, longitude: number, days: number = 7): Promise<any[]> {
         try {
             const url = buildApiUrl(`/api/v1/xweather/brazil-forecast?latitude=${latitude}&longitude=${longitude}&days=${days}`);
-            const response = await fetch(url);
+            const response = await fetch(url, {
+                headers: getDefaultHeaders(),
+            });
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -404,7 +464,9 @@ export const externalApi = {
             }
 
             const url = buildApiUrl(`/api/v1/external/real-time-data?${params}`);
-            const response = await fetch(url);
+            const response = await fetch(url, {
+                headers: getDefaultHeaders(),
+            });
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -490,6 +552,8 @@ export const microsegmentationApi = {
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {
+                    ...getDefaultHeaders(),
+                    ...getDefaultHeaders(),
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(regionBounds),
@@ -509,7 +573,9 @@ export const microsegmentationApi = {
     async analyzeLocationRisk(latitude: number, longitude: number, regionId: string = 'default'): Promise<LocationRiskAnalysis> {
         try {
             const url = buildApiUrl(`/api/v1/microsegmentation/analyze-location?latitude=${latitude}&longitude=${longitude}&region_id=${regionId}`);
-            const response = await fetch(url);
+            const response = await fetch(url, {
+                headers: getDefaultHeaders(),
+            });
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -525,7 +591,9 @@ export const microsegmentationApi = {
     async getMicrosegmentationSummary(regionId: string = 'default'): Promise<MicrosegmentationSummary> {
         try {
             const url = buildApiUrl(`/api/v1/microsegmentation/summary?region_id=${regionId}`);
-            const response = await fetch(url);
+            const response = await fetch(url, {
+                headers: getDefaultHeaders(),
+            });
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -642,7 +710,7 @@ export const auditApi = {
             }
 
             const url = buildApiUrl(`/api/v1/audit/logs?${queryParams}`);
-            const response = await fetch(url);
+            const response = await fetch(url, { headers: getDefaultHeaders() });
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -670,7 +738,7 @@ export const auditApi = {
             }
 
             const url = buildApiUrl(`/api/v1/audit/compliance/report?${queryParams}`);
-            const response = await fetch(url);
+            const response = await fetch(url, { headers: getDefaultHeaders() });
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -700,6 +768,7 @@ export const auditApi = {
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {
+                    ...getDefaultHeaders(),
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(params),
@@ -735,7 +804,7 @@ export const auditApi = {
             }
 
             const url = buildApiUrl(`/api/v1/audit/alerts?${queryParams}`);
-            const response = await fetch(url);
+            const response = await fetch(url, { headers: getDefaultHeaders() });
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -754,6 +823,7 @@ export const auditApi = {
             const response = await fetch(url, {
                 method: 'PUT',
                 headers: {
+                    ...getDefaultHeaders(),
                     'Content-Type': 'application/json',
                 },
             });
@@ -775,6 +845,7 @@ export const auditApi = {
             const response = await fetch(url, {
                 method: 'PUT',
                 headers: {
+                    ...getDefaultHeaders(),
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ resolution_notes: resolutionNotes }),
@@ -794,7 +865,7 @@ export const auditApi = {
     async getAlertStats(): Promise<AlertStats> {
         try {
             const url = buildApiUrl('/api/v1/audit/alerts/stats');
-            const response = await fetch(url);
+            const response = await fetch(url, { headers: getDefaultHeaders() });
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -810,7 +881,7 @@ export const auditApi = {
     async getAlertSummary(): Promise<AlertSummary> {
         try {
             const url = buildApiUrl('/api/v1/audit/alerts/summary');
-            const response = await fetch(url);
+            const response = await fetch(url, { headers: getDefaultHeaders() });
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -853,6 +924,7 @@ export const pricingApi = {
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {
+                    ...getDefaultHeaders(),
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(request),
@@ -1021,6 +1093,8 @@ export interface PolicyPricingRequest {
     scr_score?: number;
     is_manual_underwriting?: boolean;
     location_risk_zone?: string;
+    latitude?: number;
+    longitude?: number;
 }
 
 export interface FinancialBreakdown {
@@ -1042,6 +1116,12 @@ export interface PolicyPricingResult {
     status: string;
     rejection_reason: string | null;
     financials: FinancialBreakdown;
+    fractal_metrics?: {
+        hurst_exponent: number;
+        fractal_dimension: number;
+        regime: string;
+        complexity: number;
+    };
     decision_flow: string;
 }
 
@@ -1050,7 +1130,7 @@ export const policyPricingApi = {
         const useMockData = import.meta.env.VITE_USE_MOCK_DATA === 'true';
 
         if (useMockData) {
-            console.warn('Using mock data for policy pricing calculation');
+            console.warn('Using mock data for policy pricing calculation (configured via env)');
             return generateMockPricingResult(request);
         }
 
@@ -1059,58 +1139,76 @@ export const policyPricingApi = {
 
             // Add timeout and improve error handling
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(request),
-                signal: controller.signal
-            });
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        ...getDefaultHeaders(),
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(request),
+                    signal: controller.signal
+                });
 
-            clearTimeout(timeoutId);
+                clearTimeout(timeoutId);
 
-            if (!response.ok) {
-                // Handle 404 and other HTTP errors
-                if (response.status === 404) {
-                    console.warn('API endpoint not found, using mock data as fallback');
-                    return generateMockPricingResult(request);
-                }
-
-                let errorMessage = `HTTP error! status: ${response.status}`;
-                const text = await response.text().catch(() => '');
-                try {
-                    const errorData = JSON.parse(text);
-                    if (errorData.detail) {
-                        errorMessage += ` - ${errorData.detail}`;
-                    } else {
-                        errorMessage += ` - ${JSON.stringify(errorData)}`;
+                if (!response.ok) {
+                    // Handle 404 and other HTTP errors
+                    if (response.status === 404) {
+                        console.warn('API endpoint not found (404), using mock data as fallback');
+                        return generateMockPricingResult(request);
                     }
-                } catch (e) {
-                    errorMessage += ` - ${text.substring(0, 200)}`;
-                }
-                throw new Error(errorMessage);
-            }
 
-            const result = await response.json();
-            return result;
-        } catch (error) {
+                    let errorMessage = `HTTP error! status: ${response.status}`;
+                    const text = await response.text().catch(() => '');
+                    try {
+                        const errorData = JSON.parse(text);
+                        if (errorData.detail) {
+                            errorMessage += ` - ${errorData.detail}`;
+                        } else {
+                            errorMessage += ` - ${JSON.stringify(errorData)}`;
+                        }
+                    } catch (e) {
+                        errorMessage += ` - ${text.substring(0, 200)}`;
+                    }
+                    throw new Error(errorMessage);
+                }
+
+                const result = await response.json();
+                return validatePolicyPricingResult(result);
+            } catch (networkError: any) {
+                clearTimeout(timeoutId);
+                throw networkError;
+            }
+        } catch (error: any) {
             console.error('Erro no cálculo de apólice:', error);
-            // Check if the error is related to network issues to provide better diagnostics
-            if (error instanceof TypeError && (error.message.includes('fetch') || error.message.includes('network'))) {
-                console.error('Falha na requisição de cálculo avançado - verifique a configuração do backend');
+
+            // Enhanced error detection for fallback
+            const isNetworkError = error instanceof TypeError && (
+                error.message.includes('fetch') ||
+                error.message.includes('network') ||
+                error.message.includes('Failed to fetch')
+            );
+
+            const isTimeout = error.name === 'AbortError';
+            const isConnectionRefused = error.message.includes('ECONNREFUSED') || error.message.includes('Connection refused');
+
+            if (isNetworkError || isTimeout || isConnectionRefused) {
+                const reason = isTimeout ? 'timeout' : 'network error';
+                console.error(`Falha na requisição de cálculo avançado (${reason}) - verifique a configuração do backend`);
 
                 // Provide mock response for development/deployment without backend
-                console.warn('Using mock data for policy pricing calculation (fallback)');
-                return generateMockPricingResult(request);
-            }
+                console.warn(`Using mock data for policy pricing calculation (fallback due to ${reason})`);
 
-            // Specific handling for AbortError (timeout)
-            if ((error as Error).name === 'AbortError') {
-                console.warn('Request timeout, using mock data');
-                return generateMockPricingResult(request);
+                // Add a flag to the result to indicate it's a fallback
+                const mockResult = generateMockPricingResult(request);
+                return {
+                    ...mockResult,
+                    status: `${mockResult.status}_FALLBACK`,
+                    rejection_reason: `Backend indisponível (${error.message}). Usando dados simulados.`
+                };
             }
 
             throw error;
@@ -1118,6 +1216,45 @@ export const policyPricingApi = {
     }
 };
 
+function validatePolicyPricingResult(payload: any): PolicyPricingResult {
+    const fin = payload?.financials;
+    if (
+        !fin ||
+        typeof fin.total_premium !== 'number' ||
+        typeof fin.net_profit !== 'number' ||
+        typeof fin.pure_premium !== 'number'
+    ) {
+        throw new Error('Resposta de pricing inválida: financials ausente ou malformado');
+    }
+
+    return {
+        is_approved: Boolean(payload.is_approved),
+        status: String(payload.status ?? ''),
+        rejection_reason: payload.rejection_reason ?? null,
+        financials: {
+            pure_premium: Number(fin.pure_premium),
+            risk_margin: Number(fin.risk_margin ?? 0),
+            loadings: Number(fin.loadings ?? 0),
+            total_premium: Number(fin.total_premium),
+            op_claims_cost: Number(fin.op_claims_cost ?? 0),
+            op_admin_cost: Number(fin.op_admin_cost ?? 0),
+            op_subscription_cost: Number(fin.op_subscription_cost ?? 0),
+            total_operational_costs: Number(fin.total_operational_costs ?? 0),
+            net_profit: Number(fin.net_profit),
+            profit_margin_pct: Number(fin.profit_margin_pct ?? 0),
+            combined_ratio: Number(fin.combined_ratio ?? 0),
+        },
+        fractal_metrics: payload.fractal_metrics
+            ? {
+                hurst_exponent: Number(payload.fractal_metrics.hurst_exponent ?? 0),
+                fractal_dimension: Number(payload.fractal_metrics.fractal_dimension ?? 0),
+                regime: String(payload.fractal_metrics.regime ?? ''),
+                complexity: Number(payload.fractal_metrics.complexity ?? 0),
+            }
+            : undefined,
+        decision_flow: String(payload.decision_flow ?? ''),
+    };
+}
 export const climateDerivativesApi = {
     async calculatePricing(request: ClimateDerivativePricingRequest): Promise<ClimateDerivativePricingResult> {
         try {
@@ -1125,6 +1262,7 @@ export const climateDerivativesApi = {
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {
+                    ...getDefaultHeaders(),
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(request),
@@ -1147,6 +1285,7 @@ export const climateDerivativesApi = {
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {
+                    ...getDefaultHeaders(),
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(request),
@@ -1174,6 +1313,7 @@ export const climateDerivativesApi = {
             const response = await fetch(url, {
                 method: 'GET',
                 headers: {
+                    ...getDefaultHeaders(),
                     'Content-Type': 'application/json',
                 },
             });
@@ -1201,6 +1341,7 @@ export const climateDerivativesApi = {
             const response = await fetch(url, {
                 method: 'GET',
                 headers: {
+                    ...getDefaultHeaders(),
                     'Content-Type': 'application/json',
                 },
             });
@@ -1222,6 +1363,7 @@ export const climateDerivativesApi = {
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {
+                    ...getDefaultHeaders(),
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(request),
@@ -1266,6 +1408,7 @@ export const geminiApi = {
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: {
+                        ...getDefaultHeaders(),
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({ message, context, history }),
@@ -1302,6 +1445,7 @@ export const geminiApi = {
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {
+                    ...getDefaultHeaders(),
                     'Content-Type': 'application/json',
                 },
             });
@@ -1327,6 +1471,7 @@ export const geminiApi = {
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {
+                    ...getDefaultHeaders(),
                     'Content-Type': 'application/json',
                 },
             });
@@ -1345,7 +1490,7 @@ export const geminiApi = {
     async getCapabilities(): Promise<any> {
         try {
             const url = buildApiUrl('/api/v1/gemini/capabilities');
-            const response = await fetch(url);
+            const response = await fetch(url, { headers: getDefaultHeaders() });
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);

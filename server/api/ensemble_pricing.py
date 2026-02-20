@@ -133,7 +133,7 @@ async def calculate_ensemble_pricing_endpoint(
                 detail="Number of parameters and observations must be positive",
             )
 
-        result = calculate_ensemble_pricing(
+        result = await calculate_ensemble_pricing(
             model_premiums,
             model_log_likelihoods,
             model_n_params,

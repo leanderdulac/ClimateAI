@@ -1,0 +1,35 @@
+# ============================================
+# Configuração de Cron para Backups Automáticos
+# ============================================
+# Adicione esta linha ao crontab (crontab -e)
+# ============================================
+
+# Backup diário às 2:00 AM
+0 2 * * * cd /home/exp/Downloads/ClimateAI && ./scripts/backup.sh >> ./logs/backup_cron.log 2>&1
+
+# Backup semanal (Domingo às 3:00 AM) com retenção estendida
+0 3 * * 0 cd /home/exp/Downloads/ClimateAI && RETENTION_DAYS=90 ./scripts/backup.sh >> ./logs/backup_weekly.log 2>&1
+
+# Verificação de integridade dos backups (diária às 4:00 AM)
+0 4 * * * cd /home/exp/Downloads/ClimateAI && find ./backups -name "*.sql.gz" -mtime +1 -exec gzip -t {} \; >> ./logs/backup_verify.log 2>&1
+
+# Limpeza de logs antigos (mensal)
+0 5 1 * * cd /home/exp/Downloads/ClimateAI && find ./logs -name "*.log" -mtime +30 -delete
+
+# ============================================
+# Instruções de Instalação
+# ============================================
+# 1. Torne os scripts executáveis:
+#    chmod +x ./scripts/backup.sh
+#
+# 2. Edite o crontab:
+#    crontab -e
+#
+# 3. Adicione as linhas acima
+#
+# 4. Verifique o cron:
+#    crontab -l
+#
+# 5. Reinicie o serviço cron:
+#    sudo systemctl restart cron
+# ============================================

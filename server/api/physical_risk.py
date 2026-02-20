@@ -10,7 +10,6 @@ from fastapi import APIRouter, HTTPException, Query
 
 from services.physical_risk_service import (
     ClimateScenario,
-    PhysicalRiskCalculator,
     PropertyCharacteristics,
     calculate_physical_risk,
     calculate_scenario_comparison,

@@ -65,14 +65,23 @@ class DatabaseHealthCheck:
         start_time = datetime.now()
 
         try:
-            # Importar engine do SQLAlchemy
-            from sqlalchemy import create_engine, text
+            # Importar engine do SQLAlchemy async
+            from sqlalchemy.ext.asyncio import create_async_engine
+            from sqlalchemy import text
+            
+            # Se for SQLite na memória, adicionar connect_args
+            is_sqlite = self.database_url.startswith("sqlite")
+            connect_args = {"check_same_thread": False} if is_sqlite else {}
+            
+            print(f"CRITICAL HEALTHCHECK URL: {self.database_url}")
+            engine = create_async_engine(self.database_url, connect_args=connect_args)
 
-            engine = create_engine(self.database_url)
-
-            # Teste de conexão
-            with engine.connect() as connection:
-                connection.execute(text("SELECT 1"))
+            # Teste de conexão assíncrono
+            async with engine.connect() as connection:
+                await connection.execute(text("SELECT 1"))
+                
+            # Fechar conexão do engine
+            await engine.dispose()
 
             elapsed = (datetime.now() - start_time).total_seconds() * 1000
 
@@ -81,7 +90,7 @@ class DatabaseHealthCheck:
                 status=ServiceStatus.HEALTHY,
                 message="Database connection successful",
                 response_time_ms=elapsed,
-                details={"driver": "PostgreSQL/SQLite"},
+                details={"driver": "PostgreSQL/SQLite (Async)"},
             )
 
         except Exception as e:

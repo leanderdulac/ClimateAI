@@ -10,7 +10,6 @@ from typing import Any, Dict, List, Optional, Tuple
 from fastapi import APIRouter, HTTPException, Query
 
 from services.concentration_risk_service import (
-    ConcentrationRiskCalculator,
     ConcentrationRiskResult,
     NeighborhoodDefinition,
     PropertyInfo,

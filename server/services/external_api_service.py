@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 from functools import lru_cache
 from typing import Any, Dict, List, Optional, Tuple
 
-import requests
+import httpx
 
 logger = logging.getLogger(__name__)
 
@@ -104,7 +104,8 @@ class ExternalAPIService:
                 "units": "metric",
             }
 
-            response = requests.get(url, params=params, timeout=10)
+            async with httpx.AsyncClient() as client:
+                response = await client.get(url, params=params, timeout=10.0)
             response.raise_for_status()
 
             data = response.json()
@@ -181,45 +182,46 @@ class ExternalAPIService:
             # Get CPI (inflation) and GDP data
             indicators = {}
 
-            # CPI data (Brazil)
-            cpi_url = "https://api.stlouisfed.org/fred/series/observations"
-            cpi_params = {
-                "series_id": "BRACPIALLMINMEI",  # Brazil CPI
-                "api_key": self.fred_api_key,
-                "file_type": "json",
-                "limit": 1,
-                "sort_order": "desc",
-            }
+            async with httpx.AsyncClient() as client:
+                # CPI data (Brazil)
+                cpi_url = "https://api.stlouisfed.org/fred/series/observations"
+                cpi_params = {
+                    "series_id": "BRACPIALLMINMEI",  # Brazil CPI
+                    "api_key": self.fred_api_key,
+                    "file_type": "json",
+                    "limit": 1,
+                    "sort_order": "desc",
+                }
 
-            cpi_response = requests.get(cpi_url, params=cpi_params, timeout=10)
-            if cpi_response.status_code == 200:
-                cpi_data = cpi_response.json()
-                if cpi_data.get("observations"):
-                    latest_cpi = cpi_data["observations"][0]
-                    indicators["inflation_rate"] = (
-                        float(latest_cpi.get("value", 0)) / 100
-                    )
+                cpi_response = await client.get(cpi_url, params=cpi_params, timeout=10.0)
+                if cpi_response.status_code == 200:
+                    cpi_data = cpi_response.json()
+                    if cpi_data.get("observations"):
+                        latest_cpi = cpi_data["observations"][0]
+                        indicators["inflation_rate"] = (
+                            float(latest_cpi.get("value", 0)) / 100
+                        )
 
-            # GDP growth (Brazil)
-            gdp_url = "https://api.stlouisfed.org/fred/series/observations"
-            gdp_params = {
-                "series_id": "MKTGDPBRA646NWDB",  # Brazil GDP
-                "api_key": self.fred_api_key,
-                "file_type": "json",
-                "limit": 12,  # Last 12 months for YoY calculation
-                "sort_order": "desc",
-            }
+                # GDP growth (Brazil)
+                gdp_url = "https://api.stlouisfed.org/fred/series/observations"
+                gdp_params = {
+                    "series_id": "MKTGDPBRA646NWDB",  # Brazil GDP
+                    "api_key": self.fred_api_key,
+                    "file_type": "json",
+                    "limit": 12,  # Last 12 months for YoY calculation
+                    "sort_order": "desc",
+                }
 
-            gdp_response = requests.get(gdp_url, params=gdp_params, timeout=10)
-            if gdp_response.status_code == 200:
-                gdp_data = gdp_response.json()
-                if gdp_data.get("observations") and len(gdp_data["observations"]) >= 12:
-                    current_gdp = float(gdp_data["observations"][0].get("value", 0))
-                    previous_gdp = float(gdp_data["observations"][11].get("value", 0))
-                    if previous_gdp > 0:
-                        indicators["gdp_growth"] = (
-                            current_gdp - previous_gdp
-                        ) / previous_gdp
+                gdp_response = await client.get(gdp_url, params=gdp_params, timeout=10.0)
+                if gdp_response.status_code == 200:
+                    gdp_data = gdp_response.json()
+                    if gdp_data.get("observations") and len(gdp_data["observations"]) >= 12:
+                        current_gdp = float(gdp_data["observations"][0].get("value", 0))
+                        previous_gdp = float(gdp_data["observations"][11].get("value", 0))
+                        if previous_gdp > 0:
+                            indicators["gdp_growth"] = (
+                                current_gdp - previous_gdp
+                            ) / previous_gdp
 
             economic_data = {
                 "inflation_rate": indicators.get("inflation_rate", 0.04),  # Default 4%
@@ -262,53 +264,54 @@ class ExternalAPIService:
 
         results = {}
 
-        for symbol in symbols:
-            cache_key = f"commodity_{symbol}"
+        async with httpx.AsyncClient() as client:
+            for symbol in symbols:
+                cache_key = f"commodity_{symbol}"
 
-            # Check cache first
-            cached_data = self._get_cached_data(cache_key)
-            if cached_data:
-                results[symbol] = cached_data
-                continue
+                # Check cache first
+                cached_data = self._get_cached_data(cache_key)
+                if cached_data:
+                    results[symbol] = cached_data
+                    continue
 
-            if not self._rate_limit_check("alphavantage"):
-                logger.warning("Rate limit exceeded for Alpha Vantage API")
-                results[symbol] = self._get_mock_commodity_data([symbol])[symbol]
-                continue
-
-            try:
-                url = "https://www.alphavantage.co/query"
-                params = {
-                    "function": "GLOBAL_QUOTE",
-                    "symbol": symbol,
-                    "apikey": self.alpha_vantage_api_key,
-                }
-
-                response = requests.get(url, params=params, timeout=10)
-                response.raise_for_status()
-
-                data = response.json()
-
-                if "Global Quote" in data:
-                    quote = data["Global Quote"]
-                    commodity_data = {
-                        "price": float(quote.get("05. price", 0)),
-                        "change": float(quote.get("09. change", 0)),
-                        "change_percent": float(
-                            quote.get("10. change percent", "0%").strip("%")
-                        ),
-                        "volume": int(quote.get("06. volume", 0)),
-                        "timestamp": datetime.now().isoformat(),
-                        "source": "alphavantage",
-                    }
-                    results[symbol] = commodity_data
-                    self._set_cached_data(cache_key, commodity_data)
-                else:
+                if not self._rate_limit_check("alphavantage"):
+                    logger.warning("Rate limit exceeded for Alpha Vantage API")
                     results[symbol] = self._get_mock_commodity_data([symbol])[symbol]
+                    continue
 
-            except Exception as e:
-                logger.error(f"Error fetching commodity data for {symbol}: {e}")
-                results[symbol] = self._get_mock_commodity_data([symbol])[symbol]
+                try:
+                    url = "https://www.alphavantage.co/query"
+                    params = {
+                        "function": "GLOBAL_QUOTE",
+                        "symbol": symbol,
+                        "apikey": self.alpha_vantage_api_key,
+                    }
+
+                    response = await client.get(url, params=params, timeout=10.0)
+                    response.raise_for_status()
+
+                    data = response.json()
+
+                    if "Global Quote" in data:
+                        quote = data["Global Quote"]
+                        commodity_data = {
+                            "price": float(quote.get("05. price", 0)),
+                            "change": float(quote.get("09. change", 0)),
+                            "change_percent": float(
+                                quote.get("10. change percent", "0%").strip("%")
+                            ),
+                            "volume": int(quote.get("06. volume", 0)),
+                            "timestamp": datetime.now().isoformat(),
+                            "source": "alphavantage",
+                        }
+                        results[symbol] = commodity_data
+                        self._set_cached_data(cache_key, commodity_data)
+                    else:
+                        results[symbol] = self._get_mock_commodity_data([symbol])[symbol]
+
+                except Exception as e:
+                    logger.error(f"Error fetching commodity data for {symbol}: {e}")
+                    results[symbol] = self._get_mock_commodity_data([symbol])[symbol]
 
         return results
 

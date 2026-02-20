@@ -12,7 +12,7 @@ from fastapi import APIRouter, HTTPException, Query
 
 from services.investment_return_service import (
     InvestmentPortfolioAnalysis,
-    InvestmentReturnCalculator,
+    InvestmentReturnService,
     InvestmentReturnResult,
     PolicyInvestmentProfile,
     calculate_expected_return_rate,

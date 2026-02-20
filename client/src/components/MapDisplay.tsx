@@ -145,7 +145,7 @@ export function MapDisplay() {
                                                 </div>
                                                 <div>
                                                     <p className="text-xs text-gray-600 font-medium">Temperatura</p>
-                                                    <p className="text-lg font-black text-red-700">{weather.temperature.toFixed(1)}°C</p>
+                                                    <p className="text-lg font-black text-red-700">{typeof weather.temperature === 'number' ? weather.temperature.toFixed(1) : '--'}°C</p>
                                                 </div>
                                             </div>
 
@@ -156,8 +156,8 @@ export function MapDisplay() {
                                                 <div>
                                                     <p className="text-xs text-gray-600 font-medium">Precipitação / Umidade</p>
                                                     <p className="text-lg font-black text-blue-700">
-                                                        {weather.precipitation.toFixed(1)} mm
-                                                        <span className="text-sm font-normal text-gray-500 ml-2">({weather.humidity}%)</span>
+                                                        {typeof weather.precipitation === 'number' ? weather.precipitation.toFixed(1) : '--'} mm
+                                                        <span className="text-sm font-normal text-gray-500 ml-2">{typeof weather.humidity === 'number' ? `(${weather.humidity}%)` : ''}</span>
                                                     </p>
                                                 </div>
                                             </div>
@@ -169,7 +169,7 @@ export function MapDisplay() {
                                                     </div>
                                                     <div>
                                                         <p className="text-xs text-gray-600 font-medium">Velocidade do Vento</p>
-                                                        <p className="text-lg font-black text-slate-700">{weather.windSpeed.toFixed(1)} km/h</p>
+                                                        <p className="text-lg font-black text-slate-700">{typeof weather.windSpeed === 'number' ? weather.windSpeed.toFixed(1) : '--'} km/h</p>
                                                     </div>
                                                 </div>
                                             )}

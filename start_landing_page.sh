@@ -16,7 +16,6 @@ if [ ! -f "landing-page.html" ]; then
 fi
 
 # Inicia um servidor HTTP simples na porta 8080
-cd /home/artha/climateAI
 python3 -m http.server 8080 --bind 0.0.0.0
 
 echo ""

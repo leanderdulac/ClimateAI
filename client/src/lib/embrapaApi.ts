@@ -1,4 +1,5 @@
 // Real API service for backend integration
+/// <reference types="vite/client" />
 import axios from 'axios';
 
 // Nominatim API base URL for real geocoding
@@ -117,6 +118,8 @@ class EmbrapaApiService {
   private useMockData = import.meta.env.VITE_USE_MOCK_DATA === 'true' ||
     !import.meta.env.VITE_API_BASE_URL ||
     import.meta.env.VITE_API_BASE_URL === '';
+  private cache: Map<string, { data: any, timestamp: number }> = new Map();
+  private CACHE_TTL = 1000 * 60 * 10; // 10 minutes
 
   // Real geocoding using Nominatim API
   private async nominatimSearch(query: string, limit: number = 10): Promise<any[]> {
@@ -167,7 +170,7 @@ class EmbrapaApiService {
 
   private async apiGet<T>(endpoint: string, params?: Record<string, any>): Promise<T> {
     try {
-      const response = await axios.get(`${baseUrl}${endpoint}`, { params, timeout: 5000 });
+      const response = await axios.get(`${baseUrl}${endpoint}`, { params, timeout: 30000 });
       this.isApiAvailable = true;
       return response.data;
     } catch (error) {
@@ -179,7 +182,7 @@ class EmbrapaApiService {
 
   private async apiPost<T>(endpoint: string, data?: any): Promise<T> {
     try {
-      const response = await axios.post(`${baseUrl}${endpoint}`, data, { timeout: 5000 });
+      const response = await axios.post(`${baseUrl}${endpoint}`, data, { timeout: 30000 });
       this.isApiAvailable = true;
       return response.data;
     } catch (error) {
@@ -190,29 +193,66 @@ class EmbrapaApiService {
   }
 
   async getClimateData(latitude: number, longitude: number, startDate: string, endDate: string): Promise<ClimateData[]> {
+    const cacheKey = `historical:${latitude}:${longitude}:${startDate}:${endDate}`;
+    const cached = this.cache.get(cacheKey);
+
+    if (cached && (Date.now() - cached.timestamp) < this.CACHE_TTL) {
+      console.log('🏛️ Usando dados climáticos do cache:', cacheKey);
+      return cached.data;
+    }
+
     if (this.useMockData) {
       // Usar dados mock apenas quando explicitamente configurado
       console.log('🌤️ Usando dados climáticos mock (configurado)');
       const days = Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24));
-      return mockClimateData(Math.min(days, 365));
+      const mockResult = mockClimateData(Math.min(days, 365));
+      this.cache.set(cacheKey, { data: mockResult, timestamp: Date.now() });
+      return mockResult;
     }
 
     try {
       // Tentar API real primeiro
-      return await this.apiGet('/clima/historico', {
+      const response = await this.apiGet<any>('/api/v1/clima/historico', {
         latitude,
         longitude,
         data_inicio: startDate,
         data_fim: endDate
       });
+
+      // Backend returns { data: [...], ... }
+      const dataArray = response.data || response;
+      const normalized = Array.isArray(dataArray) ? dataArray.map(d => this.normalizeClimateData(d)) : [];
+
+      this.cache.set(cacheKey, { data: normalized, timestamp: Date.now() });
+      return normalized;
     } catch (error) {
       console.error('❌ API climática real falhou:', error);
       // Em produção, sem mock configurado, devemos falhar graciosamente
       // mas por enquanto, usar mock como último recurso
       console.warn('⚠️ Fallback para dados climáticos mock (emergência)');
       const days = Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24));
-      return mockClimateData(Math.min(days, 365));
+      const mockResult = mockClimateData(Math.min(days, 365));
+      this.cache.set(cacheKey, { data: mockResult, timestamp: Date.now() });
+      return mockResult;
     }
+  }
+
+  private normalizeClimateData(data: any): ClimateData {
+    return {
+      date: data?.date ?? data?.data ?? new Date().toISOString().split('T')[0],
+      temperature: data?.temperature ?? data?.temperatura ?? 20,
+      temperature_max: data?.temperature_max ?? data?.temperatura_max ?? data?.temperature ?? data?.temperatura,
+      temperature_min: data?.temperature_min ?? data?.temperatura_min ?? data?.temperature ?? data?.temperatura,
+      temperature_apparent: data?.temperature_apparent ?? data?.temperatura_apparent,
+      precipitation: data?.precipitation ?? data?.precipitacao ?? 0,
+      precipitation_probability: data?.precipitation_probability ?? data?.precipitacao_probability ?? 0,
+      humidity: data?.humidity ?? data?.umidade ?? 50,
+      windSpeed: data?.windSpeed ?? data?.wind_speed ?? data?.vento_velocidade ?? 0,
+      wind_speed: data?.wind_speed ?? data?.windSpeed ?? data?.vento_velocidade ?? 0,
+      weather_code: data?.weather_code ?? data?.weatherCode ?? 0,
+      weatherCode: data?.weatherCode ?? data?.weather_code ?? 0,
+      pressure: data?.pressure ?? data?.pressao ?? 1013
+    };
   }
 
   async getCurrentClimate(latitude: number, longitude: number): Promise<ClimateData> {
@@ -224,7 +264,7 @@ class EmbrapaApiService {
 
     try {
       // Tentar API real primeiro
-      return await this.apiGet('/clima/atual', {
+      return await this.apiGet('/api/v1/clima/atual', {
         latitude,
         longitude
       });
@@ -236,9 +276,9 @@ class EmbrapaApiService {
     }
   }
 
-  async getLocationData(latitude: number, longitude: number): Promise<LocationData> {
+  async getLocalizacao(latitude: number, longitude: number): Promise<LocationData> {
     try {
-      const location = await this.apiGet('/localizacao/coordenadas', {
+      const location = await this.apiGet('/api/v1/localizacao/coordenadas', {
         latitude,
         longitude
       });
@@ -250,11 +290,11 @@ class EmbrapaApiService {
     }
   }
 
-  async getLocationByCep(cep: string): Promise<LocationData> {
+  async getLocalizacaoPorCep(cep: string): Promise<LocationData> {
     try {
       const sanitized = cep.replace(/\D/g, '');
       console.log(`🔍 [API] Buscando CEP via API: ${sanitized}`);
-      const location = await this.apiGet(`/localizacao/cep/${sanitized}`);
+      const location = await this.apiGet(`/api/v1/localizacao/cep/${sanitized}`);
       console.log('✅ [API] CEP encontrado via API');
       return this.normalizeLocation(location);
     } catch (error) {
@@ -445,7 +485,7 @@ class EmbrapaApiService {
     }));
   }
 
-  async getLocationByCity(city: string, state: string): Promise<LocationData> {
+  async getLocalizacaoPorCidade(city: string, state: string): Promise<LocationData> {
     if (this.useMockData) {
       // Usar dados mock diretamente
       console.log(`🔍 [MOCK] Buscando cidade mock: ${city}, ${state}`);
@@ -499,7 +539,7 @@ class EmbrapaApiService {
   // IBGE API for Brazilian municipalities
   private IBGE_API_BASE_URL = 'https://servicodados.ibge.gov.br/api/v1/localidades/municipios';
 
-  async searchCities(term: string, state?: string): Promise<LocationData[]> {
+  async buscarCidades(term: string, state?: string): Promise<LocationData[]> {
     if (this.useMockData) {
       console.log('🌍 Usando busca de cidades mock');
       return this.getMockCitySearch(term, state);
@@ -514,7 +554,7 @@ class EmbrapaApiService {
         params.estado = state.toUpperCase();
       }
 
-      const cities = await this.apiGet<any[]>('/localizacao/cidade/busca', params);
+      const cities = await this.apiGet<any[]>('/api/v1/localizacao/cidade/busca', params);
 
       if (cities && cities.length > 0) {
         const locationData: LocationData[] = cities.map((city: any) => ({
@@ -541,6 +581,23 @@ class EmbrapaApiService {
     }
   }
 
+  // English aliases for backward compatibility with older frontend code
+  async getLocationData(latitude: number, longitude: number): Promise<LocationData> {
+    return this.getLocalizacao(latitude, longitude);
+  }
+
+  async getLocationByCep(cep: string): Promise<LocationData> {
+    return this.getLocalizacaoPorCep(cep);
+  }
+
+  async getLocationByCity(city: string, state: string): Promise<LocationData> {
+    return this.getLocalizacaoPorCidade(city, state);
+  }
+
+  async searchCities(term: string, state?: string): Promise<LocationData[]> {
+    return this.buscarCidades(term, state);
+  }
+
   async getWeatherForecast(latitude: number, longitude: number, days: number = 7): Promise<ForecastData[]> {
     if (this.useMockData) {
       // Usar dados mock apenas quando explicitamente configurado
@@ -549,21 +606,21 @@ class EmbrapaApiService {
     }
 
     try {
-      const response = await this.apiGet('/clima/previsao', {
+      const response = await this.apiGet('/api/v1/clima/previsao', {
         latitude,
         longitude,
         dias: days
       }) as any;
 
-      // O backend retorna { previsao: [...], ... }, então extraímos o array
-      const forecastArray = response.previsao || response;
+      // O backend retorna { forecast: [...], ... } ou { previsao: [...], ... }
+      const forecastArray = response.forecast || response.previsao || response;
       return Array.isArray(forecastArray) ? forecastArray : [];
     } catch (error) {
       console.error('❌ API previsão real falhou:', error);
       // Tenta fallback para xWeather API
       try {
         console.log('🌤️ Tentando fallback para API xWeather...');
-        const xweatherResponse = await fetch(`${baseUrl}/xweather/brazil-forecast?latitude=${latitude}&longitude=${longitude}&days=${days}`);
+        const xweatherResponse = await fetch(`${baseUrl}/api/v1/xweather/brazil-forecast?latitude=${latitude}&longitude=${longitude}&days=${days}`);
         if (xweatherResponse.ok) {
           const xweatherData = await xweatherResponse.json();
           const forecastData = xweatherData.forecast_data || [];
@@ -589,7 +646,7 @@ class EmbrapaApiService {
   }
 
   async getAgriculturalZoning(latitude: number, longitude: number, crop: string): Promise<any> {
-    return this.apiGet('/clima/zarc', {
+    return this.apiGet('/api/v1/clima/zarc', {
       latitude,
       longitude,
       cultura: crop
@@ -597,7 +654,7 @@ class EmbrapaApiService {
   }
 
   async getRiskAnalysis(latitude: number, longitude: number, startDate?: string, endDate?: string): Promise<RiskAnalysis> {
-    return this.apiGet('/clima/risco', {
+    return this.apiGet('/api/v1/clima/risco', {
       latitude,
       longitude,
       data_inicio: startDate,
@@ -955,21 +1012,21 @@ class EmbrapaApiService {
     const longitude = data?.longitude ?? fallback?.longitude;
 
     return {
-      latitude,
-      longitude,
-      city: data?.city ?? data?.cidade,
-      state: data?.state ?? data?.estado,
-      stateName: data?.state_name ?? data?.estado_nome,
+      latitude: latitude || 0,
+      longitude: longitude || 0,
+      city: data?.city ?? data?.cidade ?? data?.municipio ?? data?.nome,
+      state: data?.state ?? data?.estado ?? data?.uf ?? data?.sigla,
+      stateName: data?.state_name ?? data?.estado_nome ?? data?.nome_estado,
       country: data?.country ?? data?.pais ?? 'Brasil',
-      postcode: data?.postcode ?? data?.cep,
-      formattedAddress: data?.formatted_address ?? data?.formattedAddress,
-      distanceKm: data?.distance_km,
-      bairro: data?.bairro,
-      neighborhood: data?.bairro,
-      logradouro: data?.logradouro,
-      street: data?.logradouro,
-      complemento: data?.complemento,
-      cep: data?.cep
+      postcode: data?.postcode ?? data?.cep ?? data?.zipcode,
+      formattedAddress: data?.formatted_address ?? data?.formattedAddress ?? data?.endereco_formatado,
+      distanceKm: data?.distance_km ?? data?.distancia,
+      bairro: data?.bairro ?? data?.neighborhood ?? data?.distrito,
+      neighborhood: data?.bairro ?? data?.neighborhood,
+      logradouro: data?.logradouro ?? data?.street ?? data?.rua,
+      street: data?.logradouro ?? data?.street,
+      complemento: data?.complemento ?? data?.additional_info,
+      cep: data?.cep ?? data?.postcode
     };
   }
 }

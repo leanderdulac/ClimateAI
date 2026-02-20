@@ -15,7 +15,7 @@ class ClimaService:
     def __init__(self):
         self.openmeteo_service = OpenMeteoService()
 
-    def obter_historico(
+    async def obter_historico(
         self,
         latitude: float,
         longitude: float,
@@ -27,7 +27,7 @@ class ClimaService:
         Obter dados climáticos históricos para uma localização específica
         """
         # Obter dados reais da API OpenMeteo
-        dados = self.openmeteo_service.obter_historico(
+        dados = await self.openmeteo_service.obter_historico(
             latitude=latitude,
             longitude=longitude,
             data_inicio=data_inicio,
@@ -37,13 +37,13 @@ class ClimaService:
 
         return dados
 
-    def obter_clima_atual(self, latitude: float, longitude: float) -> ClimaData:
+    async def obter_clima_atual(self, latitude: float, longitude: float) -> ClimaData:
         """
         Obter condições climáticas atuais para uma localização específica
         """
         # Usar o mesmo serviço do OpenMeteo, mas apenas para hoje
         agora = datetime.now()
-        dados = self.openmeteo_service.obter_historico(
+        dados = await self.openmeteo_service.obter_historico(
             latitude=latitude,
             longitude=longitude,
             data_inicio=agora,
@@ -56,12 +56,29 @@ class ClimaService:
     def _gerar_temperatura_simulada(self, latitude: float, data: datetime) -> float:
         """
         Gerar temperatura simulada considerando latitude e sazonalidade do dia do ano.
+        Ajustado para refletir melhor climas tropicais e extremos de verão.
         """
         dia_do_ano = data.timetuple().tm_yday
-        variacao_sazonal = 8 * math.sin((2 * math.pi * dia_do_ano) / 365)
-        ajuste_latitude = max(-8.0, min(8.0, -abs(latitude) * 0.2))
-        ruido = random.uniform(-2.5, 2.5)
-        return 24 + variacao_sazonal + ajuste_latitude + ruido
+        
+        # Ajuste de fase para o Hemisfério Sul (verão em Jan/Fev)
+        # No original, o pico era no meio do ano (senoidal simples)
+        fase = 0 if latitude > 0 else math.pi
+        variacao_sazonal = 10 * math.sin((2 * math.pi * dia_do_ano) / 365 - fase)
+        
+        # Base de temperatura ligeiramente mais alta para áreas tropicais/equatoriais
+        base_temp = 26 if abs(latitude) < 25 else 22
+        
+        # Ajuste de latitude (mais frio longe do equador)
+        ajuste_latitude = -abs(latitude) * 0.15
+        
+        # Ruído determinístico para manter consistência mas com variação
+        random.seed(int(data.timestamp() + latitude))
+        ruido = random.uniform(-3, 5) # Tendência para calor no ruído
+        
+        temp = base_temp + variacao_sazonal + ajuste_latitude + ruido
+        
+        # Garantir limites realistas
+        return max(-10.0, min(45.0, temp))
 
     def _gerar_precipitacao_simulada(self, data: datetime) -> float:
         """

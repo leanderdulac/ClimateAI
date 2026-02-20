@@ -15,6 +15,7 @@ numpy>=1.26.0,<2.0.0
 scipy>=1.11.0,<1.14.0
 scikit-learn==1.5.2
 torch==2.8.0  # PyTorch for LSTM attention mechanisms (aligned with prod ML) - Updated for security
+nolds>=0.5.2
 python-json-logger==4.0.0  # For structured JSON logging - Updated for security
 # ⚠️ REMOVIDO: tensorflow==2.18.0
 # Usar requirements-ml.txt para desenvolvimento com TensorFlow
@@ -26,8 +27,14 @@ google-generativeai>=0.4.0
 requests-cache
 retry-requests
 geopy==2.4.1
+tenacity>=9.0.0  # Retry library com circuit breaker pattern
 pycep-correios==5.2.0
 aiosqlite==0.22.1
+# Observabilidade / OpenTelemetry
+opentelemetry-sdk==1.27.0
+opentelemetry-exporter-otlp==1.27.0
+opentelemetry-instrumentation-fastapi==0.48b0
+opentelemetry-instrumentation-logging==0.48b0
 # Authentication dependencies
 pyjwt[crypto]>=2.8.0
 passlib[bcrypt]==1.7.4
@@ -36,6 +43,9 @@ alembic==1.18.1
 psutil
 pynamicalsys
 asyncpg==0.29.0
+
+# Secrets Manager - HashiCorp Vault
+hvac==2.3.0
 
 # NOTA IMPORTANTE:
 # Perfil padrão (produção com ML essencial):

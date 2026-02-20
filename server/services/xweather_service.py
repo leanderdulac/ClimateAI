@@ -1,371 +1,416 @@
 """
-Serviço para integração com a API xWeather para previsões climáticas no Brasil
-URL: https://data.api.xweather.com/forecasts/brazil
+XWeather API Integration Service
+Provides real-time weather conditions and forecasts
+API: https://www.xweather.com/
 """
 
 import logging
-from datetime import datetime, timedelta
-from typing import Any, Dict, List
-
-import httpx
-from fastapi import HTTPException
-
-from models.schemas import ClimaData
+import urllib.request
+import json
+from datetime import datetime
+from typing import Any, Dict, List, Optional
+from dataclasses import dataclass
+from services.embrapa_service import EmbrapaService
 
 logger = logging.getLogger(__name__)
 
 
+@dataclass
+class XWeatherCondition:
+    """Condições climáticas atuais do XWeather"""
+    location: str
+    latitude: float
+    longitude: float
+    temperature: float
+    feels_like: float
+    humidity: int
+    pressure: float
+    wind_speed: float
+    wind_direction: int
+    visibility: float
+    dew_point: float
+    weather_code: int
+    weather_description: str
+    precip_1hr: float
+    precip_24hr: float
+    snow_1hr: float
+    snow_24hr: float
+    solar_radiation: float
+    uv_index: float
+    ceiling: float
+    observation_time: str
+    source: str = "XWeather"
+
+
+@dataclass
+class XWeatherForecast:
+    """Previsão do XWeather"""
+    location: str
+    latitude: float
+    longitude: float
+    forecast_date: str
+    temperature_high: float
+    temperature_low: float
+    humidity: int
+    precipitation: float
+    precipitation_probability: float
+    wind_speed: float
+    wind_direction: int
+    weather_code: int
+    weather_description: str
+    sunrise: str
+    sunset: str
+    source: str = "XWeather"
+
+
 class XWeatherService:
+    """
+    Serviço de integração com XWeather API
+    Documentação: https://www.xweather.com/develop
+    
+    API Keys configuradas:
+    - client_id: gIvJgm7aucflvyPpN4aMu
+    - client_secret: k2cfveiiBwIW5Q8dPnjOCxveYsYvhfjWUvni5MnQ
+    """
+    
+    # XWeather API credentials
+    CLIENT_ID = "gIvJgm7aucflvyPpN4aMu"
+    CLIENT_SECRET = "k2cfveiiBwIW5Q8dPnjOCxveYsYvhfjWUvni5MnQ"
+    
+    # API endpoints
+    BASE_URL = "https://data.api.xweather.com"
+    CONDITIONS_ENDPOINT = "/conditions/:auto"
+    FORECAST_ENDPOINT = "/forecast/:auto"
+    
     def __init__(self):
-        self.client_id = "gIvJgm7aucflvyPpN4aMu"
-        self.client_secret = "k2cfveiiBwIW5Q8dPnjOCxveYsYvhfjWUvni5MnQ"
-        self.base_url = "https://data.api.xweather.com/forecasts"
-        self.api_key = None  # Será obtido via troca de credenciais
-        self._token_expires_at = None
-
-    async def _get_access_token(self) -> str:
+        self.use_mock = False
+        self.embrapa_service = EmbrapaService()
+        logger.info("XWeather Service initialized")
+    
+    def _build_url(self, endpoint: str, params: Dict = None) -> str:
+        """Construir URL da API XWeather"""
+        base = f"{self.BASE_URL}{endpoint}"
+        
+        # Adicionar parâmetros de autenticação
+        auth_params = {
+            'client_id': self.CLIENT_ID,
+            'client_secret': self.CLIENT_SECRET,
+            'format': 'geojson'
+        }
+        
+        if params:
+            auth_params.update(params)
+        
+        # Construir query string
+        query_string = '&'.join([f"{k}={v}" for k, v in auth_params.items()])
+        return f"{base}?{query_string}"
+    
+    def _make_request(self, url: str, timeout: int = 10) -> Optional[Dict]:
         """
-        Obtém token de acesso usando client credentials
+        Fazer requisição para API XWeather
+        
+        Args:
+            url: URL completa da API
+            timeout: Timeout em segundos
+        
+        Returns:
+            Dict com resposta ou None em caso de erro
         """
-        if (
-            self.api_key
-            and self._token_expires_at
-            and datetime.now() < self._token_expires_at - timedelta(minutes=5)
-        ):
-            # Token ainda é válido
-            return self.api_key
-
-        # Endpoint para obter token usando client credentials
-        token_url = "https://data.api.xweather.com/auth/token"
-
-        async with httpx.AsyncClient() as client:
-            try:
-                response = await client.post(
-                    token_url,
-                    data={
-                        "grant_type": "client_credentials",
-                        "client_id": self.client_id,
-                        "client_secret": self.client_secret,
-                    },
-                    headers={"Content-Type": "application/x-www-form-urlencoded"},
-                )
-
-                if response.status_code == 200:
-                    token_data = response.json()
-                    self.api_key = token_data.get("access_token")
-
-                    # Define expiração do token (menos 5 min para renovação antecipada)
-                    expires_in = token_data.get("expires_in", 3600)
-                    self._token_expires_at = datetime.now() + timedelta(
-                        seconds=expires_in - 300
-                    )
-
-                    return self.api_key
+        try:
+            logger.info(f"XWeather API request: {url}")
+            request = urllib.request.Request(
+                url,
+                headers={
+                    'User-Agent': 'ClimateAI/1.0',
+                    'Accept': 'application/json'
+                }
+            )
+            
+            with urllib.request.urlopen(request, timeout=timeout) as response:
+                data = response.read()
+                result = json.loads(data)
+                
+                if result.get('success'):
+                    logger.info("XWeather API request successful")
+                    return result
                 else:
-                    # Se o endpoint de token não existe ou funciona diferente,
-                    # tentaremos usar os parâmetros diretamente
-                    logger.warning("Falha no OAuth. Usando credenciais diretas.")
-                    # Usaremos os parâmetros client_id e client_secret diretamente
-                    return f"Basic {self.client_id}:{self.client_secret}"
-            except Exception as e:
-                logger.error(f"Erro ao obter token de acesso: {str(e)}")
-                raise HTTPException(
-                    status_code=500,
-                    detail=f"Erro ao obter acesso à API xWeather: {str(e)}",
-                )
-
-    async def get_brazil_climate_forecast(
-        self, days: int = 7, location: str = "brasilia,br"
+                    error_msg = result.get('error', {}).get('description', 'Unknown error')
+                    logger.error(f"XWeather API error: {error_msg}")
+                    return None
+                    
+        except urllib.error.HTTPError as e:
+            logger.error(f"XWeather HTTP Error {e.code}: {e.reason}")
+            return None
+        except urllib.error.URLError as e:
+            logger.error(f"XWeather URL Error: {e.reason}")
+            return None
+        except json.JSONDecodeError as e:
+            logger.error(f"XWeather JSON Decode Error: {e}")
+            return None
+        except Exception as e:
+            logger.error(f"XWeather unexpected error: {e}")
+            return None
+    
+    def get_current_conditions(
+        self,
+        latitude: float,
+        longitude: float,
+        limit: int = 1
+    ) -> Optional[XWeatherCondition]:
+        """
+        Obter condições climáticas atuais
+        
+        Args:
+            latitude: Latitude da localização
+            longitude: Longitude da localização
+            limit: Número de estações para retornar
+        
+        Returns:
+            XWeatherCondition ou None em caso de erro
+        """
+        try:
+            # Construir endpoint com coordenadas
+            endpoint = self.CONDITIONS_ENDPOINT.replace(':auto', f'{latitude},{longitude}')
+            
+            # Parâmetros da requisição
+            params = {
+                'plimit': str(limit),
+                'filter': '1min'
+            }
+            
+            url = self._build_url(endpoint, params)
+            result = self._make_request(url)
+            
+            if result and result.get('success'):
+                # Extrair dados da resposta
+                features = result.get('features', [])
+                if features:
+                    feature = features[0]
+                    properties = feature.get('properties', {})
+                    geometry = feature.get('geometry', {})
+                    coordinates = geometry.get('coordinates', [0, 0])
+                    
+                    # Mapear para XWeatherCondition
+                    condition = XWeatherCondition(
+                        location=properties.get('place', f'{latitude},{longitude}'),
+                        latitude=coordinates[1] if len(coordinates) > 1 else latitude,
+                        longitude=coordinates[0] if len(coordinates) > 0 else longitude,
+                        temperature=properties.get('temperature', 0),
+                        feels_like=properties.get('feelsLike', 0),
+                        humidity=properties.get('humidity', 0),
+                        pressure=properties.get('pressure', 0),
+                        wind_speed=properties.get('windSpeed', 0),
+                        wind_direction=properties.get('windDirection', 0),
+                        visibility=properties.get('visibility', 0),
+                        dew_point=properties.get('dewPoint', 0),
+                        weather_code=properties.get('weatherCode', 0),
+                        weather_description=properties.get('weatherDescription', ''),
+                        precip_1hr=properties.get('precip1HR', 0),
+                        precip_24hr=properties.get('precip24HR', 0),
+                        snow_1hr=properties.get('snow1HR', 0),
+                        snow_24hr=properties.get('snow24HR', 0),
+                        solar_radiation=properties.get('solarRadiation', 0),
+                        uv_index=properties.get('uvIndex', 0),
+                        ceiling=properties.get('ceiling', 0),
+                        observation_time=properties.get('observationTime', ''),
+                        source="XWeather"
+                    )
+                    
+                    logger.info(f"XWeather conditions retrieved: {condition.temperature}°C")
+                    return condition
+            
+            logger.warning("XWeather returned no data")
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error getting XWeather conditions: {e}")
+            return None
+    
+    def get_forecast(
+        self,
+        latitude: float,
+        longitude: float,
+        days: int = 7
+    ) -> Optional[List[XWeatherForecast]]:
+        """
+        Obter previsão climática
+        
+        Args:
+            latitude: Latitude da localização
+            longitude: Longitude da localização
+            days: Número de dias de previsão
+        
+        Returns:
+            Lista de XWeatherForecast ou None
+        """
+        try:
+            # Construir endpoint com coordenadas
+            endpoint = self.FORECAST_ENDPOINT.replace(':auto', f'{latitude},{longitude}')
+            
+            # Parâmetros da requisição
+            params = {
+                'plimit': str(days)
+            }
+            
+            url = self._build_url(endpoint, params)
+            result = self._make_request(url)
+            
+            if result and result.get('success'):
+                features = result.get('features', [])
+                forecasts = []
+                
+                for feature in features:
+                    properties = feature.get('properties', {})
+                    geometry = feature.get('geometry', {})
+                    coordinates = geometry.get('coordinates', [0, 0])
+                    
+                    forecast = XWeatherForecast(
+                        location=properties.get('place', f'{latitude},{longitude}'),
+                        latitude=coordinates[1] if len(coordinates) > 1 else latitude,
+                        longitude=coordinates[0] if len(coordinates) > 0 else longitude,
+                        forecast_date=properties.get('validTime', '').split('T')[0],
+                        temperature_high=properties.get('temperatureHigh', 0),
+                        temperature_low=properties.get('temperatureLow', 0),
+                        humidity=properties.get('humidity', 0),
+                        precipitation=properties.get('precipAmount', 0),
+                        precipitation_probability=properties.get('precipProbability', 0),
+                        wind_speed=properties.get('windSpeed', 0),
+                        wind_direction=properties.get('windDirection', 0),
+                        weather_code=properties.get('weatherCode', 0),
+                        weather_description=properties.get('weatherDescription', ''),
+                        sunrise=properties.get('sunrise', ''),
+                        sunset=properties.get('sunset', ''),
+                        source="XWeather"
+                    )
+                    forecasts.append(forecast)
+                
+                logger.info(f"XWeather forecast retrieved: {len(forecasts)} days")
+                return forecasts
+            
+            logger.warning("XWeather forecast returned no data")
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error getting XWeather forecast: {e}")
+            return None
+    
+    def get_weather_data(
+        self,
+        latitude: float,
+        longitude: float,
+        days: int = 7
     ) -> Dict[str, Any]:
         """
-        Obtém previsão climática para o Brasil via API xWeather
-
+        Obter dados climáticos completos (atuais + previsão)
+        Método principal para integração com ClimateAI
+    
         Args:
-            days: Número de dias para previsão (padrão 7, máx 7 conforme filtro 'day')
-
+            latitude: Latitude
+            longitude: Longitude
+            days: Dias de previsão
+        
         Returns:
-            Dados climáticos para o Brasil
+            Dict com dados atuais e previsão
         """
-        # Garante que não ultrapasse o máximo permitido pela API
-        days = min(days, 7)  # Limite de 7 dias com filtro 'day'
-
-        # Obter token de acesso
-        access_token = await self._get_access_token()
-
-        # Parâmetros da requisição conforme especificado
-        params = {
-            "format": "json",
-            "filter": "day",  # Filtro especificado
-            "limit": days,  # Limite especificado
-            "client_id": self.client_id,
-            "client_secret": self.client_secret,
+        result = {
+            'success': False,
+            'source': 'XWeather',
+            'current': None,
+            'forecast': [],
+            'error': None
         }
-
-        headers = {
-            "Authorization": (
-                f"Bearer {self.api_key}"
-                if self.api_key and "Basic" not in str(access_token)
-                else ""
-            ),
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-        }
-
-        # Remover autorização se for Basic auth
-        if "Basic" in str(access_token):
-            params.update(
-                {"client_id": self.client_id, "client_secret": self.client_secret}
-            )
-            headers.pop("Authorization", None)
-
+        
         try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                url = f"{self.base_url}/{location}"
-                response = await client.get(url, params=params, headers=headers)
-
-                if response.status_code == 200:
-                    data = response.json()
-                    return data
-                elif response.status_code == 401:
-                    raise HTTPException(
-                        status_code=401,
-                        detail="Credenciais inválidas para a API xWeather",
-                    )
-                elif response.status_code == 429:
-                    raise HTTPException(
-                        status_code=429,
-                        detail="Limite de requisições excedido para a API xWeather",
-                    )
-                else:
-                    logger.error(
-                        f"Erro xWeather: {response.status_code} - {response.text}"[:200]
-                    )
-                    raise HTTPException(
-                        status_code=response.status_code,
-                        detail=f"Erro na API xWeather: {response.text}",
-                    )
-
-        except httpx.TimeoutException:
-            raise HTTPException(
-                status_code=408, detail="Timeout na requisição para a API xWeather"
-            )
+            # Obter condições atuais
+            current = self.get_current_conditions(latitude, longitude)
+            if current:
+                result['current'] = {
+                    'temperature': current.temperature,
+                    'feels_like': current.feels_like,
+                    'humidity': current.humidity,
+                    'pressure': current.pressure,
+                    'wind_speed': current.wind_speed,
+                    'wind_direction': current.wind_direction,
+                    'weather_code': current.weather_code,
+                    'weather_description': current.weather_description,
+                    'precipitation': current.precip_1hr,
+                    'observation_time': current.observation_time,
+                    'source': current.source
+                }
+            
+            # Obter previsão
+            forecast = self.get_forecast(latitude, longitude, days)
+            if forecast:
+                result['forecast'] = [
+                    {
+                        'date': f.forecast_date,
+                        'temperature_high': f.temperature_high,
+                        'temperature_low': f.temperature_low,
+                        'humidity': f.humidity,
+                        'precipitation': f.precipitation,
+                        'precipitation_probability': f.precipitation_probability,
+                        'wind_speed': f.wind_speed,
+                        'wind_direction': f.wind_direction,
+                        'weather_code': f.weather_code,
+                        'weather_description': f.weather_description,
+                        'source': f.source
+                    }
+                    for f in forecast
+                ]
+            
+            result['success'] = bool(current or forecast)
+            
+            if not result['success']:
+                result['error'] = 'No data available from XWeather'
+                logger.warning("XWeather returned no data, falling back to Embrapa")
+                
+                # Fallback para Embrapa
+                embrapa_data = self.embrapa_service.obter_historico(
+                    latitude, longitude,
+                    datetime.now(), datetime.now()
+                )
+                if embrapa_data:
+                    result['current'] = {
+                        'temperature': embrapa_data[0].temperatura,
+                        'humidity': embrapa_data[0].umidade,
+                        'precipitation': embrapa_data[0].precipitacao,
+                        'wind_speed': embrapa_data[0].vento_velocidade,
+                        'wind_direction': embrapa_data[0].vento_direcao,
+                        'source': 'Embrapa (fallback)'
+                    }
+                    result['success'] = True
+                    result['source'] = 'Embrapa (fallback)'
+            
+            return result
+            
         except Exception as e:
-            logger.error(f"Erro inesperado ao chamar API xWeather: {str(e)}")
-            raise HTTPException(
-                status_code=500, detail=f"Erro ao obter dados da API xWeather: {str(e)}"
-            )
-
-    async def get_brazil_climate_forecast_for_location(
-        self, latitude: float, longitude: float, days: int = 7
-    ) -> List[ClimaData]:
+            logger.error(f"Error in get_weather_data: {e}")
+            result['error'] = str(e)
+            return result
+    
+    def get_service_status(self) -> Dict[str, Any]:
         """
-        Obtém previsão climática para coordenadas específicas no Brasil
-
-        Args:
-            latitude: Latitude (-90 a 90)
-            longitude: Longitude (-180 a 180)
-            days: Número de dias para previsão (máximo 7)
-
+        Obter status do serviço XWeather
+        
         Returns:
-            Lista de dados climáticos diários
+            Dict com status do serviço
         """
-        if not (-90 <= latitude <= 90):
-            raise ValueError("Latitude deve estar entre -90 e 90")
-        if not (-180 <= longitude <= 180):
-            raise ValueError("Longitude deve estar entre -180 e 180")
-
-        # Primeiro obtemos a previsão para a localização específica
-        location = f"{latitude},{longitude}"
-        forecast_data = await self.get_brazil_climate_forecast(days, location)
-
-        # Processar os dados para extrair informações relevantes para a localização
-        # A estrutura real dependerá da resposta da API
-        # mas faremos um tratamento genérico
-        clima_data_list = []
-
-        try:
-            # Verificar se a resposta tem a estrutura esperada
-            # A resposta da API geralmente vem em 'response' -> [0] -> 'periods'
-            forecast_items = []
-
-            if isinstance(forecast_data, dict):
-                if not forecast_data.get("success", True):
-                    logger.error(f"API retornou erro: {forecast_data.get('error')}")
-                    return []
-
-                response_list = forecast_data.get("response", [])
-                if (
-                    response_list
-                    and isinstance(response_list, list)
-                    and len(response_list) > 0
-                ):
-                    # Pegamos o primeiro item da resposta (primeira localização)
-                    first_location = response_list[0]
-                    if "periods" in first_location:
-                        forecast_items = first_location["periods"]
-
-            # Fallback para tentar encontrar em outros lugares
-            if not forecast_items:
-                forecast_items = forecast_data.get("forecasts", [])
-
-            # Se não encontrar 'forecasts', tenta outras chaves
-            if not forecast_items:
-                # Verificar se é uma lista direta
-                if isinstance(forecast_data, list):
-                    forecast_items = forecast_data
-                else:
-                    # Tentar encontrar outras chaves possíveis
-                    possible_keys = [
-                        "data",
-                        "results",
-                        "items",
-                        "climate_data",
-                        "weather",
-                    ]
-                    for key in possible_keys:
-                        if key in forecast_data:
-                            forecast_items = forecast_data[key]
-                            break
-
-            if not forecast_items and isinstance(forecast_data, dict):
-                # Se a estrutura for diferente, tentamos interpretar como um único item
-                # Mas apenas se não tivermos encontrado nada antes
-                pass
-
-            for i, item in enumerate(forecast_items[:days]):
-                # Extraindo campos potenciais da resposta
-                date_str = self._extract_field(
-                    item,
-                    ["validTime", "date", "dt", "data", "timestamp"],
-                    default=(datetime.now() + timedelta(days=i)).strftime("%Y-%m-%d"),
-                )
-
-                # Converter string de data para objeto datetime se necessário
-                if isinstance(date_str, str):
-                    try:
-                        data_obj = datetime.strptime(date_str, "%Y-%m-%d")
-                    except ValueError:
-                        try:
-                            data_obj = datetime.fromisoformat(
-                                date_str.replace("Z", "+00:00")
-                            )
-                        except ValueError:
-                            data_obj = datetime.now() + timedelta(days=i)
-                else:
-                    data_obj = (
-                        date_str
-                        if isinstance(date_str, datetime)
-                        else datetime.now() + timedelta(days=i)
-                    )
-
-                # Extrair outros campos climáticos
-                temperatura = self._extract_field(
-                    item,
-                    [
-                        "avgTempC",
-                        "tempC",
-                        "temperature",
-                        "temp",
-                        "temperature_avg",
-                        "avg_temp",
-                    ],
-                    default=None,
-                )
-                if not temperatura:
-                    # Tentar extrair máximas e mínimas e calcular média
-                    temp_max = self._extract_field(
-                        item,
-                        ["maxTempC", "max_temp", "temp_max", "temperature_max"],
-                        default=None,
-                    )
-                    temp_min = self._extract_field(
-                        item,
-                        ["minTempC", "min_temp", "temp_min", "temperature_min"],
-                        default=None,
-                    )
-                    if temp_max is not None and temp_min is not None:
-                        temperatura = (temp_max + temp_min) / 2
-                    elif temp_max:
-                        temperatura = temp_max
-                    elif temp_min:
-                        temperatura = temp_min
-
-                precipitacao = self._extract_field(
-                    item,
-                    ["precipMM", "precipitation", "rain", "precip", "mm"],
-                    default=None,
-                )
-                umidade = self._extract_field(
-                    item, ["humidity", "umidade", "humidity_avg"], default=None
-                )
-                vento_velocidade = self._extract_field(
-                    item,
-                    ["windSpeedKPH", "wind_speed", "wind", "velocity"],
-                    default=None,
-                )
-                vento_direcao = self._extract_field(
-                    item,
-                    [
-                        "windDirDEG",
-                        "wind_dir_deg",
-                        "wind_direction_deg",
-                        "dir_deg",
-                        "windDir",
-                        "wind_dir",
-                        "wind_direction",
-                        "dir",
-                    ],
-                    default=None,
-                )
-                pressao = self._extract_field(
-                    item,
-                    ["pressureMB", "pressure", "pressao", "barometric"],
-                    default=None,
-                )
-
-                # Criar objeto ClimaData
-                clima_data = ClimaData(
-                    latitude=latitude,
-                    longitude=longitude,
-                    data=data_obj,
-                    temperatura=temperatura,
-                    precipitacao=precipitacao,
-                    umidade=umidade,
-                    vento_velocidade=vento_velocidade,
-                    vento_direcao=vento_direcao,
-                    pressao=pressao,
-                    indice_spi=None,  # SPI requer cálculo separado
-                    fonte="xWeather API",
-                )
-
-                clima_data_list.append(clima_data)
-
-        except Exception as e:
-            logger.error(f"Erro ao processar dados da API xWeather: {str(e)}")
-            # Se der erro no processamento, retornamos uma previsão vazia
-            raise HTTPException(
-                status_code=500,
-                detail=f"Erro ao processar dados da API xWeather: {str(e)}",
-            )
-
-        return clima_data_list
-
-    def _extract_field(self, data: Dict, possible_keys: List[str], default=None):
-        """
-        Extrai um campo de dicionário tentando varias possíveis chaves
-        """
-        for key in possible_keys:
-            if isinstance(data, dict) and key in data:
-                value = data[key]
-                # Verificar se é um dicionário aninhado e extrair valor útil
-                if isinstance(value, dict):
-                    # Tentar extrair campo 'value', 'val', 'data', ou similar
-                    for subkey in ["value", "val", "data", "avg", "mean"]:
-                        if subkey in value:
-                            return value[subkey]
-                return value
-        return default
-
-
-# Instância global do serviço
-xweather_service = XWeatherService()
+        return {
+            'service': 'XWeather Integration',
+            'status': 'active',
+            'api_key_configured': bool(self.CLIENT_ID and self.CLIENT_SECRET),
+            'base_url': self.BASE_URL,
+            'endpoints': [
+                'conditions',
+                'forecast'
+            ],
+            'features': [
+                'current_conditions',
+                'weather_forecast',
+                'real_time_data',
+                'solar_radiation',
+                'uv_index'
+            ],
+            'fallback': 'Embrapa/OpenMeteo',
+            'timestamp': datetime.now().isoformat()
+        }

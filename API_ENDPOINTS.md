@@ -7,6 +7,14 @@ O Framework Integrado de Modelagem Climático-Econômica (FIMCE) disponibiliza o
   - Parâmetros: latitude, longitude, data_inicio, data_fim, variavel (opcional)
 - `GET /api/v1/clima/atual` - Obter condições climáticas atuais
   - Parâmetros: latitude, longitude
+- `POST /api/v1/noaa/climate-data` - Obter dados climáticos históricos do NOAA
+  - Parâmetros: location (string), start_date, end_date, data_type (opcional)
+  - Fallback: Embrapa API se NOAA falhar
+- `POST /api/v1/noaa/weather-forecast` - Obter previsão do tempo do NOAA
+  - Parâmetros: latitude, longitude
+  - Fallback: Embrapa API se NOAA falhar
+- `GET /api/v1/noaa/status` - Status da integração NOAA
+- `GET /api/v1/noaa/data-types` - Tipos de dados disponíveis no NOAA
 
 ## 📈 Previsões
 - `GET /api/v1/previsao/clima` - Obter previsão climática

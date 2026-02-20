@@ -57,7 +57,7 @@ async def calculate_comprehensive_premium_endpoint(
         )
 
         # Calculate comprehensive premium
-        result = calculate_comprehensive_premium(pricing_input)
+        result = await calculate_comprehensive_premium(pricing_input)
 
         # Calculate zone concentration ratio
         zone_concentration_ratio = calculate_zone_concentration_ratio(

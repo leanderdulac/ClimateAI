@@ -12,8 +12,15 @@ Subpackages:
 - core: Core business services
 """
 
-# Subpackage imports (for convenience)
-from services import ai, climate, core, external, modules, pricing, risk
+import logging
+
+logger = logging.getLogger(__name__)
+
+# Subpackage imports (for convenience) — wrapped to allow partial startup
+try:
+    from services import ai, climate, core, external, modules, pricing, risk
+except ImportError as e:
+    logger.warning(f"Some service subpackages unavailable: {e}")
 
 # Re-export commonly used services for backwards compatibility
 from services.audit_service import (
@@ -34,7 +41,14 @@ from services.microsegmentation_service import (
     create_microsegments,
     get_microsegmentation_summary,
 )
-from services.ml_service import get_ml_model_info, predict_sinistrality, train_ml_models
+
+try:
+    from services.ml_service import get_ml_model_info, predict_sinistrality, train_ml_models
+except ImportError as e:
+    logger.warning(f"ML service unavailable: {e}")
+    predict_sinistrality = None
+    train_ml_models = None
+    get_ml_model_info = None
 
 __all__ = [
     # Audit functions

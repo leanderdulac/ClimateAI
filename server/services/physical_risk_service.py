@@ -109,7 +109,7 @@ class PhysicalRiskService:
             1.5, 1 + 0.01 * age
         )  # Max 50% increase at 50 years
 
-    def calculate_physical_risk(
+    async def calculate_physical_risk(
         self,
         property_char: PropertyCharacteristics,
         climate_scenario: ClimateScenario,
@@ -398,13 +398,13 @@ class PhysicalRiskService:
 physical_risk_service = PhysicalRiskService()
 
 
-def calculate_physical_risk(
+async def calculate_physical_risk(
     property_char: PropertyCharacteristics,
     climate_scenario: ClimateScenario,
     scenario_name: str = "base",
 ) -> PhysicalRiskResult:
     """Convenience function to calculate physical risk"""
-    return physical_risk_service.calculate_physical_risk(
+    return await physical_risk_service.calculate_physical_risk(
         property_char, climate_scenario, scenario_name
     )
 

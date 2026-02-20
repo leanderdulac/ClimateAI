@@ -11,7 +11,6 @@ from fastapi import APIRouter, HTTPException, Query
 from services.transition_risk_service import (
     AssetCharacteristics,
     EnvironmentalScenario,
-    TransitionRiskCalculator,
     calculate_scenario_comparison,
     calculate_sector_specific_risk,
     calculate_transition_risk,

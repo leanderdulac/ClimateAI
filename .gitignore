@@ -39,11 +39,21 @@ yarn-error.log
 
 # Sistema
 .DS_Store
-Thumbs.dbvenv/
+Thumbs.db
+
+# Environment files (NEVER commit these)
+.env
+server/.env
+client/.env
+client/.env.production
+client/.env.local
+
 .coverage
 test_results.log
 tests.log
 coverage.json
+coverage_html/
+htmlcov/
 
 # Databases
 *.db
@@ -59,3 +69,7 @@ server/*.log
 *.pdf
 *.cache
 ci_check_env/
+client/playwright-report/
+client/test-results/
+client/dist/
+kimi-cli/

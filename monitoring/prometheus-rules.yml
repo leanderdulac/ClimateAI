@@ -1,0 +1,308 @@
+# Prometheus Recording Rules e Alertas para SLOs
+# ClimateAI Platform
+
+groups:
+  # ============================================
+  # SLO RECORDING RULES
+  # ============================================
+  - name: slo_recording_rules
+    interval: 15s
+    rules:
+      # Availability SLO (99.9%)
+      - record: slo:availability:ratio_rate5m
+        expr: |
+          sum(rate(http_requests_total{status_code!~"5.."}[5m])) 
+          / 
+          sum(rate(http_requests_total[5m]))
+
+      # Latency SLOs
+      - record: slo:latency_p50:milliseconds
+        expr: |
+          histogram_quantile(0.50, 
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (le)
+          ) * 1000
+
+      - record: slo:latency_p90:milliseconds
+        expr: |
+          histogram_quantile(0.90, 
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (le)
+          ) * 1000
+
+      - record: slo:latency_p95:milliseconds
+        expr: |
+          histogram_quantile(0.95, 
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (le)
+          ) * 1000
+
+      - record: slo:latency_p99:milliseconds
+        expr: |
+          histogram_quantile(0.99, 
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (le)
+          ) * 1000
+
+      # Error Rate SLO
+      - record: slo:error_rate:ratio_rate5m
+        expr: |
+          sum(rate(http_requests_total{status_code=~"5.."}[5m])) 
+          / 
+          sum(rate(http_requests_total[5m]))
+
+      # Request Rate
+      - record: slo:request_rate:rate1m
+        expr: |
+          sum(rate(http_requests_total[1m])) * 60
+
+      # Throughput
+      - record: slo:throughput:bytes_rate1m
+        expr: |
+          sum(rate(http_response_size_bytes[1m]))
+
+  # ============================================
+  # EXTERNAL API HEALTH
+  # ============================================
+  - name: external_api_health
+    interval: 15s
+    rules:
+      # External API Latency
+      - record: external_api:latency_seconds:p95
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(external_api_request_duration_seconds_bucket[5m])) 
+            by (le, external_service)
+          )
+
+      # External API Error Rate
+      - record: external_api:error_rate:ratio_rate5m
+        expr: |
+          sum(rate(external_api_requests_total{status_code=~"5.."}[5m])) 
+          by (external_service)
+          /
+          sum(rate(external_api_requests_total[5m])) 
+          by (external_service)
+
+      # External API Availability
+      - record: external_api:availability:ratio_rate5m
+        expr: |
+          sum(rate(external_api_requests_total{status_code!~"5.."}[5m])) 
+          by (external_service)
+          /
+          sum(rate(external_api_requests_total[5m])) 
+          by (external_service)
+
+  # ============================================
+  # CIRCUIT BREAKER METRICS
+  # ============================================
+  - name: circuit_breaker_metrics
+    interval: 15s
+    rules:
+      # Circuit Breaker State (0=CLOSED, 1=OPEN, 2=HALF_OPEN)
+      - record: circuit_breaker:state
+        expr: |
+          climateai_circuit_breaker_state
+
+      # Circuit Breaker Failures
+      - record: circuit_breaker:failure_count:rate5m
+        expr: |
+          rate(climateai_circuit_breaker_failures_total[5m])
+
+      # Circuit Breaker State Changes
+      - record: circuit_breaker:state_changes:rate5m
+        expr: |
+          rate(climateai_circuit_breaker_state_changes_total[5m])
+
+  # ============================================
+  # SLO ALERTS
+  # ============================================
+  - name: slo_alerts
+    rules:
+      # Critical: Availability abaixo de 99.9%
+      - alert: SLOAvailabilityCritical
+        expr: slo:availability:ratio_rate5m < 0.999
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "SLO de Disponibilidade Crítico"
+          description: "Disponibilidade em {{ $value | humanizePercentage }} (SLO: 99.9%)"
+          runbook_url: "https://wiki.climateai.ai/runbooks/slo-availability"
+
+      # Warning: Disponibilidade abaixo de 99.95%
+      - alert: SLOAvailabilityWarning
+        expr: slo:availability:ratio_rate5m < 0.9995
+        for: 2m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "SLO de Disponibilidade em Risco"
+          description: "Disponibilidade em {{ $value | humanizePercentage }} (SLO: 99.9%)"
+
+      # Critical: Latência P99 acima de 500ms
+      - alert: SLOLatencyP99Critical
+        expr: slo:latency_p99:milliseconds > 500
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "SLO de Latência P99 Crítico"
+          description: "Latência P99 em {{ $value }}ms (SLO: 500ms)"
+
+      # Warning: Latência P95 acima de 250ms
+      - alert: SLOLatencyP95Warning
+        expr: slo:latency_p95:milliseconds > 250
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "SLO de Latência P95 em Risco"
+          description: "Latência P95 em {{ $value }}ms (SLO: 250ms)"
+
+      # Critical: Error Rate acima de 0.1%
+      - alert: SLOErrorRateCritical
+        expr: slo:error_rate:ratio_rate5m > 0.001
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "SLO de Error Rate Crítico"
+          description: "Error Rate em {{ $value | humanizePercentage }} (SLO: 0.1%)"
+
+      # Warning: Error Rate acima de 0.05%
+      - alert: SLOErrorRateWarning
+        expr: slo:error_rate:ratio_rate5m > 0.0005
+        for: 2m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "SLO de Error Rate em Risco"
+          description: "Error Rate em {{ $value | humanizePercentage }} (SLO: 0.1%)"
+
+  # ============================================
+  # EXTERNAL API ALERTS
+  # ============================================
+  - name: external_api_alerts
+    rules:
+      # External API High Latency
+      - alert: ExternalAPILatencyHigh
+        expr: external_api:latency_seconds:p95 > 5
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Alta latência na API externa {{ $labels.external_service }}"
+          description: "Latência P95 em {{ $value }}s para {{ $labels.external_service }}"
+
+      # External API High Error Rate
+      - alert: ExternalAPIErrorRateHigh
+        expr: external_api:error_rate:ratio_rate5m > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Alto error rate na API externa {{ $labels.external_service }}"
+          description: "Error Rate em {{ $value | humanizePercentage }} para {{ $labels.external_service }}"
+
+      # External API Down
+      - alert: ExternalAPIDown
+        expr: external_api:availability:ratio_rate5m < 0.95
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "API externa {{ $labels.external_service }} indisponível"
+          description: "Disponibilidade em {{ $value | humanizePercentage }} para {{ $labels.external_service }}"
+
+  # ============================================
+  # CIRCUIT BREAKER ALERTS
+  # ============================================
+  - name: circuit_breaker_alerts
+    rules:
+      # Circuit Breaker Open
+      - alert: CircuitBreakerOpen
+        expr: circuit_breaker:state == 1
+        for: 1m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Circuit breaker OPEN para {{ $labels.external_service }}"
+          description: "O circuit breaker para {{ $labels.external_service }} está aberto. Requisições estão sendo bloqueadas."
+
+      # Circuit Breaker Half-Open
+      - alert: CircuitBreakerHalfOpen
+        expr: circuit_breaker:state == 2
+        for: 1m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Circuit breaker HALF-OPEN para {{ $labels.external_service }}"
+          description: "O circuit breaker para {{ $labels.external_service }} está em estado HALF-OPEN. Testando recuperação."
+
+      # High Circuit Breaker Failure Rate
+      - alert: CircuitBreakerHighFailureRate
+        expr: circuit_breaker:failure_count:rate5m > 10
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Alta taxa de falhas no circuit breaker"
+          description: "{{ $value }} falhas/minuto no circuit breaker"
+
+  # ============================================
+  # INFRASTRUCTURE ALERTS
+  # ============================================
+  - name: infrastructure_alerts
+    rules:
+      # High CPU Usage
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Uso de CPU alto em {{ $labels.instance }}"
+          description: "Uso de CPU em {{ $value }}%"
+
+      # High Memory Usage
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Uso de memória alto em {{ $labels.instance }}"
+          description: "Uso de memória em {{ $value }}%"
+
+      # Disk Space Low
+      - alert: DiskSpaceLow
+        expr: (1 - (node_filesystem_avail_bytes{fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{fstype!~"tmpfs|overlay"})) * 100 > 85
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Espaço em disco baixo em {{ $labels.instance }}"
+          description: "Uso de disco em {{ $value }}%"
+
+      # Container High Memory
+      - alert: ContainerHighMemory
+        expr: (container_memory_usage_bytes / container_spec_memory_limit_bytes) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Container {{ $labels.name }} com uso alto de memória"
+          description: "Uso de memória em {{ $value }}%"

@@ -164,7 +164,7 @@ class EnsemblePricingService:
         """
         return norm.ppf(confidence_level)
 
-    def calculate_ensemble_pricing(
+    async def calculate_ensemble_pricing(
         self,
         model_premiums: List[float],
         model_log_likelihoods: List[float],
@@ -316,7 +316,7 @@ def calculate_dynamic_weights(
     )
 
 
-def calculate_ensemble_pricing(
+async def calculate_ensemble_pricing(
     model_premiums: List[float],
     model_log_likelihoods: List[float],
     model_n_params: List[int],
@@ -325,7 +325,7 @@ def calculate_ensemble_pricing(
     confidence_level: float = 0.95,
 ) -> Dict[str, Any]:
     """Complete ensemble pricing calculation"""
-    return ensemble_pricing_service.calculate_ensemble_pricing(
+    return await ensemble_pricing_service.calculate_ensemble_pricing(
         model_premiums,
         model_log_likelihoods,
         model_n_params,

@@ -39,6 +39,9 @@ export function ClimateAssistant() {
             const fetchDetailedData = async () => {
                 setIsLoading(true);
                 try {
+                    // Debug: print selectedLocation
+                    console.log('[DEBUG] selectedLocation:', selectedLocation);
+
                     // Fetch current weather data
                     const data = await embrapaApi.getDadosAtuais(selectedLocation.latitude, selectedLocation.longitude);
                     setWeatherData(data);
@@ -98,24 +101,27 @@ export function ClimateAssistant() {
                     const context = {
                         page: window.location.pathname,
                         timestamp: new Date().toISOString(),
-                        location: {
+                        // Debug: print context before sending to Gemini
+                        location: selectedLocation ? {
                             city: selectedLocation.cidade,
                             state: selectedLocation.estado,
                             latitude: selectedLocation.latitude,
-                            longitude: selectedLocation.longitude
-                        },
-                        weather: {
+                            longitude: selectedLocation.longitude,
+                        } : null,
+                        weather: data ? {
                             temp: data.temperatura,
                             precip: data.precipitacao,
                             humidity: data.umidade,
                             wind: data.vento_velocidade
-                        },
-                        microclimate: {
-                            type: microclimateType,
-                            characteristics: getMicroclimateCharacteristics(microclimateType),
+                        } : null,
+                        microclimate: microclimateInfo ? {
+                            type: microclimateInfo.type,
+                            characteristics: getMicroclimateCharacteristics(microclimateInfo.type),
                             historicalData: microclimateInfo
-                        }
+                        } : null
                     };
+                    console.log('[DEBUG] Context sent to Gemini:', context);
+
 
                     const systemInstruction = `
                         O usuário selecionou a localização: ${selectedLocation.cidade}, ${selectedLocation.estado}.

@@ -2,6 +2,8 @@
 """
 Test script for Supabase integration
 Run: python test_supabase.py
+
+Requires SUPABASE_URL and SUPABASE_ANON_KEY to be set in environment or .env file.
 """
 
 import asyncio
@@ -9,6 +11,7 @@ import os
 import sys
 from datetime import datetime, timedelta
 from decimal import Decimal
+import json
 
 # Add server to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -17,16 +20,40 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from dotenv import load_dotenv
 load_dotenv()
 
-# Set credentials if not in env
-if not os.getenv("SUPABASE_URL"):
-    os.environ["SUPABASE_URL"] = "https://tyzmywhvpmdfepxdtyes.supabase.co"
-    os.environ["SUPABASE_ANON_KEY"] = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR5em15d2h2cG1kZmVweGR0eWVzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4NzAzNjcsImV4cCI6MjA4NDQ0NjM2N30.14R4jz5hzgx6u3pPnMDrnBEUmgorb0Iqlb8spQRgzaI"
+# Simple REST fallback using Supabase PostgREST (porta 443)
+import requests
+
+# Validate required env vars
+if not os.getenv("SUPABASE_URL") or not os.getenv("SUPABASE_ANON_KEY"):
+    print("❌ ERROR: SUPABASE_URL and SUPABASE_ANON_KEY must be set in .env file")
+    print("   Copy .env.example to .env and fill in your credentials.")
+    sys.exit(1)
 
 from config.supabase_client import (
     get_supabase_client,
     is_supabase_configured,
     check_supabase_health,
 )
+
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
+
+
+def rest_request(method: str, table: str, params=None, json_body=None):
+    """Fallback para PostgREST (HTTPS) evitando dependência de DNS/porta 5432."""
+    url = f"{SUPABASE_URL}/rest/v1/{table}"
+    headers = {
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": f"Bearer {SUPABASE_ANON_KEY}",
+        "Content-Type": "application/json",
+        "Prefer": "return=representation",
+    }
+    resp = requests.request(method, url, headers=headers, params=params, json=json_body, timeout=10)
+    resp.raise_for_status()
+    try:
+        return resp.json()
+    except json.JSONDecodeError:
+        return None
 
 
 def print_header(title: str):
@@ -68,8 +95,8 @@ async def test_locations_crud():
     
     client = get_supabase_client()
     if not client:
-        print_result("Get client", False, "Client is None")
-        return False
+        print_result("Get client", False, "Client is None, tentando fallback REST")
+    use_rest = client is None
     
     # CREATE - Insert a test location
     test_location = {
@@ -84,8 +111,12 @@ async def test_locations_crud():
     }
     
     try:
-        response = client.table("locations").insert(test_location).execute()
-        location_id = response.data[0]["id"] if response.data else None
+        if use_rest:
+            data = rest_request("POST", "locations", json_body=test_location)
+            location_id = data[0]["id"] if data else None
+        else:
+            response = client.table("locations").insert(test_location).execute()
+            location_id = response.data[0]["id"] if response.data else None
         print_result("CREATE location", bool(location_id), f"ID: {location_id}")
     except Exception as e:
         print_result("CREATE location", False, str(e))
@@ -93,23 +124,42 @@ async def test_locations_crud():
     
     # READ - Query the location
     try:
-        response = client.table("locations").select("*").eq("id", location_id).execute()
-        found = len(response.data) > 0
-        print_result("READ location", found, f"Found: {response.data[0]['name'] if found else 'N/A'}")
+        if use_rest:
+            data = rest_request("GET", "locations", params={"id": f"eq.{location_id}"})
+            found = len(data) > 0
+            name = data[0]["name"] if found else "N/A"
+        else:
+            response = client.table("locations").select("*").eq("id", location_id).execute()
+            data = response.data
+            found = len(data) > 0
+            name = data[0]["name"] if found else "N/A"
+        print_result("READ location", found, f"Found: {name}")
     except Exception as e:
         print_result("READ location", False, str(e))
     
     # UPDATE - Update the location
     try:
-        response = client.table("locations").update({"risk_zone": "low"}).eq("id", location_id).execute()
-        updated = len(response.data) > 0 and response.data[0]["risk_zone"] == "low"
+        if use_rest:
+            data = rest_request(
+                "PATCH",
+                "locations",
+                params={"id": f"eq.{location_id}"},
+                json_body={"risk_zone": "low"},
+            )
+            updated = len(data) > 0 and data[0]["risk_zone"] == "low"
+        else:
+            response = client.table("locations").update({"risk_zone": "low"}).eq("id", location_id).execute()
+            updated = len(response.data) > 0 and response.data[0]["risk_zone"] == "low"
         print_result("UPDATE location", updated, f"risk_zone -> low")
     except Exception as e:
         print_result("UPDATE location", False, str(e))
     
     # DELETE - Clean up test data
     try:
-        client.table("locations").delete().eq("id", location_id).execute()
+        if use_rest:
+            rest_request("DELETE", "locations", params={"id": f"eq.{location_id}"})
+        else:
+            client.table("locations").delete().eq("id", location_id).execute()
         print_result("DELETE location", True, "Cleaned up test data")
     except Exception as e:
         print_result("DELETE location", False, str(e))
@@ -122,18 +172,19 @@ async def test_policies_table():
     print_header("Test 3: Policies Table")
     
     client = get_supabase_client()
+    use_rest = client is None
     if not client:
-        print_result("Get client", False)
-        return False
+        print_result("Get client", False, "Client is None, tentando fallback REST")
     
     # First create a location
     try:
-        loc_response = client.table("locations").insert({
-            "name": "Policy Test Location",
-            "city": "São Paulo",
-            "state": "SP"
-        }).execute()
-        location_id = loc_response.data[0]["id"]
+        loc_payload = {"name": "Policy Test Location", "city": "São Paulo", "state": "SP"}
+        if use_rest:
+            loc_data = rest_request("POST", "locations", json_body=loc_payload)
+            location_id = loc_data[0]["id"]
+        else:
+            loc_response = client.table("locations").insert(loc_payload).execute()
+            location_id = loc_response.data[0]["id"]
         print_result("Create test location", True)
     except Exception as e:
         print_result("Create test location", False, str(e))
@@ -155,27 +206,52 @@ async def test_policies_table():
     }
     
     try:
-        response = client.table("policies").insert(test_policy).execute()
-        policy_id = response.data[0]["id"] if response.data else None
+        if use_rest:
+            data = rest_request("POST", "policies", json_body=test_policy)
+            policy_id = data[0]["id"] if data else None
+        else:
+            response = client.table("policies").insert(test_policy).execute()
+            policy_id = response.data[0]["id"] if response.data else None
         print_result("CREATE policy", bool(policy_id), f"Policy: {test_policy['policy_number']}")
     except Exception as e:
         print_result("CREATE policy", False, str(e))
         # Clean up location
-        client.table("locations").delete().eq("id", location_id).execute()
+        try:
+            if use_rest:
+                rest_request("DELETE", "locations", params={"id": f"eq.{location_id}"})
+            else:
+                client.table("locations").delete().eq("id", location_id).execute()
+        except Exception:
+            pass
         return False
     
     # Read policy
     try:
-        response = client.table("policies").select("*, locations(name, city)").eq("id", policy_id).execute()
-        found = len(response.data) > 0
+        if use_rest:
+            data = rest_request(
+                "GET",
+                "policies",
+                params={
+                    "id": f"eq.{policy_id}",
+                    "select": "*,locations(name,city)"
+                }
+            )
+            found = len(data) > 0
+        else:
+            response = client.table("policies").select("*, locations(name, city)").eq("id", policy_id).execute()
+            found = len(response.data) > 0
         print_result("READ policy with relation", found)
     except Exception as e:
         print_result("READ policy with relation", False, str(e))
     
     # Clean up
     try:
-        client.table("policies").delete().eq("id", policy_id).execute()
-        client.table("locations").delete().eq("id", location_id).execute()
+        if use_rest:
+            rest_request("DELETE", "policies", params={"id": f"eq.{policy_id}"})
+            rest_request("DELETE", "locations", params={"id": f"eq.{location_id}"})
+        else:
+            client.table("policies").delete().eq("id", policy_id).execute()
+            client.table("locations").delete().eq("id", location_id).execute()
         print_result("CLEANUP", True, "Removed test policy and location")
     except Exception as e:
         print_result("CLEANUP", False, str(e))
@@ -188,15 +264,22 @@ async def test_claims_table():
     print_header("Test 4: Claims Table")
     
     client = get_supabase_client()
+    use_rest = client is None
     if not client:
-        return False
-    
+        print_result("Get client", False, "Client is None, tentando fallback REST")
+        # continue with REST
+
     # Create location and policy first
     try:
-        loc = client.table("locations").insert({"name": "Claims Test", "city": "Curitiba", "state": "PR"}).execute()
-        location_id = loc.data[0]["id"]
-        
-        pol = client.table("policies").insert({
+        loc_payload = {"name": "Claims Test", "city": "Curitiba", "state": "PR"}
+        if use_rest:
+            loc_data = rest_request("POST", "locations", json_body=loc_payload)
+            location_id = loc_data[0]["id"]
+        else:
+            loc = client.table("locations").insert(loc_payload).execute()
+            location_id = loc.data[0]["id"]
+
+        pol_payload = {
             "policy_number": f"POL-CLAIM-{datetime.now().strftime('%Y%m%d%H%M%S')}",
             "policy_type": "crop",
             "coverage_amount": 50000,
@@ -204,8 +287,13 @@ async def test_claims_table():
             "effective_date": datetime.now().strftime("%Y-%m-%d"),
             "expiration_date": (datetime.now() + timedelta(days=365)).strftime("%Y-%m-%d"),
             "location_id": location_id
-        }).execute()
-        policy_id = pol.data[0]["id"]
+        }
+        if use_rest:
+            pol_data = rest_request("POST", "policies", json_body=pol_payload)
+            policy_id = pol_data[0]["id"]
+        else:
+            pol = client.table("policies").insert(pol_payload).execute()
+            policy_id = pol.data[0]["id"]
         print_result("Setup policy for claim", True)
     except Exception as e:
         print_result("Setup policy for claim", False, str(e))
@@ -225,29 +313,56 @@ async def test_claims_table():
     }
     
     try:
-        response = client.table("claims").insert(test_claim).execute()
-        claim_id = response.data[0]["id"] if response.data else None
+        if use_rest:
+            claim_data = rest_request("POST", "claims", json_body=test_claim)
+            claim_id = claim_data[0]["id"] if claim_data else None
+        else:
+            response = client.table("claims").insert(test_claim).execute()
+            claim_id = response.data[0]["id"] if response.data else None
         print_result("CREATE claim", bool(claim_id), f"Claim: {test_claim['claim_number']}")
     except Exception as e:
         print_result("CREATE claim", False, str(e))
         # Cleanup
-        client.table("policies").delete().eq("id", policy_id).execute()
-        client.table("locations").delete().eq("id", location_id).execute()
+        try:
+            if use_rest:
+                rest_request("DELETE", "policies", params={"id": f"eq.{policy_id}"})
+                rest_request("DELETE", "locations", params={"id": f"eq.{location_id}"})
+            else:
+                client.table("policies").delete().eq("id", policy_id).execute()
+                client.table("locations").delete().eq("id", location_id).execute()
+        except Exception:
+            pass
         return False
     
     # Read claim with policy relation
     try:
-        response = client.table("claims").select("*, policies(policy_number, coverage_amount)").eq("id", claim_id).execute()
-        found = len(response.data) > 0
+        if use_rest:
+            data = rest_request(
+                "GET",
+                "claims",
+                params={
+                    "id": f"eq.{claim_id}",
+                    "select": "*,policies(policy_number,coverage_amount)"
+                }
+            )
+            found = len(data) > 0
+        else:
+            response = client.table("claims").select("*, policies(policy_number, coverage_amount)").eq("id", claim_id).execute()
+            found = len(response.data) > 0
         print_result("READ claim with policy", found)
     except Exception as e:
         print_result("READ claim with policy", False, str(e))
     
     # Cleanup
     try:
-        client.table("claims").delete().eq("id", claim_id).execute()
-        client.table("policies").delete().eq("id", policy_id).execute()
-        client.table("locations").delete().eq("id", location_id).execute()
+        if use_rest:
+            rest_request("DELETE", "claims", params={"id": f"eq.{claim_id}"})
+            rest_request("DELETE", "policies", params={"id": f"eq.{policy_id}"})
+            rest_request("DELETE", "locations", params={"id": f"eq.{location_id}"})
+        else:
+            client.table("claims").delete().eq("id", claim_id).execute()
+            client.table("policies").delete().eq("id", policy_id).execute()
+            client.table("locations").delete().eq("id", location_id).execute()
         print_result("CLEANUP", True)
     except Exception as e:
         print_result("CLEANUP", False, str(e))

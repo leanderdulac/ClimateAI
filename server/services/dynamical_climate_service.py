@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Dynamical Systems Climate Service
 Implements advanced climate modeling using dynamical systems theory with pynamicalsys.
@@ -18,9 +19,23 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
-import pynamicalsys as pds
-from scipy.interpolate import interp1d
-from sklearn.preprocessing import StandardScaler
+
+try:
+    import pynamicalsys as pds
+    HAS_PYNAMICALSYS = True
+except ImportError:
+    pds = None
+    HAS_PYNAMICALSYS = False
+
+try:
+    from scipy.interpolate import interp1d
+except ImportError:
+    interp1d = None
+
+try:
+    from sklearn.preprocessing import StandardScaler
+except ImportError:
+    StandardScaler = None
 
 logger = logging.getLogger(__name__)
 

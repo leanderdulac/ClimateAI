@@ -1,6 +1,5 @@
 import { mlApi, MLPredictionFeatures, MLPredictionResult, externalApi, climateDerivativesApi, policyPricingApi, PolicyPricingRequest, PolicyPricingResult } from '@/lib/api';
-import { loadEmbrapaApi } from '@/lib/loadEmbrapaApi';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +27,9 @@ import {
   BarChart3,
   Brain
 } from "lucide-react";
+
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, ScatterChart, Scatter, ZAxis, ReferenceLine } from 'recharts';
+import { BatchResult, computeBatchStats } from '@/hooks/useBatchStats';
 
 // Financial analysis function to properly calculate viability
 const analyzeFinancialViability = (
@@ -163,6 +165,21 @@ const climateEvents: ClimateEvent[] = [
   }
 ];
 
+
+
+// Error alert component (must be top-level, not inside another function)
+function ErrorAlert({ message, onClose }: { message: string, onClose: () => void }) {
+  return (
+    <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-800 rounded flex items-center justify-between animate-fade-in">
+      <div className="flex items-center gap-2">
+        <AlertTriangle className="h-5 w-5 text-red-500" />
+        <span className="font-medium">{message}</span>
+      </div>
+      <button onClick={onClose} className="ml-4 px-2 py-1 text-xs bg-red-200 rounded hover:bg-red-300">Fechar</button>
+    </div>
+  );
+}
+
 export function PricingSimulator() {
   const { t } = useTranslation();
   const { selectedPeriod } = usePeriod();
@@ -170,17 +187,29 @@ export function PricingSimulator() {
   const [selectedEvent, setSelectedEvent] = useState<ClimateEvent | null>(null);
   const [frequency, setFrequency] = useState<number>(10); // %
   const [severity, setSeverity] = useState<number>(10000); // $
+  const [variableSim, setVariableSim] = useState<boolean>(false); // Simulação variável
   const [confidence, setConfidence] = useState<number>(95); // %
   const [premium, setPremium] = useState<number>(0);
   const [advancedResults, setAdvancedResults] = useState<any>(null);
   const [financialAnalysis, setFinancialAnalysis] = useState<any>(null);
   const [calculating, setCalculating] = useState<boolean>(false);
   const [policySimulations, setPolicySimulations] = useState<any[]>([]);
+  const [calcError, setCalcError] = useState<string | null>(null);
   const [coveragePeriod, setCoveragePeriod] = useState<number>(1); // Período de cobertura em anos
   const [activeTab, setActiveTab] = useState<'simulator' | 'tokenization'>('simulator');
   const [mlPredictions, setMlPredictions] = useState<MLPredictionResult | null>(null);
 
   const { selectedLocation } = useLocation();
+
+  const validBatch = useMemo<BatchResult[]>(() => {
+    const batch = (advancedResults?.batch as BatchResult[] | undefined) ?? [];
+    return batch.filter((b) => b.premium !== null);
+  }, [advancedResults]);
+
+  const batchStats = useMemo(() => {
+    if (!validBatch.length) return null;
+    return computeBatchStats(validBatch);
+  }, [validBatch]);
 
   const handleEventSelect = (event: ClimateEvent) => {
     setSelectedEvent(event);
@@ -189,27 +218,134 @@ export function PricingSimulator() {
   };
 
   const handleCalculate = async () => {
+    console.log('[PricingSimulator] Iniciando cálculo...');
+    console.log('[PricingSimulator] assetValue:', assetValue);
+    console.log('[PricingSimulator] selectedEvent:', selectedEvent);
+    console.log('[PricingSimulator] frequency:', frequency);
+    console.log('[PricingSimulator] severity:', severity);
+    console.log('[PricingSimulator] selectedLocation:', selectedLocation);
+    
+    // Parâmetros base e validações iniciais
+    let simAssetValue = assetValue;
+    let simFrequency = frequency;
+    let simSeverity = severity;
+
     if (assetValue <= 0) {
-      alert(t('pricing.errors.invalidAsset'));
+      const errorMsg = t('pricing.errors.invalidAsset') || 'Valor do bem inválido';
+      console.error('[PricingSimulator] Validação falhou: assetValue <= 0');
+      setCalcError(errorMsg);
+      alert(errorMsg);
       return;
     }
+
     if (!selectedEvent) {
-      alert(t('pricing.errors.selectEvent'));
-      return;
+      console.warn('[PricingSimulator] Nenhum evento selecionado, usando valores padrão');
+      simFrequency = simFrequency || 10;
+      simSeverity = simSeverity || 10000;
+    }
+
+    // Cenário de stress e simulação variável
+    let stressResults = null;
+    let batchResults: BatchResult[] = [];
+
+    const logNorm = (mu: number, sigma: number) => Math.exp(mu + sigma * (Math.random() * 2 - 1));
+    const genParams = () => {
+      let v, f, s;
+      v = Math.round(Math.max(20000, Math.min(1000000, logNorm(11.5, 0.7))));
+      f = Math.random() < 0.2 ? Math.round(30 + Math.random() * 40) : Math.round(5 + Math.random() * 25);
+      s = Math.random() < 0.15 ? Math.round(60000 + Math.random() * 140000) : Math.round(5000 + Math.random() * 55000);
+      return { v, f, s };
+    };
+
+    if (variableSim) {
+      console.log('[PricingSimulator] Executando simulação variável (5 execuções)...');
+
+      const requests = Array.from({ length: 5 }, (_, i) => {
+        const { v, f, s } = genParams();
+        const req: PolicyPricingRequest = {
+          asset_value: v,
+          severity_amount: s,
+          frequency_pct: f,
+          coverage_period_years: coveragePeriod,
+          scr_score: 450,
+          is_manual_underwriting: false,
+          latitude: selectedLocation?.latitude ?? -23.55,
+          longitude: selectedLocation?.longitude ?? -46.63,
+        };
+
+        return policyPricingApi
+          .calculate(req)
+          .then((res) => {
+            console.log(`[PricingSimulator] Simulação ${i + 1}/5:`, { v, f, s });
+            return {
+              assetValue: v,
+              frequency: f,
+              severity: s,
+              premium: res.financials.total_premium,
+              netProfit: res.financials.net_profit,
+              loss: res.financials.pure_premium,
+              margin: res.financials.profit_margin_pct,
+            } as BatchResult;
+          })
+          .catch((e) => {
+            console.error(`[PricingSimulator] Erro na simulação ${i + 1}/5:`, e);
+            return { assetValue: v, frequency: f, severity: s, premium: null, netProfit: null, loss: null, margin: null } as BatchResult;
+          });
+      });
+
+      batchResults = await Promise.all(requests);
+
+      const firstValid = batchResults.find((b) => b.premium !== null) || batchResults[0];
+      simAssetValue = firstValid.assetValue;
+      simFrequency = firstValid.frequency;
+      simSeverity = firstValid.severity;
+
+      console.log('[PricingSimulator] Simulação variável completa, resultados:', batchResults.length);
+
+      const stressRequest: PolicyPricingRequest = {
+        asset_value: simAssetValue,
+        severity_amount: 200000,
+        frequency_pct: 70,
+        coverage_period_years: coveragePeriod,
+        scr_score: 450,
+        is_manual_underwriting: false,
+        latitude: selectedLocation?.latitude ?? -23.55,
+        longitude: selectedLocation?.longitude ?? -46.63,
+      };
+      try {
+        const stressResult: PolicyPricingResult = await policyPricingApi.calculate(stressRequest);
+        stressResults = {
+          assetValue: stressRequest.asset_value,
+          frequency: stressRequest.frequency_pct,
+          severity: stressRequest.severity_amount,
+          premium: stressResult.financials.total_premium,
+          netProfit: stressResult.financials.net_profit,
+          loss: stressResult.financials.pure_premium,
+          margin: stressResult.financials.profit_margin_pct,
+        };
+      } catch (e) {
+        console.warn('[PricingSimulator] Erro no stress test (ignorando):', e);
+      }
     }
 
     setCalculating(true);
+    setCalcError(null);
     try {
+      console.log('[PricingSimulator] Enviando requisição para API...');
       const request: PolicyPricingRequest = {
-        asset_value: assetValue,
-        severity_amount: severity,
-        frequency_pct: frequency,
+        asset_value: simAssetValue,
+        severity_amount: simSeverity,
+        frequency_pct: simFrequency,
         coverage_period_years: coveragePeriod,
         scr_score: 450, // Default value as it's not in the UI
         is_manual_underwriting: false,
+        latitude: selectedLocation?.latitude ?? -23.55, // Default: São Paulo
+        longitude: selectedLocation?.longitude ?? -46.63
       };
 
+      console.log('[PricingSimulator] Request:', request);
       const result: PolicyPricingResult = await policyPricingApi.calculate(request);
+      console.log('[PricingSimulator] Resultado da API:', result);
 
       // --- Map new result to old state structure ---
 
@@ -227,14 +363,34 @@ export function PricingSimulator() {
           inferior: result.financials.total_premium - confidenceMargin,
           superior: result.financials.total_premium + confidenceMargin
         },
-        analise_fractal: null,
+        analise_fractal: result.fractal_metrics ? {
+          hurst_exponent: result.fractal_metrics.hurst_exponent,
+          fractal_dimension: result.fractal_metrics.fractal_dimension,
+          regime: result.fractal_metrics.regime,
+          complexity_index: result.fractal_metrics.complexity
+        } : null,
         risco_fuzzy: null,
         metodologia: {
-          tecnicas_utilizadas: ['Backend Pricing Service', 'Monte Carlo Simulation'],
+          tecnicas_utilizadas: ['EVT (Extreme Value Theory)', 'Fractal Analysis', 'Monte Carlo'],
           iteracoes_monte_carlo: 10000
         },
       };
       setAdvancedResults(newAdvancedResults);
+    // Se simulação variável, salva lote para exibir
+    if (variableSim && batchResults.length > 0) {
+      setAdvancedResults((prev: any) => ({
+        ...prev,
+        batch: batchResults
+      }));
+    }
+
+    // Exibir resultados de stress se houver
+    if (stressResults) {
+      setAdvancedResults((prev: any) => ({
+        ...prev,
+        stressScenario: stressResults
+      }));
+    }
 
       // Analyze financial viability using the correct methodology
       const financialAnalysisResult = analyzeFinancialViability(
@@ -319,6 +475,11 @@ export function PricingSimulator() {
       // Policy simulations are not generated by the new service, so we can clear it.
       setPolicySimulations([]);
 
+      console.log('[PricingSimulator] Cálculo concluído com sucesso!');
+      console.log('[PricingSimulator] Premium:', result.financials.total_premium);
+      console.log('[PricingSimulator] Net Profit:', result.financials.net_profit);
+      console.log('[PricingSimulator] Status:', result.status);
+
       // Get ML predictions for sinistrality (can remain as is)
       try {
         let realTimeData = null;
@@ -337,8 +498,8 @@ export function PricingSimulator() {
           humidity: realTimeData?.weather?.humidity || 70,
           inflation_rate: realTimeData?.economic?.inflation_rate || 0.04,
           gdp_growth: realTimeData?.economic?.gdp_growth || 0.025,
-          latitude: selectedLocation?.latitude,
-          longitude: selectedLocation?.longitude,
+          latitude: selectedLocation?.latitude ?? -23.55,
+          longitude: selectedLocation?.longitude ?? -46.63,
           month: new Date().getMonth() + 1
         };
 
@@ -350,16 +511,204 @@ export function PricingSimulator() {
       }
 
     } catch (error: any) {
-      console.error('Erro no cálculo:', error);
-      const errorMessage = error?.message || error?.detail || t('pricing.errors.calculationError');
-      alert(`${t('pricing.errors.calculationError')}\n\nDetalhes: ${errorMessage}`);
+      console.error('[PricingSimulator] Erro no cálculo:', error);
+      console.error('[PricingSimulator] Error details:', {
+        message: error?.message,
+        detail: error?.detail,
+        stack: error?.stack
+      });
+      
+      let errorMessage = t('pricing.errors.calculationError') || 'Erro ao calcular prêmio';
+      
+      if (error?.message) {
+        errorMessage += `: ${error.message}`;
+      } else if (error?.detail) {
+        errorMessage += `: ${error.detail}`;
+      } else if (typeof error === 'string') {
+        errorMessage += `: ${error}`;
+      }
+      
+      // Adiciona dicas de troubleshooting
+      const troubleshootingTips = [
+        '\n\nDicas:',
+        '1. Verifique se o backend está rodando (http://localhost:8000)',
+        '2. Verifique o console do navegador para mais detalhes',
+        '3. Tente novamente em alguns instantes'
+      ].join('\n');
+      
+      setCalcError(errorMessage + troubleshootingTips);
+      alert(errorMessage);
     } finally {
       setCalculating(false);
+      console.log('[PricingSimulator] Cálculo finalizado (calculating = false)');
     }
   };
 
   return (
     <Card className="pricing-simulator overflow-hidden animate-fade-in" variant="default">
+      {calcError && (
+        <ErrorAlert message={calcError} onClose={() => setCalcError(null)} />
+      )}
+      <div className="flex items-center gap-3 mb-4">
+        <input type="checkbox" id="variableSim" checked={variableSim} onChange={e => setVariableSim(e.target.checked)} />
+        <label htmlFor="variableSim" className="text-sm">Simulação Variável (aleatoriedade realista nos parâmetros)</label>
+      </div>
+      {variableSim && (
+        <div className="mb-4 p-3 bg-blue-50 rounded text-xs text-blue-900">
+          <div><b>Simulações em lote (5 execuções aleatórias):</b></div>
+          <ol className="list-decimal ml-4">
+            {advancedResults?.batch?.map((b: any, idx: number) => (
+              <li key={idx}>
+                Valor do bem: R$ {b.assetValue.toLocaleString()} | Frequência: {b.frequency}% | Severidade: R$ {b.severity.toLocaleString()}<br/>
+                {b.premium !== null ? (
+                  <>
+                    Prêmio: R$ {b.premium.toLocaleString()} | Perda Esperada: R$ {b.loss.toLocaleString()} | Lucro Líquido: R$ {b.netProfit.toLocaleString()} | Margem: {b.margin}%
+                  </>
+                ) : (
+                  <span className="text-red-700">Erro ao calcular</span>
+                )}
+              </li>
+            ))}
+          </ol>
+          {/* Estatísticas do lote e gráficos avançados */}
+          {batchStats && validBatch.length > 0 && (() => {
+            const stats = batchStats;
+            return (
+              <>
+                <div className="mt-2 p-2 bg-blue-100 rounded">
+                  <b>Estatísticas do lote:</b><br/>
+                  Prêmio: média R$ {stats.premiumStats.mean.toLocaleString(undefined, {maximumFractionDigits:0})}, desvio R$ {stats.premiumStats.std.toLocaleString(undefined, {maximumFractionDigits:0})}, min R$ {stats.premiumStats.min.toLocaleString()}, max R$ {stats.premiumStats.max.toLocaleString()}<br/>
+                  Perda Esperada: média R$ {stats.lossStats.mean.toLocaleString(undefined, {maximumFractionDigits:0})}, desvio R$ {stats.lossStats.std.toLocaleString(undefined, {maximumFractionDigits:0})}, min R$ {stats.lossStats.min.toLocaleString()}, max R$ {stats.lossStats.max.toLocaleString()}<br/>
+                  Lucro Líquido: média R$ {stats.profitStats.mean.toLocaleString(undefined, {maximumFractionDigits:0})}, desvio R$ {stats.profitStats.std.toLocaleString(undefined, {maximumFractionDigits:0})}, min R$ {stats.profitStats.min.toLocaleString()}, max R$ {stats.profitStats.max.toLocaleString()}<br/>
+                  Margem: média {stats.marginStats.mean.toFixed(1)}%, desvio {stats.marginStats.std.toFixed(1)}%, min {stats.marginStats.min.toFixed(1)}%, max {stats.marginStats.max.toFixed(1)}%<br/>
+                  Correlação prêmio x lucro: <b>{stats.corrPremioLucro.toFixed(2)}</b><br/>
+                  Percentil 10 do lucro: R$ {stats.p10.toLocaleString(undefined, {maximumFractionDigits:0})} | Percentil 90: R$ {stats.p90.toLocaleString(undefined, {maximumFractionDigits:0})}<br/>
+                  Outliers prêmio: {stats.outPremio.length > 0 ? stats.outPremio.map(x => `R$ ${x.toLocaleString()}`).join(', ') : 'nenhum'}<br/>
+                  Outliers lucro: {stats.outLucro.length > 0 ? stats.outLucro.map(x => `R$ ${x.toLocaleString()}`).join(', ') : 'nenhum'}
+                </div>
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Boxplot dos Prêmios */}
+                  <div>
+                    <b>Boxplot dos Prêmios</b>
+                    <ResponsiveContainer width="100%" height={120}>
+                      <BarChart data={[stats.premiumBox]}>
+                        <XAxis dataKey={() => ''} hide />
+                        <YAxis />
+                        <Tooltip />
+                        <Bar dataKey="min" fill="#d1d5db" />
+                        <Bar dataKey="q1" fill="#a5b4fc" />
+                        <Bar dataKey="median" fill="#6366f1" />
+                        <Bar dataKey="q3" fill="#a5b4fc" />
+                        <Bar dataKey="max" fill="#d1d5db" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  {/* Linha temporal dos Lucros */}
+                  <div>
+                    <b>Lucro Líquido (Linha Temporal)</b>
+                    <ResponsiveContainer width="100%" height={120}>
+                      <LineChart data={validBatch.map((b, i) => ({name: `Sim ${i+1}`, value: b.netProfit}))}>
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Line type="monotone" dataKey="value" stroke="#059669" />
+                        <ReferenceLine y={0} stroke="#ef4444" strokeDasharray="3 3" />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                  {/* Scatter plot Prêmio vs Lucro */}
+                  <div>
+                    <b>Dispersão Prêmio x Lucro</b>
+                    <ResponsiveContainer width="100%" height={120}>
+                      <ScatterChart>
+                        <CartesianGrid />
+                        <XAxis dataKey="premium" name="Prêmio" />
+                        <YAxis dataKey="netProfit" name="Lucro" />
+                        <Tooltip cursor={{ strokeDasharray: '3 3' }} />
+                        <Scatter name="Simulações" data={validBatch} fill="#6366f1" />
+                      </ScatterChart>
+                    </ResponsiveContainer>
+                  </div>
+                  {/* Boxplot dos Lucros */}
+                  <div>
+                    <b>Boxplot dos Lucros Líquidos</b>
+                    <ResponsiveContainer width="100%" height={120}>
+                      <BarChart data={[stats.profitBox]}>
+                        <XAxis dataKey={() => ''} hide />
+                        <YAxis />
+                        <Tooltip />
+                        <Bar dataKey="min" fill="#d1d5db" />
+                        <Bar dataKey="q1" fill="#a7f3d0" />
+                        <Bar dataKey="median" fill="#059669" />
+                        <Bar dataKey="q3" fill="#a7f3d0" />
+                        <Bar dataKey="max" fill="#d1d5db" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+                {/* Gráficos originais de barras */}
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <b>Distribuição dos Prêmios</b>
+                    <ResponsiveContainer width="100%" height={120}>
+                      <BarChart data={validBatch.map((b, i) => ({name: `Sim ${i+1}`, value: b.premium}))}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Bar dataKey="value" fill="#2563eb" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div>
+                    <b>Distribuição dos Lucros Líquidos</b>
+                    <ResponsiveContainer width="100%" height={120}>
+                      <BarChart data={validBatch.map((b, i) => ({name: `Sim ${i+1}`, value: b.netProfit}))}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Bar dataKey="value" fill="#059669" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div>
+                    <b>Distribuição das Perdas Esperadas</b>
+                    <ResponsiveContainer width="100%" height={120}>
+                      <BarChart data={validBatch.map((b, i) => ({name: `Sim ${i+1}`, value: b.loss}))}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Bar dataKey="value" fill="#f59e42" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div>
+                    <b>Distribuição das Margens (%)</b>
+                    <ResponsiveContainer width="100%" height={120}>
+                      <BarChart data={validBatch.map((b, i) => ({name: `Sim ${i+1}`, value: b.margin}))}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Bar dataKey="value" fill="#6366f1" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </>
+            );
+          })()}
+          <div className="mt-2"><b>Simulação principal:</b> Valor do bem: R$ {assetValue.toLocaleString()} | Frequência: {frequency}% | Severidade: R$ {severity.toLocaleString()}</div>
+          {advancedResults?.stressScenario && (
+            <div className="mt-2">
+              <b>Cenário de Stress:</b> Valor do bem: R$ {advancedResults.stressScenario.assetValue.toLocaleString()} | Frequência: {advancedResults.stressScenario.frequency}% | Severidade: R$ {advancedResults.stressScenario.severity.toLocaleString()}<br/>
+              Prêmio: R$ {advancedResults.stressScenario.premium.toLocaleString()} | Lucro Líquido: R$ {advancedResults.stressScenario.netProfit.toLocaleString()} | Margem: {advancedResults.stressScenario.margin}%
+            </div>
+          )}
+        </div>
+      )}
       <CardHeader className="border-none bg-gradient-to-r from-primary-500 to-primary-600">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
@@ -682,28 +1031,26 @@ export function PricingSimulator() {
                       <h3 className="font-medium text-purple-900">Análise Fractal Climática</h3>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="rounded-lg bg-white p-4 shadow-sm">
-                        <div className="text-xs text-neutral-600">Dimensão Fractal</div>
-                        <div className="text-lg font-bold text-purple-600">
-                          {advancedResults?.analise_fractal?.dimensao_fractal?.toFixed(3) || 'N/A'}
-                        </div>
-                        <div className="text-xs text-neutral-500">Complexidade do padrão</div>
+                    <div className="rounded-lg bg-white p-4 shadow-sm border border-purple-200">
+                      <div className="text-xs text-neutral-600">Hurst Exponent</div>
+                      <div className="text-lg font-bold text-purple-600">
+                        {advancedResults?.analise_fractal?.hurst_exponent?.toFixed(3) || 'N/A'}
                       </div>
-                      <div className="rounded-lg bg-white p-4 shadow-sm">
-                        <div className="text-xs text-neutral-600">Lacunaaridade</div>
-                        <div className="text-lg font-bold text-purple-600">
-                          {advancedResults?.analise_fractal?.lacunaaridade?.toFixed(3) || 'N/A'}
-                        </div>
-                        <div className="text-xs text-neutral-500">Heterogeneidade</div>
+                      <div className="text-xs text-neutral-500">Persistência vs Caos</div>
+                    </div>
+                    <div className="rounded-lg bg-white p-4 shadow-sm border border-purple-200">
+                      <div className="text-xs text-neutral-600">Dimensão Fractal</div>
+                      <div className="text-lg font-bold text-purple-600">
+                        {advancedResults?.analise_fractal?.fractal_dimension?.toFixed(3) || 'N/A'}
                       </div>
-                      <div className="rounded-lg bg-white p-4 shadow-sm">
-                        <div className="text-xs text-neutral-600">Persistência</div>
-                        <div className="text-lg font-bold text-purple-600">
-                          {advancedResults?.analise_fractal?.persistencia?.toFixed(3) || 'N/A'}
-                        </div>
-                        <div className="text-xs text-neutral-500">Autocorrelação</div>
+                      <div className="text-xs text-neutral-500">Complexidade do padrão</div>
+                    </div>
+                    <div className="rounded-lg bg-white p-4 shadow-sm border border-purple-200">
+                      <div className="text-xs text-neutral-600">Regime Detectado</div>
+                      <div className="text-sm font-bold text-purple-700">
+                        {advancedResults?.analise_fractal?.regime || 'N/A'}
                       </div>
+                      <div className="text-xs text-neutral-500">Estado dinâmico</div>
                     </div>
                   </div>
                 </div>

@@ -1,132 +1,385 @@
 name: Security Scan
 
 on:
-  schedule:
-    - cron: '0 2 * * 1'  # Runs weekly on Monday at 2 AM
   push:
-    branches: [ main, develop ]
-    paths:
-      - '**/package.json'
-      - '**/package-lock.json'
-      - '**/requirements.txt'
-      - '**/requirements-dev.txt'
-      - '**/Pipfile'
-      - '**/Gemfile'
-      - '**/Gemfile.lock'
+    branches: [main, develop]
   pull_request:
-    branches: [ main ]
-    paths:
-      - '**/package.json'
-      - '**/package-lock.json'
-      - '**/requirements.txt'
-      - '**/requirements-dev.txt'
-      - '**/Pipfile'
-      - '**/Gemfile'
-      - '**/Gemfile.lock'
-  workflow_dispatch:
+    branches: [main]
+  schedule:
+    # Executar diariamente às 02:00 UTC
+    - cron: '0 2 * * *'
 
 jobs:
-  security-scan:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      # Backend security scan
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-
-      - name: Install pip-audit
-        run: pip install pip-audit
-
-      - name: Run pip-audit on requirements.txt
-        run: |
-          cd server
-          pip-audit -r requirements.txt || echo "Security scan completed with findings (non-fatal)"
-
-      - name: Run pip-audit on production requirements
-        run: |
-          cd server
-          pip-audit -r requirements-prod-ml.txt || echo "Security scan completed with findings (non-fatal)"
-
-      # Frontend security scan
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: client/package-lock.json
-
-      - name: Install client dependencies
-        run: |
-          cd client
-          npm ci
-
-      - name: Run npm audit
-        run: |
-          cd client
-          npm audit --audit-level high || echo "Security scan completed with findings (non-fatal)"
-
-      - name: Run npm audit for root
-        run: |
-          npm audit --audit-level high || echo "Security scan completed with findings (non-fatal)"
-
-      # Run Snyk scan if token is available
-      - name: Snyk scan
-        uses: snyk/actions/node@master
-        if: env.SNYK_TOKEN != null
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          args: --all-projects --fail-on=high
-
-      - name: Snyk scan for Python
-        uses: snyk/actions/python-3.11@master
-        if: env.SNYK_TOKEN != null
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          args: --file=server/requirements.txt --fail-on=high
-
-      # Run Trivy scan
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-
-      - name: Upload Trivy scan results
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: 'trivy-results.sarif'
-
-  codeql-analysis:
+  # ============================================
+  # SAST - Static Application Security Testing
+  # ============================================
+  sast:
+    name: SAST (CodeQL)
     runs-on: ubuntu-latest
     permissions:
       actions: read
       contents: read
       security-events: write
-
+    
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Initializes the CodeQL tools for scanning
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
-          languages: python,javascript
+          languages: python, javascript
+          queries: security-extended
 
-      # Autobuild attempts to build any compiled languages (C/C++, C#, Go, or Java)
       - name: Autobuild
         uses: github/codeql-action/autobuild@v3
 
-      # Perform CodeQL Analysis
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:python,javascript"
+          output: sarif-results
+          upload: true
+
+      - name: Upload SARIF results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: sarif-results
+
+  # ============================================
+  # Python Security Audit
+  # ============================================
+  python-security:
+    name: Python Security (pip-audit + Bandit)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: server/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install pip-audit bandit safety
+
+      - name: Run pip-audit
+        run: |
+          pip-audit --format json --output pip-audit-results.json || true
+          pip-audit --output-format columns
+        continue-on-error: false
+
+      - name: Run Bandit SAST
+        run: |
+          bandit -r . -f json -o bandit-results.json --severity-level medium --confidence-level medium || true
+          bandit -r . --severity-level medium --confidence-level medium
+        continue-on-error: false
+
+      - name: Run Safety check
+        run: |
+          safety check --json --output safety-results.json || true
+          safety check
+        continue-on-error: false
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: python-security-results
+          path: |
+            server/pip-audit-results.json
+            server/bandit-results.json
+            server/safety-results.json
+
+  # ============================================
+  # JavaScript Security Audit
+  # ============================================
+  javascript-security:
+    name: JavaScript Security (npm audit + ESLint)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit
+        run: |
+          npm audit --json > npm-audit-results.json || true
+          npm audit --audit-level=moderate
+        continue-on-error: false
+
+      - name: Run ESLint with security plugin
+        run: |
+          npm install --save-dev eslint-plugin-security
+          npx eslint . --format json --output-file eslint-results.json || true
+        continue-on-error: false
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: javascript-security-results
+          path: |
+            client/npm-audit-results.json
+            client/eslint-results.json
+
+  # ============================================
+  # DAST - Dynamic Application Security Testing
+  # ============================================
+  dast:
+    name: DAST (OWASP ZAP)
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Start application (Docker Compose)
+        run: |
+          docker-compose up -d backend
+          sleep 30
+        continue-on-error: true
+
+      - name: OWASP ZAP Scan
+        uses: zaproxy/action-baseline@v0.10.0
+        with:
+          target: 'http://localhost:8000'
+          rules_file_name: '.zap/rules.tsv'
+          cmd_options: '-a -j'
+        continue-on-error: true
+
+      - name: Upload ZAP results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: zap-scan-results
+          path: |
+            report_html.html
+            report_json.json
+
+  # ============================================
+  # Container Security Scan (Trivy)
+  # ============================================
+  container-security:
+    name: Container Security (Trivy)
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker images
+        run: |
+          docker build -t climateai-backend:latest ./server
+          docker build -t climateai-frontend:latest .
+
+      - name: Run Trivy vulnerability scanner (Backend)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'climateai-backend:latest'
+          format: 'sarif'
+          output: 'trivy-backend-results.sarif'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+          vuln-type: 'os,library'
+        continue-on-error: true
+
+      - name: Run Trivy vulnerability scanner (Frontend)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'climateai-frontend:latest'
+          format: 'sarif'
+          output: 'trivy-frontend-results.sarif'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+          vuln-type: 'os,library'
+        continue-on-error: true
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-backend-results.sarif'
+          category: 'trivy-backend'
+
+      - name: Upload Trivy results (Frontend)
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-frontend-results.sarif'
+          category: 'trivy-frontend'
+
+      - name: Upload Trivy artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trivy-results
+          path: |
+            trivy-backend-results.sarif
+            trivy-frontend-results.sarif
+
+  # ============================================
+  # SBOM Generation (Software Bill of Materials)
+  # ============================================
+  sbom:
+    name: SBOM Generation
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Syft
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+
+      - name: Generate SBOM (Backend)
+        run: |
+          syft dir:./server -o cyclonedx-json=server-sbom.json
+          syft dir:./server -o spdx-json=server-sbom-spdx.json
+        continue-on-error: true
+
+      - name: Generate SBOM (Frontend)
+        run: |
+          syft dir:./client -o cyclonedx-json=client-sbom.json
+          syft dir:./client -o spdx-json=client-sbom-spdx.json
+        continue-on-error: true
+
+      - name: Generate SBOM (Docker Images)
+        run: |
+          docker build -t climateai-backend:latest ./server
+          docker build -t climateai-frontend:latest .
+          syft climateai-backend:latest -o cyclonedx-json=backend-image-sbom.json
+          syft climateai-frontend:latest -o cyclonedx-json=frontend-image-sbom.json
+        continue-on-error: true
+
+      - name: Upload SBOM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-files
+          path: |
+            server-sbom.json
+            server-sbom-spdx.json
+            client-sbom.json
+            client-sbom-spdx.json
+            backend-image-sbom.json
+            frontend-image-sbom.json
+
+      - name: Publish SBOM to GitHub Packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-release
+          path: |
+            *.json
+          retention-days: 90
+
+  # ============================================
+  # Secrets Scanning
+  # ============================================
+  secrets-scan:
+    name: Secrets Scanning (Gitleaks)
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+        continue-on-error: true
+
+      - name: Upload Gitleaks results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gitleaks-results
+          path: |
+            results.sarif
+
+  # ============================================
+  # Dependency Review
+  # ============================================
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: moderate
+          deny-licenses: GPL-3.0, AGPL-3.0
+          allow-ghsas: []
+
+  # ============================================
+  # Security Summary Report
+  # ============================================
+  security-summary:
+    name: Security Summary
+    runs-on: ubuntu-latest
+    needs: [sast, python-security, javascript-security, dast, container-security, sbom, secrets-scan]
+    if: always()
+    
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
+      - name: Generate Security Summary
+        run: |
+          echo "## 🔒 Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Scan | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| SAST (CodeQL) | ${{ needs.sast.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Python Security | ${{ needs.python-security.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| JavaScript Security | ${{ needs.javascript-security.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| DAST (ZAP) | ${{ needs.dast.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Container Security (Trivy) | ${{ needs.container-security.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| SBOM Generation | ${{ needs.sbom.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Secrets Scan | ${{ needs.secrets-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # List artifacts
+          echo "### Artifacts Generated" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Python Security: pip-audit-results.json, bandit-results.json, safety-results.json" >> $GITHUB_STEP_SUMMARY
+          echo "- JavaScript Security: npm-audit-results.json, eslint-results.json" >> $GITHUB_STEP_SUMMARY
+          echo "- DAST: report_html.html, report_json.json" >> $GITHUB_STEP_SUMMARY
+          echo "- Container Security: trivy-backend-results.sarif, trivy-frontend-results.sarif" >> $GITHUB_STEP_SUMMARY
+          echo "- SBOM: server-sbom.json, client-sbom.json, backend-image-sbom.json, frontend-image-sbom.json" >> $GITHUB_STEP_SUMMARY
+          echo "- Secrets: results.sarif" >> $GITHUB_STEP_SUMMARY

@@ -1,8 +1,17 @@
 from enum import Enum
 from typing import Optional
-
+import asyncio
+from datetime import datetime, timedelta
 from fastapi import APIRouter
 from pydantic import BaseModel
+import pandas as pd
+import logging
+
+from services.extreme_value_pricing_service import DefensivePricingOrchestrator
+from services.openmeteo_service import OpenMeteoService
+from services.noaa_service import NOAAService
+
+logger = logging.getLogger(__name__)
 
 # This entire file is created based on the user-provided Python script,
 # adapted for a FastAPI router.
@@ -41,6 +50,8 @@ class PolicyRequest(BaseModel):
     scr_score: float = 0.0
     is_manual_underwriting: bool = False
     location_risk_zone: str = "STANDARD"
+    latitude: Optional[float] = -23.55
+    longitude: Optional[float] = -46.63
 
 
 class FinancialBreakdown(BaseModel):
@@ -57,11 +68,18 @@ class FinancialBreakdown(BaseModel):
     combined_ratio: float
 
 
+class FractalMetrics(BaseModel):
+    hurst_exponent: float
+    fractal_dimension: float
+    regime: str
+    complexity: float
+
 class PricingResult(BaseModel):
     is_approved: bool
     status: str
     rejection_reason: Optional[str]
     financials: FinancialBreakdown
+    fractal_metrics: Optional[FractalMetrics] = None
     decision_flow: str
 
 
@@ -196,12 +214,122 @@ class ClimatePricingService:
 # --- API ENDPOINT ---
 
 
+async def _calculate_evt_pricing(request: PolicyRequest) -> Optional[PricingResult]:
+    """
+    Asynchronous EVT/fractal calculation using real climate data.
+    Returns None on failure so caller can fallback to heuristic.
+    """
+    try:
+        om_service = OpenMeteoService()
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=365 * 2)
+
+        logger.info(
+            f"Fetching climate data for pricing: {request.latitude}, {request.longitude}"
+        )
+        # Note: OpenMeteoService.obter_historico is async
+        clima_data = await om_service.obter_historico(
+            request.latitude,
+            request.longitude,
+            start_date,
+            end_date,
+            variavel="temperature_2m_max",
+        )
+
+        if not clima_data:
+            return None
+
+        df = pd.DataFrame(
+            [{"date": d.data, "temperature": d.temperatura} for d in clima_data]
+        )
+        df["date"] = pd.to_datetime(df["date"])
+
+        orchestrator = DefensivePricingOrchestrator()
+        evt_result = orchestrator.price_contract(
+            df,
+            asset_value=request.asset_value,
+            severity_amount=request.severity_amount,
+            frequency_pct=request.frequency_pct,
+            duration_years=request.coverage_period_years,
+        )
+
+        final_price = evt_result.final_premium
+        pure_premium_base = (
+            (request.frequency_pct / 100.0)
+            * min(request.severity_amount, request.asset_value)
+            * request.coverage_period_years
+        )
+
+        total_loading = max(0, final_price - pure_premium_base)
+        risk_padding = total_loading * 0.4
+        loadings = total_loading * 0.6
+
+        cost_sub = (
+            PricingConstants.COST_SUBSCRIPTION_MANUAL
+            if request.is_manual_underwriting
+            else PricingConstants.COST_SUBSCRIPTION_AUTO
+        )
+        cost_claims = final_price * PricingConstants.COST_CLAIMS_PCT
+        cost_admin = final_price * PricingConstants.COST_ADMIN_PCT
+        total_op_costs = cost_sub + cost_claims + cost_admin
+
+        net_profit = final_price - pure_premium_base - total_op_costs
+
+        financials = FinancialBreakdown(
+            pure_premium=pure_premium_base,
+            risk_margin=risk_padding,
+            loadings=loadings,
+            total_premium=final_price,
+            op_claims_cost=cost_claims,
+            op_admin_cost=cost_admin,
+            op_subscription_cost=cost_sub,
+            total_operational_costs=total_op_costs,
+            net_profit=net_profit,
+            profit_margin_pct=(net_profit / final_price * 100) if final_price > 0 else 0,
+            combined_ratio=((pure_premium_base + total_op_costs) / final_price)
+            if final_price > 0
+            else 0,
+        )
+
+        fractal_metrics = None
+        if evt_result.fractal_metrics:
+            fractal_metrics = FractalMetrics(
+                hurst_exponent=evt_result.fractal_metrics.hurst_exponent,
+                fractal_dimension=evt_result.fractal_metrics.fractal_dimension,
+                regime=evt_result.fractal_metrics.regime,
+                complexity=evt_result.fractal_metrics.risk_multiplier,
+            )
+
+        status = "APPROVED" if net_profit > 0 else "REVIEW"
+
+        return PricingResult(
+            is_approved=True,
+            status=status,
+            rejection_reason=None
+            if net_profit > 0
+            else "Lucratividade Marginal em Stress Climático",
+            financials=financials,
+            fractal_metrics=fractal_metrics,
+            decision_flow="EVT_FRACTAL_MODEL",
+        )
+    except Exception as e:
+        logger.error(f"EVT Pricing failed: {e}. Falling back to heuristic.")
+        return None
+
+
 @router.post("/calculate", response_model=PricingResult)
 async def calculate_policy_endpoint(request: PolicyRequest) -> PricingResult:
     """
-    Calculates the full policy premium and financial viability based on input parameters.
-    This endpoint encapsulates the core backend pricing logic.
+    Calculates proper insurance pricing using:
+    1. Real Climate Data (OpenMeteo)
+    2. Extreme Value Theory (EVT) for tail risk
+    3. Fractal Analysis for market regime
     """
+    # Directly await the async EVT calculation
+    evt_result = await _calculate_evt_pricing(request)
+
+    if evt_result:
+        return evt_result
+
     pricer = ClimatePricingService()
-    result = pricer.calculate_policy(request)
-    return result
+    return pricer.calculate_policy(request)

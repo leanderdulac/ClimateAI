@@ -7,7 +7,7 @@ import os
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 
-import requests
+import httpx
 from dotenv import load_dotenv
 
 from services.openmeteo_service import OpenMeteoService
@@ -27,16 +27,17 @@ class EmbrapaService:
         self.is_configured = bool(self.api_key and self.api_key != "your_api_key_here")
 
         if self.is_configured:
-            self.session = requests.Session()
-            self.session.headers.update(
-                {
+            self.client = httpx.AsyncClient(
+                base_url=self.base_url,
+                headers={
                     "Authorization": f"Bearer {self.api_key}",
                     "Accept": "application/json",
                     "Content-Type": "application/json",
-                }
+                },
+                timeout=10.0
             )
         else:
-            self.session = None
+            self.client = None
 
     async def get_climate_data(
         self, latitude: float, longitude: float, start_date: str, end_date: str
@@ -69,7 +70,7 @@ class EmbrapaService:
         }
 
         try:
-            response = self.session.get(endpoint, params=params, timeout=10)
+            response = await self.client.get(f"/{self.api_version}/clima/historico", params=params)
             response.raise_for_status()
             data = response.json()
 
@@ -81,7 +82,7 @@ class EmbrapaService:
             else:
                 return []
 
-        except (requests.exceptions.RequestException, ValueError) as e:
+        except (httpx.HTTPError, ValueError) as e:
             logger.warning(f"Erro na API Embrapa: {str(e)}. Usando fallback OpenMeteo.")
             return await self._fallback_to_openmeteo(
                 latitude, longitude, start_date, end_date
@@ -102,10 +103,10 @@ class EmbrapaService:
         params = {"latitude": latitude, "longitude": longitude, "dias": days}
 
         try:
-            response = self.session.get(endpoint, params=params, timeout=10)
+            response = await self.client.get(f"/{self.api_version}/clima/previsao", params=params)
             response.raise_for_status()
             return response.json()
-        except (requests.exceptions.RequestException, ValueError) as e:
+        except (httpx.HTTPError, ValueError) as e:
             logger.warning(f"Erro na API Embrapa: {str(e)}. Usando fallback OpenMeteo.")
             return await self._fallback_forecast_openmeteo(latitude, longitude, days)
 
@@ -117,10 +118,10 @@ class EmbrapaService:
         params = {"latitude": latitude, "longitude": longitude}
 
         try:
-            response = self.session.get(endpoint, params=params)
+            response = await self.client.get(f"/{self.api_version}/localizacao", params=params)
             response.raise_for_status()
             return response.json()
-        except requests.exceptions.RequestException as e:
+        except httpx.HTTPError as e:
             raise Exception(f"Erro ao obter dados da localização: {str(e)}")
 
     async def get_agricultural_zoning(
@@ -133,10 +134,10 @@ class EmbrapaService:
         params = {"latitude": latitude, "longitude": longitude, "cultura": crop}
 
         try:
-            response = self.session.get(endpoint, params=params)
+            response = await self.client.get(f"/{self.api_version}/zarc", params=params)
             response.raise_for_status()
             return response.json()
-        except requests.exceptions.RequestException as e:
+        except httpx.HTTPError as e:
             raise Exception(f"Erro ao obter zoneamento agrícola: {str(e)}")
 
     async def get_climate_risk_assessment(
@@ -154,10 +155,10 @@ class EmbrapaService:
         params = {"latitude": latitude, "longitude": longitude}
 
         try:
-            response = self.session.get(endpoint, params=params)
+            response = await self.client.get(f"/{self.api_version}/clima/risco", params=params)
             response.raise_for_status()
             return response.json()
-        except requests.exceptions.RequestException as e:
+        except httpx.HTTPError as e:
             raise Exception(f"Erro ao obter avaliação de risco climático: {str(e)}")
 
     async def _fallback_to_openmeteo(
@@ -175,7 +176,7 @@ class EmbrapaService:
             if (end_dt - start_dt).days > 365:
                 start_dt = end_dt - timedelta(days=365)
 
-            dados = openmeteo_service.obter_historico(
+            dados = await openmeteo_service.obter_historico(
                 latitude, longitude, start_dt, end_dt
             )
 
@@ -207,7 +208,7 @@ class EmbrapaService:
         """
         try:
             openmeteo_service = OpenMeteoService()
-            dados = openmeteo_service.obter_previsao(
+            dados = await openmeteo_service.obter_previsao(
                 latitude, longitude, min(days, 16)
             )  # OpenMeteo limita a 16 dias
 

@@ -35,14 +35,15 @@ class GeminiIntegrationService:
 
     def __init__(self):
         # Configuração da API do Gemini
-        self.api_key = (
-            os.getenv("GEMINI_API_KEY") or "AIzaSyB7mgES13tpKVXWFoCUYvmWQATv6JeUHlU"
-        )
+        from config.config import settings
+        self.api_key = settings.GEMINI_API_KEY or ""
 
         if not self.api_key:
-            raise ValueError(
-                "GEMINI_API_KEY não configurada. Configure no arquivo .env"
+            logger.warning(
+                "GEMINI_API_KEY não configurada. Funcionalidades do Gemini estarão desativadas."
             )
+            self.initialized = False
+            return
 
         try:
             genai.configure(api_key=self.api_key)

@@ -14,12 +14,12 @@ from services.aat_module_service import (
     ActuarialAnalysisResult,
     HistoricalLossData,
     RiskCategory,
-    TraditionalActuarialEngine,
+    AATModuleService,
     calculate_reinsurance_requirements,
     perform_actuarial_analysis,
 )
 from services.epe_module_service import (
-    CommercialPricingEngine,
+    EPEModuleService,
     CommercialPricingResult,
     MarketData,
     PricingStrategy,
@@ -31,7 +31,7 @@ from services.mds_module_service import (
     ApplicationData,
     ModuleInputs,
     UnderwritingDecision,
-    UnderwritingDecisionEngine,
+    MDSModuleService,
     apply_policy_rules,
     make_underwriting_decision,
 )
@@ -40,7 +40,7 @@ from services.mds_module_service import (
 from services.scr_module_service import (
     ClimateData,
     ClimateRiskScore,
-    SCRRiskScoringEngine,
+    SCRModuleService,
     calculate_climate_risk_score,
 )
 
@@ -82,10 +82,10 @@ class IntegratedPipeline:
     """
 
     def __init__(self):
-        self.scr_engine = SCRRiskScoringEngine()
-        self.aat_engine = TraditionalActuarialEngine()
-        self.epe_engine = CommercialPricingEngine()
-        self.mds_engine = UnderwritingDecisionEngine()
+        self.scr_engine = SCRModuleService()
+        self.aat_engine = AATModuleService()
+        self.epe_engine = EPEModuleService()
+        self.mds_engine = MDSModuleService()
 
     def process_application(self, pipeline_input: PipelineInput) -> PipelineResult:
         """

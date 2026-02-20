@@ -5,12 +5,8 @@
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-// Fallback credentials for production (in case env vars don't load correctly during build)
-const FALLBACK_SUPABASE_URL = 'https://tyzmywhvpmdfepxdtyes.supabase.co';
-const FALLBACK_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR5em15d2h2cG1kZmVweGR0eWVzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4NzAzNjcsImV4cCI6MjA4NDQ0NjM2N30.14R4jz5hzgx6u3pPnMDrnBEUmgorb0Iqlb8spQRgzaI';
-
-// Get Supabase credentials from environment variables with fallback
-// Get Supabase credentials from environment variables with fallback
+// Get Supabase credentials from environment variables
+// These MUST be set via VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env
 // Helper to validate JWT format (header.payload.signature)
 const isValidJWT = (key: string | undefined): boolean => {
     if (!key) return false;
@@ -18,17 +14,21 @@ const isValidJWT = (key: string | undefined): boolean => {
     return parts.length === 3 && parts[2].length > 0;
 };
 
-// Get Supabase credentials - prefer Env Var IF valid, otherwise use Fallback
+// Get Supabase credentials from env vars (no hardcoded fallbacks)
 const envKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || FALLBACK_SUPABASE_URL;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const supabaseAnonKey = isValidJWT(envKey) ? envKey : '';
 
-// If Env Var is truncated (common Vercel issue), use fallback
-const supabaseAnonKey = isValidJWT(envKey) ? envKey : FALLBACK_SUPABASE_ANON_KEY;
+if (!supabaseUrl || !supabaseAnonKey) {
+    console.error(
+        'Supabase credentials not configured! Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env'
+    );
+}
 
 console.log('Supabase Config:', {
     url: supabaseUrl,
     keyLength: supabaseAnonKey?.length,
-    isFallback: supabaseAnonKey === FALLBACK_SUPABASE_ANON_KEY
+    configured: Boolean(supabaseUrl && supabaseAnonKey)
 });
 
 // Validate configuration

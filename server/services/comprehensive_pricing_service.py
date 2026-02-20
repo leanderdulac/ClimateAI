@@ -182,7 +182,7 @@ class ComprehensivePricingService:
             self.supply_demand_adjustments["medium_concentration"],
         )
 
-    def calculate_comprehensive_pricing(
+    async def calculate_comprehensive_pricing(
         self, pricing_input: PolicyPricingInput
     ) -> PolicyAnalysisReport:
         """
@@ -446,11 +446,11 @@ class ComprehensivePricingService:
 comprehensive_pricing_service = ComprehensivePricingService()
 
 
-def calculate_comprehensive_premium(
+async def calculate_comprehensive_premium(
     pricing_input: PolicyPricingInput,
 ) -> PolicyAnalysisReport:
     """Convenience function to calculate comprehensive premium"""
-    return comprehensive_pricing_service.calculate_comprehensive_pricing(pricing_input)
+    return await comprehensive_pricing_service.calculate_comprehensive_pricing(pricing_input)
 
 
 def calculate_zone_concentration_ratio(

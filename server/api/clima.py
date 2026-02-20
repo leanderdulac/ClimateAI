@@ -9,21 +9,21 @@ from fastapi import APIRouter, HTTPException, Query, status
 
 from models.schemas import ClimaData
 from services.advanced_actuarial_service import AdvancedActuarialService
-from services.embrapa_service import EmbrapaAPIService
+from services.climate_insight_service import climate_insight_service
+from services.embrapa_service import embrapa_service
 from services.openmeteo_service import OpenMeteoService
 
 router = APIRouter()
-embrapa_service = EmbrapaAPIService()
 openmeteo_service = OpenMeteoService()
 advanced_actuarial_service = AdvancedActuarialService()
 
 
-@router.get("/historical", tags=["Climate Data"])
+@router.get("/historico", tags=["Climate Data"])
 async def get_historical_climate(
     latitude: float = Query(..., ge=-90, le=90),
     longitude: float = Query(..., ge=-180, le=180),
-    start_date: datetime = Query(...),
-    end_date: datetime = Query(...),
+    data_inicio: str = Query(..., description="Start date (YYYY-MM-DD)"),
+    data_fim: str = Query(..., description="End date (YYYY-MM-DD)"),
     variable: Optional[str] = Query(None),
 ):
     """
@@ -31,24 +31,28 @@ async def get_historical_climate(
 
     - **latitude**: Latitude of the location (-90 to 90)
     - **longitude**: Longitude of the location (-180 to 180)
-    - **start_date**: Start date for the data query
-    - **end_date**: End date for the data query
+    - **data_inicio**: Start date for the data query (YYYY-MM-DD)
+    - **data_fim**: End date for the data query (YYYY-MM-DD)
     - **variable**: Filter by a specific variable (optional)
     """
     try:
+        # Parse dates safely
+        start_date_obj = datetime.strptime(data_inicio, "%Y-%m-%d")
+        end_date_obj = datetime.strptime(data_fim, "%Y-%m-%d")
+        
         # Use Embrapa with a fallback to OpenMeteo if needed
         data = await embrapa_service.get_climate_data(
             latitude=latitude,
             longitude=longitude,
-            start_date=start_date.strftime("%Y-%m-%d"),
-            end_date=end_date.strftime("%Y-%m-%d"),
+            start_date=data_inicio,
+            end_date=data_fim,
         )
         return {
             "data": data,
             "source": "Embrapa",
             "period": {
-                "start": start_date.strftime("%Y-%m-%d"),
-                "end": end_date.strftime("%Y-%m-%d"),
+                "start": start_date_obj.strftime("%Y-%m-%d"),
+                "end": end_date_obj.strftime("%Y-%m-%d"),
             },
         }
     except Exception as e:
@@ -63,7 +67,7 @@ async def get_historical_climate(
         )
 
 
-@router.get("/current", response_model=ClimaData, tags=["Climate Data"])
+@router.get("/atual", response_model=ClimaData, tags=["Climate Data"])
 async def get_current_climate(
     latitude: float = Query(..., ge=-90, le=90),
     longitude: float = Query(..., ge=-180, le=180),
@@ -94,7 +98,7 @@ async def get_current_climate(
         )
 
 
-@router.get("/forecast", tags=["Climate Data"])
+@router.get("/previsao", tags=["Climate Data"])
 async def get_climate_forecast(
     latitude: float = Query(..., ge=-90, le=90),
     longitude: float = Query(..., ge=-180, le=180),
@@ -104,7 +108,7 @@ async def get_climate_forecast(
     Get weather forecast for the next few days using OpenMeteo.
     """
     try:
-        forecast_data = openmeteo_service.get_forecast(
+        forecast_data = await openmeteo_service.get_forecast(
             latitude=latitude, longitude=longitude, days=days
         )
         return {
@@ -161,6 +165,38 @@ async def get_risk_analysis(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
+@router.get("/insights", tags=["Climate Data"])
+async def get_climate_insights(
+    latitude: float = Query(..., ge=-90, le=90),
+    longitude: float = Query(..., ge=-180, le=180),
+):
+    """
+    Get analyzed climate insights and predominant extreme event risks for a location.
+    Analyzes the last 2 years of historical data.
+    """
+    try:
+        end_date = datetime.now().strftime("%Y-%m-%d")
+        start_date = (datetime.now() - timedelta(days=730)).strftime("%Y-%m-%d")
+
+        # Fetch historical data
+        climate_data = await embrapa_service.get_climate_data(
+            latitude=latitude,
+            longitude=longitude,
+            start_date=start_date,
+            end_date=end_date,
+        )
+
+        # Analyze insights
+        insights = climate_insight_service.analyze_location_insights(climate_data)
+
+        return insights
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Falha ao gerar insights climáticos: {str(e)}"
         )
 
 

@@ -10,6 +10,7 @@ O sistema combina:
 - **Modelagem Econômica Integrada**: Impacto de eventos climáticos nos preços de commodities
 - **Sistema de Alertas**: Monitoramento 24/7 com alertas automáticos
 - **Tokenização de Eventos Climáticos**: Mecanismo para transformar eventos climáticos em ativos financeiros
+- **Integração com APIs Climáticas**: NOAA, Embrapa, OpenMeteo com sistema de fallback inteligente
 
 ## 🚀 **Recursos Principais**
 
@@ -24,6 +25,12 @@ O sistema combina:
 - `status_platform.sh` - Verifica status da plataforma
 - `start_landing_page.sh` - Inicia apenas a landing page
 - `generate_pdf.sh` - Gera PDF da landing page
+
+### ✅ **Integrações Climáticas**
+- **NOAA (National Oceanic and Atmospheric Administration)**: Dados climáticos oficiais dos EUA
+- **Embrapa**: Dados climáticos brasileiros especializados em agricultura
+- **OpenMeteo**: API gratuita de dados meteorológicos globais
+- **Sistema de Fallback**: APIs secundárias ativadas automaticamente em caso de falha
 
 ### ✅ **Landing Page Aprimorada**
 - Design moderno inspirado no i4sea.com
@@ -69,9 +76,6 @@ O sistema é composto por três partes principais:
 ```
 
 ### **3. Acessar os Serviços**
-- **API Backend**: http://localhost:8000/docs
-- **Aplicação Frontend**: http://localhost:3000
-- **Landing Page**: http://localhost:8080/landing-page.html
 
 ### **4. Gerar PDF da Landing Page**
 ```bash
@@ -82,6 +86,28 @@ O sistema é composto por três partes principais:
 ```bash
 ./stop_platform.sh
 ```
+## Dependências e Ambiente
+
+1. Instale as dependências:
+  ```bash
+  pip install -r requirements.txt
+  ```
+
+2. Configure as variáveis de ambiente:
+  - Crie um arquivo `.env` baseado em `.env.example` (client) e adicione as chaves necessárias.
+  - Para Supabase, configure `SUPABASE_URL` e `SUPABASE_ANON_KEY`.
+  - Para NOAA, configure `NOAA_API_KEY` se disponível.
+
+3. Execute scripts de verificação e testes:
+  ```bash
+  ./run_tests_venv.sh
+  ```
+
+## Recomendações
+
+- Use ambientes virtuais para isolar dependências.
+- Consulte os scripts de health check e verificação de conexão para garantir a estabilidade.
+- Para mais detalhes, veja os arquivos de teste e scripts na pasta `server/`.
 
 ## 🔗 **Integração Landing Page ↔ Dashboard**
 
@@ -151,8 +177,21 @@ A landing page está totalmente integrada ao dashboard para maximizar conversõe
 - `GET /api/v1/modelagem/simulacao` - Simulações Monte Carlo
 
 ### Localização
-- `GET /api/v1/localizacao/cidades` - Busca de cidades brasileiras
+- `GET /api/v1/localizacao/cidade/busca?termo={termo}&estado={estado}` - Busca de cidades brasileiras
+- `GET /api/v1/localizacao/cep/{cep}` - Busca de localização por CEP
 - `GET /api/v1/localizacao/coordenadas` - Geocodificação reversa
+
+### IA e Análise
+- `POST /api/v1/grok/analyze` - Análise de dados climáticos com Grok especialista
+- `POST /api/v1/grok/insights` - Geração de insights climáticos especializados
+- `POST /api/v1/grok/parametric-insurance` - Análise de seguros paramétricos
+- `POST /api/v1/grok/actuarial-calculation` - Cálculos atuariais para seguros
+- `GET /api/v1/grok/status` - Status da integração com Grok
+- `GET /api/v1/grok/models` - Informações sobre modelos especializados
+- `POST /api/v1/noaa/climate-data` - Dados climáticos históricos do NOAA
+- `POST /api/v1/noaa/weather-forecast` - Previsão do tempo do National Weather Service
+- `GET /api/v1/noaa/status` - Status da integração com NOAA
+- `GET /api/v1/noaa/data-types` - Tipos de dados climáticos disponíveis
 
 ## 🛠️ **Tecnologias Utilizadas**
 
@@ -162,6 +201,11 @@ A landing page está totalmente integrada ao dashboard para maximizar conversõe
 - **Scikit-learn**: Machine Learning
 - **SQLAlchemy**: ORM para banco de dados
 - **OpenMeteo/Embrapa**: APIs climáticas
+
+### Integração com IA
+- **Google Gemini**: Análise avançada de dados climáticos
+- **xAI Grok**: Especialista em seguros paramétricos, normas SUSEP, cálculos atuariais e histórico climático brasileiro (1994-2024)
+- **NOAA (National Oceanic and Atmospheric Administration)**: Dados climáticos históricos e previsões meteorológicas
 
 ### Frontend
 - **React**: Biblioteca UI
@@ -176,6 +220,84 @@ A landing page está totalmente integrada ao dashboard para maximizar conversõe
 - **Font Awesome**: Ícones
 - **Google Fonts**: Tipografia
 - **Chrome Headless**: Geração de PDF
+
+## 🎯 **Especializações do xAI Grok**
+
+O ClimateAI integra o xAI Grok configurado como **especialista em seguros paramétricos e atuária brasileira**, com conhecimento profundo das normas da SUSEP e do histórico climático nacional dos últimos 30 anos.
+
+### 🛡️ Seguros Paramétricos
+- Análise de viabilidade de produtos paramétricos
+- Definição de triggers automáticos baseados em índices climáticos
+- Cálculo de pay-outs automáticos
+- Redução de custos administrativos (até 70%)
+
+### ⚖️ Normas da SUSEP
+- **Circular 562/2015**: Seguros paramétricos
+- **Circular 591/2016**: Seguros agrícolas
+- **Circular 269/2004**: Contratos de seguro
+- **Circular 302/2005**: Resseguro
+- **Circular 347/2007**: Responsabilidade civil
+
+### 🧮 Cálculos Atuariais
+- Princípios atuariais: Equivalência, Suficiência, Adequação
+- Cálculo de prêmios baseado em probabilidade de sinistros
+- Reserva matemática e provisões técnicas
+- Taxa de juros técnica (i) e taxa de desconto
+- Valor presente dos fluxos de caixa
+
+### 🌡️ Histórico Climático Brasileiro (1994-2024)
+- **Região Norte**: Acre (+15% precipitação), Amazonas (+1.2°C), Pará (+20% dias >50mm)
+- **Região Nordeste**: Ceará (+25% secas extremas), Bahia (+1.5°C), Pernambuco (+30% chuvas intensas)
+- **Região Centro-Oeste**: Mato Grosso (+18% safra), Mato Grosso do Sul (+1.3°C), Goiás (+22% granizo)
+- **Região Sudeste**: São Paulo (+15% chuvas extremas), Rio de Janeiro (+1.4°C), Minas Gerais (+20% variabilidade)
+- **Região Sul**: Rio Grande do Sul (+25% granizo), Santa Catarina (+1.1°C), Paraná (+18% precipitação invernal)
+
+### 📊 Endpoints Especializados
+```bash
+# Análise paramétrica
+POST /api/v1/grok/parametric-insurance
+
+# Cálculos atuariais
+POST /api/v1/grok/actuarial-calculation
+
+# Insights especializados
+POST /api/v1/grok/insights
+```
+
+## 🌊 **Integração com NOAA (National Oceanic and Atmospheric Administration)**
+
+O ClimateAI integra dados oficiais do NOAA para fornecer informações climáticas precisas e históricas.
+
+### 📊 **Dados Climáticos Disponíveis**
+- **Temperatura**: Máxima, mínima e média diária
+- **Precipitação**: Quantidade de chuva e neve
+- **Ventos**: Velocidade e direção dos ventos
+- **Umidade**: Dados de umidade relativa
+
+### 🌤️ **Previsão do Tempo**
+- Previsões do National Weather Service (NWS)
+- Alertas meteorológicos e avisos
+- Dados em tempo real para qualquer localização
+
+### 📈 **Datasets NOAA Integrados**
+- **GHCND**: Global Historical Climatology Network Daily
+- **NEXRAD**: Next Generation Weather Radar
+- **GOES**: Geostationary Operational Environmental Satellite
+
+### 🔧 **Endpoints NOAA**
+```bash
+# Dados climáticos históricos
+POST /api/v1/noaa/climate-data
+
+# Previsão do tempo
+POST /api/v1/noaa/weather-forecast
+
+# Status da integração
+GET /api/v1/noaa/status
+
+# Tipos de dados disponíveis
+GET /api/v1/noaa/data-types
+```
 
 ## 📁 **Estrutura do Projeto**
 

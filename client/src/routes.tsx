@@ -2,6 +2,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { PageLoader } from '@/components/PageLoader';
+import { ParametricSimulator } from '@/components/ParametricSimulator';
 
 // Lazy load all pages
 const IndexPage = lazy(() => import('@/pages/Index').then(m => ({ default: m.IndexPage })));
@@ -61,6 +62,18 @@ const router = createBrowserRouter([
       <ProtectedRoute>
         <Suspense fallback={<PageLoader />}>
           <AnalyticsPage />
+        </Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/parametric-simulator",
+    element: (
+      <ProtectedRoute>
+        <Suspense fallback={<PageLoader />}>
+          <div className="container mx-auto py-8">
+            <ParametricSimulator />
+          </div>
         </Suspense>
       </ProtectedRoute>
     ),

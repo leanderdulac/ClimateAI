@@ -9,7 +9,9 @@ import unicodedata
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-import pycep_correios
+# Temporariamente desabilitado para evitar erro de import
+# import pycep_correios
+import httpx
 from fastapi import HTTPException
 from geopy.exc import GeocoderTimedOut
 from geopy.geocoders import Nominatim
@@ -44,40 +46,52 @@ class GeocodingService:
         if normalized in self.cache:
             return self.cache[normalized]
 
-        try:
-            address_data = await asyncio.to_thread(
-                pycep_correios.get_address_from_cep, normalized
-            )
-        except (
-            pycep_correios.exceptions.InvalidCEP,
-            pycep_correios.exceptions.CEPNotFound,
-        ) as exc:
-            # Tentar ViaCEP como fallback
-            try:
-                import requests
+        address_data = None
 
-                response = requests.get(
-                    f"https://viacep.com.br/ws/{normalized}/json/", timeout=10
-                )
-                if response.status_code == 200:
-                    via_cep_data = response.json()
-                    if "erro" not in via_cep_data:
-                        address_data = {
-                            "cep": via_cep_data.get("cep"),
-                            "logradouro": via_cep_data.get("logradouro"),
-                            "bairro": via_cep_data.get("bairro"),
-                            "cidade": via_cep_data.get("localidade"),
-                            "uf": via_cep_data.get("uf"),
-                            "complemento": via_cep_data.get("complemento"),
-                        }
-                    else:
-                        raise HTTPException(
-                            status_code=404, detail="CEP não encontrado"
-                        )
+        # Tentar ViaCEP primeiro (mais confiável)
+        try:
+            import requests
+
+            response = requests.get(
+                f"https://viacep.com.br/ws/{normalized}/json/", timeout=10
+            )
+            if response.status_code == 200:
+                via_cep_data = response.json()
+                if "erro" not in via_cep_data:
+                    address_data = {
+                        "cep": via_cep_data.get("cep"),
+                        "logradouro": via_cep_data.get("logradouro"),
+                        "bairro": via_cep_data.get("bairro"),
+                        "cidade": via_cep_data.get("localidade"),
+                        "uf": via_cep_data.get("uf"),
+                        "complemento": via_cep_data.get("complemento"),
+                    }
                 else:
                     raise HTTPException(
-                        status_code=response.status_code, detail="Erro na API ViaCEP"
+                        status_code=404, detail="CEP não encontrado"
                     )
+            else:
+                raise HTTPException(
+                    status_code=response.status_code, detail="Erro na API ViaCEP"
+                )
+        except HTTPException:
+            raise
+        except Exception:
+            # Tentar pycep_correios como fallback
+            try:
+                address_data = await asyncio.to_thread(
+                    pycep_correios.get_address_from_cep, normalized
+                )
+            except (
+                pycep_correios.exceptions.InvalidCEP,
+                pycep_correios.exceptions.CEPNotFound,
+            ) as exc:
+                if isinstance(exc, pycep_correios.exceptions.InvalidCEP):
+                    raise HTTPException(status_code=400, detail="CEP inválido") from exc
+                else:
+                    raise HTTPException(
+                        status_code=404, detail="CEP não encontrado"
+                    ) from exc
             except Exception:
                 # Último fallback: tentar geocodificar como endereço
                 try:
@@ -97,44 +111,73 @@ class GeocodingService:
                 except Exception:
                     pass
 
-                # Se chegou aqui, nenhum fallback funcionou
-                if isinstance(exc, pycep_correios.exceptions.InvalidCEP):
-                    raise HTTPException(status_code=400, detail="CEP inválido") from exc
-                else:
-                    raise HTTPException(
-                        status_code=404, detail="CEP não encontrado"
-                    ) from exc
-        except Exception as exc:  # pragma: no cover - fallback defensivo
-            # Tentar ViaCEP como último recurso
-            try:
-                import requests
-
-                response = requests.get(
-                    f"https://viacep.com.br/ws/{normalized}/json/", timeout=10
-                )
-                if response.status_code == 200:
-                    via_cep_data = response.json()
-                    if "erro" not in via_cep_data:
-                        address_data = {
-                            "cep": via_cep_data.get("cep"),
-                            "logradouro": via_cep_data.get("logradouro"),
-                            "bairro": via_cep_data.get("bairro"),
-                            "cidade": via_cep_data.get("localidade"),
-                            "uf": via_cep_data.get("uf"),
-                            "complemento": via_cep_data.get("complemento"),
-                        }
-                    else:
-                        raise HTTPException(
-                            status_code=404, detail="CEP não encontrado"
-                        )
-                else:
-                    raise HTTPException(
-                        status_code=response.status_code, detail="Erro na API ViaCEP"
-                    )
-            except Exception:
                 raise HTTPException(
-                    status_code=500, detail=f"Erro ao buscar CEP: {exc}"
-                ) from exc
+                    status_code=500, detail="Erro ao buscar CEP"
+                )
+
+        # Se conseguimos address_data, processar
+        if address_data:
+            city_name = address_data.get("cidade")
+            state_abbr = address_data.get("uf")
+            formatted_address = (
+                ", ".join(
+                    filter(
+                        None,
+                        [
+                            address_data.get("logradouro"),
+                            address_data.get("bairro"),
+                            (
+                                f"{city_name} - {state_abbr}"
+                                if city_name and state_abbr
+                                else None
+                            ),
+                            "Brasil",
+                        ],
+                    )
+                )
+                or None
+            )
+
+            entry = self._find_city_entry(city_name, state_abbr)
+            if entry:
+                response = self._city_to_response(
+                    entry,
+                    extra={
+                        "cep": address_data.get("cep") or normalized,
+                        "logradouro": address_data.get("logradouro"),
+                        "bairro": address_data.get("bairro"),
+                        "complemento": address_data.get("complemento"),
+                        "formatted_address": formatted_address,
+                    },
+                    fallback_city=city_name,
+                    fallback_state=state_abbr,
+                )
+            else:
+                geo = await self.geocode_address(
+                    formatted_address or f"{city_name}, {state_abbr}, Brasil"
+                )
+                response = self._city_to_response(
+                    None,
+                    latitude=geo.get("latitude"),
+                    longitude=geo.get("longitude"),
+                    extra={
+                        "cep": address_data.get("cep") or normalized,
+                        "logradouro": address_data.get("logradouro"),
+                        "bairro": address_data.get("bairro"),
+                        "complemento": address_data.get("complemento"),
+                        "formatted_address": geo.get("formatted_address"),
+                    },
+                    fallback_city=city_name,
+                    fallback_state=state_abbr,
+                )
+
+            self.cache[normalized] = response
+            return response
+
+        # Se chegou aqui, nenhum método funcionou
+        raise HTTPException(
+            status_code=500, detail="Erro interno ao processar CEP"
+        )
 
         city_name = address_data.get("cidade")
         state_abbr = address_data.get("uf")
@@ -370,7 +413,24 @@ class GeocodingService:
     ) -> Optional[Dict]:
         if not city or not state:
             return None
-        return self.city_index.get(self._build_key(city, state))
+        # Busca tolerante a caixa e acentuação
+        key = self._build_key(city, state)
+        entry = self.city_index.get(key)
+        if entry:
+            return entry
+        # Tentar encontrar ignorando acentos e caixa
+        norm_city = self._normalize_text(city)
+        norm_state = (state or '').strip().upper()
+        for k, v in self.city_index.items():
+            k_city, k_state = k.split("::")
+            if k_city == norm_city and k_state == norm_state:
+                return v
+        # Tentar encontrar por aproximação (início do nome)
+        for k, v in self.city_index.items():
+            k_city, k_state = k.split("::")
+            if norm_city in k_city and k_state == norm_state:
+                return v
+        return None
 
     def _find_nearest_city(self, latitude: float, longitude: float) -> Optional[Dict]:
         if not self.city_data:

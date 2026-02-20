@@ -44,13 +44,14 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         except KeyError:
             pass
 
-        # Log de requisições suspeitas
-        if (
-            "union" in str(request.query_params).lower()
-            or "script" in str(request.body).lower()
-        ):
-            logger.warning(
-                f"⚠️  Requisição suspeita de {request.client.host}: {request.url.path}"
-            )
+        # Log de requisições maliciosas óbvias (padrões de SQL injection comuns)
+        if request.method != "OPTIONS":
+            path_lower = str(request.url.path).lower()
+            query_lower = str(request.query_params).lower()
+            
+            if "union select" in query_lower or "union all" in query_lower:
+                logger.warning(
+                    f"⚠️  Possível tentativa de SQL Injection de {request.client.host}: {request.url.path}"
+                )
 
         return response

@@ -118,7 +118,7 @@ class TransitionRiskService:
             "litigation_sensitivity": 0.3,
         }
 
-    def calculate_transition_risk(
+    async def calculate_transition_risk(
         self,
         asset_char: AssetCharacteristics,
         env_scenario: EnvironmentalScenario,
@@ -446,14 +446,14 @@ class TransitionRiskService:
 transition_risk_service = TransitionRiskService()
 
 
-def calculate_transition_risk(
+async def calculate_transition_risk(
     asset_char: AssetCharacteristics,
     env_scenario: EnvironmentalScenario,
     beta_weights: Optional[Dict[str, float]] = None,
     scenario_name: str = "base",
 ) -> TransitionRiskResult:
     """Convenience function to calculate transition risk"""
-    return transition_risk_service.calculate_transition_risk(
+    return await transition_risk_service.calculate_transition_risk(
         asset_char, env_scenario, beta_weights, scenario_name
     )
 

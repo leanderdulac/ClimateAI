@@ -7,7 +7,32 @@ import os
 import sys
 from pathlib import Path
 from typing import Any, AsyncGenerator, Generator
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import AsyncMock, Mock, patch, MagicMock
+
+# Set dummy API keys for test environment (prevents ValueError during import)
+os.environ.setdefault("GEMINI_API_KEY", "test-dummy-gemini-key")
+os.environ.setdefault("GROK_API_KEY", "test-dummy-grok-key")
+os.environ.setdefault("SECRET_KEY", "test-secret-key-for-pytest-only-not-production")
+os.environ.setdefault("SUPABASE_URL", "https://test.supabase.co")
+os.environ.setdefault("SUPABASE_ANON_KEY", "test-dummy-anon-key")
+
+# Mock heavy ML libraries to avoid installation in test environment
+sys.modules["torch"] = MagicMock()
+sys.modules["torch.nn"] = MagicMock()
+sys.modules["torch.nn.functional"] = MagicMock()
+sys.modules["tensorflow"] = MagicMock()
+sys.modules["pynamicalsys"] = MagicMock()
+sys.modules["prophet"] = MagicMock()
+sys.modules["statsmodels"] = MagicMock()
+sys.modules["statsmodels.tsa.stattools"] = MagicMock()
+sys.modules["xgboost"] = MagicMock()
+sys.modules["lightgbm"] = MagicMock()
+sys.modules["pycep_correios"] = MagicMock()
+
+# Fix for scipy's is_torch_array check
+class MockTensor:
+    pass
+sys.modules["torch"].Tensor = MockTensor
 
 import pytest
 
@@ -31,7 +56,8 @@ from config.database import (
     async_session_maker,
     get_db_session,
 )
-from lib.security import SecurityManager
+
+from services.auth_service import AuthService, auth_service
 
 # Import FastAPI app after path fix
 from main import app  # noqa: E402
@@ -70,7 +96,7 @@ async def engine(test_engine):
 @pytest.fixture(scope="function")
 async def db_session(engine) -> AsyncGenerator[AsyncSession, None]:
     """Create a fresh database session for each test"""
-    async with async_session_maker() as session:
+    async with db_config.async_session_maker() as session:
 
         async def override_get_db():
             return session
@@ -86,10 +112,11 @@ async def db_session(engine) -> AsyncGenerator[AsyncSession, None]:
 async def sample_user(db_session: AsyncSession) -> User:
     """Create a sample user for testing"""
     from datetime import datetime
+    import uuid
 
     user = User(
-        id="test-user-id",
-        email="test@example.com",
+        id=f"test-user-id-{uuid.uuid4()}",
+        email=f"test-{uuid.uuid4()}@example.com",
         full_name="Test User",
         hashed_password="hashed_password_123",
         is_active=True,
@@ -142,10 +169,8 @@ def client(db_session: AsyncSession) -> TestClient:
 def authenticated_client(client: TestClient, sample_user: User) -> TestClient:
     """FastAPI test client with authentication"""
     # Create JWT token
-    from core.security import create_access_token
-
-    token = create_access_token(
-        data={"sub": str(sample_user.id), "email": sample_user.email}
+    token = auth_service.create_access_token(
+        data={"sub": str(sample_user.id), "email": sample_user.email, "role": "user"}
     )
 
     # Add authorization header
@@ -189,10 +214,10 @@ async def health_checker():
         redis_url=None,
         external_apis=["https://api.open-meteo.com/v1/forecast"],
     )
-    await checker.initialize()
+    # await checker.initialize()  # Not needed, initialized in __init__
     yield checker
     # Cleanup
-    await checker.close()
+    # await checker.close()  # No close method available
 
 
 # ============================================================================
@@ -202,10 +227,8 @@ async def health_checker():
 
 @pytest.fixture
 def security_manager():
-    """Create a SecurityManager instance"""
-    return SecurityManager(
-        secret_key="test-secret-key-do-not-use-in-production-1234567890"
-    )
+    """Alias for auth_service to maintain compatibility"""
+    return auth_service
 
 
 @pytest.fixture
@@ -216,10 +239,10 @@ def sample_password() -> str:
 
 @pytest.fixture
 def sample_hashed_password(
-    security_manager: SecurityManager, sample_password: str
+    security_manager: AuthService, sample_password: str
 ) -> str:
     """Hash a sample password"""
-    return security_manager.hash_password(sample_password)
+    return security_manager.get_password_hash(sample_password)
 
 
 # ============================================================================
@@ -337,7 +360,7 @@ def event_loop():
     loop.close()
 
 
-@pytest.mark.asyncio
+
 @pytest.fixture
 async def async_client(client: TestClient):
     """Async client for testing async endpoints"""

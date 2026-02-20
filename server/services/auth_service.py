@@ -15,21 +15,23 @@ from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config.config import settings
+from lib.security import password_manager, token_manager
 from models.schemas import LoginRequest, Token, TokenData, TokenType
 from models.schemas import User as UserSchema
 from models.schemas import UserCreate, UserPermissions, UserRole, UserUpdate
 from models.sqlalchemy_models import User as UserModel
 
-# Configurações de segurança
-SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
+# Configurações de segurança - usando o módulo centralizado
+if not settings.SECRET_KEY:
+    import warnings
+    warnings.warn(
+        "SECRET_KEY is not set! Authentication will not work securely.",
+        RuntimeWarning,
+    )
+SECRET_KEY = settings.SECRET_KEY or "INSECURE-FALLBACK-KEY-SET-SECRET-KEY-ENV-VAR"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 REFRESH_TOKEN_EXPIRE_DAYS = 7
-
-# Contexto para hashing de senhas
-pwd_context = CryptContext(
-    schemes=["bcrypt"], deprecated="auto", bcrypt__default_rounds=12, bcrypt__ident="2b"
-)
 
 # Bearer token scheme
 security = HTTPBearer()
@@ -46,68 +48,44 @@ class AuthService:
 
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:
         """Verifica se a senha plain corresponde ao hash"""
-        return pwd_context.verify(plain_password, hashed_password)
+        return password_manager.verify_password(plain_password, hashed_password)
 
     def get_password_hash(self, password: str) -> str:
         """Gera hash da senha"""
-        truncated_password = password.encode("utf-8")[:72].decode(
-            "utf-8", errors="ignore"
-        )
-        return pwd_context.hash(truncated_password)
+        return password_manager.hash_password(password)
 
     def create_access_token(
         self, data: Dict[str, Any], expires_delta: Optional[timedelta] = None
     ) -> str:
         """Cria token de acesso JWT"""
-        to_encode = data.copy()
-        if expires_delta:
-            expire = datetime.utcnow() + expires_delta
-        else:
-            expire = datetime.utcnow() + timedelta(
-                minutes=self.access_token_expire_minutes
-            )
-        to_encode.update(
-            {"exp": expire, "iat": datetime.utcnow(), "type": TokenType.ACCESS.value}
-        )
-        return jwt.encode(to_encode, self.secret_key, algorithm=self.algorithm)
+        return token_manager.create_access_token(data, expires_delta)
 
     def create_refresh_token(self, data: Dict[str, Any]) -> str:
         """Cria token de refresh JWT"""
-        to_encode = data.copy()
-        expire = datetime.utcnow() + timedelta(days=self.refresh_token_expire_days)
-        to_encode.update(
-            {"exp": expire, "iat": datetime.utcnow(), "type": TokenType.REFRESH.value}
-        )
-        return jwt.encode(to_encode, self.secret_key, algorithm=self.algorithm)
+        return token_manager.create_refresh_token(data)
 
     def verify_token(
         self, token: str, token_type: TokenType = TokenType.ACCESS
     ) -> TokenData:
         """Verifica e decodifica token JWT"""
-        try:
-            payload = jwt.decode(token, self.secret_key, algorithms=[self.algorithm])
-            user_id: str = payload.get("sub")
-            email: str = payload.get("email")
-            role: str = payload.get("role")
-            token_type_claim: str = payload.get("type")
+        payload = token_manager.verify_token(token, token_type.value)
+        
+        user_id: str = payload.get("sub")
+        email: str = payload.get("email")
+        role: str = payload.get("role")
 
-            if user_id is None or email is None or role is None:
-                raise JWTError("Token inválido")
-            if token_type_claim != token_type.value:
-                raise JWTError(f"Tipo de token incorreto. Esperado: {token_type.value}")
-
-            return TokenData(
-                user_id=user_id,
-                email=email,
-                role=UserRole(role),
-                exp=datetime.fromtimestamp(payload.get("exp", 0)),
-            )
-        except JWTError:
+        if user_id is None or email is None or role is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Token inválido ou expirado",
-                headers={"WWW-Authenticate": "Bearer"},
+                detail="Token inválido",
             )
+
+        return TokenData(
+            user_id=user_id,
+            email=email,
+            role=UserRole(role),
+            exp=datetime.fromtimestamp(payload.get("exp", 0)),
+        )
 
     def get_user_permissions(self, role: UserRole) -> UserPermissions:
         """Retorna permissões baseadas no papel do usuário"""
@@ -137,7 +115,7 @@ class AuthService:
     ) -> Optional[UserModel]:
         """Autentica usuário com email e senha"""
         result = await db.execute(select(UserModel).filter(UserModel.email == email))
-        user = (await result).scalars().first()
+        user = result.scalars().first()
         if not user or not self.verify_password(password, user.hashed_password):
             return None
         return user
@@ -145,11 +123,11 @@ class AuthService:
     async def create_user(self, db: AsyncSession, user_data: UserCreate) -> UserModel:
         """Cria novo usuário"""
         db_user = UserModel(
-            id=uuid.uuid4(),
+            id=str(uuid.uuid4()),
             email=user_data.email,
             full_name=user_data.full_name,
             hashed_password=self.get_password_hash(user_data.password),
-            role=user_data.role,
+            role=user_data.role.value if hasattr(user_data.role, "value") else str(user_data.role),
             is_active=user_data.is_active,
             organization=user_data.organization,
         )
@@ -162,8 +140,10 @@ class AuthService:
         self, db: AsyncSession, user_id: str
     ) -> Optional[UserModel]:
         """Busca usuário por ID"""
+        # Ensure user_id is a string for comparison with String column
+        search_id = str(user_id)
         result = await db.execute(
-            select(UserModel).filter(UserModel.id == uuid.UUID(user_id))
+            select(UserModel).filter(UserModel.id == search_id)
         )
         return result.scalars().first()
 
@@ -198,7 +178,7 @@ class AuthService:
 
         stmt = (
             update(UserModel)
-            .where(UserModel.id == uuid.UUID(user_id))
+            .where(UserModel.id == str(user_id))
             .values(**update_values)
         )
         await db.execute(stmt)
@@ -207,7 +187,7 @@ class AuthService:
 
     async def delete_user(self, db: AsyncSession, user_id: str) -> bool:
         """Remove usuário"""
-        stmt = delete(UserModel).where(UserModel.id == uuid.UUID(user_id))
+        stmt = delete(UserModel).where(UserModel.id == str(user_id))
         result = await db.execute(stmt)
         await db.commit()
         return result.rowcount > 0
@@ -227,10 +207,10 @@ class AuthService:
             )
 
         access_token = self.create_access_token(
-            data={"sub": str(user.id), "email": user.email, "role": user.role.value}
+            data={"sub": str(user.id), "email": user.email, "role": user.role}
         )
         refresh_token = self.create_refresh_token(
-            data={"sub": str(user.id), "email": user.email, "role": user.role.value}
+            data={"sub": str(user.id), "email": user.email, "role": user.role}
         )
 
         return Token(
@@ -252,7 +232,7 @@ class AuthService:
             )
 
         access_token = self.create_access_token(
-            data={"sub": str(user.id), "email": user.email, "role": user.role.value}
+            data={"sub": str(user.id), "email": user.email, "role": user.role}
         )
 
         return Token(

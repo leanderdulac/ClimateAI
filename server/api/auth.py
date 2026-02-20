@@ -30,6 +30,30 @@ router = APIRouter()
 security = HTTPBearer()
 
 
+@router.post("/register", response_model=User)
+async def register(
+    user_data: UserCreate,
+    db: AsyncSession = Depends(get_db_session),
+):
+    """
+    Cria novo usuário (público)
+
+    - **email**: Email único do usuário
+    - **full_name**: Nome completo
+    - **password**: Senha
+    - **role**: Papel do usuário (default: user)
+    - **organization**: Organização (opcional)
+    """
+    # Verificar se email já existe
+    existing_user = await auth_service.get_user_by_email(db, user_data.email)
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Email já cadastrado"
+        )
+
+    return await auth_service.create_user(db, user_data)
+
+
 @router.post("/login", response_model=Token)
 async def login(login_data: LoginRequest, db: AsyncSession = Depends(get_db_session)):
     """

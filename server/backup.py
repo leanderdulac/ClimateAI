@@ -136,15 +136,20 @@ class DatabaseBackup:
         url = BackupConfig.DATABASE_URL
 
         # Simples parsing de postgresql://user:pass@host:5432/database
-        if url.startswith("postgresql://"):
-            url = url.replace("postgresql://", "")
+        if url.startswith("postgresql://") or url.startswith("postgresql+asyncpg://"):
+            url = url.replace("postgresql://", "").replace("postgresql+asyncpg://", "")
 
             # user:pass@host:port/database
             auth_part, db_part = url.split("@")
             user, password = auth_part.split(":")
 
             host_port, database = db_part.split("/")
-            host, port = host_port.split(":")
+            
+            if ":" in host_port:
+                host, port = host_port.split(":")
+            else:
+                host = host_port
+                port = "5432"
 
             return {
                 "user": user,

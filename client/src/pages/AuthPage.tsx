@@ -81,232 +81,261 @@ export function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen grid lg:grid-cols-2">
+      {/* Left: Brand / Visual Side */}
+      <div className="hidden lg:flex flex-col justify-between bg-muted/30 p-12 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-mesh opacity-50"></div>
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2672&auto=format&fit=crop')] bg-cover bg-center opacity-10 mix-blend-overlay"></div>
+
         {/* Logo */}
-        <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-2 text-2xl font-bold text-blue-600 hover:text-blue-700">
-            <Globe className="h-8 w-8" />
+        <div className="relative z-10">
+          <Link to="/" className="inline-flex items-center gap-2 text-2xl font-display font-bold text-foreground">
+            <div className="rounded-lg bg-primary/10 p-2 ring-1 ring-primary/20">
+              <Globe className="h-6 w-6 text-primary" />
+            </div>
             ClimateWise
           </Link>
-          <p className="text-gray-600 mt-2">Acesse sua conta ou crie uma nova</p>
         </div>
 
-        <Tabs defaultValue="login" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="login">Entrar</TabsTrigger>
-            <TabsTrigger value="register">Cadastrar</TabsTrigger>
-          </TabsList>
+        <div className="relative z-10 max-w-lg">
+          <blockquote className="space-y-6">
+            <div className="text-3xl font-display font-bold leading-tight text-foreground">
+              "ClimateWise has completely transformed how we assess and mitigate climate risk in our agricultural portfolio."
+            </div>
+            <footer className="flex items-center gap-4">
+              <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center font-bold text-primary">
+                JD
+              </div>
+              <div className="text-sm">
+                <div className="font-semibold text-foreground">John Davis</div>
+                <div className="text-muted-foreground">Risk Manager, AgriCorp Global</div>
+              </div>
+            </footer>
+          </blockquote>
+        </div>
 
-          {/* Login Tab */}
-          <TabsContent value="login">
-            <Card>
-              <CardHeader>
-                <CardTitle>Entrar na sua conta</CardTitle>
-                <CardDescription>
-                  Digite suas credenciais para acessar o sistema
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {errorMessage && (
-                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
-                    {errorMessage}
-                  </div>
-                )}
-                <form onSubmit={handleLogin} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="login-email">E-mail</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        id="login-email"
-                        type="email"
-                        placeholder="seu@email.com"
-                        className="pl-10"
-                        value={loginData.email}
-                        onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
-                        required
-                      />
-                    </div>
-                  </div>
+        <div className="relative z-10 text-sm text-muted-foreground">
+          &copy; 2024 ClimateWise Inc. All rights reserved.
+        </div>
+      </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="login-password">Senha</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        id="login-password"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="••••••••"
-                        className="pl-10 pr-10"
-                        value={loginData.password}
-                        onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
+      {/* Right: Auth Forms */}
+      <div className="flex items-center justify-center p-8 bg-background">
+        <div className="w-full max-w-md space-y-8">
+          <div className="lg:hidden text-center mb-8">
+            <Link to="/" className="inline-flex items-center gap-2 text-2xl font-bold text-foreground">
+              <Globe className="h-8 w-8 text-primary" />
+              ClimateWise
+            </Link>
+          </div>
 
-                  <div className="flex items-center justify-between">
-                    <label className="flex items-center space-x-2 text-sm">
-                      <input type="checkbox" className="rounded" />
-                      <span>Lembrar-me</span>
-                    </label>
-                    <Link to="/forgot-password" className="text-sm text-blue-600 hover:text-blue-700">
-                      Esqueceu a senha?
-                    </Link>
-                  </div>
+          <div className="flex flex-col space-y-2 text-center">
+            <h1 className="text-2xl font-semibold tracking-tight font-display">
+              Bem-vindo de volta
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Entre com suas credenciais ou crie uma conta para começar
+            </p>
+          </div>
 
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? "Entrando..." : "Entrar"}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-          </TabsContent>
+          <Tabs defaultValue="login" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-8">
+              <TabsTrigger value="login">Entrar</TabsTrigger>
+              <TabsTrigger value="register">Cadastrar</TabsTrigger>
+            </TabsList>
 
-          {/* Register Tab */}
-          <TabsContent value="register">
-            <Card>
-              <CardHeader>
-                <CardTitle>Criar nova conta</CardTitle>
-                <CardDescription>
-                  Junte-se à ClimateWise e transforme riscos climáticos em oportunidades
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {errorMessage && (
-                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
-                    {errorMessage}
-                  </div>
-                )}
-                <form onSubmit={handleRegister} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="register-name">Nome completo</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        id="register-name"
-                        type="text"
-                        placeholder="Seu nome completo"
-                        className="pl-10"
-                        value={registerData.name}
-                        onChange={(e) => setRegisterData({ ...registerData, name: e.target.value })}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="register-email">E-mail</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        id="register-email"
-                        type="email"
-                        placeholder="seu@email.com"
-                        className="pl-10"
-                        value={registerData.email}
-                        onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="register-company">Empresa (opcional)</Label>
+            {/* Login Tab */}
+            <TabsContent value="login" className="space-y-4">
+              {errorMessage && (
+                <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md text-destructive text-sm flex items-center gap-2 animate-fade-in">
+                  <span className="h-1.5 w-1.5 rounded-full bg-destructive flex-shrink-0" />
+                  {errorMessage}
+                </div>
+              )}
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="login-email">E-mail</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
-                      id="register-company"
-                      type="text"
-                      placeholder="Nome da empresa"
-                      value={registerData.company}
-                      onChange={(e) => setRegisterData({ ...registerData, company: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="register-password">Senha</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        id="register-password"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="••••••••"
-                        className="pl-10 pr-10"
-                        value={registerData.password}
-                        onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="register-confirm-password">Confirmar senha</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        id="register-confirm-password"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="••••••••"
-                        className="pl-10 pr-10"
-                        value={registerData.confirmPassword}
-                        onChange={(e) => setRegisterData({ ...registerData, confirmPassword: e.target.value })}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex items-start space-x-2">
-                    <input
-                      type="checkbox"
-                      id="accept-terms"
-                      className="mt-1 rounded"
-                      checked={registerData.acceptTerms}
-                      onChange={(e) => setRegisterData({ ...registerData, acceptTerms: e.target.checked })}
+                      id="login-email"
+                      type="email"
+                      placeholder="seu@email.com"
+                      className="pl-10 h-11"
+                      value={loginData.email}
+                      onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
                       required
                     />
-                    <label htmlFor="accept-terms" className="text-sm text-gray-600">
-                      Aceito os{" "}
-                      <Link to="/terms" className="text-blue-600 hover:text-blue-700">
-                        Termos de Uso
-                      </Link>{" "}
-                      e{" "}
-                      <Link to="/privacy" className="text-blue-600 hover:text-blue-700">
-                        Política de Privacidade
-                      </Link>
-                    </label>
                   </div>
+                </div>
 
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? "Criando conta..." : "Criar conta"}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                <div className="space-y-2">
+                  <Label htmlFor="login-password">Senha</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="login-password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      className="pl-10 pr-10 h-11"
+                      value={loginData.password}
+                      onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
 
-        {/* Footer */}
-        <div className="text-center mt-6 text-sm text-gray-600">
-          <p>
-            Precisa de ajuda?{" "}
-            <Link to="/support" className="text-blue-600 hover:text-blue-700">
-              Entre em contato
-            </Link>
-          </p>
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-foreground cursor-pointer transition-colors">
+                    <input type="checkbox" className="rounded border-border text-primary focus:ring-primary" />
+                    <span>Lembrar-me</span>
+                  </label>
+                  <Link to="/forgot-password" className="text-sm font-medium text-primary hover:text-primary/80 transition-colors">
+                    Esqueceu a senha?
+                  </Link>
+                </div>
+
+                <Button type="submit" className="w-full h-11 text-base shadow-lg shadow-primary/20" disabled={isLoading}>
+                  {isLoading ? "Entrando..." : "Entrar"}
+                </Button>
+              </form>
+            </TabsContent>
+
+            {/* Register Tab */}
+            <TabsContent value="register" className="space-y-4">
+              {errorMessage && (
+                <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md text-destructive text-sm flex items-center gap-2 animate-fade-in">
+                  <span className="h-1.5 w-1.5 rounded-full bg-destructive flex-shrink-0" />
+                  {errorMessage}
+                </div>
+              )}
+              <form onSubmit={handleRegister} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="register-name">Nome completo</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="register-name"
+                      type="text"
+                      placeholder="Seu nome completo"
+                      className="pl-10 h-11"
+                      value={registerData.name}
+                      onChange={(e) => setRegisterData({ ...registerData, name: e.target.value })}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="register-email">E-mail</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="register-email"
+                      type="email"
+                      placeholder="seu@email.com"
+                      className="pl-10 h-11"
+                      value={registerData.email}
+                      onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="register-company">Empresa (opcional)</Label>
+                  <Input
+                    id="register-company"
+                    type="text"
+                    placeholder="Nome da empresa"
+                    className="h-11"
+                    value={registerData.company}
+                    onChange={(e) => setRegisterData({ ...registerData, company: e.target.value })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="register-password">Senha</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="register-password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      className="pl-10 pr-10 h-11"
+                      value={registerData.password}
+                      onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="register-confirm-password">Confirmar senha</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="register-confirm-password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      className="pl-10 pr-10 h-11"
+                      value={registerData.confirmPassword}
+                      onChange={(e) => setRegisterData({ ...registerData, confirmPassword: e.target.value })}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-start space-x-2 pt-2">
+                  <input
+                    type="checkbox"
+                    id="accept-terms"
+                    className="mt-1 rounded border-border text-primary focus:ring-primary"
+                    checked={registerData.acceptTerms}
+                    onChange={(e) => setRegisterData({ ...registerData, acceptTerms: e.target.checked })}
+                    required
+                  />
+                  <label htmlFor="accept-terms" className="text-sm text-muted-foreground leading-none">
+                    Aceito os{" "}
+                    <Link to="/terms" className="text-primary hover:text-primary/80 transition-colors">
+                      Termos de Uso
+                    </Link>{" "}
+                    e{" "}
+                    <Link to="/privacy" className="text-primary hover:text-primary/80 transition-colors">
+                      Política de Privacidade
+                    </Link>
+                  </label>
+                </div>
+
+                <Button type="submit" className="w-full h-11 text-base shadow-lg shadow-primary/20" disabled={isLoading}>
+                  {isLoading ? "Criando conta..." : "Criar conta"}
+                </Button>
+              </form>
+            </TabsContent>
+          </Tabs>
+
+          <div className="text-center text-sm text-muted-foreground">
+            <p>
+              Precisa de ajuda?{" "}
+              <Link to="/support" className="text-primary hover:text-primary/80 font-medium transition-colors">
+                Entre em contato
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>

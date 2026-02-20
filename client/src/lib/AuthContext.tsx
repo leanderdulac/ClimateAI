@@ -87,81 +87,64 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
   };
 
+  // Get status of API (development/production)
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
+
   // Initialize auth state
   useEffect(() => {
-    if (!isSupabaseConfigured() || !supabase) {
-      console.warn('Supabase not configured, using fallback auth');
-      setIsLoading(false);
-      return;
+    // Check if using mock data
+    const useMockData = import.meta.env.VITE_USE_MOCK_DATA === 'true';
+
+    if (useMockData) {
+      // Check for stored mock tokens
+      const accessToken = localStorage.getItem('access_token');
+      const refreshToken = localStorage.getItem('refresh_token');
+
+      if (accessToken === 'mock-access-token' && refreshToken === 'mock-refresh-token') {
+        // Set mock user
+        setUser({
+          id: 'mock-user-1',
+          email: 'user@example.com',
+          name: 'Mock User',
+          company: 'Mock Company',
+          role: 'user'
+        });
+        setSession({ access_token: accessToken, refresh_token: refreshToken });
+      }
+    } else {
+      // Check for stored tokens
+      const accessToken = localStorage.getItem('access_token');
+      const refreshToken = localStorage.getItem('refresh_token');
+
+      if (accessToken && refreshToken) {
+        // TODO: Validate token with backend
+        setSession({ access_token: accessToken, refresh_token: refreshToken });
+        // For now, set a basic user - in production you'd decode the JWT
+        setUser({
+          id: 'temp',
+          email: 'user@example.com',
+          name: 'User',
+          role: 'user'
+        });
+      }
     }
 
-    // Get initial session
-    const initAuth = async () => {
-      try {
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-
-        if (currentSession?.user) {
-          setSession(currentSession);
-          const mappedUser = await mapSupabaseUser(currentSession.user);
-          setUser(mappedUser);
-        }
-      } catch (err) {
-        console.error('Error initializing auth:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    initAuth();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, newSession) => {
-        console.log('Auth state changed:', event);
-
-        if (newSession?.user) {
-          setSession(newSession);
-          const mappedUser = await mapSupabaseUser(newSession.user);
-          setUser(mappedUser);
-        } else {
-          setSession(null);
-          setUser(null);
-        }
-
-        setIsLoading(false);
-      }
-    );
+    setIsLoading(false);
 
     return () => {
-      subscription.unsubscribe();
+      // Cleanup if needed
     };
   }, []);
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     setError(null);
-
     try {
-      if (!supabase) {
-        throw new Error('Supabase não configurado');
-      }
-
-      const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (authError) {
-        throw new Error(authError.message === 'Invalid login credentials'
-          ? 'E-mail ou senha incorretos'
-          : authError.message);
-      }
-
-      if (data.user) {
-        const mappedUser = await mapSupabaseUser(data.user);
-        setUser(mappedUser);
-        setSession(data.session);
-      }
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw new Error(error.message || 'Falha no login');
+      if (!data.session || !data.user) throw new Error('Sessão inválida');
+      setUser(await mapSupabaseUser(data.user));
+      setSession(data.session);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Falha no login';
       setError(message);
@@ -174,53 +157,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const register = async (userData: RegisterData) => {
     setIsLoading(true);
     setError(null);
-
     try {
-      if (!supabase) {
-        throw new Error('Supabase não configurado');
-      }
-
-      // Validate input
       if (!userData.name || !userData.email || !userData.password) {
         throw new Error('Todos os campos obrigatórios devem ser preenchidos');
       }
-
-      if (userData.password.length < 6) {
-        throw new Error('A senha deve ter pelo menos 6 caracteres');
-      }
-
-      // Sign up with Supabase
-      const { data, error: authError } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email: userData.email,
         password: userData.password,
         options: {
           data: {
             full_name: userData.name,
             company_name: userData.company || '',
+            role: 'user',
           },
         },
       });
-
-      if (authError) {
-        if (authError.message.includes('already registered')) {
-          throw new Error('Este e-mail já está cadastrado');
-        }
-        throw new Error(authError.message);
-      }
-
-      // Update profile with additional info
-      if (data.user) {
-        await supabase.from('profiles').upsert({
-          id: data.user.id,
-          email: userData.email,
-          full_name: userData.name,
-          company_name: userData.company || '',
-        });
-
-        const mappedUser = await mapSupabaseUser(data.user);
-        setUser(mappedUser);
-        setSession(data.session);
-      }
+      if (error) throw new Error(error.message || 'Falha no cadastro');
+      setError('Cadastro realizado com sucesso! Verifique seu e-mail para ativar a conta.');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Falha no cadastro';
       setError(message);
@@ -235,13 +188,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setError(null);
 
     try {
-      if (supabase) {
-        const { error: authError } = await supabase.auth.signOut();
-        if (authError) {
-          console.error('Logout error:', authError);
-        }
-      }
-
+      // Clear local storage
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
       setUser(null);
       setSession(null);
     } catch (err) {
@@ -252,47 +201,44 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const resetPassword = async (email: string) => {
+    setIsLoading(true);
     setError(null);
 
     try {
-      if (!supabase) {
-        throw new Error('Supabase não configurado');
-      }
+      if (!supabase) throw new Error('Supabase não disponível');
 
-      const { error: authError } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
       });
 
-      if (authError) {
-        throw new Error(authError.message);
-      }
+      if (error) throw error;
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Falha ao enviar e-mail';
+      const message = err instanceof Error ? err.message : 'Falha ao solicitar reset de senha';
       setError(message);
       throw new Error(message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const updateProfile = async (data: Partial<User>) => {
+    setIsLoading(true);
     setError(null);
 
     try {
-      if (!supabase || !user) {
-        throw new Error('Usuário não autenticado');
-      }
+      if (!supabase || !user) throw new Error('Usuário não autenticado');
 
-      const { error: updateError } = await supabase
+      const { error } = await supabase
         .from('profiles')
         .update({
           full_name: data.name,
           company_name: data.company,
           avatar_url: data.avatar,
+          updated_at: new Date().toISOString(),
         })
         .eq('id', user.id);
 
-      if (updateError) {
-        throw new Error(updateError.message);
-      }
+      if (error) throw error;
 
       // Update local state
       setUser(prev => prev ? { ...prev, ...data } : null);
@@ -300,6 +246,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const message = err instanceof Error ? err.message : 'Falha ao atualizar perfil';
       setError(message);
       throw new Error(message);
+    } finally {
+      setIsLoading(false);
     }
   };
 

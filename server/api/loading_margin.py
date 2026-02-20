@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException, Query
 
 from services.loading_margin_service import (
-    LoadingMarginCalculator,
+    LoadingMarginService,
     PolicyLoadingInfo,
     PortfolioLoadingAnalysis,
     calculate_loading_margin,

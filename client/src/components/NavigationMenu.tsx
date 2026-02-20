@@ -42,6 +42,12 @@ const navigationItems: NavigationItem[] = [
     href: "/analytics",
     icon: BarChart3,
     description: "Análises avançadas"
+  },
+  {
+    label: "Simulador Paramétrico",
+    href: "/parametric-simulator",
+    icon: Globe,
+    description: "Precificação e Risco"
   }
 ];
 
@@ -63,19 +69,20 @@ export function NavigationMenu() {
   return (
     <div className="relative">
       {/* Desktop Navigation */}
-      <div className="hidden md:flex items-center gap-6">
+      <div className="hidden md:flex items-center gap-1">
         {navigationItems.map((item) => {
           const Icon = item.icon;
+          const isItemActive = isActive(item.href);
           return (
             <Link
               key={item.href}
               to={item.href}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 ${isActive(item.href)
-                  ? "bg-blue-100 text-blue-700 font-medium"
-                  : "text-gray-600 hover:text-blue-600 hover:bg-gray-50"
+              className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all duration-200 text-sm font-medium ${isItemActive
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                 }`}
             >
-              <Icon className="h-4 w-4" />
+              <Icon className={`h-4 w-4 ${isItemActive ? "text-primary" : "text-muted-foreground"}`} />
               {item.label}
             </Link>
           );
@@ -85,97 +92,101 @@ export function NavigationMenu() {
       {/* Mobile Navigation Button */}
       <div className="md:hidden">
         <Button
-          variant="outline"
-          size="sm"
+          variant="ghost"
+          size="icon"
           onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-2"
+          className="relative text-muted-foreground hover:text-foreground"
         >
-          <Menu className="h-4 w-4" />
-          Menu
-          <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+          <Menu className="h-5 w-5" />
         </Button>
       </div>
 
       {/* Mobile Dropdown Menu */}
       {isOpen && (
-        <Card className="absolute top-full right-0 mt-2 w-80 z-50 shadow-xl border-0 md:hidden">
-          <div className="p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900">Navegação</h3>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsOpen(false)}
-                className="h-8 w-8 p-0"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-
-            <div className="space-y-2">
-              {navigationItems.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.href}
-                    to={item.href}
+        <>
+          <div
+            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 md:hidden"
+            onClick={() => setIsOpen(false)}
+          />
+          <div className="absolute top-full right-0 mt-2 w-full min-w-[300px] z-50 md:hidden p-4">
+            <Card className="border-border shadow-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+              <div className="p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-foreground">Menu</span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={() => setIsOpen(false)}
-                    className={`flex items-center gap-3 p-3 rounded-lg transition-all duration-200 ${isActive(item.href)
-                        ? "bg-blue-50 text-blue-700 border border-blue-200"
-                        : "text-gray-700 hover:bg-gray-50 hover:text-blue-600"
-                      }`}
+                    className="h-8 w-8"
                   >
-                    <div className={`p-2 rounded-lg ${isActive(item.href) ? "bg-blue-100" : "bg-gray-100"
-                      }`}>
-                      <Icon className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <div className="font-medium">{item.label}</div>
-                      {item.description && (
-                        <div className="text-sm text-gray-500">{item.description}</div>
-                      )}
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
 
-            <div className="border-t border-gray-200 mt-4 pt-4">
-              {user && (
-                <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <UserCircle className="h-8 w-8 text-gray-600" />
-                    <div>
-                      <p className="font-medium text-sm">{user.name}</p>
-                      <p className="text-xs text-gray-500">{user.email}</p>
-                      {user.company && (
-                        <p className="text-xs text-gray-500">{user.company}</p>
-                      )}
+                <div className="space-y-1">
+                  {navigationItems.map((item) => {
+                    const Icon = item.icon;
+                    const isItemActive = isActive(item.href);
+                    return (
+                      <Link
+                        key={item.href}
+                        to={item.href}
+                        onClick={() => setIsOpen(false)}
+                        className={`flex items-start gap-3 p-3 rounded-lg transition-colors ${isItemActive
+                          ? "bg-primary/5 text-primary"
+                          : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                          }`}
+                      >
+                        <Icon className={`h-5 w-5 mt-0.5 ${isItemActive ? "text-primary" : "text-muted-foreground"}`} />
+                        <div>
+                          <div className="font-medium text-sm">{item.label}</div>
+                          {item.description && (
+                            <div className="text-xs text-muted-foreground/80 mt-0.5">{item.description}</div>
+                          )}
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+
+                <div className="border-t border-border mt-4 pt-4">
+                  {user && (
+                    <div className="mb-4 p-3 bg-muted/50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <UserCircle className="h-8 w-8 text-muted-foreground" />
+                        <div>
+                          <p className="font-medium text-sm text-foreground">{user.name}</p>
+                          <p className="text-xs text-muted-foreground">{user.email}</p>
+                          {user.company && (
+                            <p className="text-xs text-muted-foreground">{user.company}</p>
+                          )}
+                        </div>
+                      </div>
                     </div>
+                  )}
+                  <div className="space-y-2">
+                    <Button variant="ghost" className="w-full justify-start gap-3 hover:bg-muted/50">
+                      <User className="h-4 w-4" />
+                      Perfil
+                    </Button>
+                    <Button variant="ghost" className="w-full justify-start gap-3 hover:bg-muted/50">
+                      <Settings className="h-4 w-4" />
+                      Configurações
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start gap-3 text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={handleLogout}
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Sair
+                    </Button>
                   </div>
                 </div>
-              )}
-              <div className="space-y-2">
-                <Button variant="ghost" className="w-full justify-start gap-3">
-                  <User className="h-4 w-4" />
-                  Perfil
-                </Button>
-                <Button variant="ghost" className="w-full justify-start gap-3">
-                  <Settings className="h-4 w-4" />
-                  Configurações
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start gap-3 text-red-600 hover:text-red-700 hover:bg-red-50"
-                  onClick={handleLogout}
-                >
-                  <LogOut className="h-4 w-4" />
-                  Sair
-                </Button>
               </div>
-            </div>
+            </Card>
           </div>
-        </Card>
+        </>
       )}
     </div>
   );

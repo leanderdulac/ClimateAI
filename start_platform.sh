@@ -25,9 +25,11 @@ check_port 8080 && LANDING_OK=true || LANDING_OK=false
 # Iniciar backend
 if [ "$BACKEND_OK" = true ]; then
     echo "🔧 Iniciando Backend (porta 8000)..."
-    cd /home/artha/climateAI/server
-    source venv/bin/activate
-    PYTHONPATH=/home/artha/climateAI/server uvicorn main:app --host 0.0.0.0 --port 8000 --reload &
+    (
+        cd server
+        source ../.venv/bin/activate
+        PYTHONPATH=. ../.venv/bin/python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    ) &
     BACKEND_PID=$!
     echo "✅ Backend iniciado (PID: $BACKEND_PID)"
 else
@@ -40,8 +42,10 @@ sleep 3
 # Iniciar frontend
 if [ "$FRONTEND_OK" = true ]; then
     echo "🎨 Iniciando Frontend (porta 3000)..."
-    cd /home/artha/climateAI/client
-    npm run dev &
+    (
+        cd client
+        npm run dev -- --host 0.0.0.0 --port 3000
+    ) &
     FRONTEND_PID=$!
     echo "✅ Frontend iniciado (PID: $FRONTEND_PID)"
 else
@@ -51,7 +55,6 @@ fi
 # Iniciar landing page
 if [ "$LANDING_OK" = true ]; then
     echo "📄 Iniciando Landing Page (porta 8080)..."
-    cd /home/artha/climateAI
     python3 -m http.server 8080 --bind 0.0.0.0 &
     LANDING_PID=$!
     echo "✅ Landing Page iniciada (PID: $LANDING_PID)"

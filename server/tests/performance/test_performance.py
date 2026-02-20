@@ -159,12 +159,14 @@ class TestDatabasePerformance:
 
     def test_database_query_response_time(self, db_session, sample_user):
         """Test database query performance"""
+        from sqlalchemy import select
         start = time.time()
 
         # Query user
-        from api.models import User
+        from models.sqlalchemy_models import User
 
-        user = db_session.query(User).filter_by(id=sample_user.id).first()
+        result = db_session.execute(select(User).filter_by(id=sample_user.id))
+        user = result.scalars().first()
 
         duration = (time.time() - start) * 1000
 
@@ -175,7 +177,7 @@ class TestDatabasePerformance:
         """Test database insert performance"""
         from datetime import datetime
 
-        from api.models import User
+        from models.sqlalchemy_models import User
 
         start = time.time()
 
@@ -196,13 +198,15 @@ class TestDatabasePerformance:
 
     def test_bulk_query_performance(self, db_session, sample_user):
         """Test performance with multiple queries"""
-        from api.models import User
+        from sqlalchemy import select
+        from models.sqlalchemy_models import User
 
         start = time.time()
 
         # Query multiple times
         for _ in range(10):
-            db_session.query(User).all()
+            result = db_session.execute(select(User))
+            result.scalars().all()
 
         duration = (time.time() - start) * 1000
 

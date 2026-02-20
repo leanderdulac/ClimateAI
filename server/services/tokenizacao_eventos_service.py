@@ -120,13 +120,17 @@ class TokenizacaoEventosService:
 
         try:
             # A quantidade de tokens pode ser baseada na severidade ou risco
-            # Ex: Severidade 5 = 50 tokens, Severidade 1 = 10 tokens
-            amount = token.severity_level * 10
+            # ERC-3525: O 'value' representa a cobertura financeira total
+            value = int(token.severity_level * 1000) # Ex: Severidade 5 = 5000 USD
+            
+            # Gerar Slot ID para o ERC-3525
+            slot = self._gerar_slot_id(token)
 
             logger.info(
-                f"Iniciando mintagem on-chain para token {token.token_id} -> {destination_address}"
+                f"Iniciando mintagem ERC-3525 para token {token.token_id} -> {destination_address} (Slot: {slot}, Value: {value})"
             )
-            receipt = self.blockchain_service.mint(destination_address, amount)
+            # Adaptamos a chamada para mintPolicy do novo contrato
+            receipt = self.blockchain_service.mint_policy(destination_address, slot, value)
 
             # Extrair hash da transação
             tx_hash = (
@@ -139,15 +143,17 @@ class TokenizacaoEventosService:
             elif isinstance(tx_hash, bytes):
                 tx_hash = tx_hash.hex()
 
-            # Atualizar metadata do token (em memória, persistência deve ser feita pelo chamador)
+            # Atualizar metadata do token
             token.metadata["on_chain_status"] = "minted"
             token.metadata["tx_hash"] = tx_hash
-            token.metadata["minted_amount"] = amount
+            token.metadata["minted_value"] = value
+            token.metadata["erc3525_slot"] = slot
 
             return {
                 "status": "success",
                 "tx_hash": tx_hash,
-                "amount": amount,
+                "value": value,
+                "slot": slot,
                 "token_id": token.token_id,
             }
 
@@ -246,6 +252,25 @@ class TokenizacaoEventosService:
             grupos[group_key].append(token)
 
         return grupos
+
+    def _gerar_slot_id(self, token: EventoToken) -> int:
+        """
+        Gera um ID numérico para o Slot (ERC-3525) baseado no tipo de evento e região.
+        Permite agrupar apólices do mesmo tipo e localidade.
+        """
+        # Tipo de evento (código fixo)
+        type_prefix = {
+            EventoClimaticoTipo.SECA: 100,
+            EventoClimaticoTipo.ENCHENTE: 200,
+            EventoClimaticoTipo.ONDA_CALOR: 300,
+            EventoClimaticoTipo.GEADA: 400,
+            EventoClimaticoTipo.SECA_FLASH: 500
+        }.get(token.event_type, 900)
+        
+        # Hash da localização reduzido a um inteiro
+        loc_int = int(hashlib.md5(token.location_hash.encode()).hexdigest()[:4], 16)
+        
+        return type_prefix + (loc_int % 1000)
 
     def _calcular_severidade_composta(self, evento: EventoClimatico) -> int:
         """

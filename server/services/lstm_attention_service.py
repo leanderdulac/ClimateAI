@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Advanced LSTM Attention Service for Climate Time Series Prediction
 Implements the attention mechanism for climate data:
@@ -13,14 +14,25 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
+
+try:
+    import torch
+    import torch.nn as nn
+    import torch.nn.functional as F
+    HAS_TORCH = True
+except ImportError:
+    torch = None
+    nn = None
+    F = None
+    HAS_TORCH = False
 
 logger = logging.getLogger(__name__)
 
+# Use a dummy base class when torch is not available
+_BaseModule = nn.Module if HAS_TORCH else object
 
-class ClimateAttentionLSTM(nn.Module):
+
+class ClimateAttentionLSTM(_BaseModule):
     """
     LSTM with Attention mechanism for climate time series prediction
     Implements: h_t = LSTM(x_t, h_{t-1}), α_t = softmax(v^T tanh(W_h h_t + W_c c_t)), ŷ = Σ_t α_t · h_t
@@ -147,7 +159,7 @@ class LSTMAttentionService:
     def __init__(self):
         self.model = None
         self.optimizer = None
-        self.criterion = nn.MSELoss()
+        self.criterion = nn.MSELoss() if HAS_TORCH else None
         self.is_trained = False
         self.scaler = {"mean": None, "std": None}  # For input normalization
 
@@ -488,7 +500,7 @@ class LSTMAttentionService:
 
 
 # Global instance
-climate_attention_service = LSTMAttentionService()
+climate_attention_service = LSTMAttentionService() if HAS_TORCH else None
 
 
 # Convenience functions for API integration

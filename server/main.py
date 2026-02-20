@@ -7,6 +7,7 @@ import hashlib
 import logging
 import os
 import time
+import uuid
 from functools import lru_cache
 from typing import Any, Dict, List, Optional
 
@@ -14,6 +15,10 @@ import uvicorn
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from dotenv import load_dotenv
+
+# Carregar variáveis de ambiente ANTES de qualquer import
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
 
 # Importar health checker
 from api.health import HealthChecker
@@ -38,14 +43,50 @@ from config.config import settings
 
 # Importar módulos de segurança
 from lib.security import SecurityConfig, rate_limiter
+from middleware.security_middleware import SecurityHeadersMiddleware
 
+from services.otel import init_otel
+from middleware.redaction import redact_payload
+
+# ============================================
+# SECRETS MANAGER - HashiCorp Vault (Tier 1)
+# ============================================
+from lib.vault_secrets import get_vault, VaultSecretsManager
+
+# Inicializar Vault Secrets Manager
+vault_manager: Optional[VaultSecretsManager] = None
+try:
+    vault_manager = get_vault()
+    if vault_manager.is_enabled():
+        logger.info(f"✓ Vault Secrets Manager initialized: {vault_manager.url}")
+    else:
+        logger.warning("⚠ Vault Secrets Manager disabled (VAULT_TOKEN not configured)")
+except Exception as e:
+    logger.warning(f"⚠ Vault Secrets Manager initialization skipped: {e}")
+
+# ============================================
+# MLFLOW MODEL REGISTRY (Tier 1)
+# ============================================
+from lib.mlflow_registry import get_mlflow, MLflowModelRegistry
+
+# Inicializar MLflow Model Registry
+mlflow_registry: Optional[MLflowModelRegistry] = None
+try:
+    mlflow_registry = get_mlflow()
+    if mlflow_registry.is_enabled():
+        logger.info(f"✓ MLflow Model Registry initialized: {mlflow_registry.tracking_uri}")
+    else:
+        logger.warning("⚠ MLflow Model Registry disabled (MLflow not installed)")
+except Exception as e:
+    logger.warning(f"⚠ MLflow Model Registry initialization skipped: {e}")
 
 # Sistema de Cache Inteligente
 class SmartCache:
     def __init__(self):
         self.cache = {}
         self.cache_timestamps = {}
-        self.max_age = 3600  # 1 hora por padrão
+        self.cache_ttls = {}  # Per-entry TTL
+        self.default_max_age = 3600  # 1 hora por padrão
 
     def _generate_key(self, data: Any) -> str:
         """Gera uma chave única para os dados"""
@@ -56,17 +97,23 @@ class SmartCache:
             sorted_data = str(data)
         return hashlib.md5(sorted_data.encode()).hexdigest()
 
+    def _get_ttl(self, key: str) -> int:
+        """Retorna o TTL para uma entrada específica"""
+        return self.cache_ttls.get(key, self.default_max_age)
+
     def get(self, key: str) -> Optional[Any]:
         """Recupera dados do cache se ainda válidos"""
         if key in self.cache:
             timestamp = self.cache_timestamps.get(key, 0)
-            if time.time() - timestamp < self.max_age:
+            ttl = self._get_ttl(key)
+            if time.time() - timestamp < ttl:
                 logger.info(f"Cache hit for key: {key[:8]}...")
                 return self.cache[key]
             else:
                 # Remove entrada expirada
                 del self.cache[key]
                 del self.cache_timestamps[key]
+                self.cache_ttls.pop(key, None)
         return None
 
     def set(self, key: str, value: Any, ttl: Optional[int] = None) -> None:
@@ -74,7 +121,7 @@ class SmartCache:
         self.cache[key] = value
         self.cache_timestamps[key] = time.time()
         if ttl:
-            self.max_age = ttl
+            self.cache_ttls[key] = ttl
         logger.info(f"Cached data for key: {key[:8]}...")
 
     def clear_expired(self) -> None:
@@ -83,11 +130,12 @@ class SmartCache:
         expired_keys = [
             key
             for key, timestamp in self.cache_timestamps.items()
-            if current_time - timestamp >= self.max_age
+            if current_time - timestamp >= self._get_ttl(key)
         ]
         for key in expired_keys:
             del self.cache[key]
             del self.cache_timestamps[key]
+            self.cache_ttls.pop(key, None)
         if expired_keys:
             logger.info(f"Cleared {len(expired_keys)} expired cache entries")
 
@@ -106,6 +154,8 @@ from pydantic import BaseModel
 
 from api.alertas import router as alertas_router
 from api.auth import router as auth_router
+from api.audit import router as audit_router
+from api.backtesting import router as backtesting_router
 from api.bayesian_bootstrap import router as bayesian_bootstrap_router
 from api.blockchain_tokens import router as blockchain_tokens_router
 from api.cache import router as cache_router
@@ -125,13 +175,24 @@ from api.climate_scr import router as climate_scr_router
 from api.comprehensive_pricing import router as comprehensive_pricing_router
 from api.concentration_risk import router as concentration_risk_router
 from api.dynamic_insurance_analysis import router as dynamic_insurance_analysis_router
-from api.dynamical_climate import router as dynamical_climate_router
+try:
+    from api.dynamical_climate import router as dynamical_climate_router
+except ImportError:
+    dynamical_climate_router = None
 from api.english_api import router as english_api_router
 from api.english_climateai import router as english_climateai_router
 from api.ensemble_pricing import router as ensemble_pricing_router
 from api.eventos import router as eventos_router
 from api.external import router as external_router
 from api.gemini_integration import router as gemini_integration_router
+from api.grok_integration import router as grok_integration_router
+from api.noaa_integration import router as noaa_integration_router
+from api.xweather_forecast import router as xweather_forecast_router
+from api.model_governance import router as model_governance_router
+from api.regulatory_reporting import router as regulatory_reporting_router
+from api.inmet_alertas import router as inmet_alertas_router
+from api.brazil_disaster_alerts import router as brazil_disaster_alerts_router
+from api.parametric_trigger_verification import router as parametric_trigger_router
 from api.i18n import router as i18n_router
 from api.ia_analytics_agent import router as ia_analytics_agent_router
 from api.integrated_pipeline import router as integrated_pipeline_router
@@ -142,21 +203,32 @@ from api.investment_return import router as investment_return_router
 from api.lei_analysis import router as lei_analysis_router
 from api.loading_margin import router as loading_margin_router
 from api.localizacao import router as localizacao_router
-from api.lstm_attention import router as lstm_attention_router
+try:
+    from api.lstm_attention import router as lstm_attention_router
+except ImportError:
+    lstm_attention_router = None
 from api.mathematical_engines import router as mathematical_engines_router
 from api.microsegmentation import router as microsegmentation_router
 from api.mitigation_measures import router as mitigation_measures_router
-from api.ml import router as ml_router
+try:
+    from api.ml import router as ml_router
+except ImportError:
+    ml_router = None
 from api.modelagem import router as modelagem_router
 from api.operating_costs import router as operating_costs_router
+from api.parametric import router as parametric_router
+from api.transparency import router as transparency_router
+from api.carbon import router as carbon_router
 from api.parametric_insurance import router as parametric_insurance_router
 from api.performance_testing import router as performance_testing_router
 from api.physical_risk import router as physical_risk_router
 from api.policy_pricing import router as policy_pricing_router
 from api.policy_uncertainty import router as policy_uncertainty_router
 from api.policy_valuation import router as policy_valuation_router
+from api.probabilistic_climate_scenarios import router as probabilistic_climate_scenarios_router
 from api.previsao import router as previsao_router
 from api.pricing import router as pricing_router
+from api.extreme_value_pricing import router as extreme_value_pricing_router
 from api.sips_performance_analytics import router as sips_performance_analytics_router
 from api.smart_exclusions import router as smart_exclusions_router
 from api.tcfd_issb import router as tcfd_issb_router
@@ -164,7 +236,6 @@ from api.tokenizacao import router as tokenizacao_router
 from api.transition_risk import router as transition_risk_router
 from api.unified_pricing import router as unified_pricing_router
 from api.xweather_forecast import router as xweather_forecast_router
-from config.config import settings
 from config.database import close_db, init_db
 from services.audit_service import (
     get_audit_logs,
@@ -188,12 +259,18 @@ from services.microsegmentation_service import (
 )
 
 # from api.audit import router as audit_router
-from services.ml_service import (
-    get_ml_model_info,
-    predict_sinistrality,
-    sinistrality_predictor,
-    train_ml_models,
-)
+try:
+    from services.ml_service import (
+        get_ml_model_info,
+        predict_sinistrality,
+        sinistrality_predictor,
+        train_ml_models,
+    )
+except ImportError:
+    get_ml_model_info = None
+    predict_sinistrality = None
+    sinistrality_predictor = None
+    train_ml_models = None
 
 
 class PricingRequest(BaseModel):
@@ -328,7 +405,7 @@ for var, description in required_env_vars:
         logger.warning(f"Variável de ambiente não encontrada: {var}")
 
 # (Imports e código inicial)
-from lib.exception_handlers import register_handlers
+# from lib.exception_handlers import register_handlers
 from middleware.error_handling import setup_error_middleware
 
 # (Código omitido para brevidade)
@@ -338,16 +415,23 @@ app = FastAPI(
     title="FIMCE API",
     description="API do Framework Integrado de Modelagem Climático-Econômica",
     version="1.0.0",
+    validate_responses=True,
 )
 
 # Setup advanced error handling middleware
 setup_error_middleware(app)
 
+# OpenTelemetry instrumentation (conditional)
+init_otel(app)
+
 # Configuração de CORS
 # Em produção, ALLOW_ORIGINS deve ser configurado com a URL do frontend (ex: https://meu-app.netlify.app)
 # Se não configurado, permite todas as origens (*) por padrão para facilitar deploy inicial
-allow_origins_str = os.getenv("ALLOW_ORIGINS", "*")
+allow_origins_str = os.getenv("ALLOW_ORIGINS", "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173")
 allow_origins = allow_origins_str.split(",") if allow_origins_str != "*" else ["*"]
+
+# Security headers middleware (Register early to ensure headers are set even for errors)
+app.add_middleware(SecurityHeadersMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
@@ -357,8 +441,43 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Request ID middleware (basic tracing)
+@app.middleware("http")
+async def request_id_middleware(request: Request, call_next):
+    request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
+    request.state.request_id = request_id
+    response = await call_next(request)
+    response.headers["X-Request-ID"] = request_id
+    return response
+
+# Rate limiting middleware
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+    client_ip = request.client.host if request.client else "unknown"
+    if not rate_limiter.is_allowed(client_ip):
+        return JSONResponse(
+            status_code=429,
+            content={"detail": "Limite de requisições excedido. Tente novamente em alguns minutos."},
+            headers={
+                "X-RateLimit-Limit": str(rate_limiter.max_requests),
+                "X-RateLimit-Window": str(rate_limiter.window_seconds),
+                "Retry-After": str(rate_limiter.window_seconds),
+                "X-Request-ID": getattr(request.state, "request_id", ""),
+            }
+        )
+    response = await call_next(request)
+    response.headers["X-Request-ID"] = getattr(request.state, "request_id", "")
+    return response
+
+# Redact sensitive fields in request.state.log_context (if set by handlers)
+@app.middleware("http")
+async def redaction_middleware(request: Request, call_next):
+    if hasattr(request.state, "log_context"):
+        request.state.log_context = redact_payload(request.state.log_context)
+    response = await call_next(request)
+    return response
 # Registrar os handlers de exceção customizados
-register_handlers(app)
+    # register_handlers(app)
 
 API_PREFIX = "/api/v1"
 
@@ -372,7 +491,7 @@ async def get_cache_stats():
     return {
         "total_entries": len(smart_cache.cache),
         "cache_size_mb": len(str(smart_cache.cache)) / (1024 * 1024),  # Aproximação
-        "max_age_seconds": smart_cache.max_age,
+        "max_age_seconds": smart_cache.default_max_age,
         "uptime": "Sistema ativo",
     }
 
@@ -383,6 +502,207 @@ async def clear_cache():
     smart_cache.cache.clear()
     smart_cache.cache_timestamps.clear()
     return {"message": "Cache limpo com sucesso"}
+
+
+# ============================================
+# DEBUG ENDPOINTS
+# ============================================
+@app.get("/api/v1/debug/initialization")
+async def debug_initialization():
+    """Debug endpoint para verificar inicialização"""
+    return {
+        "vault_manager_initialized": vault_manager is not None,
+        "mlflow_registry_initialized": mlflow_registry is not None,
+        "vault_enabled": vault_manager.is_enabled() if vault_manager else False,
+        "mlflow_enabled": mlflow_registry.is_enabled() if mlflow_registry else False,
+    }
+
+
+# ============================================
+# SECRETS MANAGER ENDPOINTS (HashiCorp Vault)
+# ============================================
+@app.get("/api/v1/vault/status")
+async def get_vault_status():
+    """
+    Retorna status do Vault Secrets Manager
+    
+    Returns:
+        Status de saúde e configuração do Vault
+    """
+    if not vault_manager:
+        return {"enabled": False, "status": "not_configured"}
+    
+    return {
+        "enabled": vault_manager.is_enabled(),
+        "healthy": vault_manager.is_healthy() if vault_manager.is_enabled() else False,
+        "url": getattr(vault_manager, "url", "N/A"),
+        "cache_ttl": getattr(vault_manager, "cache_ttl", 300),
+    }
+
+
+@app.get("/api/v1/vault/secrets/{path:path}")
+async def get_vault_secret(path: str, version: Optional[int] = None):
+    """
+    Recupera um secret do Vault
+    
+    Args:
+        path: Caminho do secret (ex: secret/data/climateai/api-keys)
+        version: Versão específica (opcional)
+    
+    Returns:
+        Dados do secret ou erro
+    """
+    if not vault_manager or not vault_manager.is_enabled():
+        raise HTTPException(status_code=503, detail="Vault not enabled")
+    
+    secret_data = vault_manager.get_secret(path, version)
+    if not secret_data:
+        raise HTTPException(status_code=404, detail="Secret not found")
+    
+    # Não retornar dados sensíveis diretamente
+    return {
+        "path": path,
+        "keys": list(secret_data.keys()),
+        "version": version or "latest",
+    }
+
+
+@app.post("/api/v1/vault/secrets/{path:path}")
+async def set_vault_secret(path: str, data: Dict[str, Any]):
+    """
+    Armazena um secret no Vault
+    
+    Args:
+        path: Caminho do secret
+        data: Dados do secret
+    
+    Returns:
+        Confirmação de armazenamento
+    """
+    if not vault_manager or not vault_manager.is_enabled():
+        raise HTTPException(status_code=503, detail="Vault not enabled")
+    
+    success = vault_manager.set_secret(path, data)
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to store secret")
+    
+    return {"path": path, "status": "stored", "keys": list(data.keys())}
+
+
+@app.delete("/api/v1/vault/secrets/{path:path}")
+async def delete_vault_secret(path: str):
+    """
+    Deleta um secret do Vault
+    
+    Args:
+        path: Caminho do secret
+    
+    Returns:
+        Confirmação de deleção
+    """
+    if not vault_manager or not vault_manager.is_enabled():
+        raise HTTPException(status_code=503, detail="Vault not enabled")
+    
+    success = vault_manager.delete_secret(path)
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to delete secret")
+    
+    return {"path": path, "status": "deleted"}
+
+
+# ============================================
+# MLFLOW MODEL REGISTRY ENDPOINTS
+# ============================================
+@app.get("/api/v1/mlflow/status")
+async def get_mlflow_status():
+    """
+    Retorna status do MLflow Model Registry
+    
+    Returns:
+        Status de saúde e configuração do MLflow
+    """
+    if not mlflow_registry:
+        return {"enabled": False, "status": "not_configured"}
+    
+    return {
+        "enabled": mlflow_registry.is_enabled(),
+        "healthy": mlflow_registry.is_healthy() if mlflow_registry.is_enabled() else False,
+        "tracking_uri": getattr(mlflow_registry, "tracking_uri", "N/A") if mlflow_registry.is_enabled() else "N/A",
+        "registry_uri": getattr(mlflow_registry, "registry_uri", "N/A") if mlflow_registry.is_enabled() else "N/A",
+        "experiment_name": getattr(mlflow_registry, "experiment_name", "N/A") if mlflow_registry.is_enabled() else "N/A",
+        "experiment_id": getattr(mlflow_registry, "experiment_id", "N/A") if mlflow_registry.is_enabled() else "N/A",
+    }
+
+
+@app.get("/api/v1/mlflow/models")
+async def list_mlflow_models():
+    """
+    Lista todos os modelos registrados no MLflow
+    
+    Returns:
+        Lista de nomes de modelos
+    """
+    if not mlflow_registry or not mlflow_registry.is_enabled():
+        raise HTTPException(status_code=503, detail="MLflow not enabled")
+    
+    models = mlflow_registry.list_models()
+    return {"models": models, "count": len(models)}
+
+
+@app.get("/api/v1/mlflow/models/{model_name:path}")
+async def get_mlflow_model_info(model_name: str):
+    """
+    Obtém informações de um modelo específico
+    
+    Args:
+        model_name: Nome do modelo
+    
+    Returns:
+        Informações detalhadas do modelo
+    """
+    if not mlflow_registry or not mlflow_registry.is_enabled():
+        raise HTTPException(status_code=503, detail="MLflow not enabled")
+    
+    info = mlflow_registry.get_model_info(model_name)
+    if not info:
+        raise HTTPException(status_code=404, detail="Model not found")
+    
+    return info
+
+
+@app.post("/api/v1/mlflow/models/{model_name:path}/transition")
+async def transition_mlflow_model(model_name: str, version: str, stage: str):
+    """
+    Transiciona modelo para um stage
+    
+    Args:
+        model_name: Nome do modelo
+        version: Versão do modelo
+        stage: Stage destino (Production, Staging, Archived)
+    
+    Returns:
+        Confirmação da transição
+    """
+    if not mlflow_registry or not mlflow_registry.is_enabled():
+        raise HTTPException(status_code=503, detail="MLflow not enabled")
+    
+    valid_stages = ["Production", "Staging", "Archived"]
+    if stage not in valid_stages:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid stage. Must be one of: {valid_stages}"
+        )
+    
+    success = mlflow_registry.transition_model_stage(model_name, version, stage)
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to transition model")
+    
+    return {
+        "model": model_name,
+        "version": version,
+        "stage": stage,
+        "status": "transitioned"
+    }
 
 
 # Machine Learning Endpoints
@@ -918,56 +1238,17 @@ async def health_check() -> Dict[str, str]:
     return response
 
 
+# Endpoint simples de health check para automação e monitoramento
+@app.get("/health")
+async def health_check_simple():
+    """
+    Endpoint simples de health check para automação e monitoramento.
+    """
+    return {"status": "ok", "message": "API online"}
+
+
 # Verificar configuração antes de incluir os routers
-@app.on_event("startup")
-async def startup_event():
-    """
-    Verificar configurações e dependências na inicialização
-    """
-    global health_checker
-
-    logger.info("Iniciando servidor FIMCE...")
-
-    # Verificar variáveis de ambiente críticas
-    if missing_vars:
-        logger.warning(
-            "Servidor iniciado com configurações incompletas. "
-            f"Variáveis ausentes: {', '.join(missing_vars)}"
-        )
-
-    # Verificar configurações do settings
-    try:
-        # No Pydantic v2, a validação é automática na criação da instância
-        logger.info("Configurações validadas com sucesso")
-    except Exception as e:
-        logger.error(f"Erro na validação das configurações: {str(e)}")
-        raise
-
-    # Inicializar o health checker
-    try:
-        # Obter URL do banco de dados
-        database_url = os.getenv("DATABASE_URL")
-        if not database_url:
-            # Usar SQLite como fallback
-            database_url = "sqlite:///./test.db"
-
-        # Obter URL do Redis (opcional)
-        redis_url = os.getenv("REDIS_URL", None)
-
-        # Criar instância global do health checker
-        health_checker = HealthChecker(database_url=database_url, redis_url=redis_url)
-
-        logger.info("Health checker inicializado com sucesso")
-        logger.info(f"Database URL configurada: {database_url[:50]}...")
-        if redis_url:
-            logger.info(f"Redis URL configurada: {redis_url[:50]}...")
-        else:
-            logger.info("Redis não configurado (verificações de cache desabilitadas)")
-
-    except Exception as e:
-        logger.warning(f"Falha ao inicializar health checker: {str(e)}")
-        # Não falhar completamente se o health checker não inicializar
-        health_checker = None
+# NOTE: Single unified startup event — see below at line ~1226
 
 
 try:
@@ -1005,11 +1286,20 @@ try:
         prefix=f"{API_PREFIX}/climate-risk",
         tags=["climate-risk-modeling"],
     )
-    app.include_router(
-        lstm_attention_router,
-        prefix=f"{API_PREFIX}/lstm-attention",
-        tags=["lstm-attention"],
-    )
+    if lstm_attention_router:
+        app.include_router(
+            lstm_attention_router,
+            prefix=f"{API_PREFIX}/lstm-attention",
+            tags=["lstm-attention"],
+        )
+    app.include_router(parametric_router, prefix=f"{API_PREFIX}")
+    app.include_router(transparency_router, prefix=f"{API_PREFIX}")
+    app.include_router(carbon_router, prefix=f"{API_PREFIX}")
+    try:
+        from api.oracle import router as oracle_router
+        app.include_router(oracle_router, prefix=f"{API_PREFIX}")
+    except Exception as e:
+        logger.warning(f"Oracle router not loaded: {e}")
     app.include_router(
         parametric_insurance_router,
         prefix=f"{API_PREFIX}/parametric-insurance",
@@ -1022,6 +1312,11 @@ try:
         ensemble_pricing_router,
         prefix=f"{API_PREFIX}/ensemble-pricing",
         tags=["ensemble-pricing"],
+    )
+    app.include_router(
+        extreme_value_pricing_router,
+        prefix=f"{API_PREFIX}/pricing/extreme-value",
+        tags=["extreme-value-pricing"],
     )
     app.include_router(
         climate_risk_analysis_router,
@@ -1048,11 +1343,12 @@ try:
         prefix=f"{API_PREFIX}/performance-testing",
         tags=["performance-testing"],
     )
-    app.include_router(
-        dynamical_climate_router,
-        prefix=f"{API_PREFIX}/dynamical-climate",
-        tags=["dynamical-climate"],
-    )
+    if dynamical_climate_router:
+        app.include_router(
+            dynamical_climate_router,
+            prefix=f"{API_PREFIX}/dynamical-climate",
+            tags=["dynamical-climate"],
+        )
     app.include_router(
         dynamic_insurance_analysis_router,
         prefix=f"{API_PREFIX}/dynamic-insurance",
@@ -1149,6 +1445,30 @@ try:
         gemini_integration_router, prefix=f"{API_PREFIX}/gemini", tags=["gemini"]
     )
     app.include_router(
+        grok_integration_router, prefix=f"{API_PREFIX}/grok", tags=["grok"]
+    )
+    app.include_router(
+        noaa_integration_router, prefix=f"{API_PREFIX}/noaa", tags=["noaa"]
+    )
+    app.include_router(
+        xweather_forecast_router, prefix=f"{API_PREFIX}/xweather", tags=["xweather"]
+    )
+    app.include_router(
+        model_governance_router, prefix=f"{API_PREFIX}/model-governance", tags=["model-governance"]
+    )
+    app.include_router(
+        regulatory_reporting_router, prefix=f"{API_PREFIX}/regulatory-reporting", tags=["regulatory-reporting"]
+    )
+    app.include_router(
+        inmet_alertas_router, prefix=f"{API_PREFIX}/inmet-alertas", tags=["inmet-alertas"]
+    )
+    app.include_router(
+        brazil_disaster_alerts_router, prefix=f"{API_PREFIX}/brazil-alerts", tags=["brazil-alerts"]
+    )
+    app.include_router(
+        parametric_trigger_router, prefix=f"{API_PREFIX}/parametric-triggers", tags=["parametric-triggers"]
+    )
+    app.include_router(
         policy_valuation_router,
         prefix=f"{API_PREFIX}/policy-valuation",
         tags=["policy-valuation"],
@@ -1157,6 +1477,11 @@ try:
         policy_pricing_router,
         prefix=f"{API_PREFIX}/policy-pricing",
         tags=["policy-pricing"],
+    )
+    app.include_router(
+        probabilistic_climate_scenarios_router,
+        prefix=f"{API_PREFIX}/probabilistic-climate-scenarios",
+        tags=["probabilistic-climate-scenarios"],
     )
     app.include_router(i18n_router, prefix=f"{API_PREFIX}/i18n", tags=["i18n"])
     app.include_router(
@@ -1169,7 +1494,8 @@ try:
     )
     # New refactored routers
     app.include_router(cache_router, prefix=f"{API_PREFIX}/cache", tags=["cache"])
-    app.include_router(ml_router, prefix=f"{API_PREFIX}/ml", tags=["ml"])
+    if ml_router:
+        app.include_router(ml_router, prefix=f"{API_PREFIX}/ml", tags=["ml"])
     app.include_router(
         external_router, prefix=f"{API_PREFIX}/external", tags=["external"]
     )
@@ -1184,6 +1510,13 @@ try:
         prefix=f"{API_PREFIX}/unified-pricing",
         tags=["unified-pricing"],
     )
+    # Tier 1 Regulatory Compliance
+    app.include_router(
+        backtesting_router, prefix=f"{API_PREFIX}", tags=["backtesting"]
+    )
+    app.include_router(
+        audit_router, prefix=f"{API_PREFIX}/audit", tags=["audit"]
+    )
     # app.include_router(audit_router, prefix=f"{API_PREFIX}/audit", tags=["audit"])
 except Exception as e:
     logger.error(f"Erro ao incluir routers: {str(e)}")
@@ -1194,10 +1527,51 @@ except Exception as e:
 @app.on_event("startup")
 async def startup_event():
     """Evento executado na inicialização do servidor"""
+    global health_checker
+
     logger.info("Inicializando ClimateAI...")
+
+    # Verificar variáveis de ambiente críticas
+    if missing_vars:
+        logger.warning(
+            "Servidor iniciado com configurações incompletas. "
+            f"Variáveis ausentes: {', '.join(missing_vars)}"
+        )
+
+    # Inicializar banco de dados
     if settings.DATABASE_ENABLED:
         await init_db()
         logger.info("Banco de dados inicializado")
+
+    # Inicializar o health checker
+    try:
+        database_url = os.getenv("DATABASE_URL")
+        if not database_url:
+            database_url = "sqlite:///./test.db"
+
+        redis_url = os.getenv("REDIS_URL", None)
+        health_checker = HealthChecker(database_url=database_url, redis_url=redis_url)
+        logger.info("✓ Health checker inicializado com sucesso")
+    except Exception as e:
+        logger.warning(f"⚠ Falha ao inicializar health checker: {str(e)}")
+        health_checker = None
+
+    # Log de status dos serviços Tier 1
+    logger.info("=" * 60)
+    logger.info("STATUS DOS SERVIÇOS TIER 1:")
+    logger.info("=" * 60)
+    
+    if vault_manager and vault_manager.is_enabled():
+        logger.info(f"✓ Vault Secrets Manager: {vault_manager.url}")
+    else:
+        logger.warning("⚠ Vault Secrets Manager: Não configurado")
+    
+    if mlflow_registry and mlflow_registry.is_enabled():
+        logger.info(f"✓ MLflow Model Registry: {mlflow_registry.tracking_uri}")
+    else:
+        logger.warning("⚠ MLflow Model Registry: Não configurado")
+    
+    logger.info("=" * 60)
     logger.info("Servidor ClimateAI iniciado com sucesso")
 
 

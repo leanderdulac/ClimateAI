@@ -10,7 +10,6 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException, Query
 
 from services.climate_capital_charge_service import (
-    ClimateCapitalChargeCalculator,
     PolicyClimateRisk,
     calculate_climate_capital_charge,
     calculate_climate_reserves,

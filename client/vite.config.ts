@@ -10,9 +10,9 @@ export default defineConfig({
     },
   },
   server: {
-    host: 'localhost',
-    port: 3000,
-    strictPort: false,
+    host: '0.0.0.0', // permite bind em qualquer interface (corrige EPERM em alguns ambientes)
+    port: 5173,
+    strictPort: true,
     proxy: {
       '/api/v1': {
         target: 'http://127.0.0.1:8000',

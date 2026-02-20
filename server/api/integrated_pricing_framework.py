@@ -4,7 +4,7 @@ Implements the full formula: Prêmio = PTP × (1 + ML) × (1 + TR) × (1 + CC) �
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Annotated
 
 from fastapi import APIRouter, HTTPException, Query
 
@@ -27,16 +27,16 @@ from services.mitigation_measures_service import (
     MitigationMeasures,
     calculate_final_scr_score,
 )
-from services.operating_costs_service import calculate_operating_costs
+from services.operating_costs_service import calculate_operating_costs, PolicyDetails
 from services.physical_risk_service import (
     ClimateScenario,
-    PhysicalRiskCalculator,
+    PhysicalRiskService,
     PropertyCharacteristics,
 )
 from services.transition_risk_service import (
     AssetCharacteristics,
     EnvironmentalScenario,
-    TransitionRiskCalculator,
+    TransitionRiskService,
 )
 
 router = APIRouter()
@@ -44,57 +44,27 @@ router = APIRouter()
 
 @router.post("/complete-pricing-framework/calculate")
 async def calculate_complete_pricing_framework(
-    location_latitude: float = Query(-23.5507, description="Latitude of the property"),
-    location_longitude: float = Query(
-        -46.6339, description="Longitude of the property"
-    ),
-    property_value: float = Query(..., gt=0, description="Value of the property"),
-    coverage_amount: float = Query(
-        ..., gt=0, description="Amount of coverage requested"
-    ),
-    coverage_period_years: int = Query(
-        1, ge=1, le=10, description="Coverage period in years"
-    ),
-    policy_age_months: int = Query(0, ge=0, description="Age of the policy in months"),
-    zone_policies_premiums: List[float] = Query(
-        [], description="Premiums of policies in the same zone"
-    ),
-    free_capital: float = Query(..., gt=0, description="Free capital available"),
-    climate_temperature_change: float = Query(
-        1.5, description="Expected climate temperature change (ΔT)"
-    ),
-    climate_precipitation_change: float = Query(
-        50.0, description="Expected precipitation change"
-    ),
-    fossil_energy_exposure: float = Query(
-        0.5, ge=0, le=1, description="Fossil energy exposure (0-1)"
-    ),
-    revenue_dependence: float = Query(
-        0.4, ge=0, le=1, description="Revenue dependence on covered asset"
-    ),
-    mitigation_drainage: float = Query(
-        0.25, ge=0, le=1, description="Drainage mitigation effectiveness"
-    ),
-    mitigation_structural: float = Query(
-        8.0, ge=1, le=10, description="Structural resistance class"
-    ),
-    mitigation_sensors: int = Query(15, ge=0, description="Number of IoT sensors"),
-    mitigation_vegetation: float = Query(
-        0.7, ge=0, le=1, description="NDVI (vegetation index)"
-    ),
-    mitigation_refuge_distance: float = Query(
-        1.0, ge=0, description="Distance to refuge in km"
-    ),
-    processing_method: str = Query(
-        "automated", description="Processing method: 'automated' or 'manual'"
-    ),
-    risk_category: str = Query(
-        "standard", description="Risk category: 'low', 'standard', 'high', 'special'"
-    ),
-    coverage_type: str = Query(
-        "property", description="Coverage type: 'property', 'liability', etc."
-    ),
-    claim_history_count: int = Query(0, ge=0, description="Number of past claims"),
+    location_latitude: Annotated[float, Query(description="Latitude of the property")] = -23.5507,
+    location_longitude: Annotated[float, Query(description="Longitude of the property")] = -46.6339,
+    property_value: Annotated[float, Query(gt=0, description="Value of the property")] = 1000000.0,
+    coverage_amount: Annotated[float, Query(gt=0, description="Amount of coverage requested")] = 800000.0,
+    coverage_period_years: Annotated[int, Query(ge=1, le=10, description="Coverage period in years")] = 1,
+    policy_age_months: Annotated[int, Query(ge=0, description="Age of the policy in months")] = 0,
+    zone_policies_premiums: Annotated[List[float], Query(description="Premiums of policies in the same zone")] = [],
+    free_capital: Annotated[float, Query(gt=0, description="Free capital available")] = 10000000.0,
+    climate_temperature_change: Annotated[float, Query(description="Expected climate temperature change (ΔT)")] = 1.5,
+    climate_precipitation_change: Annotated[float, Query(description="Expected precipitation change")] = 50.0,
+    fossil_energy_exposure: Annotated[float, Query(ge=0, le=1, description="Fossil energy exposure (0-1)")] = 0.5,
+    revenue_dependence: Annotated[float, Query(ge=0, le=1, description="Revenue dependence on covered asset")] = 0.4,
+    mitigation_drainage: Annotated[float, Query(ge=0, le=1, description="Drainage mitigation effectiveness")] = 0.25,
+    mitigation_structural: Annotated[float, Query(ge=1, le=10, description="Structural resistance class")] = 8.0,
+    mitigation_sensors: Annotated[int, Query(ge=0, description="Number of IoT sensors")] = 15,
+    mitigation_vegetation: Annotated[float, Query(ge=0, le=1, description="NDVI (vegetation index)")] = 0.7,
+    mitigation_refuge_distance: Annotated[float, Query(ge=0, description="Distance to refuge in km")] = 1.0,
+    processing_method: Annotated[str, Query(description="Processing method")] = "automated",
+    risk_category: Annotated[str, Query(description="Risk category")] = "standard",
+    coverage_type: Annotated[str, Query(description="Coverage type")] = "property",
+    claim_history_count: Annotated[int, Query(ge=0, description="Number of past claims")] = 0,
 ):
     """
     Calculate comprehensive premium using the full integrated formula:
@@ -104,8 +74,8 @@ async def calculate_complete_pricing_framework(
     """
     try:
         # Initialize calculators
-        physical_calc = PhysicalRiskCalculator()
-        transition_calc = TransitionRiskCalculator()
+        physical_calc = PhysicalRiskService()
+        transition_calc = TransitionRiskService()
 
         # Step 1: Calculate Physical Risk
         property_char = PropertyCharacteristics(
@@ -126,7 +96,7 @@ async def calculate_complete_pricing_framework(
             baseline_year=2020,
         )
 
-        physical_result = physical_calc.calculate_physical_risk(
+        physical_task = physical_calc.calculate_physical_risk(
             property_char, climate_scenario
         )
 
@@ -150,8 +120,14 @@ async def calculate_complete_pricing_framework(
             baseline_year=2020,
         )
 
-        transition_result = transition_calc.calculate_transition_risk(
+        transition_task = transition_calc.calculate_transition_risk(
             asset_char, env_scenario
+        )
+
+        # Run risk assessments in parallel
+        import asyncio
+        physical_result, transition_result = await asyncio.gather(
+            physical_task, transition_task
         )
 
         # Step 3: Create concentration risk estimate
@@ -175,7 +151,7 @@ async def calculate_complete_pricing_framework(
                         climate_zone="tropical",
                     )
                 )
-            concentration_result = calculate_concentration_risk(properties, "flood")
+            concentration_result = calculate_concentration_risk(properties, hazard_type="flood")
             concentration_risk = concentration_result.concentration_risk
         else:
             # Use representative value if no zone data
@@ -212,16 +188,16 @@ async def calculate_complete_pricing_framework(
         ) * coverage_amount
 
         # Step 6: Calculate operating costs (for ML component)
-        operating_costs_result = calculate_operating_costs(
-            premium_amount=expected_claims
-            * 1.2,  # Estimate premium as expected claims + loading
-            asset_value=property_value,
-            risk_factors={
-                "climatic_risk": physical_result.total_physical_risk,
-                "transition_risk": transition_result.total_transition_risk,
-                "concentration_risk": concentration_risk,
-            },
+        policy_details = PolicyDetails(
+            policy_id="TEMP_INTEGRATED",
+            premium_issued=expected_claims * 1.2,
+            processing_method=processing_method,
+            risk_category=risk_category,
+            coverage_type=coverage_type,
+            policy_age_months=policy_age_months,
+            claim_history_count=claim_history_count,
         )
+        operating_costs_result = calculate_operating_costs(policy_details)
 
         # Step 7: Calculate Loading Margin
         ml_result = calculate_loading_margin(
@@ -260,7 +236,7 @@ async def calculate_complete_pricing_framework(
             free_capital=free_capital,
         )
 
-        comprehensive_result = calculate_comprehensive_premium(pricing_input)
+        comprehensive_result = await calculate_comprehensive_premium(pricing_input)
 
         # Organize results
         return {
