@@ -146,10 +146,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (!data.session || !data.user) throw new Error('Sessão inválida');
         setUser(await mapSupabaseUser(data.user));
         setSession(data.session);
-      } else {
-        // Fallback: backend API auth when Supabase is not configured
-        const apiUrl = baseUrl || 'http://localhost:8000';
-        const res = await fetch(`${apiUrl}/api/v1/auth/login`, {
+      } else if (baseUrl) {
+        // Backend API auth (only when API URL is explicitly configured)
+        const res = await fetch(`${baseUrl}/api/v1/auth/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password }),
@@ -165,9 +164,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
           role: data.user?.role || 'user',
         });
         setSession({ access_token: data.access_token, refresh_token: data.refresh_token } as any);
+      } else {
+        throw new Error('Servidor de autenticação não disponível. Verifique a conexão.');
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Falha no login';
+      let message = err instanceof Error ? err.message : 'Falha no login';
+      // User-friendly error for network failures
+      if (message.toLowerCase().includes('failed to fetch') || message.toLowerCase().includes('network')) {
+        message = 'Não foi possível conectar ao servidor. Verifique sua conexão ou tente novamente.';
+      }
       setError(message);
       throw new Error(message);
     } finally {
