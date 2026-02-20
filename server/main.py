@@ -479,13 +479,15 @@ async def redaction_middleware(request: Request, call_next):
 # Registrar os handlers de exceção customizados
     # register_handlers(app)
 
-API_PREFIX = "/api/v1"
+# Configuração de prefixo da API
+# Em DigitalOcean, o ingress faz stripping de '/api', então o prefixo interno deve ser '/v1'
+API_PREFIX = os.getenv("API_PREFIX", "/api/v1")
 
 # (Restante do código, incluindo middlewares e routers)
 
 
 # Endpoint para estatísticas do cache
-@app.get("/api/v1/cache/stats")
+@app.get(f"{API_PREFIX}/cache/stats")
 async def get_cache_stats():
     """Retorna estatísticas do sistema de cache"""
     return {
@@ -496,7 +498,7 @@ async def get_cache_stats():
     }
 
 
-@app.post("/api/v1/cache/clear")
+@app.post(f"{API_PREFIX}/cache/clear")
 async def clear_cache():
     """Limpa todo o cache"""
     smart_cache.cache.clear()
@@ -507,7 +509,7 @@ async def clear_cache():
 # ============================================
 # DEBUG ENDPOINTS
 # ============================================
-@app.get("/api/v1/debug/initialization")
+@app.get(f"{API_PREFIX}/debug/initialization")
 async def debug_initialization():
     """Debug endpoint para verificar inicialização"""
     return {
@@ -521,7 +523,7 @@ async def debug_initialization():
 # ============================================
 # SECRETS MANAGER ENDPOINTS (HashiCorp Vault)
 # ============================================
-@app.get("/api/v1/vault/status")
+@app.get(f"{API_PREFIX}/vault/status")
 async def get_vault_status():
     """
     Retorna status do Vault Secrets Manager
@@ -540,7 +542,7 @@ async def get_vault_status():
     }
 
 
-@app.get("/api/v1/vault/secrets/{path:path}")
+@app.get(f"{API_PREFIX}/vault/secrets/{{path:path}}")
 async def get_vault_secret(path: str, version: Optional[int] = None):
     """
     Recupera um secret do Vault
@@ -567,7 +569,7 @@ async def get_vault_secret(path: str, version: Optional[int] = None):
     }
 
 
-@app.post("/api/v1/vault/secrets/{path:path}")
+@app.post(f"{API_PREFIX}/vault/secrets/{{path:path}}")
 async def set_vault_secret(path: str, data: Dict[str, Any]):
     """
     Armazena um secret no Vault
@@ -589,7 +591,7 @@ async def set_vault_secret(path: str, data: Dict[str, Any]):
     return {"path": path, "status": "stored", "keys": list(data.keys())}
 
 
-@app.delete("/api/v1/vault/secrets/{path:path}")
+@app.delete(f"{API_PREFIX}/vault/secrets/{{path:path}}")
 async def delete_vault_secret(path: str):
     """
     Deleta um secret do Vault
@@ -613,7 +615,7 @@ async def delete_vault_secret(path: str):
 # ============================================
 # MLFLOW MODEL REGISTRY ENDPOINTS
 # ============================================
-@app.get("/api/v1/mlflow/status")
+@app.get(f"{API_PREFIX}/mlflow/status")
 async def get_mlflow_status():
     """
     Retorna status do MLflow Model Registry
@@ -634,7 +636,7 @@ async def get_mlflow_status():
     }
 
 
-@app.get("/api/v1/mlflow/models")
+@app.get(f"{API_PREFIX}/mlflow/models")
 async def list_mlflow_models():
     """
     Lista todos os modelos registrados no MLflow
@@ -649,7 +651,7 @@ async def list_mlflow_models():
     return {"models": models, "count": len(models)}
 
 
-@app.get("/api/v1/mlflow/models/{model_name:path}")
+@app.get(f"{API_PREFIX}/mlflow/models/{{model_name:path}}")
 async def get_mlflow_model_info(model_name: str):
     """
     Obtém informações de um modelo específico
@@ -670,7 +672,7 @@ async def get_mlflow_model_info(model_name: str):
     return info
 
 
-@app.post("/api/v1/mlflow/models/{model_name:path}/transition")
+@app.post(f"{API_PREFIX}/mlflow/models/{{model_name:path}}/transition")
 async def transition_mlflow_model(model_name: str, version: str, stage: str):
     """
     Transiciona modelo para um stage
@@ -706,7 +708,7 @@ async def transition_mlflow_model(model_name: str, version: str, stage: str):
 
 
 # Machine Learning Endpoints
-@app.post("/api/v1/ml/predict-sinistrality")
+@app.post(f"{API_PREFIX}/ml/predict-sinistrality")
 async def predict_sinistrality_endpoint(features: Dict[str, Any]):
     """
     Prediz frequência e severidade de sinistros usando machine learning
@@ -753,7 +755,7 @@ async def predict_sinistrality_endpoint(features: Dict[str, Any]):
         raise HTTPException(status_code=500, detail=f"Erro na predição: {str(e)}")
 
 
-@app.post("/api/v1/ml/train-models")
+@app.post(f"{API_PREFIX}/ml/train-models")
 async def train_ml_models_endpoint(data: Optional[List[Dict[str, Any]]] = None):
     """
     Treina os modelos de machine learning para predição de sinistralidade
@@ -775,7 +777,7 @@ async def train_ml_models_endpoint(data: Optional[List[Dict[str, Any]]] = None):
         raise HTTPException(status_code=500, detail=f"Erro no treinamento: {str(e)}")
 
 
-@app.get("/api/v1/ml/model-info")
+@app.get(f"{API_PREFIX}/ml/model-info")
 async def get_ml_model_info_endpoint():
     """
     Retorna informações sobre os modelos de machine learning
@@ -791,7 +793,7 @@ async def get_ml_model_info_endpoint():
 
 
 # External API Endpoints
-@app.get("/api/v1/external/weather")
+@app.get(f"{API_PREFIX}/external/weather")
 async def get_weather_endpoint(latitude: float, longitude: float):
     """
     Obter dados meteorológicos em tempo real
@@ -811,7 +813,7 @@ async def get_weather_endpoint(latitude: float, longitude: float):
         raise HTTPException(status_code=500, detail=f"Erro meteorológico: {str(e)}")
 
 
-@app.get("/api/v1/external/economic-indicators")
+@app.get(f"{API_PREFIX}/external/economic-indicators")
 async def get_economic_indicators_endpoint():
     """
     Obter indicadores econômicos atuais
@@ -827,7 +829,7 @@ async def get_economic_indicators_endpoint():
         raise HTTPException(status_code=500, detail=f"Erro econômico: {str(e)}")
 
 
-@app.get("/api/v1/external/commodity-prices")
+@app.get(f"{API_PREFIX}/external/commodity-prices")
 async def get_commodity_prices_endpoint(
     symbols: List[str] = Query(..., description="Símbolos das commodities")
 ):
@@ -848,7 +850,7 @@ async def get_commodity_prices_endpoint(
         raise HTTPException(status_code=500, detail=f"Erro commodities: {str(e)}")
 
 
-@app.get("/api/v1/external/real-time-data")
+@app.get(f"{API_PREFIX}/external/real-time-data")
 async def get_real_time_data_endpoint(
     latitude: float,
     longitude: float,
@@ -907,7 +909,7 @@ async def get_real_time_data_endpoint(
 
 
 # Microsegmentation Endpoints
-@app.post("/api/v1/microsegmentation/create")
+@app.post(f"{API_PREFIX}/microsegmentation/create")
 async def create_microsegments_endpoint(
     region_bounds: Dict[str, Any],
     n_segments: int = Query(20, description="Número de microsegmentos"),
@@ -930,7 +932,7 @@ async def create_microsegments_endpoint(
         raise HTTPException(status_code=500, detail=f"Erro microsegmentação: {str(e)}")
 
 
-@app.get("/api/v1/microsegmentation/analyze-location")
+@app.get(f"{API_PREFIX}/microsegmentation/analyze-location")
 async def analyze_location_risk_endpoint(
     latitude: float,
     longitude: float,
@@ -983,7 +985,7 @@ async def analyze_location_risk_endpoint(
         raise HTTPException(status_code=500, detail=f"Erro análise risco: {str(e)}")
 
 
-@app.get("/api/v1/microsegmentation/summary")
+@app.get(f"{API_PREFIX}/microsegmentation/summary")
 async def get_microsegmentation_summary_endpoint(
     region_id: str = Query("default", description="ID da região")
 ):
@@ -1005,7 +1007,7 @@ async def get_microsegmentation_summary_endpoint(
 
 
 # Audit and Compliance Endpoints
-@app.get("/api/v1/audit/logs")
+@app.get(f"{API_PREFIX}/audit/logs")
 async def get_audit_logs_endpoint(
     start_date: Optional[str] = Query(None, description="Data inicial (ISO format)"),
     end_date: Optional[str] = Query(None, description="Data final (ISO format)"),
@@ -1038,7 +1040,7 @@ async def get_audit_logs_endpoint(
         raise HTTPException(status_code=500, detail=f"Erro logs auditoria: {str(e)}")
 
 
-@app.get("/api/v1/compliance/report")
+@app.get(f"{API_PREFIX}/compliance/report")
 async def get_compliance_report_endpoint(
     start_date: Optional[str] = Query(None, description="Data inicial (ISO format)"),
     end_date: Optional[str] = Query(None, description="Data final (ISO format)"),
@@ -1062,7 +1064,7 @@ async def get_compliance_report_endpoint(
         )
 
 
-@app.post("/api/v1/audit/log-operation")
+@app.post(f"{API_PREFIX}/audit/log-operation")
 async def log_operation_endpoint(
     operation: str,
     resource_type: str,
@@ -1101,7 +1103,7 @@ async def log_operation_endpoint(
 
 
 # Pricing Endpoints
-@app.post("/api/v1/pricing/calculate")
+@app.post(f"{API_PREFIX}/pricing/calculate")
 async def calculate_pricing_endpoint(request: PricingRequest):
     """
     Calcular preço de seguro baseado em dados climáticos e fatores de risco
@@ -1193,7 +1195,7 @@ health_checker: Optional[HealthChecker] = None
 
 
 # Endpoint de verificação de saúde completa
-@app.get("/api/v1/health/full")
+@app.get(f"{API_PREFIX}/health/full")
 async def health_check_full() -> Dict[str, Any]:
     """
     Verificação completa de saúde da API incluindo todas as dependências
@@ -1209,7 +1211,7 @@ async def health_check_full() -> Dict[str, Any]:
 
 
 # Endpoint de verificação de saúde crítica
-@app.get("/api/v1/health/critical")
+@app.get(f"{API_PREFIX}/health/critical")
 async def health_check_critical() -> Dict[str, Any]:
     """
     Verificação de saúde apenas de componentes críticos (Database, System)

@@ -21,6 +21,8 @@ services:
         value: "1"
       - key: ENVIRONMENT
         value: "production"
+      - key: API_PREFIX
+        value: "/v1"
 
 static_sites:
   # Frontend React/Vite Static Site
