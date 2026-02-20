@@ -1238,14 +1238,6 @@ async def health_check() -> Dict[str, str]:
     return response
 
 
-# Endpoint simples de health check para automação e monitoramento
-@app.get("/health")
-async def health_check_simple():
-    """
-    Endpoint simples de health check para automação e monitoramento.
-    """
-    return {"status": "ok", "message": "API online"}
-
 
 # Verificar configuração antes de incluir os routers
 # NOTE: Single unified startup event — see below at line ~1226
