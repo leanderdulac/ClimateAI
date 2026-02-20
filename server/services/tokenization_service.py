@@ -2,8 +2,14 @@ from __future__ import annotations
 import json
 import os
 import logging
-from typing import Any, Optional, cast
-from web3 import Web3
+from typing import Any, Dict, Optional, cast
+
+try:
+    from web3 import Web3
+    WEB3_AVAILABLE = True
+except ImportError:
+    Web3 = None  # type: ignore
+    WEB3_AVAILABLE = False
 
 # google.cloud imports are now conditional to allow local development without GCP libs
 try:
@@ -33,6 +39,11 @@ class TokenizationService:
 
     def _initialize_service(self) -> None:
         """Initializes the Web3 connection and contract using Secrets or Env Vars."""
+
+        if not WEB3_AVAILABLE:
+            logger.warning("web3 library not installed. Switching to MOCK mode.")
+            self.mock_mode = True
+            return
 
         # 1. Attempt to load configuration
         node_url = self._get_config("BC_NODE_URL")
