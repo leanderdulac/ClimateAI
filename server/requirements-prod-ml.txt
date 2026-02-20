@@ -45,6 +45,8 @@ nolds>=0.5.2  # Nonlinear dynamics analysis
 tenacity>=9.0.0  # Retry library with circuit breaker pattern
 hvac==2.3.0  # HashiCorp Vault secrets manager
 feedparser>=6.0.0  # RSS/Atom feed parser for INMET alerts
+beautifulsoup4>=4.12.0  # HTML parser for INMET alert descriptions
+aiohttp>=3.9.0  # Async HTTP client for health checks
 
 # === DADOS E ML ESSENCIAIS (PRODUÇÃO) ===
 pandas==2.2.3
