@@ -6,7 +6,7 @@
   "rewrites": [
     {
       "source": "/api/:match*",
-      "destination": "https://climateai-backend-f7a8.onrender.com/api/:match*"
+      "destination": "https://hammerhead-app-3payj.ondigitalocean.app/api/:match*"
     },
     {
       "source": "/:path*",
