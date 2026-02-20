@@ -435,31 +435,41 @@ def with_resilience(
 ):
     """
     Decorator para adicionar resiliência a funções assíncronas.
-    
-    Uso:
-        @with_resilience("my_service", max_retries=3)
-        async def my_function():
-            ...
+    Implementa retry com backoff exponencial e timeout.
     """
     def decorator(func: Callable[..., T]) -> Callable[..., T]:
         @wraps(func)
         async def wrapper(*args, **kwargs) -> T:
-            # Implementação simplificada - em produção, usar um client compartilhado
-            start_time = time.time()
-            try:
-                return await asyncio.wait_for(
-                    func(*args, **kwargs),
-                    timeout=timeout
-                )
-            except asyncio.TimeoutError:
-                logger.error(f"Timeout em {service_name}.{func.__name__} após {timeout}s")
-                raise
-            except Exception as e:
-                logger.error(f"Erro em {service_name}.{func.__name__}: {e}")
-                raise
-            finally:
-                elapsed = time.time() - start_time
-                logger.debug(f"{service_name}.{func.__name__} executou em {elapsed:.2f}s")
+            last_exception = None
+            
+            for attempt in range(1, max_retries + 1):
+                try:
+                    return await asyncio.wait_for(
+                        func(*args, **kwargs),
+                        timeout=timeout
+                    )
+                except asyncio.TimeoutError:
+                    last_exception = asyncio.TimeoutError(f"Timeout em {service_name}.{func.__name__} após {timeout}s")
+                    logger.warning(f"Tentativa {attempt}/{max_retries} falhou por timeout: {service_name}.{func.__name__}")
+                except Exception as e:
+                    last_exception = e
+                    # Se for erro de rate limit, esperar um pouco mais
+                    error_msg = str(e)
+                    if "429" in error_msg or "Rate Limit" in error_msg:
+                        wait_time = 2 ** attempt  # Exponential backoff
+                        logger.warning(f"Rate limit hit em {service_name}.{func.__name__}. Esperando {wait_time}s...")
+                        await asyncio.sleep(wait_time)
+                    else:
+                        logger.warning(f"Tentativa {attempt}/{max_retries} falhou em {service_name}.{func.__name__}: {e}")
+                
+                # Backoff exponencial simples para outros erros
+                if attempt < max_retries:
+                    wait_time = 0.5 * (2 ** (attempt - 1))
+                    await asyncio.sleep(wait_time)
+            
+            # Se chegou aqui, falhou após todos os retries
+            logger.error(f"Todas as {max_retries} tentativas falharam para {service_name}.{func.__name__}")
+            raise last_exception
         
         return wrapper
     return decorator

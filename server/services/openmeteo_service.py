@@ -11,6 +11,8 @@ from typing import Any, Dict, List, Optional
 import openmeteo_requests
 import pandas as pd
 import requests_cache
+import asyncio
+import requests
 from fastapi import HTTPException
 from retry_requests import retry
 from lib.redis_cache import external_api_cache, get_cache
@@ -135,6 +137,10 @@ class OpenMeteoService:
                         logger.error(f"Erro ao buscar chunk {current_start}: {e}")
                         
                     current_start = current_end + timedelta(days=1)
+                    
+                    # Defensivo: Delay para evitar rate limit de minutely requests
+                    if current_start < data_fim:
+                        await asyncio.sleep(1.0)
                     
                 if not all_data:
                     raise HTTPException(status_code=404, detail="Nenhum dado encontrado em nenhum dos períodos.")
@@ -284,9 +290,16 @@ class OpenMeteoService:
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Erro ao obter dados históricos: {str(e)}")
+            error_msg = str(e)
+            if "Minutely API request limit exceeded" in error_msg or "429" in error_msg:
+                logger.warning(f"Open-Meteo Rate Limit hit: {error_msg}")
+                raise HTTPException(
+                    status_code=429,
+                    detail="Limite de requisições do Open-Meteo atingido. Por favor, tente novamente em um minuto."
+                )
+            logger.error(f"Erro ao obter dados históricos: {error_msg}")
             raise HTTPException(
-                status_code=500, detail=f"Erro ao obter dados históricos: {str(e)}"
+                status_code=500, detail=f"Erro ao obter dados históricos: {error_msg}"
             )
 
         return dados
