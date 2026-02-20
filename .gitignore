@@ -45,7 +45,6 @@ Thumbs.db
 .env
 server/.env
 client/.env
-client/.env.production
 client/.env.local
 
 .coverage
