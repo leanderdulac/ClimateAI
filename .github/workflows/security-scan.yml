@@ -342,7 +342,7 @@ jobs:
         with:
           fail-on-severity: moderate
           deny-licenses: GPL-3.0, AGPL-3.0
-          allow-ghsas: []
+          allow-ghsas: ""
 
   # ============================================
   # Security Summary Report

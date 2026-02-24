@@ -58,3 +58,6 @@ hvac==2.3.0
 #   pip install -r server/requirements-prod-ml.txt
 # Para desenvolvimento com TensorFlow:
 #   pip install -r server/requirements-base.txt -r server/requirements-ml.txt
+
+pytest==8.0.0
+pytest-asyncio==0.23.5

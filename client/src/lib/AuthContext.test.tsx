@@ -31,7 +31,7 @@ const { mockSupabase } = vi.hoisted(() => {
   mock.from.mockReturnThis();
   mock.select.mockReturnThis();
   mock.eq.mockReturnThis();
-  mock.single.mockResolvedValue({ data: null, error: null });
+  mock.single.mockResolvedValue({ data: { name: 'Test User', email: 'test@test.com' }, error: null });
   mock.upsert.mockResolvedValue({ error: null });
   mock.update.mockResolvedValue({ error: null });
 
