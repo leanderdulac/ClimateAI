@@ -58,7 +58,9 @@ jobs:
           # Install NumPy first with a compatible version for PyTorch
           pip install --timeout 1800 --retries 5 --no-cache-dir "numpy<2.0.0"
           pip install --timeout 1800 --retries 5 --prefer-binary --index-url https://download.pytorch.org/whl/cpu 'torch==2.1.1+cpu' --find-links https://download.pytorch.org/whl/torch_stable.html --no-build-isolation --force-reinstall
-          pip install --timeout 1800 --retries 5 --no-build-isolation -r requirements-prod-ml.txt
+          # Install beautifulsoup4 explicitly before main requirements to avoid import errors
+          pip install --timeout 1800 --retries 5 beautifulsoup4>=4.12.0
+          pip install --timeout 1800 --retries 5 --no-cache-dir -r requirements-prod-ml.txt
 
       - name: Run pip-audit security scan
         continue-on-error: true
