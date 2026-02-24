@@ -140,39 +140,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setIsLoading(true);
     setError(null);
     try {
-      if (supabase) {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw new Error(error.message || 'Falha no login');
-        if (!data.session || !data.user) throw new Error('Sessão inválida');
-        setUser(await mapSupabaseUser(data.user));
-        setSession(data.session);
-      } else if (baseUrl) {
-        // Backend API auth (only when API URL is explicitly configured)
-        const res = await fetch(`${baseUrl}/api/v1/auth/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || 'Falha no login');
-        localStorage.setItem('access_token', data.access_token || 'local-token');
-        localStorage.setItem('refresh_token', data.refresh_token || 'local-refresh');
-        setUser({
-          id: data.user?.id || 'local-user',
-          email: email,
-          name: data.user?.name || email.split('@')[0],
-          role: data.user?.role || 'user',
-        });
-        setSession({ access_token: data.access_token, refresh_token: data.refresh_token } as any);
-      } else {
-        throw new Error('Servidor de autenticação não disponível. Verifique a conexão.');
-      }
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw new Error(error.message || 'Falha no login');
+      if (!data.session || !data.user) throw new Error('Sessão inválida');
+      setUser(await mapSupabaseUser(data.user));
+      setSession(data.session);
     } catch (err) {
-      let message = err instanceof Error ? err.message : 'Falha no login';
-      // User-friendly error for network failures
-      if (message.toLowerCase().includes('failed to fetch') || message.toLowerCase().includes('network')) {
-        message = 'Não foi possível conectar ao servidor. Verifique sua conexão ou tente novamente.';
-      }
+      const message = err instanceof Error ? err.message : 'Falha no login';
       setError(message);
       throw new Error(message);
     } finally {
@@ -187,30 +161,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (!userData.name || !userData.email || !userData.password) {
         throw new Error('Todos os campos obrigatórios devem ser preenchidos');
       }
-      if (supabase) {
-        const { data, error } = await supabase.auth.signUp({
-          email: userData.email,
-          password: userData.password,
-          options: {
-            data: {
-              full_name: userData.name,
-              company_name: userData.company || '',
-              role: 'user',
-            },
+      const { data, error } = await supabase.auth.signUp({
+        email: userData.email,
+        password: userData.password,
+        options: {
+          data: {
+            full_name: userData.name,
+            company_name: userData.company || '',
+            role: 'user',
           },
-        });
-        if (error) throw new Error(error.message || 'Falha no cadastro');
-      } else {
-        // Fallback: backend API register
-        const apiUrl = baseUrl || 'http://localhost:8000';
-        const res = await fetch(`${apiUrl}/api/v1/auth/register`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(userData),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || 'Falha no cadastro');
-      }
+        },
+      });
+      if (error) throw new Error(error.message || 'Falha no cadastro');
       setError('Cadastro realizado com sucesso! Verifique seu e-mail para ativar a conta.');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Falha no cadastro';

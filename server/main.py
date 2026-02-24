@@ -225,6 +225,7 @@ from api.physical_risk import router as physical_risk_router
 from api.policy_pricing import router as policy_pricing_router
 from api.policy_uncertainty import router as policy_uncertainty_router
 from api.policy_valuation import router as policy_valuation_router
+from api.policy_risk_monitor import router as policy_risk_monitor_router
 from api.probabilistic_climate_scenarios import router as probabilistic_climate_scenarios_router
 from api.previsao import router as previsao_router
 from api.pricing import router as pricing_router
@@ -1473,6 +1474,11 @@ try:
         policy_pricing_router,
         prefix=f"{API_PREFIX}/policy-pricing",
         tags=["policy-pricing"],
+    )
+    app.include_router(
+        policy_risk_monitor_router,
+        prefix=f"{API_PREFIX}/risk-monitor",
+        tags=["risk-monitor"],
     )
     app.include_router(
         probabilistic_climate_scenarios_router,

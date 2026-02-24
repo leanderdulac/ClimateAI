@@ -10,6 +10,7 @@ const WelcomePage = lazy(() => import('@/pages/Welcome').then(m => ({ default: m
 const TokenizationPage = lazy(() => import('@/pages/TokenizationPage').then(m => ({ default: m.TokenizationPage })));
 const AnalyticsPage = lazy(() => import('@/pages/AnalyticsPage').then(m => ({ default: m.AnalyticsPage })));
 const AuthPage = lazy(() => import('@/pages/AuthPage').then(m => ({ default: m.AuthPage })));
+const ActuarialLabPage = lazy(() => import('@/pages/ActuarialLabPage').then(m => ({ default: m.ActuarialLabPage })));
 
 const router = createBrowserRouter([
   {
@@ -67,13 +68,11 @@ const router = createBrowserRouter([
     ),
   },
   {
-    path: "/parametric-simulator",
+    path: "/actuarial-lab",
     element: (
       <ProtectedRoute>
         <Suspense fallback={<PageLoader />}>
-          <div className="container mx-auto py-8">
-            <ParametricSimulator />
-          </div>
+          <ActuarialLabPage />
         </Suspense>
       </ProtectedRoute>
     ),

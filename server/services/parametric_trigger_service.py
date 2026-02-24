@@ -19,6 +19,7 @@ import numpy as np
 from services.brazil_disaster_alerts_service import BrazilDisasterAlertService
 from services.brazil_weather_service import BrazilWeatherService
 from services.copernicus_service import CopernicusService
+from services.hybrid_climate_index import HybridClimateIndex
 
 logger = logging.getLogger(__name__)
 
@@ -83,6 +84,7 @@ class ParametricTriggerService:
         self.disaster_alerts = BrazilDisasterAlertService()
         self.weather_service = BrazilWeatherService()
         self.copernicus_service = CopernicusService()
+        self.hybrid_index = HybridClimateIndex()
         
         # Cache de verificações
         self.verifications: Dict[str, TriggerVerification] = {}
@@ -189,7 +191,22 @@ class ParametricTriggerService:
             end_date = datetime.now()
             start_date = end_date - timedelta(days=7)
             
-            # Tentar múltiplas fontes
+            # Use HybridClimateIndex for rainfall triggers
+            if policy.trigger_type == TriggerType.RAINFALL.value:
+                try:
+                    df = self.hybrid_index.fetch_by_coordinates(
+                        lat=policy.location_latitude,
+                        lon=policy.location_longitude,
+                        data_inicio=start_date.strftime("%Y-%m-%d"),
+                        data_fim=end_date.strftime("%Y-%m-%d")
+                    )
+                    if not df.empty and "acumulado_mm" in df.columns:
+                        total_rainfall = df["acumulado_mm"].sum()
+                        return float(total_rainfall)
+                except Exception as e:
+                    logger.warning(f"Hybrid climate index failed for rainfall: {e}")
+            
+            # Tentar múltiplas fontes (fallback original para outros tipos)
             sources = [
                 self.weather_service.get_historical_data,
                 self.copernicus_service.get_era5_data

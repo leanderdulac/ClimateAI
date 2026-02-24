@@ -11,8 +11,7 @@ import {
   Menu,
   X,
   ChevronDown,
-  Settings,
-  User,
+  FlaskConical as Lab,
   LogOut,
   UserCircle
 } from "lucide-react";
@@ -41,13 +40,13 @@ const navigationItems: NavigationItem[] = [
     label: "Analytics",
     href: "/analytics",
     icon: BarChart3,
-    description: "Análises avançadas"
+    description: "Portfolio & Riscos"
   },
   {
-    label: "Simulador Paramétrico",
-    href: "/parametric-simulator",
-    icon: Globe,
-    description: "Precificação e Risco"
+    label: "Lab Atuarial",
+    href: "/actuarial-lab",
+    icon: Lab,
+    description: "Design & Backtesting"
   }
 ];
 

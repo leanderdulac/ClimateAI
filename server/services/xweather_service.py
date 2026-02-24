@@ -11,6 +11,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 from dataclasses import dataclass
 from services.embrapa_service import EmbrapaService
+from config.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -67,15 +68,11 @@ class XWeatherService:
     """
     Serviço de integração com XWeather API
     Documentação: https://www.xweather.com/develop
-    
-    API Keys configuradas:
-    - client_id: gIvJgm7aucflvyPpN4aMu
-    - client_secret: k2cfveiiBwIW5Q8dPnjOCxveYsYvhfjWUvni5MnQ
     """
     
-    # XWeather API credentials
-    CLIENT_ID = "gIvJgm7aucflvyPpN4aMu"
-    CLIENT_SECRET = "k2cfveiiBwIW5Q8dPnjOCxveYsYvhfjWUvni5MnQ"
+    # XWeather API credentials (loaded from settings/env)
+    CLIENT_ID = settings.XWEATHER_CLIENT_ID
+    CLIENT_SECRET = settings.XWEATHER_CLIENT_SECRET
     
     # API endpoints
     BASE_URL = "https://data.api.xweather.com"
@@ -398,7 +395,7 @@ class XWeatherService:
         return {
             'service': 'XWeather Integration',
             'status': 'active',
-            'api_key_configured': bool(self.CLIENT_ID and self.CLIENT_SECRET),
+            'api_key_configured': bool(settings.XWEATHER_CLIENT_ID and settings.XWEATHER_CLIENT_SECRET),
             'base_url': self.BASE_URL,
             'endpoints': [
                 'conditions',

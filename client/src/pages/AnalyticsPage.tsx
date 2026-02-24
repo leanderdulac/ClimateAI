@@ -1,164 +1,149 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useTranslation } from '@/hooks/useTranslation';
 import {
-  BarChart3,
   TrendingUp,
-  TrendingDown,
   Activity,
-  Users,
-  DollarSign,
-  Calendar,
-  MapPin,
-  Cloud,
-  Thermometer,
-  Droplets,
-  Wind
+  Shield,
+  ArrowUpRight,
+  ArrowDownRight,
+  Percent
 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { parametricApi, SIPSPerformanceSummary } from "@/lib/parametricApi";
+import { BrasilRiskMap } from "@/components/BrasilRiskMap";
+import { RealTimeRiskMonitor } from "@/components/RealTimeRiskMonitor";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function AnalyticsPage() {
   const { t } = useTranslation();
+  const [data, setData] = useState<SIPSPerformanceSummary | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    parametricApi.getPerformanceSummary()
+      .then(setData)
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <DashboardLayout title={t('analytics.title')} subtitle={t('analytics.subtitle')}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-32 w-full" />)}
+        </div>
+        <Skeleton className="h-[400px] w-full" />
+      </DashboardLayout>
+    );
+  }
+
+  const metrics = data?.dashboard_summary.current_metrics;
+  const improvements = data?.dashboard_summary.improvements;
+
+  const formatPercent = (val: number) => {
+    return (val * 100).toFixed(1) + '%';
+  };
+
   return (
     <DashboardLayout
       title={t('analytics.title')}
       subtitle={t('analytics.subtitle')}
     >
-      {/* Key Metrics */}
+      {/* Key Metrics - SIPS PERFORMANCE */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Card>
+        <Card className="border-emerald-100 bg-emerald-50/10">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('analytics.metrics.totalVolume')}</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Margem Líquida</CardTitle>
+            <TrendingUp className="h-4 w-4 text-emerald-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">R$ 2.4M</div>
-            <p className="text-xs text-muted-foreground">
-              <span className="text-green-600 flex items-center gap-1">
-                <TrendingUp className="h-3 w-3" />
-                +12.5%
+            <div className="text-2xl font-bold text-emerald-700">{formatPercent(metrics?.margem_liquida || 0)}</div>
+            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+              <span className="text-emerald-600 flex items-center">
+                <ArrowUpRight className="h-3 w-3" />
+                {improvements?.margin_improvement}
               </span>
-              {t('analytics.metrics.lastMonth')}
+              vs baseline
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-blue-100 bg-blue-50/10">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('analytics.metrics.activeTokens')}</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Capital Econômico</CardTitle>
+            <Shield className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">89</div>
-            <p className="text-xs text-muted-foreground">
-              <span className="text-green-600 flex items-center gap-1">
-                <TrendingUp className="h-3 w-3" />
-                +8.2%
+            <div className="text-2xl font-bold text-blue-700">R$ 52M</div>
+            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+              <span className="text-blue-600 flex items-center">
+                <ArrowUpRight className="h-3 w-3" />
+                +15%
               </span>
-              {t('analytics.metrics.newTokensMonth')}
+              crescimento anual
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-orange-100 bg-orange-50/10">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('analytics.metrics.activeUsers')}</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Taxa de Sinistralidade</CardTitle>
+            <Activity className="h-4 w-4 text-orange-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1,247</div>
-            <p className="text-xs text-muted-foreground">
-              <span className="text-red-600 flex items-center gap-1">
-                <TrendingDown className="h-3 w-3" />
-                -2.1%
+            <div className="text-2xl font-bold text-orange-700">{formatPercent(metrics?.taxa_sinistralidade || 0)}</div>
+            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+              <span className="text-emerald-600 flex items-center">
+                <ArrowDownRight className="h-3 w-3" />
+                {improvements?.claim_rate_improvement}
               </span>
-              {t('analytics.metrics.lastWeek')}
+              melhoria de eficiência
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-purple-100 bg-purple-50/10">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('analytics.metrics.climateEvents')}</CardTitle>
-            <Cloud className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">SIPS Impact Score</CardTitle>
+            <Percent className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">156</div>
-            <p className="text-xs text-muted-foreground">
-              {t('analytics.metrics.monitoredToday')}
+            <div className="text-2xl font-bold text-purple-700">{data?.dashboard_summary.sips_impact_score.toFixed(1)}/100</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Índice de impacto atuarial otimizado
             </p>
           </CardContent>
         </Card>
       </div>
 
+      {/* Real-time Risk Monitor */}
+      <div className="mb-8">
+        <RealTimeRiskMonitor />
+      </div>
+
       {/* Charts and Analytics */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('analytics.performance.title')}</CardTitle>
-            <CardDescription>
-              {t('analytics.performance.subtitle')}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64 flex items-center justify-center bg-gradient-to-br from-blue-50 to-green-50 rounded-lg">
-              <div className="text-center">
-                <BarChart3 className="h-12 w-12 text-blue-500 mx-auto mb-2" />
-                <p className="text-sm text-gray-600">Gráfico de Performance</p>
-                <p className="text-xs text-gray-500 mt-1">Implementação em desenvolvimento</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <div className="lg:col-span-2">
+          <BrasilRiskMap />
+        </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>{t('analytics.distribution.title')}</CardTitle>
+            <CardTitle className="text-sm font-medium">Insights Chave</CardTitle>
             <CardDescription>
-              {t('analytics.distribution.subtitle')}
+              Análise automatizada do portfólio
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-blue-500" />
-                  <span className="text-sm">Sudeste</span>
+              {data?.key_findings.map((finding, i) => (
+                <div key={i} className="flex gap-3 text-sm p-3 rounded-lg bg-muted/30 border border-border/50">
+                  <div className="h-2 w-2 rounded-full bg-primary mt-1.5 shrink-0" />
+                  <p className="text-muted-foreground">{finding}</p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-24 h-2 bg-gray-200 rounded-full">
-                    <div className="w-3/4 h-2 bg-blue-500 rounded-full"></div>
-                  </div>
-                  <span className="text-sm font-medium">75%</span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-green-500" />
-                  <span className="text-sm">Sul</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-24 h-2 bg-gray-200 rounded-full">
-                    <div className="w-1/2 h-2 bg-green-500 rounded-full"></div>
-                  </div>
-                  <span className="text-sm font-medium">50%</span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-orange-500" />
-                  <span className="text-sm">Nordeste</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-24 h-2 bg-gray-200 rounded-full">
-                    <div className="w-1/4 h-2 bg-orange-500 rounded-full"></div>
-                  </div>
-                  <span className="text-sm font-medium">25%</span>
-                </div>
-              </div>
+              ))}
             </div>
           </CardContent>
         </Card>
@@ -179,40 +164,26 @@ export function AnalyticsPage() {
                 <TrendingUp className="h-4 w-4 text-green-600" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium">Novo token criado</p>
-                <p className="text-xs text-gray-600">Token de seca na região Sudeste - Valor: R$ 50.000</p>
+                <p className="text-sm font-medium">Otimização de Portfólio Concluída</p>
+                <p className="text-xs text-gray-600">Redução de exposição em áreas de alto risco no Nordeste.</p>
               </div>
               <div className="text-right">
                 <p className="text-xs text-gray-500">2h atrás</p>
-                <Badge variant="secondary" className="text-xs">Sucesso</Badge>
+                <Badge variant="secondary" className="text-xs">Eficiência</Badge>
               </div>
             </div>
 
             <div className="flex items-center gap-4 p-4 border rounded-lg">
               <div className="p-2 bg-blue-100 rounded-full">
-                <Thermometer className="h-4 w-4 text-blue-600" />
+                <Shield className="h-4 w-4 text-blue-600" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium">Alerta climático detectado</p>
-                <p className="text-xs text-gray-600">Temperatura acima do normal em São Paulo</p>
+                <p className="text-sm font-medium">Rebalanceamento de Capital</p>
+                <p className="text-xs text-gray-600">Alocação de R$ 2.5M para cobertura de Seca.</p>
               </div>
               <div className="text-right">
-                <p className="text-xs text-gray-500">4h atrás</p>
-                <Badge variant="outline" className="text-xs">Alerta</Badge>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4 p-4 border rounded-lg">
-              <div className="p-2 bg-purple-100 rounded-full">
-                <Users className="h-4 w-4 text-purple-600" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium">Novo usuário registrado</p>
-                <p className="text-xs text-gray-600">Empresa agrícola do Paraná aderiu à plataforma</p>
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-gray-500">6h atrás</p>
-                <Badge variant="secondary" className="text-xs">Registro</Badge>
+                <p className="text-xs text-gray-500">5h atrás</p>
+                <Badge variant="outline" className="text-xs">Ajuste</Badge>
               </div>
             </div>
           </div>

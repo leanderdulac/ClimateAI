@@ -1,0 +1,420 @@
+[
+  {
+    "id": "aecec78d-15e2-4ce4-b017-2cf748005571",
+    "owner_uuid": "f994026b1e7705094000936698c28c9f5d5499cb",
+    "spec": {
+      "name": "climateai",
+      "services": [
+        {
+          "name": "backend",
+          "github": {
+            "repo": "leanderdulac/ClimateAI",
+            "branch": "main",
+            "deploy_on_push": true
+          },
+          "dockerfile_path": "server/Dockerfile",
+          "source_dir": ".",
+          "envs": [
+            {
+              "key": "PYTHONUNBUFFERED",
+              "value": "1",
+              "scope": "RUN_AND_BUILD_TIME"
+            },
+            {
+              "key": "ENVIRONMENT",
+              "value": "production",
+              "scope": "RUN_AND_BUILD_TIME"
+            }
+          ],
+          "instance_size_slug": "professional-xs",
+          "instance_count": 1,
+          "http_port": 8000,
+          "health_check": {
+            "http_path": "/health"
+          }
+        }
+      ],
+      "static_sites": [
+        {
+          "name": "frontend",
+          "github": {
+            "repo": "leanderdulac/ClimateAI",
+            "branch": "main",
+            "deploy_on_push": true
+          },
+          "build_command": "npm install \u0026\u0026 npm run build",
+          "source_dir": "client",
+          "output_dir": "dist",
+          "envs": [
+            {
+              "key": "VITE_API_BASE_URL",
+              "value": "${backend.PRIVATE_URL}",
+              "scope": "BUILD_TIME"
+            }
+          ],
+          "catchall_document": "index.html"
+        }
+      ],
+      "region": "nyc",
+      "ingress": {
+        "rules": [
+          {
+            "match": {
+              "path": {
+                "prefix": "/api"
+              }
+            },
+            "component": {
+              "name": "backend"
+            }
+          },
+          {
+            "match": {
+              "path": {
+                "prefix": "/"
+              }
+            },
+            "component": {
+              "name": "frontend"
+            }
+          }
+        ]
+      }
+    },
+    "last_deployment_active_at": "2026-02-20T18:03:32Z",
+    "created_at": "2025-10-15T01:01:48Z",
+    "updated_at": "2026-02-20T18:10:28Z",
+    "active_deployment": {
+      "id": "eba24487-33cd-4c7f-8860-b508c6c0b238",
+      "spec": {
+        "name": "climateai",
+        "services": [
+          {
+            "name": "backend",
+            "image": {
+              "registry_type": "DOCR",
+              "registry": "climateai-registry-v1",
+              "repository": "backend",
+              "tag": "v2"
+            },
+            "envs": [
+              {
+                "key": "PYTHONUNBUFFERED",
+                "value": "1",
+                "scope": "RUN_AND_BUILD_TIME"
+              },
+              {
+                "key": "ENVIRONMENT",
+                "value": "production",
+                "scope": "RUN_AND_BUILD_TIME"
+              }
+            ],
+            "instance_size_slug": "professional-xs",
+            "instance_count": 1,
+            "http_port": 8000,
+            "health_check": {
+              "http_path": "/health"
+            }
+          }
+        ],
+        "static_sites": [
+          {
+            "name": "frontend",
+            "github": {
+              "repo": "leanderdulac/ClimateAI",
+              "branch": "main",
+              "deploy_on_push": true
+            },
+            "build_command": "npm install \u0026\u0026 npm run build",
+            "source_dir": "client",
+            "output_dir": "dist",
+            "envs": [
+              {
+                "key": "VITE_API_BASE_URL",
+                "value": "${backend.PRIVATE_URL}",
+                "scope": "BUILD_TIME"
+              }
+            ],
+            "catchall_document": "index.html"
+          }
+        ],
+        "region": "nyc",
+        "ingress": {
+          "rules": [
+            {
+              "match": {
+                "path": {
+                  "prefix": "/api"
+                }
+              },
+              "component": {
+                "name": "backend"
+              }
+            },
+            {
+              "match": {
+                "path": {
+                  "prefix": "/"
+                }
+              },
+              "component": {
+                "name": "frontend"
+              }
+            }
+          ]
+        }
+      },
+      "services": [
+        {
+          "name": "backend"
+        }
+      ],
+      "static_sites": [
+        {
+          "name": "frontend",
+          "source_commit_hash": "8720a85bded1886f9ca6a74b5ccace3c042ce3ba",
+          "buildpacks": [
+            {
+              "id": "heroku/nodejs",
+              "version": "0.325.5",
+              "latest": true,
+              "name": "Node.js",
+              "description": [
+                "Install dependencies using NPM, PNPM or Yarn"
+              ],
+              "docs_link": "https://docs.digitalocean.com/products/app-platform/languages-frameworks/nodejs/"
+            },
+            {
+              "id": "digitalocean/procfile",
+              "version": "0.1.0",
+              "latest": true,
+              "name": "Procfile",
+              "description": [
+                "Configure default run commands from the Procfile if one exists"
+              ]
+            },
+            {
+              "id": "digitalocean/custom",
+              "version": "0.2.0",
+              "latest": true,
+              "name": "Custom Build Command",
+              "description": [
+                "Run the provided custom build command"
+              ],
+              "docs_link": "https://docs.digitalocean.com/products/app-platform/how-to/build-run-commands/"
+            }
+          ]
+        }
+      ],
+      "phase_last_updated_at": "2026-02-20T02:54:17Z",
+      "created_at": "2026-02-20T02:49:49Z",
+      "updated_at": "2026-02-20T02:54:17Z",
+      "cause": "commit 8720a85 pushed to github.com/leanderdulac/ClimateAI/tree/main",
+      "progress": {
+        "pending_steps": 1,
+        "success_steps": 5,
+        "error_steps": 1,
+        "total_steps": 7,
+        "steps": [
+          {
+            "name": "build",
+            "status": "SUCCESS",
+            "steps": [
+              {
+                "name": "initialize",
+                "status": "SUCCESS",
+                "started_at": "2026-02-20T02:49:54.993137547Z",
+                "ended_at": "2026-02-20T02:49:55.618950393Z"
+              },
+              {
+                "name": "components",
+                "status": "SUCCESS",
+                "steps": [
+                  {
+                    "name": "backend",
+                    "status": "SUCCESS",
+                    "started_at": "0001-01-01T00:00:00Z",
+                    "ended_at": "0001-01-01T00:00:00Z",
+                    "reason": {
+                      "code": "PreBuiltImage",
+                      "message": "Your build job was skipped because you specified a pre-built image."
+                    },
+                    "component_name": "backend",
+                    "message_base": "Building service"
+                  },
+                  {
+                    "name": "frontend",
+                    "status": "SUCCESS",
+                    "started_at": "0001-01-01T00:00:00Z",
+                    "ended_at": "0001-01-01T00:00:00Z",
+                    "component_name": "frontend",
+                    "message_base": "Building static site"
+                  }
+                ],
+                "started_at": "2026-02-20T02:49:55.618987983Z",
+                "ended_at": "2026-02-20T02:51:57.931811742Z"
+              }
+            ],
+            "started_at": "2026-02-20T02:49:54.993065233Z",
+            "ended_at": "2026-02-20T02:51:58.378434263Z"
+          },
+          {
+            "name": "deploy",
+            "status": "ERROR",
+            "steps": [
+              {
+                "name": "initialize",
+                "status": "SUCCESS",
+                "started_at": "2026-02-20T02:52:02.446822316Z",
+                "ended_at": "2026-02-20T02:52:03.682445486Z"
+              },
+              {
+                "name": "components",
+                "status": "ERROR",
+                "steps": [
+                  {
+                    "name": "backend",
+                    "status": "ERROR",
+                    "steps": [
+                      {
+                        "name": "deploy",
+                        "status": "SUCCESS",
+                        "started_at": "0001-01-01T00:00:00Z",
+                        "ended_at": "0001-01-01T00:00:00Z",
+                        "component_name": "backend",
+                        "message_base": "Deploying service"
+                      },
+                      {
+                        "name": "wait",
+                        "status": "ERROR",
+                        "started_at": "0001-01-01T00:00:00Z",
+                        "ended_at": "0001-01-01T00:00:00Z",
+                        "reason": {
+                          "code": "DeployContainerHealthChecksFailed",
+                          "message": "Your deploy failed because your container did not respond to health checks."
+                        },
+                        "component_name": "backend",
+                        "message_base": "Waiting for service"
+                      }
+                    ],
+                    "started_at": "0001-01-01T00:00:00Z",
+                    "ended_at": "0001-01-01T00:00:00Z",
+                    "reason": {
+                      "code": "DeployContainerHealthChecksFailed",
+                      "message": "Your deploy failed because your container did not respond to health checks."
+                    },
+                    "component_name": "backend"
+                  }
+                ],
+                "started_at": "2026-02-20T02:52:03.682469149Z",
+                "ended_at": "2026-02-20T02:54:16.286066388Z",
+                "reason": {
+                  "code": "DeployContainerHealthChecksFailed",
+                  "message": "Your deploy failed because your container did not respond to health checks."
+                }
+              },
+              {
+                "name": "finalize",
+                "status": "PENDING",
+                "started_at": "0001-01-01T00:00:00Z",
+                "ended_at": "0001-01-01T00:00:00Z"
+              }
+            ],
+            "started_at": "2026-02-20T02:52:02.446800406Z",
+            "ended_at": "2026-02-20T02:54:16.596123976Z",
+            "reason": {
+              "code": "DeployContainerHealthChecksFailed",
+              "message": "Your deploy failed because your container did not respond to health checks."
+            }
+          }
+        ],
+        "summary_steps": [
+          {
+            "name": "deploy.components.backend.wait",
+            "status": "ERROR",
+            "started_at": "0001-01-01T00:00:00Z",
+            "ended_at": "0001-01-01T00:00:00Z",
+            "reason": {
+              "code": "DeployContainerHealthChecksFailed",
+              "message": "Your deploy failed because your container did not respond to health checks."
+            },
+            "component_name": "backend",
+            "message_base": "Waiting for service"
+          }
+        ]
+      },
+      "phase": "ERROR",
+      "tier_slug": "professional",
+      "previous_deployment_id": "90d945b6-d7b4-4366-bc4d-c13255fc2cbc",
+      "cause_details": {
+        "git_push": {
+          "github": {
+            "repo": "leanderdulac/ClimateAI",
+            "branch": "main"
+          },
+          "username": "leanderdulac",
+          "commit_sha": "8720a85bded1886f9ca6a74b5ccace3c042ce3ba",
+          "commit_message": "🐛 Fix: null guard for Supabase auth in login/register\n\n- Added null checks for supabase client in AuthContext.tsx\n- When Supabase is unavailable, falls back to backend API auth\n- Fixes 'Cannot read properties of null (reading auth)' crash"
+        },
+        "type": "DEPLOY_ON_PUSH"
+      },
+      "timing": {
+        "pending": "5.993137547s",
+        "build_total": "123.385296716s",
+        "build_billable": "93.375657626s",
+        "components": [
+          {
+            "name": "frontend",
+            "build_billable": "93.375657626s"
+          }
+        ]
+      }
+    },
+    "last_deployment_created_at": "2026-02-20T18:03:32Z",
+    "region": {
+      "slug": "nyc",
+      "label": "New York",
+      "flag": "usa",
+      "continent": "North America",
+      "data_centers": [
+        "nyc1",
+        "nyc3"
+      ]
+    },
+    "tier_slug": "professional",
+    "build_config": {
+      "cnb_versioning": {
+        "buildpacks": [
+          {
+            "id": "digitalocean/custom",
+            "latest": true,
+            "name": "Custom Build Command",
+            "description": [
+              "Run the provided custom build command"
+            ],
+            "docs_link": "https://docs.digitalocean.com/products/app-platform/how-to/build-run-commands/"
+          },
+          {
+            "id": "digitalocean/procfile",
+            "latest": true,
+            "name": "Procfile",
+            "description": [
+              "Configure default run commands from the Procfile if one exists"
+            ]
+          },
+          {
+            "id": "heroku/nodejs",
+            "latest": true,
+            "name": "Node.js",
+            "description": [
+              "Install dependencies using NPM, PNPM or Yarn"
+            ],
+            "docs_link": "https://docs.digitalocean.com/products/app-platform/languages-frameworks/nodejs/"
+          }
+        ],
+        "stack_id": "heroku-22"
+      }
+    },
+    "project_id": "6b1e670a-bfc9-413e-8b1a-17268c628d41"
+  }
+]

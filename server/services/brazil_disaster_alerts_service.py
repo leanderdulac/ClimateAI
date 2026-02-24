@@ -16,9 +16,11 @@ CEMADEN API:
 import logging
 import requests
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 import json
+from typing import Dict, List, Optional, Any
+
+from services.cemaden_service import CemadenService
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +59,7 @@ class BrazilDisasterAlertService:
         """Inicializar serviço"""
         self.cache: List[BrazilDisasterAlert] = []
         self.last_update: Optional[datetime] = None
+        self.cemaden_client = CemadenService()
         logger.info("BrazilDisasterAlertService initialized")
     
     def fetch_alerts(
@@ -115,15 +118,55 @@ class BrazilDisasterAlertService:
         """
         Buscar alertas do CEMADEN
         
-        CEMADEN fornece dados abertos via:
-        - http://www.cemaden.gov.br/dados-abertos/
-        - Alertas de chuva por município
+        Primeiro tenta buscar dados processados da REST API (volumes altos de precipitação real).
+        Caso a rota REST falhe, realiza o fallback para o serviço de dados abertos WFS.
         """
         alerts = []
         
+        # 1. Tentativa via API REST (cemaden_service.py)
         try:
-            # CEMADEN não tem API REST pública, usar dados abertos
-            # Dados de alertas de chuva
+            recent_data = self.cemaden_client.get_dados_recentes()
+            if recent_data and isinstance(recent_data, list):
+                for data in recent_data:
+                    # Acumulados grandes = alerta
+                    # Dependendo da resposta do cemaden, a chave pode variar
+                    acumulado = data.get("acumulado", data.get("acumulado_24h", 0))
+                    try:
+                        acumulado = float(acumulado) if acumulado is not None else 0.0
+                    except ValueError:
+                        acumulado = 0.0
+                        
+                    if acumulado > 50.0:
+                        city = data.get("nome", data.get("municipio", "Local Indefinido"))
+                        state = data.get("uf", "BR")
+                        
+                        intensity = 'Muito Alto' if acumulado > 100 else 'Alto' if acumulado > 70 else 'Médio'
+                        severity_level = 4 if intensity == 'Muito Alto' else 3 if intensity == 'Alto' else 2
+                        
+                        alerts.append(BrazilDisasterAlert(
+                            alert_id=f"CEMADEN-REST-{data.get('codestacao', str(hash(city)))}",
+                            title=f"Alerta de Chuva - {intensity}",
+                            disaster_type='Chuva',
+                            severity=intensity,
+                            severity_level=severity_level,
+                            start_time=datetime.now(),
+                            end_time=datetime.now() + timedelta(hours=24),
+                            state=state,
+                            cities=[city],
+                            description=f"Alerta medido de Chuva com intensidade {intensity} para {city} - {state} (Acumulado nas últimas 24h: {acumulado}mm)",
+                            source='CEMADEN REST API',
+                            link=None
+                        ))
+                        
+                if alerts:
+                    logger.info(f"Generated {len(alerts)} alerts mapped from CEMADEN REST precipitation data")
+                    return alerts
+        except Exception as e:
+            logger.error(f"Error generating REST alerts from CEMADEN: {e}")
+        
+        # 2. Fallback WFS GoServer
+        try:
+            # CEMADEN dados de alertas de chuva via GeoServer
             url = f"{self.CEMADEN_ALERTAS_URL}?service=WFS&version=1.0.0&request=GetFeature&typeName=cemaden:alerta_municipio&outputFormat=application/json&maxFeatures=100"
             
             response = requests.get(url, timeout=10)
@@ -139,7 +182,7 @@ class BrazilDisasterAlertService:
                             alerts.append(alert)
             
         except Exception as e:
-            logger.error(f"Error fetching CEMADEN alerts: {e}")
+            logger.error(f"Error fetching CEMADEN WFS alerts: {e}")
             # Fallback para dados mock
             alerts = self._get_cemaden_mock_alerts()
         

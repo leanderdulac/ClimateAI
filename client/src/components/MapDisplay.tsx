@@ -107,6 +107,7 @@ export function MapDisplay() {
                 {/* Map container with rounded corners */}
                 <div className="absolute inset-0 rounded-b-2xl overflow-hidden">
                     <MapContainer
+                        key={`${selectedLocation.latitude}-${selectedLocation.longitude}`}
                         center={position}
                         zoom={10}
                         style={{ height: '100%', width: '100%' }}

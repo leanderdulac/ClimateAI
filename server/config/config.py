@@ -64,6 +64,8 @@ class Settings(BaseSettings):
     GROK_API_KEY: Optional[str] = os.getenv("GROK_API_KEY")
     OPENMETEO_API_KEY: Optional[str] = os.getenv("OPENMETEO_API_KEY")
     NOAA_API_KEY: Optional[str] = os.getenv("NOAA_API_KEY")
+    XWEATHER_CLIENT_ID: Optional[str] = os.getenv("XWEATHER_CLIENT_ID")
+    XWEATHER_CLIENT_SECRET: Optional[str] = os.getenv("XWEATHER_CLIENT_SECRET")
 
     # Configurações OpenMeteo
     OPENMETEO_CACHE_DIR: str = ".cache"
@@ -102,8 +104,7 @@ class Settings(BaseSettings):
         if self.SUPABASE_DB_HOST and self.SUPABASE_DB_PASSWORD:
             return (
                 f"postgresql+asyncpg://{self.SUPABASE_DB_USER}:"
-                f"{self.SUPABASE_DB_PASSWORD}@{self.SUPABASE_DB_HOST}:"
-                f"{self.SUPABASE_DB_PORT}/{self.SUPABASE_DB_NAME}?sslmode=require"
+                f"{self.SUPABASE_DB_PORT}/{self.SUPABASE_DB_NAME}"
             )
 
         return None
@@ -120,10 +121,12 @@ class Settings(BaseSettings):
             
         if not self.DATABASE_URL:
             supabase_url = self._build_supabase_database_url()
-            if supabase_url:
-                self.DATABASE_URL = supabase_url
-            else:
+            if not self.DATABASE_URL:
                 self.DATABASE_URL = "postgresql+asyncpg://climateai:climateai123@localhost:5432/climateai"
+                
+        # Fix for asyncpg: remove ?sslmode=require which is not supported natively in the connection string
+        if self.DATABASE_URL and "?sslmode=require" in self.DATABASE_URL:
+            self.DATABASE_URL = self.DATABASE_URL.replace("?sslmode=require", "")
 
     # Configurações de produção
     DB_PASSWORD: Optional[str] = os.getenv("DB_PASSWORD")

@@ -16,10 +16,11 @@ from services.parametric_trigger_service import (
     TriggerType,
     TriggerStatus
 )
+from services.hybrid_climate_index import HybridClimateIndex
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/v1/parametric-triggers", tags=["parametric-triggers"])
+router = APIRouter(tags=["parametric-triggers"])
 
 # Instância global do serviço
 trigger_service = ParametricTriggerService()
@@ -99,6 +100,72 @@ class ServiceStatusResponse(BaseModel):
 # ============================================================================
 # API Endpoints
 # ============================================================================
+
+@router.get("/simulate-hybrid")
+async def simulate_hybrid_index(
+    municipio: str = Query(..., description="Nome do município"),
+    uf: str = Query(..., description="Sigla da UF (ex: SP)"),
+    data_inicio: str = Query("2025-01-01", description="Data início YYYY-MM-DD"),
+    data_fim: str = Query(datetime.now().strftime("%Y-%m-%d"), description="Data fim YYYY-MM-DD"),
+    insured_capital: float = Query(100000.0, description="Capital segurado para simulação")
+):
+    """
+    Simula o Índice Híbrido Climático para uma cidade específica (CEMADEN + OpenMeteo)
+    retornando os dados de precipitação e a precificação paramétrica estimada.
+    """
+    try:
+        start_dt = datetime.strptime(data_inicio, "%Y-%m-%d").date()
+        end_dt = datetime.strptime(data_fim, "%Y-%m-%d").date()
+        today = datetime.now().date()
+        
+        if start_dt > today or end_dt > today:
+            return {
+                "success": False,
+                "error": "A simulação atuarial paramétrica requer dados históricos. Selecione datas até o dia de hoje."
+            }
+            
+        if start_dt > end_dt:
+            return {
+                "success": False,
+                "error": "A data de início deve ser anterior ou igual à data de fim."
+            }
+
+        index = HybridClimateIndex()
+        df = index.fetch_municipal_data(
+            municipio=municipio,
+            uf=uf,
+            data_inicio=data_inicio,
+            data_fim=data_fim
+        )
+        
+        if df.empty:
+            return {"error": "Nenhum dado retornado para este município e período."}
+            
+        df_payout = index.calculate_parametric_payout(df, insured_capital=insured_capital)
+        report = index.generate_pricing_report(df_payout)
+        
+        # Import json localmente para conversao segura
+        import json
+        
+        # Converte 'data' (timestamp) em string se existir
+        if "data" in df_payout.columns:
+            df_payout["data"] = df_payout["data"].dt.strftime("%Y-%m-%d")
+            
+        # Usa to_json do Pandas que lida nativamente com NaN e np.float64
+        recent_data = json.loads(df_payout.to_json(orient="records"))
+        
+        return {
+            "success": True,
+            "municipio": municipio,
+            "uf": uf,
+            "period": f"{data_inicio} to {data_fim}",
+            "report": report,
+            "recent_data_sample": recent_data
+        }
+    except Exception as e:
+        logger.error(f"Erro simulando indice hibrido: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Erro simulando: {str(e)}")
+
 
 @router.post("/policies/register")
 async def register_policy(request: RegisterPolicyRequest):

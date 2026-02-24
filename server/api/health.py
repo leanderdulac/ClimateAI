@@ -73,8 +73,13 @@ class DatabaseHealthCheck:
             is_sqlite = self.database_url.startswith("sqlite")
             connect_args = {"check_same_thread": False} if is_sqlite else {}
             
-            print(f"CRITICAL HEALTHCHECK URL: {self.database_url}")
-            engine = create_async_engine(self.database_url, connect_args=connect_args)
+            if db_url.startswith("postgresql"):
+                if "asyncpg" in db_url:
+                    connect_args["prepared_statement_cache_size"] = 0
+                    connect_args["statement_cache_size"] = 0
+            
+            print(f"CRITICAL HEALTHCHECK URL: {db_url}")
+            engine = create_async_engine(db_url, connect_args=connect_args)
 
             # Teste de conexão assíncrono
             async with engine.connect() as connection:

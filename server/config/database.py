@@ -31,19 +31,7 @@ def _create_engine_and_session_maker(database_url: str):
 
     if is_postgres:
         # Force IPv4 resolution for Supabase to avoid timeouts
-        import socket
-        try:
-            from urllib.parse import urlparse, urlunparse
-            parsed = urlparse(database_url)
-            if parsed.hostname:
-                ip = socket.gethostbyname(parsed.hostname)
-                print(f"Resolved {parsed.hostname} to {ip}")
-                # Reconstruct URL with IP but keep original hostname in args if needed, 
-                # but for asyncpg/sqlalchemy, replacing hostname usually works best for connection.
-                # simpler: just let it be, but the resolution check confirms we can reach it.
-                # Actually, let's create a custom connector or just verify we can reach it.
-        except Exception as e:
-            print(f"Warning: DNS resolution failed: {e}")
+        # Assuming .env provides the correct IPv4 pooler url directly
 
         import ssl
         
@@ -54,15 +42,21 @@ def _create_engine_and_session_maker(database_url: str):
 
         print(f"CRITICAL: create_async_engine is using URL: {database_url}")
 
+        # Add support for pgbouncer (transaction mode pooler) which conflicts with asyncpg caching
+        connect_args = {
+            "server_settings": {"jit": "off"},
+            "ssl": ssl_context
+        }
+        if "asyncpg" in database_url: # Check if asyncpg driver is implied by the URL
+            connect_args["prepared_statement_cache_size"] = 0
+            connect_args["statement_cache_size"] = 0
+
         engine = create_async_engine(
             database_url,
             echo=False,
             pool_size=10,
             max_overflow=20,
-            connect_args={
-                "server_settings": {"jit": "off"},
-                "ssl": ssl_context
-            },
+            connect_args=connect_args,
         )
         async_session_maker = sessionmaker(
             engine, class_=AsyncSession, expire_on_commit=False
@@ -90,6 +84,8 @@ async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
         # Em ambiente de teste, o DATABASE_URL é definido em conftest.py
         # Caso contrário, usamos o settings.DATABASE_URL já calculado (Supabase como primário)
         current_db_url = os.getenv("DATABASE_URL", settings.DATABASE_URL)
+        if current_db_url and "?sslmode=require" in current_db_url:
+            current_db_url = current_db_url.replace("?sslmode=require", "")
         _create_engine_and_session_maker(current_db_url)
 
     async with async_session_maker() as session:
@@ -107,6 +103,8 @@ async def init_db():
     # Garante que o engine e o session_maker foram inicializados
     if engine is None or async_session_maker is None:
         current_db_url = os.getenv("DATABASE_URL", settings.DATABASE_URL)
+        if current_db_url and "?sslmode=require" in current_db_url:
+            current_db_url = current_db_url.replace("?sslmode=require", "")
         _create_engine_and_session_maker(current_db_url)
 
     # Criar tabelas
