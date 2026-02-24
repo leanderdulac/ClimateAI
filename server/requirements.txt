@@ -39,6 +39,7 @@ opentelemetry-instrumentation-fastapi==0.48b0
 opentelemetry-instrumentation-logging==0.48b0
 # Authentication dependencies
 pyjwt[crypto]>=2.8.0
+bcrypt==3.2.2
 passlib[bcrypt]==1.7.4
 # Database migration
 alembic==1.18.1
