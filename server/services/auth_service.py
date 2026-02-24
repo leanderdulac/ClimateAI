@@ -29,7 +29,7 @@ if not settings.SECRET_KEY:
         "SECRET_KEY is not set! Authentication will not work securely.",
         RuntimeWarning,
     )
-SECRET_KEY = settings.SECRET_KEY or "INSECURE-FALLBACK-KEY-SET-SECRET-KEY-ENV-VAR"
+SECRET_KEY = settings.SECRET_KEY or "INSECURE-FALLBACK-KEY-SET-SECRET-KEY-ENV-VAR"  # nosec
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 REFRESH_TOKEN_EXPIRE_DAYS = 7

@@ -9,12 +9,14 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 
 import pytest
+pytestmark = [pytest.mark.integration, pytest.mark.performance]
 
 # ============================================================================
 # TESTS: Response Time Performance
 # ============================================================================
 
 
+@pytest.mark.integration
 @pytest.mark.performance
 @pytest.mark.slow
 class TestResponseTimePerformance:
@@ -70,6 +72,7 @@ class TestResponseTimePerformance:
 # ============================================================================
 
 
+@pytest.mark.integration
 @pytest.mark.performance
 @pytest.mark.slow
 class TestThroughputPerformance:
@@ -111,6 +114,7 @@ class TestThroughputPerformance:
 # ============================================================================
 
 
+@pytest.mark.integration
 @pytest.mark.performance
 @pytest.mark.slow
 class TestMemoryPerformance:
@@ -397,6 +401,8 @@ class TestScalability:
 # ============================================================================
 
 
+@pytest.mark.performance
+@pytest.mark.integration
 @pytest.mark.performance
 class TestHealthCheckBenchmark:
     """Benchmark tests for health checks"""

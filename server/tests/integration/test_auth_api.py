@@ -5,6 +5,7 @@ Testes de integração para a API de autenticação
 import asyncio
 
 import pytest
+pytestmark = [pytest.mark.integration, pytest.mark.requires_db]
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -56,6 +57,8 @@ async def admin_user(db_session: AsyncSession):
     return user
 
 
+@pytest.mark.integration
+@pytest.mark.requires_db
 class TestAuthAPI:
     """Testes de integração para endpoints de autenticação"""
 

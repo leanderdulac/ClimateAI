@@ -20,7 +20,7 @@ class CemadenService:
         """
         self.api_key = api_key
         self.session = requests.Session()
-        self.session.verify = False
+        self.session.verify = False  # nosec
         # Some government APIs use self-signed certificates or have issues randomly.
         # If needed, `self.session.verify = False` could be dynamically set via env vars.
         

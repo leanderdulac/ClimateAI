@@ -4,8 +4,9 @@ Testa endpoints completos com banco de dados
 """
 
 import pytest
+pytestmark = [pytest.mark.integration, pytest.mark.requires_db]
 import asyncio
-from httpx import AsyncClient
+from httpx import AsyncClient, ASGITransport
 from server.main import app
 from server.config.database import get_db_session, init_db, close_db
 from server.config.config import settings
@@ -32,10 +33,12 @@ async def test_db():
 @pytest.fixture
 async def client():
     """Cria cliente HTTP para testes"""
-    async with AsyncClient(app=app, base_url="http://test") as ac:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         yield ac
 
 
+@pytest.mark.integration
+@pytest.mark.requires_db
 class TestHealthEndpoints:
     """Testa endpoints de health check"""
 
@@ -55,6 +58,8 @@ class TestHealthEndpoints:
         assert response.status_code in [200, 404]  # Pode retornar 404 se não tiver endpoint
 
 
+@pytest.mark.integration
+@pytest.mark.requires_db
 class TestAuthEndpoints:
     """Testa endpoints de autenticação"""
 
@@ -124,6 +129,8 @@ class TestAuthEndpoints:
         assert response.status_code == 401
 
 
+@pytest.mark.integration
+@pytest.mark.requires_db
 class TestClimateEndpoints:
     """Testa endpoints de clima"""
 
@@ -155,6 +162,8 @@ class TestClimateEndpoints:
         assert response.status_code == 200
 
 
+@pytest.mark.integration
+@pytest.mark.requires_db
 class TestEventosEndpoints:
     """Testa endpoints de eventos climáticos"""
 
@@ -173,6 +182,8 @@ class TestEventosEndpoints:
         assert isinstance(data, list) or "eventos" in data
 
 
+@pytest.mark.integration
+@pytest.mark.requires_db
 class TestModelagemEndpoints:
     """Testa endpoints de modelagem econômica"""
 
@@ -188,6 +199,8 @@ class TestModelagemEndpoints:
         assert response.status_code == 200
 
 
+@pytest.mark.integration
+@pytest.mark.requires_db
 class TestMathematicalEnginesEndpoints:
     """Testa endpoints de motores matemáticos"""
 
@@ -219,6 +232,8 @@ class TestMathematicalEnginesEndpoints:
         assert response.status_code in [200, 422]
 
 
+@pytest.mark.integration
+@pytest.mark.requires_db
 class TestPerformanceEndpoints:
     """Testa performance de endpoints"""
 

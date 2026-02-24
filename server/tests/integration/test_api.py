@@ -6,6 +6,7 @@ Tests for main.py endpoints and API workflows
 from datetime import datetime, timedelta
 
 import pytest
+pytestmark = [pytest.mark.integration, pytest.mark.requires_db]
 from fastapi.testclient import TestClient
 
 from main import app

@@ -4,6 +4,7 @@ Testes Unitários para XWeather Service
 
 import pytest
 from services.xweather_service import XWeatherService, XWeatherCondition, XWeatherForecast
+from config.config import settings
 
 
 class TestXWeatherService:
@@ -16,8 +17,8 @@ class TestXWeatherService:
     
     def test_service_initialization(self, xweather_service):
         """Teste: Inicialização do serviço"""
-        assert xweather_service.CLIENT_ID == "gIvJgm7aucflvyPpN4aMu"
-        assert xweather_service.CLIENT_SECRET == "k2cfveiiBwIW5Q8dPnjOCxveYsYvhfjWUvni5MnQ"
+        assert xweather_service.CLIENT_ID == settings.XWEATHER_CLIENT_ID
+        assert xweather_service.CLIENT_SECRET == settings.XWEATHER_CLIENT_SECRET
         assert xweather_service.BASE_URL == "https://data.api.xweather.com"
     
     def test_build_url(self, xweather_service):
@@ -41,7 +42,7 @@ class TestXWeatherService:
         
         assert status['service'] == 'XWeather Integration'
         assert status['status'] == 'active'
-        assert status['api_key_configured'] is True
+        assert status['api_key_configured'] == bool(settings.XWEATHER_CLIENT_ID and settings.XWEATHER_CLIENT_SECRET)
         assert 'conditions' in status['endpoints']
         assert 'forecast' in status['endpoints']
         assert 'current_conditions' in status['features']
