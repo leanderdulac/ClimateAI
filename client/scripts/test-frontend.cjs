@@ -1,3 +1,7 @@
+
+/* eslint-env node, es2021 */
+/* global require, document, console, process */
+// eslint-disable-next-line @typescript-eslint/no-require-imports, no-undef
 const puppeteer = require('puppeteer');
 
 (async () => {

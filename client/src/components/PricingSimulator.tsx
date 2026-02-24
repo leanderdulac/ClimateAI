@@ -1,5 +1,38 @@
-import { mlApi, MLPredictionFeatures, MLPredictionResult, externalApi, climateDerivativesApi, policyPricingApi, PolicyPricingRequest, PolicyPricingResult } from '@/lib/api';
-import { useMemo, useState } from 'react';
+// ...existing code...
+
+// Tipos para análise financeira
+type FinancialAnalysis = ReturnType<typeof analyzeFinancialViability> & {
+  annualExpectedLoss?: number;
+  totalExpectedLoss?: number;
+  insurerAnalysis: ReturnType<typeof analyzeFinancialViability>["insurerAnalysis"] & {
+    isProfitable: boolean;
+    netProfit: number;
+    profitMargin: number;
+    profitMarginPercentage: number;
+    profitabilityStatus: string;
+    operatingCosts: {
+      subscription: number;
+      claimsProcessing: number;
+      administrative: number;
+      total: number;
+      annual: number;
+    };
+    lossRatio: number;
+    expenseRatio: number;
+    combinedRatio: number;
+    var95: number;
+    var99: number;
+    expectedShortfall95: number;
+    expectedShortfall99: number;
+    capitalRequirement: number;
+    riskAdjustedReturn: number;
+  };
+  overallAssessment: ReturnType<typeof analyzeFinancialViability>["overallAssessment"] & {
+    isViable: boolean;
+    recommendation: string;
+    rejectionReason: string | null;
+  };
+};
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +40,6 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { ExecutiveDashboard } from './ExecutiveDashboard';
-import { AuditDashboard } from './AuditDashboard';
 import { useLocation } from '@/lib/LocationContext';
 import { usePeriod } from '@/lib/PeriodContext';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -25,10 +57,11 @@ import {
   CloudRain,
   Flame,
   BarChart3,
-  Brain
+  Brain,
+  Zap
 } from "lucide-react";
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, ScatterChart, Scatter, ZAxis, ReferenceLine } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, ScatterChart, Scatter, ReferenceLine } from 'recharts';
 import { BatchResult, computeBatchStats } from '@/hooks/useBatchStats';
 
 // Financial analysis function to properly calculate viability
@@ -46,6 +79,13 @@ const analyzeFinancialViability = (
   const claimsProcessingCost = premium * 0.08; // 8% of premium
   const adminCost = premium * 0.12; // 12% of premium
   const totalOperatingCosts = operatingCosts || (subscriptionCost + claimsProcessingCost + adminCost);
+  const operatingCostsObj = {
+    subscription: subscriptionCost,
+    claimsProcessing: claimsProcessingCost,
+    administrative: adminCost,
+    total: totalOperatingCosts,
+    annual: totalOperatingCosts / coveragePeriod
+  };
 
   // Calculate annual values
   const annualExpectedLoss = (frequency / 100) * Math.min(severity, assetValue);
@@ -81,7 +121,7 @@ const analyzeFinancialViability = (
       netProfit,
       profitMarginPercentage,
       expectedLoss: totalExpectedLoss,
-      operatingCosts: totalOperatingCosts,
+      operatingCosts: operatingCostsObj,
       annualNetProfit: netProfit / coveragePeriod,
       annualExpectedLoss,
       annualOperatingCosts,
@@ -191,7 +231,7 @@ export function PricingSimulator() {
   const [confidence, setConfidence] = useState<number>(95); // %
   const [premium, setPremium] = useState<number>(0);
   const [advancedResults, setAdvancedResults] = useState<any>(null);
-  const [financialAnalysis, setFinancialAnalysis] = useState<any>(null);
+  const [financialAnalysis, setFinancialAnalysis] = useState<FinancialAnalysis | null>(null);
   const [calculating, setCalculating] = useState<boolean>(false);
   const [policySimulations, setPolicySimulations] = useState<any[]>([]);
   const [calcError, setCalcError] = useState<string | null>(null);
@@ -224,7 +264,7 @@ export function PricingSimulator() {
     console.log('[PricingSimulator] frequency:', frequency);
     console.log('[PricingSimulator] severity:', severity);
     console.log('[PricingSimulator] selectedLocation:', selectedLocation);
-
+    
     // Parâmetros base e validações iniciais
     let simAssetValue = assetValue;
     let simFrequency = frequency;
@@ -246,7 +286,7 @@ export function PricingSimulator() {
 
     // Cenário de stress e simulação variável
     let stressResults = null;
-    let batchResults: BatchResult[] = [];
+    const batchResults: BatchResult[] = [];
 
     const logNorm = (mu: number, sigma: number) => Math.exp(mu + sigma * (Math.random() * 2 - 1));
     const genParams = () => {
@@ -375,21 +415,21 @@ export function PricingSimulator() {
         },
       };
       setAdvancedResults(newAdvancedResults);
-      // Se simulação variável, salva lote para exibir
-      if (variableSim && batchResults.length > 0) {
-        setAdvancedResults((prev: any) => ({
-          ...prev,
-          batch: batchResults
-        }));
-      }
+    // Se simulação variável, salva lote para exibir
+    if (variableSim && batchResults.length > 0) {
+      setAdvancedResults((prev: any) => ({
+        ...prev,
+        batch: batchResults
+      }));
+    }
 
-      // Exibir resultados de stress se houver
-      if (stressResults) {
-        setAdvancedResults((prev: any) => ({
-          ...prev,
-          stressScenario: stressResults
-        }));
-      }
+    // Exibir resultados de stress se houver
+    if (stressResults) {
+      setAdvancedResults((prev: any) => ({
+        ...prev,
+        stressScenario: stressResults
+      }));
+    }
 
       // Analyze financial viability using the correct methodology
       const financialAnalysisResult = analyzeFinancialViability(
@@ -481,7 +521,7 @@ export function PricingSimulator() {
 
       // Get ML predictions for sinistrality (can remain as is)
       try {
-        let realTimeData = null;
+        const realTimeData = null;
         try {
           realTimeData = await externalApi.getRealTimeData(
             selectedLocation?.latitude || -15,
@@ -516,9 +556,9 @@ export function PricingSimulator() {
         detail: error?.detail,
         stack: error?.stack
       });
-
+      
       let errorMessage = t('pricing.errors.calculationError') || 'Erro ao calcular prêmio';
-
+      
       if (error?.message) {
         errorMessage += `: ${error.message}`;
       } else if (error?.detail) {
@@ -526,7 +566,7 @@ export function PricingSimulator() {
       } else if (typeof error === 'string') {
         errorMessage += `: ${error}`;
       }
-
+      
       // Adiciona dicas de troubleshooting
       const troubleshootingTips = [
         '\n\nDicas:',
@@ -534,7 +574,7 @@ export function PricingSimulator() {
         '2. Verifique o console do navegador para mais detalhes',
         '3. Tente novamente em alguns instantes'
       ].join('\n');
-
+      
       setCalcError(errorMessage + troubleshootingTips);
       alert(errorMessage);
     } finally {
@@ -558,7 +598,7 @@ export function PricingSimulator() {
           <ol className="list-decimal ml-4">
             {advancedResults?.batch?.map((b: any, idx: number) => (
               <li key={idx}>
-                Valor do bem: R$ {b.assetValue.toLocaleString()} | Frequência: {b.frequency}% | Severidade: R$ {b.severity.toLocaleString()}<br />
+                Valor do bem: R$ {b.assetValue.toLocaleString()} | Frequência: {b.frequency}% | Severidade: R$ {b.severity.toLocaleString()}<br/>
                 {b.premium !== null ? (
                   <>
                     Prêmio: R$ {b.premium.toLocaleString()} | Perda Esperada: R$ {b.loss.toLocaleString()} | Lucro Líquido: R$ {b.netProfit.toLocaleString()} | Margem: {b.margin}%
@@ -575,14 +615,14 @@ export function PricingSimulator() {
             return (
               <>
                 <div className="mt-2 p-2 bg-blue-100 rounded">
-                  <b>Estatísticas do lote:</b><br />
-                  Prêmio: média R$ {stats.premiumStats.mean.toLocaleString(undefined, { maximumFractionDigits: 0 })}, desvio R$ {stats.premiumStats.std.toLocaleString(undefined, { maximumFractionDigits: 0 })}, min R$ {stats.premiumStats.min.toLocaleString()}, max R$ {stats.premiumStats.max.toLocaleString()}<br />
-                  Perda Esperada: média R$ {stats.lossStats.mean.toLocaleString(undefined, { maximumFractionDigits: 0 })}, desvio R$ {stats.lossStats.std.toLocaleString(undefined, { maximumFractionDigits: 0 })}, min R$ {stats.lossStats.min.toLocaleString()}, max R$ {stats.lossStats.max.toLocaleString()}<br />
-                  Lucro Líquido: média R$ {stats.profitStats.mean.toLocaleString(undefined, { maximumFractionDigits: 0 })}, desvio R$ {stats.profitStats.std.toLocaleString(undefined, { maximumFractionDigits: 0 })}, min R$ {stats.profitStats.min.toLocaleString()}, max R$ {stats.profitStats.max.toLocaleString()}<br />
-                  Margem: média {stats.marginStats.mean.toFixed(1)}%, desvio {stats.marginStats.std.toFixed(1)}%, min {stats.marginStats.min.toFixed(1)}%, max {stats.marginStats.max.toFixed(1)}%<br />
-                  Correlação prêmio x lucro: <b>{stats.corrPremioLucro.toFixed(2)}</b><br />
-                  Percentil 10 do lucro: R$ {stats.p10.toLocaleString(undefined, { maximumFractionDigits: 0 })} | Percentil 90: R$ {stats.p90.toLocaleString(undefined, { maximumFractionDigits: 0 })}<br />
-                  Outliers prêmio: {stats.outPremio.length > 0 ? stats.outPremio.map(x => `R$ ${x.toLocaleString()}`).join(', ') : 'nenhum'}<br />
+                  <b>Estatísticas do lote:</b><br/>
+                  Prêmio: média R$ {stats.premiumStats.mean.toLocaleString(undefined, {maximumFractionDigits:0})}, desvio R$ {stats.premiumStats.std.toLocaleString(undefined, {maximumFractionDigits:0})}, min R$ {stats.premiumStats.min.toLocaleString()}, max R$ {stats.premiumStats.max.toLocaleString()}<br/>
+                  Perda Esperada: média R$ {stats.lossStats.mean.toLocaleString(undefined, {maximumFractionDigits:0})}, desvio R$ {stats.lossStats.std.toLocaleString(undefined, {maximumFractionDigits:0})}, min R$ {stats.lossStats.min.toLocaleString()}, max R$ {stats.lossStats.max.toLocaleString()}<br/>
+                  Lucro Líquido: média R$ {stats.profitStats.mean.toLocaleString(undefined, {maximumFractionDigits:0})}, desvio R$ {stats.profitStats.std.toLocaleString(undefined, {maximumFractionDigits:0})}, min R$ {stats.profitStats.min.toLocaleString()}, max R$ {stats.profitStats.max.toLocaleString()}<br/>
+                  Margem: média {stats.marginStats.mean.toFixed(1)}%, desvio {stats.marginStats.std.toFixed(1)}%, min {stats.marginStats.min.toFixed(1)}%, max {stats.marginStats.max.toFixed(1)}%<br/>
+                  Correlação prêmio x lucro: <b>{stats.corrPremioLucro.toFixed(2)}</b><br/>
+                  Percentil 10 do lucro: R$ {stats.p10.toLocaleString(undefined, {maximumFractionDigits:0})} | Percentil 90: R$ {stats.p90.toLocaleString(undefined, {maximumFractionDigits:0})}<br/>
+                  Outliers prêmio: {stats.outPremio.length > 0 ? stats.outPremio.map(x => `R$ ${x.toLocaleString()}`).join(', ') : 'nenhum'}<br/>
                   Outliers lucro: {stats.outLucro.length > 0 ? stats.outLucro.map(x => `R$ ${x.toLocaleString()}`).join(', ') : 'nenhum'}
                 </div>
                 <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -606,7 +646,7 @@ export function PricingSimulator() {
                   <div>
                     <b>Lucro Líquido (Linha Temporal)</b>
                     <ResponsiveContainer width="100%" height={120}>
-                      <LineChart data={validBatch.map((b, i) => ({ name: `Sim ${i + 1}`, value: b.netProfit }))}>
+                      <LineChart data={validBatch.map((b, i) => ({name: `Sim ${i+1}`, value: b.netProfit}))}>
                         <XAxis dataKey="name" />
                         <YAxis />
                         <Tooltip />
@@ -650,7 +690,7 @@ export function PricingSimulator() {
                   <div>
                     <b>Distribuição dos Prêmios</b>
                     <ResponsiveContainer width="100%" height={120}>
-                      <BarChart data={validBatch.map((b, i) => ({ name: `Sim ${i + 1}`, value: b.premium }))}>
+                      <BarChart data={validBatch.map((b, i) => ({name: `Sim ${i+1}`, value: b.premium}))}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="name" />
                         <YAxis />
@@ -662,7 +702,7 @@ export function PricingSimulator() {
                   <div>
                     <b>Distribuição dos Lucros Líquidos</b>
                     <ResponsiveContainer width="100%" height={120}>
-                      <BarChart data={validBatch.map((b, i) => ({ name: `Sim ${i + 1}`, value: b.netProfit }))}>
+                      <BarChart data={validBatch.map((b, i) => ({name: `Sim ${i+1}`, value: b.netProfit}))}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="name" />
                         <YAxis />
@@ -674,7 +714,7 @@ export function PricingSimulator() {
                   <div>
                     <b>Distribuição das Perdas Esperadas</b>
                     <ResponsiveContainer width="100%" height={120}>
-                      <BarChart data={validBatch.map((b, i) => ({ name: `Sim ${i + 1}`, value: b.loss }))}>
+                      <BarChart data={validBatch.map((b, i) => ({name: `Sim ${i+1}`, value: b.loss}))}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="name" />
                         <YAxis />
@@ -686,7 +726,7 @@ export function PricingSimulator() {
                   <div>
                     <b>Distribuição das Margens (%)</b>
                     <ResponsiveContainer width="100%" height={120}>
-                      <BarChart data={validBatch.map((b, i) => ({ name: `Sim ${i + 1}`, value: b.margin }))}>
+                      <BarChart data={validBatch.map((b, i) => ({name: `Sim ${i+1}`, value: b.margin}))}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="name" />
                         <YAxis />
@@ -702,7 +742,7 @@ export function PricingSimulator() {
           <div className="mt-2"><b>Simulação principal:</b> Valor do bem: R$ {assetValue.toLocaleString()} | Frequência: {frequency}% | Severidade: R$ {severity.toLocaleString()}</div>
           {advancedResults?.stressScenario && (
             <div className="mt-2">
-              <b>Cenário de Stress:</b> Valor do bem: R$ {advancedResults.stressScenario.assetValue.toLocaleString()} | Frequência: {advancedResults.stressScenario.frequency}% | Severidade: R$ {advancedResults.stressScenario.severity.toLocaleString()}<br />
+              <b>Cenário de Stress:</b> Valor do bem: R$ {advancedResults.stressScenario.assetValue.toLocaleString()} | Frequência: {advancedResults.stressScenario.frequency}% | Severidade: R$ {advancedResults.stressScenario.severity.toLocaleString()}<br/>
               Prêmio: R$ {advancedResults.stressScenario.premium.toLocaleString()} | Lucro Líquido: R$ {advancedResults.stressScenario.netProfit.toLocaleString()} | Margem: {advancedResults.stressScenario.margin}%
             </div>
           )}

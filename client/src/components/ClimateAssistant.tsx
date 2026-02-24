@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { geminiApi, embrapaApi, policyPricingApi } from '../lib/api';
+import { geminiApi, embrapaApi } from '../lib/api';
 import { useLocation } from '../lib/LocationContext';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -21,7 +21,7 @@ export function ClimateAssistant() {
     const { selectedLocation } = useLocation();
     const [weatherData, setWeatherData] = useState<any>(null);
     const [microclimateData, setMicroclimateData] = useState<any>(null);
-    const [policyCost, setPolicyCost] = useState<number | null>(null);
+    // const [policyCost, setPolicyCost] = useState<number | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
     const [inputValue, setInputValue] = useState('');
     const [isLoading, setIsLoading] = useState(false);

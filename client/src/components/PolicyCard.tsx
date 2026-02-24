@@ -2,7 +2,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, AlertTriangle, XCircle, TrendingUp, Shield, DollarSign } from "lucide-react";
+import { CheckCircle, AlertTriangle, XCircle, Shield } from "lucide-react";
 
 export type PolicyStatus = 'recommended' | 'acceptable' | 'caution' | 'rejected';
 

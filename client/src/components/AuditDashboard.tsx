@@ -45,7 +45,7 @@ export const AuditDashboard: React.FC<AuditDashboardProps> = ({ className }) => 
 
     useEffect(() => {
         loadAuditData();
-    }, [filters]);
+    }, [filters, loadAuditData]);
 
     const loadAuditData = async () => {
         try {

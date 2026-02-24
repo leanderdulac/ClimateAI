@@ -12,8 +12,7 @@ import {
   X,
   ChevronDown,
   FlaskConical as Lab,
-  LogOut,
-  UserCircle
+  LogOut
 } from "lucide-react";
 
 interface NavigationItem {
@@ -152,7 +151,7 @@ export function NavigationMenu() {
                   {user && (
                     <div className="mb-4 p-3 bg-muted/50 rounded-lg">
                       <div className="flex items-center gap-3">
-                        <UserCircle className="h-8 w-8 text-muted-foreground" />
+                        {/* UserCircle removed: unused icon */}
                         <div>
                           <p className="font-medium text-sm text-foreground">{user.name}</p>
                           <p className="text-xs text-muted-foreground">{user.email}</p>
