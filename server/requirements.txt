@@ -44,6 +44,7 @@ passlib[bcrypt]==1.7.4
 # Database migration
 alembic==1.18.1
 psutil
+boto3>=1.34.0
 pynamicalsys
 asyncpg==0.29.0
 email-validator>=2.0.0
