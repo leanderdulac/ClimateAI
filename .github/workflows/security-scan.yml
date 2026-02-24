@@ -75,8 +75,8 @@ jobs:
 
       - name: Run pip-audit
         run: |
-          pip-audit --format json --output pip-audit-results.json || true
-          pip-audit --output-format columns
+          pip-audit --extra-index-url https://download.pytorch.org/whl/cpu --format json --output pip-audit-results.json || true
+          pip-audit --extra-index-url https://download.pytorch.org/whl/cpu --output-format columns
         continue-on-error: false
 
       - name: Run Bandit SAST

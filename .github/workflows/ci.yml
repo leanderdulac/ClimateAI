@@ -12,9 +12,9 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Backend dependency audit (pip-audit)
-        uses: pypa/gh-action-pip-audit@v1.0.8
-        with:
-          inputs: "server/requirements.txt"
+        run: |
+          pip install pip-audit
+          pip-audit --extra-index-url https://download.pytorch.org/whl/cpu -r server/requirements.txt
         continue-on-error: false
 
       - name: Frontend audit (npm audit high)
