@@ -139,19 +139,18 @@ class TestUserPermissions(unittest.TestCase):
 
     def test_user_permissions_by_role(self):
         """Testa permissões por papel"""
-        from models.schemas import UserRole, UserPermissions
+        from models.schemas import UserPermissions
         
         # Test user permissions
         user_perms = UserPermissions(
-            role=UserRole.USER,
-            can_view_dashboard=True,
-            can_create_reports=False,
-            can_delete_users=False
+            can_access_climate_data=True,
+            can_access_pricing_models=False,
+            can_manage_users=False
         )
         
-        self.assertTrue(user_perms.can_view_dashboard)
-        self.assertFalse(user_perms.can_create_reports)
-        self.assertFalse(user_perms.can_delete_users)
+        self.assertTrue(user_perms.can_access_climate_data)
+        self.assertFalse(user_perms.can_access_pricing_models)
+        self.assertFalse(user_perms.can_manage_users)
 
 
 if __name__ == '__main__':
