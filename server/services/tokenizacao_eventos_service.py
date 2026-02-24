@@ -266,10 +266,10 @@ class TokenizacaoEventosService:
             EventoClimaticoTipo.GEADA: 400,
             EventoClimaticoTipo.SECA_FLASH: 500
         }.get(token.event_type, 900)
-        
+
         # Hash da localização reduzido a um inteiro
-        loc_int = int(hashlib.md5(token.location_hash.encode()).hexdigest()[:4], 16)
-        
+        loc_int = int(hashlib.sha256(token.location_hash.encode()).hexdigest()[:4], 16)
+
         return type_prefix + (loc_int % 1000)
 
     def _calcular_severidade_composta(self, evento: EventoClimatico) -> int:
@@ -310,7 +310,7 @@ class TokenizacaoEventosService:
         lon_rounded = round(longitude, 2)
 
         location_str = f"{lat_rounded:.2f},{lon_rounded:.2f}"
-        return hashlib.md5(location_str.encode()).hexdigest()[:8]
+        return hashlib.sha256(location_str.encode()).hexdigest()[:8]
 
     def _gerar_hash_temporal(
         self, start_date: datetime, end_date: Optional[datetime]
@@ -323,7 +323,7 @@ class TokenizacaoEventosService:
         else:
             temporal_str = start_date.isoformat()
 
-        return hashlib.md5(temporal_str.encode()).hexdigest()[:8]
+        return hashlib.sha256(temporal_str.encode()).hexdigest()[:8]
 
     def _gerar_token_id(
         self,

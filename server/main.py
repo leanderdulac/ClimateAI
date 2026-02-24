@@ -95,7 +95,7 @@ class SmartCache:
             sorted_data = str(sorted(data.items()))
         else:
             sorted_data = str(data)
-        return hashlib.md5(sorted_data.encode()).hexdigest()
+        return hashlib.sha256(sorted_data.encode()).hexdigest()
 
     def _get_ttl(self, key: str) -> int:
         """Retorna o TTL para uma entrada específica"""

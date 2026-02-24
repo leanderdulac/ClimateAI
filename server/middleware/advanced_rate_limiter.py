@@ -149,7 +149,7 @@ class AdvancedRateLimiter:
     def _get_client_key(self, client_id: str, route: str, tier: ClientTier) -> str:
         """Gera chave única para o cliente/rota/tier"""
         key = f"{tier.value}:{client_id}:{route}"
-        return hashlib.md5(key.encode()).hexdigest()
+        return hashlib.sha256(key.encode()).hexdigest()
     
     def _get_config(self, route: str, tier: ClientTier) -> RateLimitConfig:
         """Obtém configuração de rate limit para rota/tier"""

@@ -299,7 +299,7 @@ class GoogleEarthEngineService:
         Returns deterministic mock data seeded by coordinates.
         Consistent for the same location across calls.
         """
-        seed = int(hashlib.md5(f"{lat:.4f},{lon:.4f}".encode()).hexdigest()[:8], 16)
+        seed = int(hashlib.sha256(f"{lat:.4f},{lon:.4f}".encode()).hexdigest()[:8], 16)
         ndvi = 0.35 + (seed % 400) / 1000.0   # Range 0.35–0.75
         sm = 0.15 + (seed % 350) / 1000.0      # Range 0.15–0.50
 
@@ -323,7 +323,7 @@ class GoogleEarthEngineService:
     ) -> Dict[str, Any]:
         """Mock NDVI timeseries for testing."""
         import math
-        seed = int(hashlib.md5(f"{lat:.4f},{lon:.4f}".encode()).hexdigest()[:8], 16)
+        seed = int(hashlib.sha256(f"{lat:.4f},{lon:.4f}".encode()).hexdigest()[:8], 16)
         base = 0.4 + (seed % 300) / 1000.0
         values = []
         for i in range(years * 12):

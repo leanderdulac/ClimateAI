@@ -517,7 +517,7 @@ class RedisCache:
                 else:
                     # Hash dos argumentos
                     args_str = f"{args}:{sorted(kwargs.items())}"
-                    args_hash = hashlib.md5(args_str.encode()).hexdigest()[:16]
+                    args_hash = hashlib.sha256(args_str.encode()).hexdigest()[:16]
                     cache_key = f"{key_prefix}:{func.__name__}:{args_hash}"
                 
                 # Tentar cache
@@ -572,10 +572,10 @@ def external_api_cache(
         @wraps(func)
         async def wrapper(*args, **kwargs) -> T:
             cache_instance = get_cache()
-            
+
             # Construir chave
             args_str = f"{args}:{sorted(kwargs.items())}"
-            args_hash = hashlib.md5(args_str.encode()).hexdigest()[:16]
+            args_hash = hashlib.sha256(args_str.encode()).hexdigest()[:16]
             cache_key = f"external:{provider}:{func.__name__}:{args_hash}"
             
             # Obter com fallback stale

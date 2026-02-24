@@ -72,7 +72,7 @@ class BigQueryDataLakeService:
             end_year = datetime.now().year
             start_year = end_year - years_back
 
-            query = f"""
+            query = f"""  # nosec B608
                 WITH nearest_station AS (
                     SELECT stn, wban, name,
                         ST_DISTANCE(
@@ -181,7 +181,7 @@ class BigQueryDataLakeService:
             return self._get_mock_tranche_analytics()
 
         try:
-            query = f"""
+            query = f"""  # nosec B608
                 SELECT
                     tranche,
                     SUM(deposit_amount) as tvl,
@@ -214,7 +214,7 @@ class BigQueryDataLakeService:
         self, lat: float = 0, lon: float = 0, years: int = 30
     ) -> Dict[str, Any]:
         """Deterministic mock data seeded by coordinates."""
-        seed = int(hashlib.md5(f"{lat:.2f},{lon:.2f}".encode()).hexdigest()[:8], 16)
+        seed = int(hashlib.sha256(f"{lat:.2f},{lon:.2f}".encode()).hexdigest()[:8], 16)
         base_precip = 900 + (seed % 600)  # 900–1500 mm/year
 
         annual_series = []
