@@ -4,7 +4,7 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 export default [
-  { ignores: ['dist', 'tests/**', 'test-tailwind/**', '*.js', '*.cjs', '!eslint.config.js', '!vite.config.js'] },
+  { ignores: ['dist', 'tests/**', 'test-tailwind/**', 'scripts/**', '*.js', '*.cjs', '!eslint.config.js', '!vite.config.js'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
