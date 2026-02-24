@@ -135,7 +135,7 @@ class TestUserPermissions(unittest.TestCase):
         # Assert
         self.assertEqual(UserRole.USER.value, 'user')
         self.assertEqual(UserRole.ADMIN.value, 'admin')
-        self.assertEqual(UserRole.SUPER_ADMIN.value, 'super_admin')
+        self.assertEqual(UserRole.ANALYST.value, 'analyst')
 
     def test_user_permissions_by_role(self):
         """Testa permissões por papel"""
