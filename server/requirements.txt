@@ -33,8 +33,8 @@ tenacity>=9.0.0  # Retry library com circuit breaker pattern
 pycep-correios==5.2.0
 aiosqlite==0.22.1
 # Observabilidade / OpenTelemetry
-opentelemetry-sdk==1.27.0
-opentelemetry-exporter-otlp==1.27.0
+opentelemetry-sdk==1.39.1
+opentelemetry-exporter-otlp==1.39.1
 opentelemetry-instrumentation-fastapi==0.48b0
 opentelemetry-instrumentation-logging==0.48b0
 # Authentication dependencies
