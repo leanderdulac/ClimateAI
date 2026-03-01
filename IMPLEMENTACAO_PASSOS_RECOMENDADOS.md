@@ -237,7 +237,7 @@ npm run api:types
 # .env
 VAULT_URL=http://localhost:8200
 VAULT_TOKEN=s.my-secret-token
-VAULT_NAMESPACE=climateai  # Opcional (Enterprise)
+VAULT_NAMESPACE=climatewise  # Opcional (Enterprise)
 ```
 
 ### Python
@@ -247,20 +247,20 @@ from lib.vault_secrets import get_vault, vault_secret
 # Opção 1: Usar singleton
 vault = get_vault()
 api_key = vault.get_secret_or_env(
-    vault_path="secret/data/climateai/api-keys",
+    vault_path="secret/data/climatewise/api-keys",
     env_var="NOAA_API_KEY",
     key="noaa_key",
 )
 
 # Opção 2: Decorator
-@vault_secret('secret/data/climateai/api-keys', 'noaa_key')
+@vault_secret('secret/data/climatewise/api-keys', 'noaa_key')
 def fetch_noaa_data(noaa_key):
     # noaa_key injetado automaticamente
     ...
 
 # Opção 3: Rotação de secrets
 vault.rotate_secret(
-    path="secret/data/climateai/api-keys",
+    path="secret/data/climatewise/api-keys",
     key="noaa_key",
 )
 ```
@@ -271,15 +271,15 @@ vault.rotate_secret(
 vault server -dev -dev-root-token-id="my-secret-token"
 
 # Criar secret
-vault kv put secret/data/climateai/api-keys \
+vault kv put secret/data/climatewise/api-keys \
   noaa_key="my-noaa-key" \
   gemini_key="my-gemini-key"
 
 # Ler secret
-vault kv get secret/data/climateai/api-keys
+vault kv get secret/data/climatewise/api-keys
 
 # Listar secrets
-vault kv list secret/data/climateai
+vault kv list secret/data/climatewise
 ```
 
 ---

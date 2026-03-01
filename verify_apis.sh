@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ============================================
-# Verificação Completa de APIs - ClimateAI
+# Verificação Completa de APIs - ClimateWise
 # ============================================
 
 set -e
@@ -104,7 +104,7 @@ echo ""
 # 6. Frontend
 echo "━━━ 6. Frontend ━━━"
 echo -n "Verificando frontend... "
-if curl -s http://localhost:3000/ | grep -q "ClimateWise\|ClimateAI"; then
+if curl -s http://localhost:3000/ | grep -q "ClimateWise\|ClimateWise"; then
     echo -e "${GREEN}✓ Carregando${NC}"
     ((APIS_OK++))
 else

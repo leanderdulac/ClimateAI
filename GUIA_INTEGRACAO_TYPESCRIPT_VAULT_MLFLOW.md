@@ -25,7 +25,7 @@ Todas as integrações foram adicionadas ao `server/main.py`:
 # .env
 VAULT_URL=http://localhost:8200
 VAULT_TOKEN=s.my-secret-token
-VAULT_NAMESPACE=climateai  # Opcional (Enterprise)
+VAULT_NAMESPACE=climatewise  # Opcional (Enterprise)
 ```
 
 ### Endpoints Criados
@@ -47,13 +47,13 @@ GET /api/v1/vault/status
 
 #### 1.2 Obter Secret
 ```http
-GET /api/v1/vault/secrets/secret/data/climateai/api-keys
+GET /api/v1/vault/secrets/secret/data/climatewise/api-keys
 ```
 
 **Resposta**:
 ```json
 {
-  "path": "secret/data/climateai/api-keys",
+  "path": "secret/data/climatewise/api-keys",
   "keys": ["noaa_key", "gemini_key", "embrapa_key"],
   "version": "latest"
 }
@@ -61,7 +61,7 @@ GET /api/v1/vault/secrets/secret/data/climateai/api-keys
 
 #### 1.3 Criar/Atualizar Secret
 ```http
-POST /api/v1/vault/secrets/secret/data/climateai/api-keys
+POST /api/v1/vault/secrets/secret/data/climatewise/api-keys
 Content-Type: application/json
 
 {
@@ -73,7 +73,7 @@ Content-Type: application/json
 **Resposta**:
 ```json
 {
-  "path": "secret/data/climateai/api-keys",
+  "path": "secret/data/climatewise/api-keys",
   "status": "stored",
   "keys": ["noaa_key", "gemini_key"]
 }
@@ -81,13 +81,13 @@ Content-Type: application/json
 
 #### 1.4 Deletar Secret
 ```http
-DELETE /api/v1/vault/secrets/secret/data/climateai/api-keys
+DELETE /api/v1/vault/secrets/secret/data/climatewise/api-keys
 ```
 
 **Resposta**:
 ```json
 {
-  "path": "secret/data/climateai/api-keys",
+  "path": "secret/data/climatewise/api-keys",
   "status": "deleted"
 }
 ```
@@ -101,19 +101,19 @@ from lib.vault_secrets import get_vault
 vault = get_vault()
 
 # Obter secret
-api_keys = vault.get_secret("secret/data/climateai/api-keys")
+api_keys = vault.get_secret("secret/data/climatewise/api-keys")
 noaa_key = api_keys.get("noaa_key")
 
 # Obter com fallback para env var
 noaa_key = vault.get_secret_or_env(
-    vault_path="secret/data/climateai/api-keys",
+    vault_path="secret/data/climatewise/api-keys",
     env_var="NOAA_API_KEY",
     key="noaa_key"
 )
 
 # Rotacionar secret
 vault.rotate_secret(
-    path="secret/data/climateai/api-keys",
+    path="secret/data/climatewise/api-keys",
     key="noaa_key"
 )
 ```
@@ -162,7 +162,7 @@ GET /api/v1/mlflow/status
   "healthy": true,
   "tracking_uri": "http://localhost:5000",
   "registry_uri": "http://localhost:5000",
-  "experiment_name": "climateai",
+  "experiment_name": "climatewise",
   "experiment_id": "1"
 }
 ```
@@ -407,7 +407,7 @@ INFO: ============================================================
 INFO: ✓ Vault Secrets Manager: http://localhost:8200
 INFO: ✓ MLflow Model Registry: http://localhost:5000
 INFO: ============================================================
-INFO: Servidor ClimateAI iniciado com sucesso
+INFO: Servidor ClimateWise iniciado com sucesso
 ```
 
 Se não configurados:

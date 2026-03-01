@@ -378,7 +378,7 @@ npm run test:a11y -- --reporter=html
 
 **Todas as 3 tarefas foram 100% implementadas!**
 
-O ClimateAI agora possui:
+O ClimateWise agora possui:
 - ✅ Infrastructure as Code completa (Terraform)
 - ✅ Disaster Recovery testável e documentado
 - ✅ Acessibilidade WCAG 2.1 AA validada

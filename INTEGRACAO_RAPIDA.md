@@ -311,7 +311,7 @@ redacted_url = redact_url(url)
 ```python
 from opentelemetry import metrics
 
-meter = metrics.get_meter("climateai")
+meter = metrics.get_meter("climatewise")
 counter = meter.create_counter("api_calls_total")
 
 # Incrementar contador
@@ -322,7 +322,7 @@ counter.add(1, {"endpoint": "/weather", "status": "success"})
 ```python
 from opentelemetry import trace
 
-tracer = trace.get_tracer("climateai")
+tracer = trace.get_tracer("climatewise")
 
 with tracer.start_as_current_span("process_weather_data") as span:
     span.set_attribute("latitude", -23.55)
@@ -382,7 +382,7 @@ services:
       # OpenTelemetry
       - OTEL_ENABLED=true
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318/v1/traces
-      - OTEL_SERVICE_NAME=climateai-backend
+      - OTEL_SERVICE_NAME=climatewise-backend
       
       # Redis
       - REDIS_URL=redis://redis:6379

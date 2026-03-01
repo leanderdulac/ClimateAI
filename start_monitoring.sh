@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# ClimateAI Monitoring Stack Startup Script
+# ClimateWise Monitoring Stack Startup Script
 
 set -e
 
-echo "🚀 Starting ClimateAI Monitoring Stack..."
+echo "🚀 Starting ClimateWise Monitoring Stack..."
 
 # Create necessary directories
 mkdir -p monitoring/prometheus/data

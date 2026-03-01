@@ -24,7 +24,7 @@ async def get_previsao_clima(
     Obter previsão climática para uma localização específica
     """
     try:
-        return previsao_service.obter_previsao_clima(
+        return await previsao_service.obter_previsao_clima(
             latitude=latitude, longitude=longitude, dias=dias
         )
     except Exception as e:
@@ -41,7 +41,7 @@ async def get_previsao_eventos(
     Obter previsão de eventos climáticos extremos
     """
     try:
-        return previsao_service.obter_previsao_eventos(
+        return await previsao_service.obter_previsao_eventos(
             latitude=latitude, longitude=longitude, dias=dias
         )
     except Exception as e:

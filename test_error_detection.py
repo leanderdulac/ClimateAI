@@ -125,7 +125,7 @@ def test_api_endpoints_syntax():
     print("  ✅ API endpoint import tests completed!\n")
 
 def main():
-    print("🔍 ClimateAI: Comprehensive Error Detection and Verification\n")
+    print("🔍 ClimateWise: Comprehensive Error Detection and Verification\n")
 
     success = True
     success &= test_imports()
@@ -134,9 +134,9 @@ def main():
 
     if success:
         print("🎉 All services and functionality verified successfully!")
-        print("✅ No syntax or import errors detected in the ClimateAI system")
+        print("✅ No syntax or import errors detected in the ClimateWise system")
     else:
-        print("❌ Some errors were detected in the ClimateAI system")
+        print("❌ Some errors were detected in the ClimateWise system")
         return 1
 
     return 0

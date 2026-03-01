@@ -1,6 +1,6 @@
-# 📋 RESUMO EXECUTIVO - Melhorias ClimateAI
+# 📋 RESUMO EXECUTIVO - Melhorias ClimateWise
 
-**Projeto**: ClimateAI - Framework Integrado de Modelagem Climático-Econômica  
+**Projeto**: ClimateWise - Framework Integrado de Modelagem Climático-Econômica  
 **Data**: Fevereiro 2026  
 **Status**: ✅ **100% FUNCIONAL - PRONTO PARA PRODUÇÃO**
 
@@ -213,8 +213,8 @@ server/config/config.py        # Validação de segurança
 
 ```bash
 # 1. Clone o repositório
-git clone https://github.com/leanderdulac/ClimateAI.git
-cd ClimateAI
+git clone https://github.com/leanderdulac/ClimateWise.git
+cd ClimateWise
 
 # 2. Execute o setup
 ./quick_start.sh
@@ -242,7 +242,7 @@ cd ClimateAI
 ./scripts/backup.sh
 
 # Restore
-./scripts/restore.sh ./backups/climateai_YYYYMMDD_HHMMSS.sql.gz
+./scripts/restore.sh ./backups/climatewise_YYYYMMDD_HHMMSS.sql.gz
 
 # Testes
 ./scripts/run_all_tests.sh
@@ -322,15 +322,15 @@ cd ClimateAI
 
 ## 📞 SUPORTE
 
-- **GitHub**: https://github.com/leanderdulac/ClimateAI
-- **Issues**: https://github.com/leanderdulac/ClimateAI/issues
+- **GitHub**: https://github.com/leanderdulac/ClimateWise
+- **Issues**: https://github.com/leanderdulac/ClimateWise/issues
 - **Documentação**: Ver arquivos `.md` na raiz
 
 ---
 
 ## 🎉 CONCLUSÃO
 
-**ClimateAI está 100% funcional e pronto para produção.**
+**ClimateWise está 100% funcional e pronto para produção.**
 
 Todas as questões críticas foram resolvidas:
 - ✅ Segurança em nível empresarial

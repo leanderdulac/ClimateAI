@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Production Setup Script for ClimateAI
+# Production Setup Script for ClimateWise
 # This script prepares the environment for production deployment
 
 set -e
 
-echo "🚀 Starting ClimateAI Production Setup..."
+echo "🚀 Starting ClimateWise Production Setup..."
 
 # Colors for output
 RED='\033[0;31m'
@@ -63,9 +63,9 @@ sudo systemctl enable nginx
 
 # Configure PostgreSQL
 print_status "Configuring PostgreSQL..."
-sudo -u postgres psql -c "CREATE DATABASE climateai;" 2>/dev/null || print_warning "Database climateai may already exist"
-sudo -u postgres psql -c "CREATE USER climateai_user WITH PASSWORD 'CHANGE_THIS_STRONG_PASSWORD';" 2>/dev/null || print_warning "User climateai_user may already exist"
-sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE climateai TO climateai_user;"
+sudo -u postgres psql -c "CREATE DATABASE climatewise;" 2>/dev/null || print_warning "Database climatewise may already exist"
+sudo -u postgres psql -c "CREATE USER climatewise_user WITH PASSWORD 'CHANGE_THIS_STRONG_PASSWORD';" 2>/dev/null || print_warning "User climatewise_user may already exist"
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE climatewise TO climatewise_user;"
 
 # Configure firewall
 print_status "Configuring firewall..."
@@ -77,16 +77,16 @@ sudo ufw allow 3000  # Frontend port
 
 # Create application directory
 print_status "Setting up application directory..."
-sudo mkdir -p /opt/climateai
-sudo chown -R $USER:$USER /opt/climateai
+sudo mkdir -p /opt/climatewise
+sudo chown -R $USER:$USER /opt/climatewise
 
 # Clone or copy application code (assuming it's already in place)
-# cd /opt/climateai
-# git clone https://github.com/leanderdulac/ClimateAI.git .
+# cd /opt/climatewise
+# git clone https://github.com/leanderdulac/ClimateWise.git .
 
 # Set up Python virtual environment
 print_status "Setting up Python virtual environment..."
-cd /opt/climateai/server
+cd /opt/climatewise/server
 python3 -m venv venv
 source venv/bin/activate
 pip install --upgrade pip
@@ -108,7 +108,7 @@ API_HOST=yourdomain.com
 API_PORT=443
 SECRET_KEY=$(openssl rand -hex 32)
 ALLOW_ORIGINS=["https://yourdomain.com"]
-DATABASE_URL=postgresql://climateai_user:CHANGE_THIS_STRONG_PASSWORD@localhost/climateai
+DATABASE_URL=postgresql://climatewise_user:CHANGE_THIS_STRONG_PASSWORD@localhost/climatewise
 REDIS_URL=redis://localhost:6379
 OPENMETEO_API_URL=https://api.open-meteo.com
 EMBRAPA_API_URL=https://api.cnptia.embrapa.br/agritec
@@ -127,12 +127,12 @@ fi
 
 # Build and start containers
 print_status "Building and starting Docker containers..."
-cd /opt/climateai
+cd /opt/climatewise
 docker-compose -f docker-compose.prod.yml up -d --build
 
 # Configure Nginx as reverse proxy
 print_status "Configuring Nginx..."
-sudo tee /etc/nginx/sites-available/climateai > /dev/null <<EOF
+sudo tee /etc/nginx/sites-available/climatewise > /dev/null <<EOF
 server {
     listen 80;
     server_name yourdomain.com www.yourdomain.com;
@@ -155,7 +155,7 @@ server {
 }
 EOF
 
-sudo ln -sf /etc/nginx/sites-available/climateai /etc/nginx/sites-enabled/
+sudo ln -sf /etc/nginx/sites-available/climatewise /etc/nginx/sites-enabled/
 sudo nginx -t
 sudo systemctl reload nginx
 

@@ -84,7 +84,7 @@ def test_parametric_insurance_functionality():
     print("  🎉 Parametric Insurance Service functionality verified!")
 
 def main():
-    print("🔬 ClimateAI: Parametric Insurance Service Test\n")
+    print("🔬 ClimateWise: Parametric Insurance Service Test\n")
 
     test_parametric_insurance_functionality()
 

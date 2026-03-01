@@ -131,7 +131,7 @@ class EventosService:
             f"Evento climático {tipo.value} detectado em {data.strftime('%Y-%m-%d')}",
         )
 
-    def obter_eventos_com_tokens(
+    async def obter_eventos_com_tokens(
         self,
         latitude: Optional[float],
         longitude: Optional[float],
@@ -149,11 +149,11 @@ class EventosService:
         eventos = self.obter_eventos(
             latitude, longitude, tipo, data_inicio, data_fim, raio
         )
-        tokens = self.token_service.tokenizar_multiplos_eventos(eventos)
+        tokens = await self.token_service.tokenizar_multiplos_eventos(eventos)
 
         return eventos, tokens
 
-    def obter_tokens_eventos(
+    async def obter_tokens_eventos(
         self,
         latitude: Optional[float],
         longitude: Optional[float],
@@ -171,11 +171,11 @@ class EventosService:
         eventos = self.obter_eventos(
             latitude, longitude, tipo, data_inicio, data_fim, raio
         )
-        tokens = self.token_service.tokenizar_multiplos_eventos(eventos)
+        tokens = await self.token_service.tokenizar_multiplos_eventos(eventos)
 
         return tokens
 
-    def obter_evento_por_token(
+    async def obter_evento_por_token(
         self, token_id: str
     ) -> Tuple[Optional[EventoClimatico], Optional[EventoToken]]:
         """
@@ -205,7 +205,7 @@ class EventosService:
             )
 
             # Gerar token para o evento simulado
-            token = self.token_service.gerar_token_evento(evento_simulado)
+            token = await self.token_service.gerar_token_evento(evento_simulado)
 
             return evento_simulado, token
 

@@ -1,4 +1,4 @@
-# Variáveis Terraform - ClimateAI
+# Variáveis Terraform - ClimateWise
 
 # ============================================
 # GERAIS
@@ -7,7 +7,7 @@
 variable "project_name" {
   description = "Nome do projeto"
   type        = string
-  default     = "climateai"
+  default     = "climatewise"
 }
 
 variable "environment" {
@@ -52,13 +52,13 @@ variable "db_allocated_storage" {
 variable "db_name" {
   description = "Nome do banco de dados"
   type        = string
-  default     = "climateai"
+  default     = "climatewise"
 }
 
 variable "db_username" {
   description = "Username do banco de dados"
   type        = string
-  default     = "climateai_admin"
+  default     = "climatewise_admin"
   sensitive   = true
 }
 
@@ -165,7 +165,7 @@ variable "enable_alerting" {
 variable "alert_email" {
   description = "Email para alertas"
   type        = string
-  default     = "alerts@climateai.com"
+  default     = "alerts@climatewise.com"
 }
 
 # ============================================

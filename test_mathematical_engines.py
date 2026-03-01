@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test script to demonstrate the advanced mathematical engines in ClimateAI
+Test script to demonstrate the advanced mathematical engines in ClimateWise
 """
 import sys
 import os
@@ -178,7 +178,7 @@ def test_stochastic_processes_engine():
     print()
 
 def main():
-    print("🔬 ClimateAI: Advanced Mathematical Engines Test Suite\n")
+    print("🔬 ClimateWise: Advanced Mathematical Engines Test Suite\n")
 
     test_extreme_value_engine()
     test_spatial_statistics_engine()

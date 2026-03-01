@@ -1,4 +1,4 @@
-# 🚀 Guia de Deploy - ClimateAI
+# 🚀 Guia de Deploy - ClimateWise
 
 ## 📋 Checklist de Readiness para Produção
 

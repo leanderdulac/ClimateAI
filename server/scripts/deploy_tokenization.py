@@ -92,7 +92,7 @@ def deploy():
     ClimateToken = w3.eth.contract(abi=abi, bytecode=bytecode)
     
     # Construct constructor args (Name, Symbol)
-    token_name = os.getenv("TOKEN_NAME", "ClimateAI Token")
+    token_name = os.getenv("TOKEN_NAME", "ClimateWise Token")
     token_symbol = os.getenv("TOKEN_SYMBOL", "CLIM")
 
     tx = ClimateToken.constructor(token_name, token_symbol).build_transaction({

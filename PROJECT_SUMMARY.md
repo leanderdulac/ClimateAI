@@ -1,6 +1,6 @@
-# 🎯 RESUMO EXECUTIVO - ClimateAI Project Modernization
+# 🎯 RESUMO EXECUTIVO - ClimateWise Project Modernization
 
-**Projeto:** ClimateAI - Framework Integrado de Modelagem Climático-Econômica
+**Projeto:** ClimateWise - Framework Integrado de Modelagem Climático-Econômica
 **Status:** 87.5% Concluído (7 de 8 Etapas)
 **Data:** 20 de outubro de 2025
 **Progresso Total:** 5 Etapas Completas + 2 em Progresso
@@ -313,7 +313,7 @@ Para dúvidas ou ajustes:
 
 ## 🎉 CONCLUSÃO
 
-O projeto ClimateAI foi modernizado e otimizado em 7 etapas principais, resultando em:
+O projeto ClimateWise foi modernizado e otimizado em 7 etapas principais, resultando em:
 
 - **67% melhoria em performance**
 - **75% redução em tamanho de imagem**

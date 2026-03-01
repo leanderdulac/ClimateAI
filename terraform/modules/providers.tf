@@ -1,4 +1,4 @@
-# Terraform Providers para ClimateAI
+# Terraform Providers para ClimateWise
 
 terraform {
   required_version = ">= 1.5.0"
@@ -43,11 +43,11 @@ terraform {
 
   # Backend para estado remoto (S3 + DynamoDB)
   # backend "s3" {
-  #   bucket         = "climateai-terraform-state"
+  #   bucket         = "climatewise-terraform-state"
   #   key            = "prod/terraform.tfstate"
   #   region         = "us-east-1"
   #   encrypt        = true
-  #   dynamodb_table = "climateai-terraform-locks"
+  #   dynamodb_table = "climatewise-terraform-locks"
   # }
 
   # Backend local para desenvolvimento

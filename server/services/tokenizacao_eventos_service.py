@@ -7,6 +7,10 @@ import logging
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
+import asyncio
+
+from config.database import get_db_session
+from models.rwa import RWAPolicy
 from models.schemas import EventoClimatico, EventoClimaticoTipo
 from models.token_schemas import EventoToken, TokenAnalysis, TokenGroup
 from services.tokenization_service import TokenizationService
@@ -46,16 +50,22 @@ class TokenizacaoEventosService:
             logger.error(f"Falha ao iniciar serviço de blockchain: {e}")
             self.blockchain_service = None
 
-    def gerar_token_evento(self, evento: EventoClimatico) -> EventoToken:
+    async def gerar_token_evento(
+        self, evento: EventoClimatico, extra_metadata: Optional[Dict[str, Any]] = None
+    ) -> EventoToken:
         """
-        Gera um token único para um evento climático
+        Gera um token único para um evento climático e salva no banco de dados
 
         Args:
             evento: Instância de EventoClimatico
+            extra_metadata: Metadados extras (ex: risk_factors) para persistência
 
         Returns:
             EventoToken: Token estruturado do evento
         """
+        import os
+        database_enabled = os.getenv("DATABASE_ENABLED", "true").lower() == "true"
+
         # Calcular severidade composta
         severity_level = self._calcular_severidade_composta(evento)
 
@@ -64,7 +74,7 @@ class TokenizacaoEventosService:
         temporal_hash = self._gerar_hash_temporal(evento.data_inicio, evento.data_fim)
 
         # Gerar token ID único
-        token_id = self._gerar_token_id(
+        token_id_str = self._gerar_token_id(
             evento.tipo,
             severity_level,
             location_hash,
@@ -82,9 +92,14 @@ class TokenizacaoEventosService:
             "on_chain_status": "pending",
             "tx_hash": None,
         }
+        
+        # Mesclar metadata extra se fornecida (ex: risk_factors do simulador)
+        if extra_metadata:
+            metadata.update(extra_metadata)
 
-        return EventoToken(
-            token_id=token_id,
+        # Criação do objeto DTO/Pydantic
+        token = EventoToken(
+            token_id=token_id_str,
             event_type=evento.tipo,
             severity_level=severity_level,
             latitude=evento.latitude,
@@ -99,7 +114,37 @@ class TokenizacaoEventosService:
             created_at=datetime.now(),
         )
 
-    def mint_token_on_chain(
+        # Persistência no banco de dados, se habilitado
+        if database_enabled:
+            # Gerar ID numérico para o on-chain/banco, baseado no hash e timestamp para não dar conflito (simulação)
+            numeric_token_id = int(hashlib.sha256(token_id_str.encode()).hexdigest()[:8], 16)
+            slot = self._gerar_slot_id(token)
+            
+            async for session in get_db_session():
+                try:
+                    rwa_policy = RWAPolicy(
+                        token_id=numeric_token_id,
+                        slot=slot,
+                        owner_address="0x0000000000000000000000000000000000000000", # Endereço neutro para automatização
+                        sum_insured=int(severity_level * 1000),
+                        currency="USDC",
+                        latitude=evento.latitude,
+                        longitude=evento.longitude,
+                        severity_score=severity_level,
+                        metadata_json=metadata
+                    )
+                    session.add(rwa_policy)
+                    await session.commit()
+                    logger.info(f"Token climátio RWAPolicy {numeric_token_id} inserido com sucesso")
+                    break # Sucesso, libera sessão principal
+                except Exception as e:
+                    await session.rollback()
+                    logger.error(f"Erro ao salvar RWAPolicy no BD para o token {token_id_str}: {e}")
+                    break
+
+        return token
+
+    async def mint_token_on_chain(
         self, token: EventoToken, destination_address: str
     ) -> Dict[str, Any]:
         """
@@ -130,7 +175,7 @@ class TokenizacaoEventosService:
                 f"Iniciando mintagem ERC-3525 para token {token.token_id} -> {destination_address} (Slot: {slot}, Value: {value})"
             )
             # Adaptamos a chamada para mintPolicy do novo contrato
-            receipt = self.blockchain_service.mint_policy(destination_address, slot, value)
+            receipt = await self.blockchain_service.mint_policy(destination_address, slot, value)
 
             # Extrair hash da transação
             tx_hash = (
@@ -163,7 +208,7 @@ class TokenizacaoEventosService:
             token.metadata["error"] = str(e)
             return {"status": "error", "message": str(e)}
 
-    def tokenizar_multiplos_eventos(
+    async def tokenizar_multiplos_eventos(
         self, eventos: List[EventoClimatico]
     ) -> List[EventoToken]:
         """
@@ -178,7 +223,7 @@ class TokenizacaoEventosService:
         tokens = []
         for evento in eventos:
             try:
-                token = self.gerar_token_evento(evento)
+                token = await self.gerar_token_evento(evento)
                 tokens.append(token)
             except Exception as e:
                 # Log do erro e continuação do processamento

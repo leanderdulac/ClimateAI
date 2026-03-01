@@ -1,5 +1,5 @@
 #!/bin/bash
-# ClimateAI - Validação do Ambiente Tier 1
+# ClimateWise - Validação do Ambiente Tier 1
 # Verifica se todos os componentes estão prontos para execução
 
 set -e
@@ -15,7 +15,7 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 echo -e "${BLUE}========================================${NC}"
-echo -e "${BLUE}ClimateAI - Validação Tier 1${NC}"
+echo -e "${BLUE}ClimateWise - Validação Tier 1${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo ""
 

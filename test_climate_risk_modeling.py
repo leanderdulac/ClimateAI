@@ -162,7 +162,7 @@ def test_comprehensive_climate_risk():
     print()
 
 def main():
-    print("🔬 ClimateAI: Advanced Climate Risk Modeling Test Suite\n")
+    print("🔬 ClimateWise: Advanced Climate Risk Modeling Test Suite\n")
 
     test_spi_calculation()
     test_rwi_calculation()

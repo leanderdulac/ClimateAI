@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ============================================
-# Teste do Cálculo de Prêmio - ClimateAI
+# Teste do Cálculo de Prêmio - ClimateWise
 # ============================================
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Script para parar toda a plataforma ClimateAI
+# Script para parar toda a plataforma ClimateWise
 
-echo "🛑 Parando Plataforma ClimateAI..."
+echo "🛑 Parando Plataforma ClimateWise..."
 
 # Parar processos
 echo "🔧 Parando Backend..."

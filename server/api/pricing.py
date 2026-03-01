@@ -44,18 +44,41 @@ async def calculate_pricing(request: PricingRequest) -> Dict[str, Any]:
         historico_inicio = datetime.now() - timedelta(days=365)
         historico_fim = datetime.now()
 
-        # Try to obtain real coordinates if available, otherwise use default (SP)
-        lat, lon = -23.5507, -46.6339
+        # Try to obtain real coordinates if available
+        lat, lon = -23.5507, -46.6339  # Default: São Paulo
+        
         if "lat=" in request.location_id and "lon=" in request.location_id:
             try:
                 parts = request.location_id.split("&")
-                lat = float(parts[0].split("=")[1])
-                lon = float(parts[1].split("=")[1])
-            except:
-                pass
+                lat_part = [p for p in parts if p.startswith("lat=")][0]
+                lon_part = [p for p in parts if p.startswith("lon=")][0]
+                lat = float(lat_part.split("=")[1])
+                lon = float(lon_part.split("=")[1])
+            except (IndexError, ValueError):
+                logger.warning(f"Failed to parse coordinates from location_id: {request.location_id}")
+        else:
+            # Try to resolve location using GeocodingService (CEP or City)
+            try:
+                from services.geocoding_service import GeocodingService
+                geo_service = GeocodingService()
+                
+                # Check if it's a CEP (simple regex-like check or just try)
+                clean_id = request.location_id.strip()
+                if clean_id.replace("-", "").isdigit():
+                    geo_data = await geo_service.get_location_from_cep(clean_id)
+                else:
+                    # Try as city name
+                    geo_data = await geo_service.geocode_address(clean_id)
+                
+                if geo_data:
+                    lat = geo_data.get("latitude", lat)
+                    lon = geo_data.get("longitude", lon)
+                    logger.info(f"Resolved location '{request.location_id}' to {lat}, {lon}")
+            except Exception as e:
+                logger.warning(f"Geocoding failed for '{request.location_id}': {e}. Using default location.")
 
         # Obter previsão para ajuste de curto prazo
-        previsao = await previsao_service.obter_previsao(latitude=lat, longitude=lon, dias=7)
+        previsao = await previsao_service.obter_previsao_clima(latitude=lat, longitude=lon, dias=7)
         # Obtain real climate data for risk analysis (ClimaService.obter_historico is async)
         dados_clima = await clima_service.obter_historico(
             latitude=lat,

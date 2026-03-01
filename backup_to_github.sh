@@ -1,9 +1,9 @@
 #!/bin/bash
-# Script to backup ClimateAI project to GitHub
+# Script to backup ClimateWise project to GitHub
 # NOTE: You will need to provide your GitHub repository details
 
 echo "==========================================="
-echo "ClimateAI Project Backup to GitHub"
+echo "ClimateWise Project Backup to GitHub"
 echo "==========================================="
 echo ""
 
@@ -30,7 +30,7 @@ git push -u origin main
 
 if [ $? -eq 0 ]; then
     echo ""
-    echo "✅ Successfully backed up ClimateAI project to GitHub!"
+    echo "✅ Successfully backed up ClimateWise project to GitHub!"
     echo ""
     echo "Repository URL: $REPO_URL"
     echo "Branch: main"

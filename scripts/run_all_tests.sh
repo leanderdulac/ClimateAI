@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ============================================
-# Script de Teste Completo do ClimateAI
+# Script de Teste Completo do ClimateWise
 # ============================================
 # Executa todos os testes: unitários, integração e E2E
 # ============================================
@@ -20,7 +20,7 @@ TESTS_PASSED=0
 TESTS_FAILED=0
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "🧪 ClimateAI - Suite de Testes Completa"
+echo "🧪 ClimateWise - Suite de Testes Completa"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 

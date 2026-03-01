@@ -61,7 +61,7 @@ def test_climate_premium_calculation():
     print("  🎉 Climate-Inclusive Premium Service functionality verified!")
 
 def main():
-    print("🔬 ClimateAI: Climate-Inclusive Premium Service Test\n")
+    print("🔬 ClimateWise: Climate-Inclusive Premium Service Test\n")
 
     test_climate_premium_calculation()
 

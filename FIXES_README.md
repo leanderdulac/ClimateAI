@@ -1,7 +1,7 @@
 # CI/CD Pipeline Fix Documentation
 
 ## Issue Summary
-The CI/CD pipeline was failing on the main branch (commit cb9532ae) due to missing dependencies required by new functionality added to the ClimateAI system.
+The CI/CD pipeline was failing on the main branch (commit cb9532ae) due to missing dependencies required by new functionality added to the ClimateWise system.
 
 ## Root Cause Analysis
 1. Recent commit added Bayesian Bootstrap functionality with regularized loss functions
@@ -47,7 +47,7 @@ The CI/CD pipeline was failing on the main branch (commit cb9532ae) due to missi
 
 ## Verification Steps
 To verify the fix:
-1. Run: `docker build -t climateai-backend:test .` in /server directory
+1. Run: `docker build -t climatewise-backend:test .` in /server directory
 2. Check that all imports work: `python -c "from main import app"`
 3. Verify Bayesian Bootstrap endpoints: `curl http://localhost:8000/api/v1/bayesian-bootstrap/health`
 

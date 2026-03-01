@@ -25,11 +25,11 @@ async def mint_climate_token(request: TokenMintRequest = Body(...)):
     """
     Cria um token blockchain para um evento climático
 
-    Esta operação cria um token único na blockchain ClimateAI
+    Esta operação cria um token único na blockchain ClimateWise
     representando um evento climático específico.
     """
     try:
-        resultado = blockchain_service.mint_climate_token(
+        resultado = await blockchain_service.mint_climate_token(
             evento=request.evento,
             wallet_address=request.wallet_address,
             token_supply=request.token_supply,
@@ -185,7 +185,7 @@ async def get_all_climate_event_tokens():
 @router.get("/stats")
 async def get_blockchain_stats():
     """
-    Obtém estatísticas da blockchain ClimateAI
+    Obtém estatísticas da blockchain ClimateWise
     """
     try:
         # Contar diferentes tipos de registros

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ============================================
-# Script de Backup Automático do ClimateAI
+# Script de Backup Automático do ClimateWise
 # ============================================
 # Backup de PostgreSQL com compressão,
 # verificação de integridade e retenção automática
@@ -13,7 +13,7 @@ set -e
 BACKUP_DIR="${BACKUP_DIR:-./backups}"
 DB_HOST="${DB_HOST:-localhost}"
 DB_PORT="${DB_PORT:-5432}"
-DB_NAME="${DB_NAME:-climateai}"
+DB_NAME="${DB_NAME:-climatewise}"
 DB_USER="${DB_USER:-postgres}"
 RETENTION_DAYS="${RETENTION_DAYS:-30}"
 COMPRESSION_LEVEL="${COMPRESSION_LEVEL:-9}"
@@ -27,7 +27,7 @@ NC='\033[0m'
 
 # Timestamp
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-BACKUP_FILE="${BACKUP_DIR}/climateai_${TIMESTAMP}.sql.gz"
+BACKUP_FILE="${BACKUP_DIR}/climatewise_${TIMESTAMP}.sql.gz"
 LOG_FILE="${BACKUP_DIR}/backup_${TIMESTAMP}.log"
 
 # Functions
@@ -51,7 +51,7 @@ log_step() {
 mkdir -p "$BACKUP_DIR"
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "🔄 ClimateAI - Backup Automático"
+echo "🔄 ClimateWise - Backup Automático"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 log_step "Iniciando backup em $(date)"
@@ -131,11 +131,11 @@ fi
 
 # Step 5: Cleanup old backups
 log_step "5️⃣  Limpando backups antigos (retenção: $RETENTION_DAYS dias)..."
-OLD_BACKUPS=$(find "$BACKUP_DIR" -name "climateai_*.sql.gz" -type f -mtime +$RETENTION_DAYS | wc -l)
+OLD_BACKUPS=$(find "$BACKUP_DIR" -name "climatewise_*.sql.gz" -type f -mtime +$RETENTION_DAYS | wc -l)
 
 if [ "$OLD_BACKUPS" -gt 0 ]; then
-    find "$BACKUP_DIR" -name "climateai_*.sql.gz" -type f -mtime +$RETENTION_DAYS -delete
-    find "$BACKUP_DIR" -name "climateai_*.sha256" -type f -mtime +$RETENTION_DAYS -delete
+    find "$BACKUP_DIR" -name "climatewise_*.sql.gz" -type f -mtime +$RETENTION_DAYS -delete
+    find "$BACKUP_DIR" -name "climatewise_*.sha256" -type f -mtime +$RETENTION_DAYS -delete
     log_info "$OLD_BACKUPS backups antigos removidos"
 else
     log_info "Nenhum backup antigo para remover"
@@ -145,7 +145,7 @@ fi
 if [ -n "$BACKUP_S3_BUCKET" ]; then
     log_step "6️⃣  Upload para S3..."
     if command -v aws &> /dev/null; then
-        aws s3 cp "$BACKUP_FILE" "s3://${BACKUP_S3_BUCKET}/climateai/$(basename $BACKUP_FILE)"
+        aws s3 cp "$BACKUP_FILE" "s3://${BACKUP_S3_BUCKET}/climatewise/$(basename $BACKUP_FILE)"
         log_info "Backup enviado para S3"
     else
         log_warn "AWS CLI não instalado, skipando upload S3"
@@ -155,7 +155,7 @@ fi
 if [ -n "$BACKUP_GCS_BUCKET" ]; then
     log_step "6️⃣  Upload para Google Cloud Storage..."
     if command -v gsutil &> /dev/null; then
-        gsutil cp "$BACKUP_FILE" "gs://${BACKUP_GCS_BUCKET}/climateai/$(basename $BACKUP_FILE)"
+        gsutil cp "$BACKUP_FILE" "gs://${BACKUP_GCS_BUCKET}/climatewise/$(basename $BACKUP_FILE)"
         log_info "Backup enviado para GCS"
     else
         log_warn "gsutil não instalado, skipando upload GCS"
@@ -169,12 +169,12 @@ send_notification() {
     
     if [ -n "$SLACK_WEBHOOK_URL" ]; then
         curl -X POST -H 'Content-type: application/json' \
-            --data "{\"text\":\"ClimateAI Backup: ${status}\\n${message}\"}" \
+            --data "{\"text\":\"ClimateWise Backup: ${status}\\n${message}\"}" \
             "$SLACK_WEBHOOK_URL" > /dev/null 2>&1 || true
     fi
     
     if [ -n "$BACKUP_EMAIL_TO" ]; then
-        echo "$message" | mail -s "ClimateAI Backup: ${status}" "$BACKUP_EMAIL_TO" || true
+        echo "$message" | mail -s "ClimateWise Backup: ${status}" "$BACKUP_EMAIL_TO" || true
     fi
 }
 

@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Script para verificar status da plataforma ClimateAI
+# Script para verificar status da plataforma ClimateWise
 
-echo "📊 Status da Plataforma ClimateAI"
+echo "📊 Status da Plataforma ClimateWise"
 echo "================================="
 
 # Verificar processos

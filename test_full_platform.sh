@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ============================================
-# Teste Completo da Plataforma ClimateAI
+# Teste Completo da Plataforma ClimateWise
 # ============================================
 # Verifica todos os componentes implementados
 # ============================================
@@ -21,7 +21,7 @@ TESTS_FAILED=0
 TESTS_SKIPPED=0
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "🧪 ClimateAI - Teste Completo da Plataforma"
+echo "🧪 ClimateWise - Teste Completo da Plataforma"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 

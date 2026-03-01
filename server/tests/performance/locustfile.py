@@ -8,7 +8,7 @@ from locust_plugins.csvreader import CSVReader
 cities_reader = CSVReader("data/br_cities.json")
 
 
-class ClimateAIUser(HttpUser):
+class ClimateWiseUser(HttpUser):
     wait_time = between(1, 3)
 
     def on_start(self):

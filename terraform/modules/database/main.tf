@@ -1,4 +1,4 @@
-# Database Module - PostgreSQL para ClimateAI
+# Database Module - PostgreSQL para ClimateWise
 
 resource "random_password" "db_password" {
   length           = 32

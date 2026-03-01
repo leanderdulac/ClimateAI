@@ -13,7 +13,7 @@ BASE_URL = "http://127.0.0.1:8000/api/v1"
 def demonstrate_integration():
     """Demonstra a integração completa do serviço de cenários probabilísticos"""
 
-    print("🌍 ClimateAI - Layer 2 Integration Demo")
+    print("🌍 ClimateWise - Layer 2 Integration Demo")
     print("=" * 50)
 
     # 1. Obter combinações SSP-RCP disponíveis

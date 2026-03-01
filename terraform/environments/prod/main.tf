@@ -1,4 +1,4 @@
-# ClimateAI - Produção Environment
+# ClimateWise - Produção Environment
 
 # ============================================
 # PROVIDERS
@@ -27,11 +27,11 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = "climateai-terraform-state-prod"
+    bucket         = "climatewise-terraform-state-prod"
     key            = "prod/terraform.tfstate"
     region         = "us-east-1"
     encrypt        = true
-    dynamodb_table = "climateai-terraform-locks"
+    dynamodb_table = "climatewise-terraform-locks"
   }
 }
 
@@ -41,7 +41,7 @@ terraform {
 
 variable "project_name" {
   type    = string
-  default = "climateai"
+  default = "climatewise"
 }
 
 variable "environment" {
@@ -114,8 +114,8 @@ module "database" {
   subnet_ids           = module.vpc.private_subnet_ids
   db_instance_class    = local.prod_config.db_instance_class
   db_allocated_storage = local.prod_config.db_storage
-  db_name              = "climateai"
-  db_username          = "climateai_admin"
+  db_name              = "climatewise"
+  db_username          = "climatewise_admin"
   db_backup_retention  = local.prod_config.backup_retention
   multi_az             = true
   aws_region           = var.aws_region
@@ -170,7 +170,7 @@ module "monitoring" {
   subnet_ids           = module.vpc.public_subnet_ids
   prometheus_retention = 30
   enable_alerting      = true
-  alert_email          = "alerts@climateai.com"
+  alert_email          = "alerts@climatewise.com"
   common_tags          = local.common_tags
 }
 
@@ -200,7 +200,7 @@ module "dr_backup" {
   environment    = var.environment
   dr_enabled     = true
   dr_region      = var.dr_region
-  s3_bucket_name = "climateai-backups-${var.environment}"
+  s3_bucket_name = "climatewise-backups-${var.environment}"
   retention_days = 90
   common_tags    = local.common_tags
 }

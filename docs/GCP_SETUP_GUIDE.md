@@ -1,6 +1,6 @@
-# ☁️ GCP Setup Guide: ClimateAI Production Environment
+# ☁️ GCP Setup Guide: ClimateWise Production Environment
 
-Este guia descreve os passos necessários para configurar a infraestrutura do Google Cloud para o ecossistema ClimateAI RWA.
+Este guia descreve os passos necessários para configurar a infraestrutura do Google Cloud para o ecossistema ClimateWise RWA.
 
 ## 1. Google Cloud KMS (HSM Signing)
 Usado para assinar transações na blockchain sem expor chaves privadas.

@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Script para gerar PDF da landing page do ClimateAI
+# Script para gerar PDF da landing page do ClimateWise
 
-echo "🚀 Gerando PDF da Landing Page do ClimateAI..."
+echo "🚀 Gerando PDF da Landing Page do ClimateWise..."
 
 # Verificar se o arquivo HTML existe
 if [ ! -f "landing-page.html" ]; then

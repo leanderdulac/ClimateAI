@@ -1,9 +1,9 @@
 {
   "dashboard": {
     "id": null,
-    "title": "ClimateAI Platform Monitoring",
+    "title": "ClimateWise Platform Monitoring",
     "tags": [
-      "climateai",
+      "climatewise",
       "monitoring"
     ],
     "timezone": "browser",
@@ -14,11 +14,11 @@
         "type": "graph",
         "targets": [
           {
-            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job=\"climateai-api\"}[5m]))",
+            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job=\"climatewise-api\"}[5m]))",
             "legendFormat": "95th percentile"
           },
           {
-            "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket{job=\"climateai-api\"}[5m]))",
+            "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket{job=\"climatewise-api\"}[5m]))",
             "legendFormat": "50th percentile"
           }
         ],
@@ -35,7 +35,7 @@
         "type": "graph",
         "targets": [
           {
-            "expr": "rate(http_requests_total{job=\"climateai-api\"}[5m])",
+            "expr": "rate(http_requests_total{job=\"climatewise-api\"}[5m])",
             "legendFormat": "Requests per second"
           }
         ],
@@ -86,7 +86,7 @@
         "type": "graph",
         "targets": [
           {
-            "expr": "pg_stat_activity_count{datname=\"climateai\"}",
+            "expr": "pg_stat_activity_count{datname=\"climatewise\"}",
             "legendFormat": "Active connections"
           }
         ],
@@ -103,7 +103,7 @@
         "type": "graph",
         "targets": [
           {
-            "expr": "rate(http_requests_total{status=~\"5..\", job=\"climateai-api\"}[5m]) / rate(http_requests_total{job=\"climateai-api\"}[5m]) * 100",
+            "expr": "rate(http_requests_total{status=~\"5..\", job=\"climatewise-api\"}[5m]) / rate(http_requests_total{job=\"climatewise-api\"}[5m]) * 100",
             "legendFormat": "Error rate %"
           }
         ],

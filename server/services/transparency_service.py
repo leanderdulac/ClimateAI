@@ -43,7 +43,7 @@ class TransparencyService:
                     gee_report_id,
                     location_lat,
                     location_lon
-                FROM `climateai-institutional.audit.payouts`
+                FROM `climatewise-institutional.audit.payouts`
                 WHERE tx_hash = '{tx_hash}'
                 LIMIT 1
             """

@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Script para iniciar toda a plataforma ClimateAI
+# Script para iniciar toda a plataforma ClimateWise
 
-echo "🚀 Iniciando Plataforma ClimateAI..."
+echo "🚀 Iniciando Plataforma ClimateWise..."
 
 # Função para verificar se uma porta está livre
 check_port() {

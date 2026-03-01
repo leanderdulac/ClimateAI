@@ -10,7 +10,7 @@ from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/v1/risk-monitor", tags=["risk-monitor"])
+router = APIRouter(tags=["risk-monitor"])
 
 class RiskSummary(BaseModel):
     total_alerts: int

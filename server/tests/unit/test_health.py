@@ -109,14 +109,21 @@ class TestDatabaseHealthCheck:
 
     async def test_database_check_healthy(self):
         """Test database check healthy"""
-        check = DatabaseHealthCheck("sqlite:///:memory:")
+        check = DatabaseHealthCheck("sqlite+aiosqlite:///:memory:")
 
-        # Mock sqlalchemy engine
-        with patch("sqlalchemy.create_engine") as mock_engine:
-            mock_connection = MagicMock()
-            mock_engine.return_value.connect.return_value.__enter__.return_value = (
-                mock_connection
-            )
+        # Mock sqlalchemy async engine
+        with patch("sqlalchemy.ext.asyncio.create_async_engine") as mock_engine:
+            mock_connection = AsyncMock()
+            mock_connection.execute = AsyncMock()
+            
+            mock_connect_cm = AsyncMock()
+            mock_connect_cm.__aenter__ = AsyncMock(return_value=mock_connection)
+            mock_connect_cm.__aexit__ = AsyncMock(return_value=None)
+            
+            mock_engine_instance = MagicMock()
+            mock_engine_instance.connect = MagicMock(return_value=mock_connect_cm)
+            mock_engine_instance.dispose = AsyncMock()
+            mock_engine.return_value = mock_engine_instance
 
             result = await check.check()
 

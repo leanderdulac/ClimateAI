@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 
 export function TokenizationPage() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [activeTab, setActiveTab] = useState("create");
 
   return (
@@ -64,7 +64,7 @@ export function TokenizationPage() {
                 <TrendingUp className="h-8 w-8 text-green-300" />
                 <h3 className="text-lg font-semibold">{t('tokenization.stats.volume')}</h3>
               </div>
-              <p className="text-3xl font-bold">R$ 2.4M</p>
+              <p className="text-3xl font-bold">{t('common.currency')} {Number(2400000).toLocaleString(language, { notation: "compact", compactDisplay: "short" })}</p>
               <p className="text-blue-200 text-sm">{t('tokenization.stats.tokenizedValue')}</p>
             </div>
 
@@ -120,7 +120,7 @@ export function TokenizationPage() {
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-600">{t('tokenization.quickStats.averageValue')}</span>
-                      <span className="font-semibold">R$ 35.000</span>
+                      <span className="font-semibold">{t('common.currency')} {Number(35000).toLocaleString(language)}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-600">{t('tokenization.quickStats.successRate')}</span>
@@ -242,7 +242,7 @@ export function TokenizationPage() {
                       <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                       <div className="flex-1">
                         <p className="text-sm font-medium">{t('tokenization.activity.newToken')}</p>
-                        <p className="text-xs text-gray-600">ENC425 - 2 {t('tokenization.activity.minutesAgo')}</p>
+                        <p className="text-xs text-gray-600">ENC425 - {t('tokenization.activity.minutesAgo', { count: 2 })}</p>
                       </div>
                     </div>
 
@@ -250,7 +250,7 @@ export function TokenizationPage() {
                       <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                       <div className="flex-1">
                         <p className="text-sm font-medium">{t('tokenization.activity.transfer')}</p>
-                        <p className="text-xs text-gray-600">SEC325 - 15 {t('tokenization.activity.minutesAgo')}</p>
+                        <p className="text-xs text-gray-600">SEC325 - {t('tokenization.activity.minutesAgo', { count: 15 })}</p>
                       </div>
                     </div>
 
@@ -258,7 +258,7 @@ export function TokenizationPage() {
                       <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
                       <div className="flex-1">
                         <p className="text-sm font-medium">{t('tokenization.activity.liquidated')}</p>
-                        <p className="text-xs text-gray-600">CAL425 - 1 {t('tokenization.activity.hourAgo')}</p>
+                        <p className="text-xs text-gray-600">CAL425 - {t('tokenization.activity.hourAgo', { count: 1 })}</p>
                       </div>
                     </div>
                   </div>

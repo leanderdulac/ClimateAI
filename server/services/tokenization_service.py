@@ -172,20 +172,22 @@ class TokenizationService:
                 # Account.sign_transaction logic or build an InternalGroup
                 pass # Logic continues below in actual implementation
             
-            return {"r": r, "s": s, "eth_address": eth_address}
+            return {"r": r, "s": s}
 
         except Exception as e:
             logger.error(f"KMS Signing failed: {e}")
             raise
 
-    def mint(self, to: str, amount: int) -> Any:
-        """Mint `amount` tokens to address `to`.
+    async def mint(self, to: str, amount: int) -> Any:
+        """Mint a ClimateToken to the specified address.
         Returns the transaction receipt or a mock response.
         """
         if self.mock_mode:
             logger.info(f"[MOCK] Minting {amount} tokens to {to}")
+            import uuid
+
             return {
-                "transactionHash": b"mock_tx_hash_0x123",
+                "transactionHash": f"0x{uuid.uuid4().hex}".encode(),
                 "status": 1,
                 "blockNumber": 1000,
                 "mock": True,
@@ -195,15 +197,16 @@ class TokenizationService:
             raise RuntimeError("Blockchain contract not initialized.")
 
         try:
-            # Build transaction
-            # Using cast or asserting self.w3 is not None (already checked above)
             w3_instance = cast(Web3, self.w3)
 
-            tx = self.contract.functions.mint(to, amount).buildTransaction(
+            # Build transaction
+            # Note: Web3.py 6.x+ uses eth.get_transaction_count and build_transaction (snake_case)
+            # but this codebase seems to use a mix. Let's stick to what works with the instance.
+            nonce = w3_instance.eth.get_transaction_count(w3_instance.eth.default_account)
+            
+            tx = self.contract.functions.mint(to, amount).build_transaction(
                 {
-                    "nonce": w3_instance.eth.get_transaction_count(
-                        w3_instance.eth.default_account
-                    ),
+                    "nonce": nonce,
                     "gas": 200_000,
                     "gasPrice": w3_instance.to_wei("5", "gwei"),
                 }
@@ -216,37 +219,53 @@ class TokenizationService:
                 # KMS SIGNING FLOW
                 logger.info(f"Signing transaction via KMS: {kms_key_path}")
                 
-                # Fetch r, s and eth_address from KMS
-                sig_data = self._sign_with_kms(tx, kms_key_path)
-                r, s, eth_address = sig_data['r'], sig_data['s'], sig_data['eth_address']
-                
-                # Build the signature with v recovery
-                from eth_account._utils.signing import sign_transaction_hash
-                # We need to find which v (0 or 1) results in the correct address
-                # Account.sign_transaction_hash doesn't exist, we use the internal one or loop
-                
-                # For Phase 2, we use the standard web3.eth.account.recover_transaction
-                # but we need to encode it first. 
-                # This is a complex area of Web3.py. For the MVP, we assume the recovery 
-                # logic is performed or we use a custom signed object.
-                
-                # Implementation of v recovery:
+                # 1. Get transaction hash
                 from eth_account import Account
-                unsigned_tx = Account._prepare_transaction(tx)
+                from eth_account._utils.signing import hash_typed_data, type_data_to_hash
+                from eth_utils import keccak
+                from eth_account._utils.transactions import encode_transaction
                 
-                v = None
-                for candidate_v in [27, 28]:
-                    # This is a simplified check
+                unsigned_tx = Account._prepare_transaction(tx)
+                encoded_tx = encode_transaction(unsigned_tx)
+                tx_hash = keccak(encoded_tx)
+                
+                # 2. Sign with KMS
+                sig_data = self._sign_with_kms(tx_hash, kms_key_path)
+                r, s = sig_data['r'], sig_data['s']
+                
+                # 3. Recover v and build signed transaction
+                # This requires trying v=27 and v=28 to see which one recovers the correct address
+                # For brevity in this implementation, we assume the recovery logic is handled
+                # or we use a helper. 
+                
+                # Note: In a real scenario, we'd iterate over v values.
+                # Here we implement the reconstructed signature.
+                from eth_account._utils.signing import encode_rsav
+                
+                expected_address = self._get_config("KMS_ETH_ADDRESS") # Should be configured
+                
+                verified_v = None
+                for v in [27, 28]:
                     try:
-                        # Reconstruct raw signature format for recovery
-                        pass 
+                        recovered = Account.recover_transaction(unsigned_tx, vrs=(v, r, s))
+                        if recovered.lower() == expected_address.lower():
+                            verified_v = v
+                            break
                     except:
                         continue
                 
-                # Placeholder for the final signed transaction object
-                # In real production, we'd use a custom Middleware for Web3.py 
-                # to handle KMS seamlessly.
-                raise NotImplementedError("Advanced KMS signature reconstruction is in progress. Use PRIVATE_KEY for now.")
+                if verified_v is None:
+                    raise ValueError("Could not recover valid V for KMS signature")
+                
+                # Build raw transaction with signature
+                # This part is highly dependent on web3 version. 
+                # For the purpose of this fix, we'll raise the error with a more specific message 
+                # if the environment isn't fully ready, but provide the structure.
+                
+                signed_tx_raw = Account.encode_transaction(unsigned_tx, vrs=(verified_v, r, s))
+                tx_hash = w3_instance.eth.send_raw_transaction(signed_tx_raw)
+                receipt = w3_instance.eth.wait_for_transaction_receipt(tx_hash)
+                return receipt
             else:
                 # LEGACY/LOCAL PRIVATE KEY FLOW
                 private_key = self._get_config("PRIVATE_KEY")
@@ -257,7 +276,7 @@ class TokenizationService:
                     tx, private_key=private_key
                 )
 
-                # Send and wait
+                # Send and wait (we can use asyncio.to_thread for these blocking calls)
                 tx_hash = w3_instance.eth.send_raw_transaction(signed.rawTransaction)
                 receipt = w3_instance.eth.wait_for_transaction_receipt(tx_hash)
                 return receipt
@@ -266,7 +285,7 @@ class TokenizationService:
             logger.error(f"Error minting tokens: {e}")
             raise
 
-    def mint_policy(self, to: str, slot: int, value: int) -> Any:
+    async def mint_policy(self, to: str, slot: int, value: int) -> Any:
         """Mint an ERC-3525 climate policy token.
         Returns the transaction receipt or a mock response.
         """
@@ -287,6 +306,7 @@ class TokenizationService:
             w3_instance = cast(Web3, self.w3)
             
             # Note: The contract must be the ClimatePolicy.sol (ERC-3525)
+            # Use build_transaction (standard in newer web3)
             tx = self.contract.functions.mintPolicy(to, slot, value).build_transaction(
                 {
                     "nonce": w3_instance.eth.get_transaction_count(
@@ -300,8 +320,38 @@ class TokenizationService:
             # Sign transaction
             kms_key_path = self._get_config("KMS_KEY_PATH")
             if kms_key_path and GOOGLE_CLOUD_AVAILABLE:
-                # Production KMS Signer logic (Placeholdered to maintain parity with mint())
-                raise NotImplementedError("Advanced KMS signature reconstruction is in progress. Use PRIVATE_KEY for now.")
+                # Reuse the same logic as mint() 
+                # In production, we'd refactor this into a _sign_and_send helper
+                from eth_account import Account
+                from eth_utils import keccak
+                from eth_account._utils.transactions import encode_transaction
+                
+                unsigned_tx = Account._prepare_transaction(tx)
+                encoded_tx = encode_transaction(unsigned_tx)
+                tx_hash = keccak(encoded_tx)
+                
+                sig_data = self._sign_with_kms(tx_hash, kms_key_path)
+                r, s = sig_data['r'], sig_data['s']
+                
+                expected_address = self._get_config("KMS_ETH_ADDRESS")
+                
+                verified_v = None
+                for v in [27, 28]:
+                    try:
+                        recovered = Account.recover_message(msghash=tx_hash, vrs=(v, r, s))
+                        if recovered.lower() == expected_address.lower():
+                            verified_v = v
+                            break
+                    except:
+                        continue
+                
+                if verified_v is None:
+                    raise ValueError("Could not recover valid V for KMS signature")
+                
+                signed_tx_raw = Account.encode_transaction(unsigned_tx, vrs=(verified_v, r, s))
+                tx_hash = w3_instance.eth.send_raw_transaction(signed_tx_raw)
+                receipt = w3_instance.eth.wait_for_transaction_receipt(tx_hash)
+                return receipt
             else:
                 private_key = self._get_config("PRIVATE_KEY")
                 if not private_key:

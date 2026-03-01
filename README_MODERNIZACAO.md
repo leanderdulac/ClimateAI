@@ -1,4 +1,4 @@
-# 🌍 ClimateAI - Framework Integrado de Modelagem Climático-Econômica
+# 🌍 ClimateWise - Framework Integrado de Modelagem Climático-Econômica
 
 ## 📊 Status do Projeto
 
@@ -359,7 +359,7 @@ mkdir -p server/tests/{unit,integration,performance}
 
 ## 🎉 Conclusão
 
-O projeto **ClimateAI foi modernizado com sucesso** em 7 etapas, resultando em:
+O projeto **ClimateWise foi modernizado com sucesso** em 7 etapas, resultando em:
 
 ✨ **Segurança:** 100% vulnerabilidades críticas resolvidas
 ⚡ **Performance:** 67% mais rápido
@@ -373,7 +373,7 @@ O projeto **ClimateAI foi modernizado com sucesso** em 7 etapas, resultando em:
 
 ## 📝 Licença
 
-Este projeto é parte do ClimateAI por Leander Dulac.
+Este projeto é parte do ClimateWise por Leander Dulac.
 
 ---
 

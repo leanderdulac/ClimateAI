@@ -298,4 +298,4 @@ echo "  • Documentation Files: 20+"
 echo "  • Coverage Target: >80%"
 echo ""
 
-echo -e "${CYAN}The ClimateAI project is now fully modernized and production-ready! 🌍✨${NC}\n"
+echo -e "${CYAN}The ClimateWise project is now fully modernized and production-ready! 🌍✨${NC}\n"

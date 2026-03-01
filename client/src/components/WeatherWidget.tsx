@@ -166,7 +166,7 @@ export function WeatherWidget() {
         setLoading(false);
         setLoadingHistorical(false);
         setClimateData([]);
-        setError(`Não foi possível carregar: ${error instanceof Error ? error.message : String(error)}`);
+        setError(`${t('weather.error.load')}: ${error instanceof Error ? error.message : String(error)}`);
       }
     };
 
@@ -186,7 +186,7 @@ export function WeatherWidget() {
               <AlertTriangle className="h-6 w-6 text-red-600" />
             </div>
             <div>
-              <CardTitle className="text-xl font-bold text-red-700">Erro no Clima</CardTitle>
+              <CardTitle className="text-xl font-bold text-red-700">{t('weather.error.title')}</CardTitle>
               <CardDescription className="text-red-600">
                 {error}
               </CardDescription>
@@ -232,7 +232,7 @@ export function WeatherWidget() {
               {currentWeather && (
                 <Badge variant="outline" className="bg-white/20 border-white/40 text-white gap-1 px-1.5 py-0 h-5 text-[10px] uppercase font-bold tracking-wider">
                   <Zap className="h-2.5 w-2.5 fill-yellow-400 text-yellow-400" />
-                  Live Data
+                  {t('weather.liveBadge')}
                 </Badge>
               )}
             </div>
@@ -241,7 +241,7 @@ export function WeatherWidget() {
                 currentWeather.temperature,
                 currentWeather.humidity,
                 currentWeather.precipitation
-              )} • ${historicalData.length > 0 ? `${historicalData.length} ${t('weather.historicalData')}` : t('weather.noHistorical')}` : 'Carregando...'}
+              )} • ${historicalData.length > 0 ? `${historicalData.length} ${t('weather.historicalData')}` : t('weather.noHistorical')}` : t('common.loading')}
               {loadingHistorical && ` • ${t('weather.loadingHistorical')}`}
             </CardDescription>
           </div>
@@ -288,20 +288,20 @@ export function WeatherWidget() {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis
                 dataKey="date"
-                tickFormatter={(date) => new Date(date).toLocaleDateString()}
+                tickFormatter={(date) => new Date(date).toLocaleDateString(t('locale') || 'pt-BR')}
               />
               <YAxis unit="°C" />
               <Tooltip
                 labelFormatter={(label) => {
                   const d = new Date(label);
-                  return isNaN(d.getTime()) ? label : d.toLocaleDateString();
+                  return isNaN(d.getTime()) ? label : d.toLocaleDateString(t('locale') || 'pt-BR');
                 }}
-                formatter={(value: any) => [Number(value).toFixed(1) + "°C", "Temperatura"]}
+                formatter={(value: any) => [Number(value).toFixed(1) + "°C", t('weather.temperature')]}
               />
               <Line
                 type="monotone"
                 dataKey="temperature"
-                name="Temperatura"
+                name={t('weather.temperature')}
                 stroke="#10b981"
                 dot={false}
               />
@@ -316,19 +316,19 @@ export function WeatherWidget() {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis
                 dataKey="date"
-                tickFormatter={(date) => new Date(date).toLocaleDateString()}
+                tickFormatter={(date) => new Date(date).toLocaleDateString(t('locale') || 'pt-BR')}
               />
               <YAxis unit="mm" />
               <Tooltip
                 labelFormatter={(label) => {
                   const d = new Date(label);
-                  return isNaN(d.getTime()) ? label : d.toLocaleDateString();
+                  return isNaN(d.getTime()) ? label : d.toLocaleDateString(t('locale') || 'pt-BR');
                 }}
-                formatter={(value: any) => [Number(value).toFixed(1) + "mm", "Precipitação"]}
+                formatter={(value: any) => [Number(value).toFixed(1) + "mm", t('weather.rain')]}
               />
               <Bar
                 dataKey="precipitation"
-                name="Precipitação"
+                name={t('weather.rain')}
                 fill="#3b82f6"
                 radius={[4, 4, 0, 0]}
               />

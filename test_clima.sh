@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ============================================
-# Teste - Dados Climáticos ClimateAI
+# Teste - Dados Climáticos ClimateWise
 # ============================================
 
 set -e
@@ -84,7 +84,7 @@ fi
 # Teste 4: Verificar Frontend
 echo ""
 echo "4️⃣  Verificando Frontend..."
-if curl -s http://localhost:3000/ | grep -q "ClimateWise\|ClimateAI"; then
+if curl -s http://localhost:3000/ | grep -q "ClimateWise\|ClimateWise"; then
     echo -e "${GREEN}✓ Frontend está rodando${NC}"
 else
     echo -e "${YELLOW}⚠ Frontend pode não estar rodando${NC}"

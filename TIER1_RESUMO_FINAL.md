@@ -1,4 +1,4 @@
-# 🎉 ClimateAI - Implementações Tier 1 Concluídas
+# 🎉 ClimateWise - Implementações Tier 1 Concluídas
 
 ## Resumo Executivo
 

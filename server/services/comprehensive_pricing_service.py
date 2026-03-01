@@ -205,11 +205,44 @@ class ComprehensivePricingService:
             zone_concentration_ratio
         )
 
+        # ── News Crawler Dynamic Risk Adjustment ─────────────────────────
+        # Augment total_risk_factor with real-time news-based risk multiplier
+        news_risk_adjustment = 0.0
+        news_risk_description = 'N/A'
+        try:
+            from services.news_crawler_service import get_news_crawler_service
+            crawler = get_news_crawler_service()
+            risk_data = crawler.get_risk_adjustment_factor()
+            news_risk_adjustment = risk_data.get('risk_factor', 0.0)
+            news_risk_description = risk_data.get('description', '')
+            if news_risk_adjustment > 0:
+                logger.info(f"📰 Pricing risk adjustment from news: +{news_risk_adjustment*100:.1f}%")
+        except Exception as e:
+            logger.debug(f"News risk adjustment skipped: {e}")
+        
+        # ── Climate Data Dynamic Risk (Open-Meteo + CEMADEN + Embrapa) ───
+        weather_risk_adjustment = 0.0
+        weather_risk_description = 'N/A'
+        weather_risk_sources: list = []
+        try:
+            from services.climate_data_service import get_climate_data_service
+            climate_svc = get_climate_data_service()
+            weather_data = climate_svc.get_weather_risk_factor()
+            weather_risk_adjustment = weather_data.get('risk_factor', 0.0)
+            weather_risk_description = weather_data.get('description', '')
+            weather_risk_sources = weather_data.get('sources', [])
+            if weather_risk_adjustment > 0:
+                logger.info(f"🌤️ Pricing risk adjustment from weather: +{weather_risk_adjustment*100:.1f}%")
+        except Exception as e:
+            logger.debug(f"Weather risk adjustment skipped: {e}")
+        
+        adjusted_total_risk = pricing_input.total_risk_factor + news_risk_adjustment + weather_risk_adjustment
+
         # Calculate final premium using the specified formula
         final_premium = (
             pricing_input.pure_theoretical_premium
             * (1 + pricing_input.loading_margin)
-            * (1 + pricing_input.total_risk_factor)
+            * (1 + adjusted_total_risk)
             * (1 + pricing_input.climate_change_factor)
             * supply_demand_adjustment
         )
@@ -274,11 +307,17 @@ class ComprehensivePricingService:
             ),
             risk_category=self.determine_concentration_level(zone_concentration_ratio),
             cost_breakdown={
-                "supply_demand_adjustment": supply_demand_adjustment,
-                "loading_margin_applied": pricing_input.loading_margin,
-                "total_risk_factor_applied": pricing_input.total_risk_factor,
-                "climate_change_factor_applied": pricing_input.climate_change_factor,
-            },
+            "supply_demand_adjustment": supply_demand_adjustment,
+            "loading_margin_applied": pricing_input.loading_margin,
+            "total_risk_factor_applied": adjusted_total_risk,
+            "total_risk_factor_base": pricing_input.total_risk_factor,
+            "news_risk_adjustment": news_risk_adjustment,
+            "news_risk_description": news_risk_description,
+            "weather_risk_adjustment": weather_risk_adjustment,
+            "weather_risk_description": weather_risk_description,
+            "weather_risk_sources": weather_risk_sources,
+            "climate_change_factor_applied": pricing_input.climate_change_factor,
+        },
             calculation_method="integrated_climate_insurance_pricing",
             calculation_timestamp=datetime.now(),
         )

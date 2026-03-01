@@ -31,13 +31,13 @@
     --popover-foreground: 222 47% 11%;
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-    
+
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 215 25% 27%;
 
     --radius: 0.5rem;
-    
+
     /* Semantic Colors */
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
@@ -560,4 +560,336 @@
       max-width: 1536px;
     }
   }
+}
+
+/* ===================================================
+   LANDING PAGE — Dark Cinematic Theme
+   =================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap');
+
+:root {
+  --lp-bg: #070d0a;
+  --lp-bg-2: #0c1710;
+  --lp-green: #22c55e;
+  --lp-green-glow: rgba(34, 197, 94, 0.35);
+  --lp-cyan: #06b6d4;
+  --lp-text: #f0fdf4;
+  --lp-text-muted: #86efac;
+  --lp-glass: rgba(255, 255, 255, 0.04);
+  --lp-glass-border: rgba(255, 255, 255, 0.08);
+}
+
+/* Landing page root wrapper */
+.lp-root {
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  background: var(--lp-bg);
+  color: var(--lp-text);
+  overflow-x: hidden;
+}
+
+/* Glass card for landing page */
+.lp-glass {
+  background: var(--lp-glass);
+  border: 1px solid var(--lp-glass-border);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+/* Green glow button */
+.lp-btn-primary {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: #fff;
+  border: none;
+  box-shadow: 0 0 32px var(--lp-green-glow), 0 4px 16px rgba(0, 0, 0, 0.4);
+  transition: all 0.25s ease;
+}
+
+.lp-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 48px var(--lp-green-glow), 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+/* Ghost button for landing page */
+.lp-btn-ghost {
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.2s ease;
+}
+
+.lp-btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Gradient headline accent */
+.lp-gradient-text {
+  background: linear-gradient(135deg, #22c55e, #06b6d4);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Ticker / marquee */
+.lp-ticker-wrap {
+  overflow: hidden;
+  white-space: nowrap;
+  border-top: 1px solid var(--lp-glass-border);
+  border-bottom: 1px solid var(--lp-glass-border);
+}
+
+.lp-ticker-track {
+  display: inline-flex;
+  animation: lp-ticker 40s linear infinite;
+}
+
+.lp-ticker-track:hover {
+  animation-play-state: paused;
+}
+
+/* Mission image overlay */
+.lp-mission-tile {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+.lp-mission-tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s ease;
+}
+
+.lp-mission-tile:hover img {
+  transform: scale(1.06);
+}
+
+.lp-mission-tile-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.1) 60%);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 1.5rem;
+  transition: opacity 0.3s ease;
+}
+
+/* Metric counter card */
+.lp-metric-card {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.08) 0%, rgba(6, 182, 212, 0.05) 100%);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  border-radius: 16px;
+  padding: 2rem;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.lp-metric-card:hover {
+  border-color: rgba(34, 197, 94, 0.5);
+  box-shadow: 0 0 40px rgba(34, 197, 94, 0.12);
+  transform: translateY(-4px);
+}
+
+.lp-metric-number {
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 900;
+  line-height: 1;
+  background: linear-gradient(135deg, #22c55e, #06b6d4);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Timeline step */
+.lp-timeline-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+}
+
+.lp-timeline-step-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(6, 182, 212, 0.1));
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+  transition: all 0.3s ease;
+}
+
+.lp-timeline-step:hover .lp-timeline-step-icon {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.35), rgba(6, 182, 212, 0.2));
+  border-color: rgba(34, 197, 94, 0.6);
+  box-shadow: 0 0 24px rgba(34, 197, 94, 0.25);
+}
+
+.lp-timeline-connector {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, rgba(34, 197, 94, 0.4), rgba(6, 182, 212, 0.3));
+  margin-top: -32px;
+}
+
+/* Live badge pulse */
+.lp-live-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: #22c55e;
+  border-radius: 50%;
+  animation: lp-pulse-dot 1.5s ease-in-out infinite;
+  box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+}
+
+/* Video hero overlay layers */
+.lp-video-overlay {
+  background: linear-gradient(to bottom,
+      rgba(7, 13, 10, 0.5) 0%,
+      rgba(7, 13, 10, 0.35) 40%,
+      rgba(7, 13, 10, 0.75) 85%,
+      rgba(7, 13, 10, 1) 100%);
+}
+
+/* Particle dots bg */
+.lp-dots-bg {
+  background-image: radial-gradient(rgba(34, 197, 94, 0.12) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* Section fade-in on scroll */
+.lp-section-hidden {
+  opacity: 0;
+  transform: translateY(32px);
+}
+
+.lp-section-visible {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+/* Testimonial card */
+.lp-testimonial {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+  padding: 2rem;
+  transition: border-color 0.3s ease;
+}
+
+.lp-testimonial:hover {
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+/* CTA section glow */
+.lp-cta-glow {
+  background: radial-gradient(ellipse 60% 40% at 50% 100%, rgba(34, 197, 94, 0.2) 0%, transparent 70%);
+}
+
+/* ---- Keyframes ---- */
+@keyframes lp-ticker {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes lp-pulse-dot {
+  0% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+  }
+
+  70% {
+    box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+  }
+}
+
+@keyframes lp-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes lp-glow-pulse {
+
+  0%,
+  100% {
+    box-shadow: 0 0 32px var(--lp-green-glow);
+  }
+
+  50% {
+    box-shadow: 0 0 64px var(--lp-green-glow), 0 0 12px rgba(6, 182, 212, 0.2);
+  }
+}
+
+@keyframes lp-ken-burns {
+  0% {
+    transform: scale(1) translateX(0) translateY(0);
+  }
+
+  50% {
+    transform: scale(1.1) translateX(-2%) translateY(-1%);
+  }
+
+  100% {
+    transform: scale(1) translateX(0) translateY(0);
+  }
+}
+
+@keyframes lp-shimmer {
+  0% {
+    background-position: -200% center;
+  }
+
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.lp-animate-fade-up {
+  animation: lp-fade-up 0.8s ease forwards;
+}
+
+.lp-delay-100 {
+  animation-delay: 0.1s;
+}
+
+.lp-delay-200 {
+  animation-delay: 0.2s;
+}
+
+.lp-delay-300 {
+  animation-delay: 0.3s;
+}
+
+.lp-delay-400 {
+  animation-delay: 0.4s;
+}
+
+.lp-delay-500 {
+  animation-delay: 0.5s;
+}
+
+.lp-btn-glow-pulse {
+  animation: lp-glow-pulse 2.5s ease-in-out infinite;
 }

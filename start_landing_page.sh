@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Script para iniciar o servidor da landing page do ClimateAI
+# Script para iniciar o servidor da landing page do ClimateWise
 
-echo "🚀 Iniciando servidor da Landing Page do ClimateAI..."
+echo "🚀 Iniciando servidor da Landing Page do ClimateWise..."
 echo "📍 URL: http://localhost:8080/landing-page.html"
 echo "📱 Acesse a partir de qualquer dispositivo na rede"
 echo ""

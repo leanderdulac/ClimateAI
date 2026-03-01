@@ -1,4 +1,4 @@
-# 🔧 ClimateAI - Guia de Correção de Deploy
+# 🔧 ClimateWise - Guia de Correção de Deploy
 
 ## 🚨 Problemas Identificados e Soluções
 
@@ -65,7 +65,7 @@ client/dist
 1. **Conectar Repositório**
    - Acesse [Netlify](https://app.netlify.com)
    - "Import from Git" → GitHub
-   - Selecione `ClimateAI`
+   - Selecione `ClimateWise`
 
 2. **Configurar Build**
    - **Build command**: `cd client && npm install && npm run build`
@@ -150,8 +150,8 @@ ssh root@YOUR_DROPLET_IP
 
 #### **4. Clonar Repositório**
 ```bash
-git clone https://github.com/leanderdulac/ClimateAI.git
-cd ClimateAI
+git clone https://github.com/leanderdulac/ClimateWise.git
+cd ClimateWise
 ```
 
 #### **5. Configurar Ambiente**

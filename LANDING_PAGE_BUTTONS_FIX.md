@@ -76,7 +76,7 @@ async function updateDashboardLinks() {
 ```javascript
 document.addEventListener('DOMContentLoaded', function() {
     // Dashboard links agora funcionam diretamente via Netlify routing
-    console.log('ClimateAI Landing Page carregada');
+    console.log('ClimateWise Landing Page carregada');
 });
 ```
 

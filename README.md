@@ -1,4 +1,4 @@
-# ClimateAI - Framework Integrado de Modelagem Climático-Econômica (FIMCE)
+# ClimateWise - Framework Integrado de Modelagem Climático-Econômica (FIMCE)
 
 APP Atuarial Climático que integra o Framework Integrado de Modelagem Climático-Econômica (FIMCE) para prever eventos climáticos extremos e seus impactos nos preços de commodities e mercados financeiros.
 
@@ -121,7 +121,7 @@ A landing page está totalmente integrada ao dashboard para maximizar conversõe
 
 #### **Página de Boas-Vindas**
 - **Rota `/welcome`**: Página dedicada para usuários vindos da landing page
-- **Onboarding Guiado**: Explica funcionalidades principais do ClimateAI
+- **Onboarding Guiado**: Explica funcionalidades principais do ClimateWise
 - **Navegação Fluida**: Botões para explorar dashboard completo
 - **Design Consistente**: Mantém identidade visual da landing page
 
@@ -153,7 +153,7 @@ A landing page está totalmente integrada ao dashboard para maximizar conversõe
 - **Call-to-Action**: Seção de conversão com elementos visuais ricos
 
 ### Demonstração Interativa
-- Conecta com APIs reais do ClimateAI
+- Conecta com APIs reais do ClimateWise
 - Mostra previsões climáticas em tempo real
 - Simula análises de risco e precificação
 - Interface responsiva e moderna
@@ -223,7 +223,7 @@ A landing page está totalmente integrada ao dashboard para maximizar conversõe
 
 ## 🎯 **Especializações do xAI Grok**
 
-O ClimateAI integra o xAI Grok configurado como **especialista em seguros paramétricos e atuária brasileira**, com conhecimento profundo das normas da SUSEP e do histórico climático nacional dos últimos 30 anos.
+O ClimateWise integra o xAI Grok configurado como **especialista em seguros paramétricos e atuária brasileira**, com conhecimento profundo das normas da SUSEP e do histórico climático nacional dos últimos 30 anos.
 
 ### 🛡️ Seguros Paramétricos
 - Análise de viabilidade de produtos paramétricos
@@ -266,7 +266,7 @@ POST /api/v1/grok/insights
 
 ## 🌊 **Integração com NOAA (National Oceanic and Atmospheric Administration)**
 
-O ClimateAI integra dados oficiais do NOAA para fornecer informações climáticas precisas e históricas.
+O ClimateWise integra dados oficiais do NOAA para fornecer informações climáticas precisas e históricas.
 
 ### 📊 **Dados Climáticos Disponíveis**
 - **Temperatura**: Máxima, mínima e média diária
@@ -302,7 +302,7 @@ GET /api/v1/noaa/data-types
 ## 📁 **Estrutura do Projeto**
 
 ```
-ClimateAI/
+ClimateWise/
 ├── client/                 # Frontend React/Vite
 │   ├── src/
 │   ├── public/
@@ -331,8 +331,8 @@ ClimateAI/
 ### Instalação
 ```bash
 # Clonar repositório
-git clone https://github.com/leanderdulac/ClimateAI.git
-cd ClimateAI
+git clone https://github.com/leanderdulac/ClimateWise.git
+cd ClimateWise
 
 # Instalar dependências do backend (perfil padrão: produção com PyTorch, sem TensorFlow)
 cd server
@@ -395,9 +395,9 @@ Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalh
 
 ## 📞 **Contato**
 
-**ClimateAI Team**
+**ClimateWise Team**
 - GitHub: [@leanderdulac](https://github.com/leanderdulac)
-- Projeto: [ClimateAI](https://github.com/leanderdulac/ClimateAI)
+- Projeto: [ClimateWise](https://github.com/leanderdulac/ClimateWise)
 
 ---
 

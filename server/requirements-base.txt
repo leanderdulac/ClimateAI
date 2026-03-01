@@ -1,4 +1,4 @@
-# ClimateAI Base Requirements
+# ClimateWise Base Requirements
 # Dependências essenciais para produção (SEM ML/TensorFlow)
 # Tamanho reduzido de ~2GB para ~500MB
 

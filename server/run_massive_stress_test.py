@@ -4,20 +4,30 @@ import sys
 import pandas as pd
 from datetime import datetime, timedelta
 from services.openmeteo_service import OpenMeteoService
-from services.extreme_value_pricing_service import DefensivePricingOrchestrator, StressTester
+from services.extreme_value_pricing_service import DefensivePricingOrchestrator, StressTester, ReinsuranceLayer
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 async def run_stress_test():
-    logger.info("Starting Massive Stress Test (50 Years)...")
+    logger.info("Starting Massive Stress Test (Defensive Analysis)...")
     
     # Initialize services
     om_service = OpenMeteoService()
     orchestrator = DefensivePricingOrchestrator()
     
-    # Define period: 2016 to 2026 (10 years) - Adjusted for stability & demo
+    # Define Reinsurance Structure: Catastrophe Excess of Loss (XoL)
+    # We protect the insurer against payouts between $10,000 and $110,000
+    cat_xol = ReinsuranceLayer(
+        name="Catastrophe_XoL",
+        attachment=10000.0, 
+        limit=100000.0,
+        rate_on_line=0.08 # 8% of limit
+    )
+    orchestrator.reinsurance_layers = [cat_xol]
+    
+    # Define period: 2016 to 2026 (10 years)
     end_date = datetime.now()
     start_date = end_date - timedelta(days=365 * 10)
     
@@ -26,7 +36,7 @@ async def run_stress_test():
     try:
         # Fetch data (will use chunking internally)
         # Using Sao Paulo coordinates
-        clima_data_list = om_service.obter_historico(-23.55, -46.63, start_date, end_date)
+        clima_data_list = await om_service.obter_historico(-23.55, -46.63, start_date, end_date)
         
         logger.info(f"Retrieved {len(clima_data_list)} records.")
         

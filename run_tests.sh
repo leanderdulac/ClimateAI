@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ###############################################################################
-# Test Suite Runner for ClimateAI
+# Test Suite Runner for ClimateWise
 # Runs pytest with various configurations for comprehensive testing
 ###############################################################################
 
@@ -216,7 +216,7 @@ show_statistics() {
 # Display help
 show_help() {
     cat << EOF
-${BLUE}ClimateAI Test Suite Runner${NC}
+${BLUE}ClimateWise Test Suite Runner${NC}
 
 Usage: $0 [command] [options]
 
@@ -260,9 +260,9 @@ main() {
     # Check prerequisites
     check_pytest
 
-    print_info "ClimateAI Test Suite"
+    print_info "ClimateWise Test Suite"
     print_info "Workspace: $(pwd)"
-    print_info "Python: $(python --version)"
+    print_info "Python: $(python3 --version)"
 
     # Parse command
     local command="${1:-all}"

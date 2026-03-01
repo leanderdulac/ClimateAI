@@ -460,7 +460,7 @@ class GeographicVisualizationService:
                 location=[center_lat, center_lon],
                 zoom_start=zoom,
                 tiles="CartoDB positron",  # Clean, subtle tile style
-                attr="© ClimateAI Globe Visualization System",
+                attr="© ClimateWise Globe Visualization System",
             )
 
             # Add a marker for the selected location
@@ -605,7 +605,7 @@ class GeographicVisualizationService:
                         f"{dates[0][:4]} to {dates[-1][:4]}" if dates else "None"
                     ),
                     "visualization_generated": datetime.now().isoformat(),
-                    "system": "ClimateAI Geographic Visualization Service with Globe Animation",
+                    "system": "ClimateWise Geographic Visualization Service with Globe Animation",
                 },
             }
 

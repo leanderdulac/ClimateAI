@@ -14,7 +14,7 @@ class MintRequest(BaseModel):
 async def mint_token(request: MintRequest):
     """Mint a ClimateToken to the specified address."""
     try:
-        receipt = service.mint(request.to, request.amount)
+        receipt = await service.mint(request.to, request.amount)
         # Handle both Web3 AttributeDict (real) and dict (mock)
         tx_hash = receipt.get("transactionHash") if isinstance(receipt, dict) else receipt.transactionHash
         status = receipt.get("status") if isinstance(receipt, dict) else receipt.status

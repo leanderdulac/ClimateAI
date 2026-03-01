@@ -58,7 +58,7 @@ def deploy():
 
     # 3. Deploy Policy
     print("Deploying ClimatePolicy...")
-    policy_receipt = send_deploy_tx(policy_data["abi"], policy_data["evm"]["bytecode"]["object"], ["ClimateAI Policy", "CPOL"])
+    policy_receipt = send_deploy_tx(policy_data["abi"], policy_data["evm"]["bytecode"]["object"], ["ClimateWise Policy", "CPOL"])
     print(f"Policy deployed at: {policy_receipt.contractAddress}")
 
     # 4. Deploy Vault
@@ -66,7 +66,7 @@ def deploy():
     vault_receipt = send_deploy_tx(
         vault_data["abi"], 
         vault_data["evm"]["bytecode"]["object"], 
-        [usdc_address, "ClimateAI Risk Vault", "cRWA", policy_receipt.contractAddress]
+        [usdc_address, "ClimateWise Risk Vault", "cRWA", policy_receipt.contractAddress]
     )
     print(f"Vault deployed at: {vault_receipt.contractAddress}")
 

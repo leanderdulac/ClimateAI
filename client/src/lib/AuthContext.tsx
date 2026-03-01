@@ -4,7 +4,7 @@
  */
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { supabase, isSupabaseConfigured } from './supabase';
+import { supabase, isSupabaseConfigured, getSupabaseClient } from './supabase';
 import type { User as SupabaseUser, Session } from '@supabase/supabase-js';
 
 // User type for the app
@@ -28,6 +28,7 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   error: string | null;
+  success: string | null;
 }
 
 interface RegisterData {
@@ -56,6 +57,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   // Convert Supabase user to app user
   const mapSupabaseUser = async (supabaseUser: SupabaseUser): Promise<User> => {
@@ -112,21 +114,35 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setSession({ access_token: accessToken, refresh_token: refreshToken });
       }
     } else {
-      // Check for stored tokens
-      const accessToken = localStorage.getItem('access_token');
-      const refreshToken = localStorage.getItem('refresh_token');
+      // Try to restore Supabase session first
+      const client = getSupabaseClient();
+      const restoreSession = async () => {
+        if (client) {
+          const { data } = await client.auth.getSession();
+          const currentSession = data?.session;
+          if (currentSession?.user) {
+            setSession(currentSession);
+            setUser(await mapSupabaseUser(currentSession.user));
+            return;
+          }
+        }
 
-      if (accessToken && refreshToken) {
-        // TODO: Validate token with backend
-        setSession({ access_token: accessToken, refresh_token: refreshToken });
-        // For now, set a basic user - in production you'd decode the JWT
-        setUser({
-          id: 'temp',
-          email: 'user@example.com',
-          name: 'User',
-          role: 'user'
-        });
-      }
+        // Fallback to legacy localStorage tokens (non-Supabase)
+        const accessToken = localStorage.getItem('access_token');
+        const refreshToken = localStorage.getItem('refresh_token');
+        if (accessToken && refreshToken) {
+          setSession({ access_token: accessToken, refresh_token: refreshToken });
+          setUser({
+            id: 'temp',
+            email: 'user@example.com',
+            name: 'User',
+            role: 'user'
+          });
+        }
+      };
+
+      restoreSession().finally(() => setIsLoading(false));
+      return;
     }
 
     setIsLoading(false);
@@ -139,12 +155,43 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     setError(null);
+    setSuccess(null);
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      // Tentar login via backend local primeiro (bypass do Supabase)
+      const apiUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+      const endpoint = apiUrl.endsWith('/api/v1') ? `${apiUrl}/auth/login` : `${apiUrl}/api/v1/auth/login`;
+
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          // Backend retornou o token com sucesso
+          setUser(data.user);
+          setSession({ access_token: data.access_token, refresh_token: data.refresh_token } as any);
+          localStorage.setItem('access_token', data.access_token);
+          localStorage.setItem('refresh_token', data.refresh_token);
+          return;
+        }
+      } catch (backendError) {
+        console.warn('Backend login falhou, tentando fallback Supabase:', backendError);
+      }
+
+      // Fallback para Supabase se o backend falhar
+      const client = getSupabaseClient();
+      if (!client) throw new Error('Supabase não configurado');
+
+      const { data, error } = await client.auth.signInWithPassword({ email, password });
       if (error) throw new Error(error.message || 'Falha no login');
       if (!data.session || !data.user) throw new Error('Sessão inválida');
       setUser(await mapSupabaseUser(data.user));
       setSession(data.session);
+      localStorage.setItem('access_token', data.session.access_token);
+      localStorage.setItem('refresh_token', data.session.refresh_token ?? '');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Falha no login';
       setError(message);
@@ -157,11 +204,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const register = async (userData: RegisterData) => {
     setIsLoading(true);
     setError(null);
+    setSuccess(null);
     try {
       if (!userData.name || !userData.email || !userData.password) {
         throw new Error('Todos os campos obrigatórios devem ser preenchidos');
       }
-      const { data, error } = await supabase.auth.signUp({
+      const client = getSupabaseClient();
+      if (!client) throw new Error('Supabase não configurado');
+
+      const { data, error } = await client.auth.signUp({
         email: userData.email,
         password: userData.password,
         options: {
@@ -173,7 +224,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
         },
       });
       if (error) throw new Error(error.message || 'Falha no cadastro');
-      setError('Cadastro realizado com sucesso! Verifique seu e-mail para ativar a conta.');
+      if (data.session) {
+        localStorage.setItem('access_token', data.session.access_token);
+        localStorage.setItem('refresh_token', data.session.refresh_token ?? '');
+        setSession(data.session);
+        if (data.user) setUser(await mapSupabaseUser(data.user));
+      }
+      setSuccess('Cadastro realizado com sucesso! Verifique seu e-mail para ativar a conta.');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Falha no cadastro';
       setError(message);
@@ -186,8 +243,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const logout = async () => {
     setIsLoading(true);
     setError(null);
+    setSuccess(null);
 
     try {
+      const client = getSupabaseClient();
+      if (client) {
+        await client.auth.signOut();
+      }
       // Clear local storage
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
@@ -203,11 +265,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const resetPassword = async (email: string) => {
     setIsLoading(true);
     setError(null);
+    setSuccess(null);
 
     try {
-      if (!supabase) throw new Error('Supabase não disponível');
+      const client = getSupabaseClient();
+      if (!client) throw new Error('Supabase não disponível');
 
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      const { error } = await client.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth/reset-password`,
       });
 
@@ -224,11 +288,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const updateProfile = async (data: Partial<User>) => {
     setIsLoading(true);
     setError(null);
+    setSuccess(null);
 
     try {
-      if (!supabase || !user) throw new Error('Usuário não autenticado');
+      const client = getSupabaseClient();
+      if (!client || !user) throw new Error('Usuário não autenticado');
 
-      const { error } = await supabase
+      const { error } = await client
         .from('profiles')
         .update({
           full_name: data.name,
@@ -262,6 +328,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     isLoading,
     isAuthenticated: !!user,
     error,
+    success,
   };
 
   return (

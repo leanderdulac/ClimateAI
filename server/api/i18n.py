@@ -1,6 +1,6 @@
 """
 API Router for Internationalization (i18n) Service
-Provides multilingual support for the ClimateAI system
+Provides multilingual support for the ClimateWise system
 """
 
 from datetime import datetime
@@ -190,8 +190,8 @@ async def get_translation_service_info():
     """
 
     return {
-        "service_name": "ClimateAI Internationalization Service",
-        "description": "Multilingual support for ClimateAI system with English and Portuguese",
+        "service_name": "ClimateWise Internationalization Service",
+        "description": "Multilingual support for ClimateWise system with English and Portuguese",
         "supported_languages": [
             {
                 "code": "en-US",

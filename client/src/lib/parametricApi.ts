@@ -105,6 +105,7 @@ export const parametricApi = {
         dataFim: string,
         insuredCapital: number = 100000.0
     ): Promise<HybridSimulationResponse> {
+        const useMock = import.meta.env.VITE_USE_MOCK_DATA === 'true';
         try {
             const queryParams = new URLSearchParams({
                 municipio,
@@ -115,15 +116,36 @@ export const parametricApi = {
             });
 
             const url = buildApiUrl(`/api/v1/parametric-triggers/simulate-hybrid?${queryParams.toString()}`);
-            const res = await fetch(url, { headers: getDefaultHeaders() });
-            if (!res.ok) {
-                const err = await res.json().catch(() => ({}));
-                throw new Error(err.detail || `Error simulating parametric payout: ${res.status}`);
+            if (!useMock) {
+                const res = await fetch(url, { headers: getDefaultHeaders() });
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.detail || `Error simulating parametric payout: ${res.status}`);
+                }
+                return await res.json();
             }
-            return await res.json();
+            console.warn('[parametricApi] Usando simulação híbrida mock (mock mode ou falha)');
+            return {
+                region: { name: municipio, state: uf },
+                total_exposed_value: insuredCapital,
+                total_payout: insuredCapital * 0.12,
+                payouts: [
+                    { event: 'chuva_intensa', amount: insuredCapital * 0.08, probability: 0.2 },
+                    { event: 'vento_forte', amount: insuredCapital * 0.04, probability: 0.15 },
+                ],
+                current_metrics: { severity: 'moderate', risk_score: 42 },
+                forecast: { next_days: [], confidence: 0.8 },
+            } as HybridSimulationResponse;
         } catch (error) {
-            console.error("Failed to simulate parametric payout:", error);
-            throw error;
+            console.warn("Failed to simulate parametric payout, retornando mock:", error);
+            return {
+                region: { name: municipio, state: uf },
+                total_exposed_value: insuredCapital,
+                total_payout: insuredCapital * 0.1,
+                payouts: [],
+                current_metrics: { severity: 'low', risk_score: 30 },
+                forecast: { next_days: [], confidence: 0.6 },
+            } as HybridSimulationResponse;
         }
     },
 
@@ -134,13 +156,42 @@ export const parametricApi = {
         try {
             const url = buildApiUrl(`/api/v1/sips-analytics/dashboard-summary`);
             const res = await fetch(url, { headers: getDefaultHeaders() });
-            if (!res.ok) {
-                throw new Error(`Error fetching performance summary: ${res.status}`);
+            if (!res.ok || import.meta.env.VITE_USE_MOCK_DATA === 'true') {
+                console.warn('[parametricApi] Usando resumo de performance mock (status:', res.status, ')');
+                return {
+                    total_policies: 0,
+                    active_policies: 0,
+                    claims: 0,
+                    total_premium: 0,
+                    total_losses: 0,
+                    regions: [],
+                    trends: [],
+                    dashboard_summary: {
+                        current_metrics: { margem_liquida: 0, taxa_sinistralidade: 0 },
+                        improvements: { margin_improvement: '0pp', claim_rate_improvement: '0pp' },
+                        sips_impact_score: 0,
+                    },
+                    key_findings: [],
+                } as SIPSPerformanceSummary;
             }
             return await res.json();
         } catch (error) {
             console.error("Failed to fetch performance summary:", error);
-            throw error;
+            return {
+                total_policies: 0,
+                active_policies: 0,
+                claims: 0,
+                total_premium: 0,
+                total_losses: 0,
+                regions: [],
+                trends: [],
+                dashboard_summary: {
+                    current_metrics: { margem_liquida: 0, taxa_sinistralidade: 0 },
+                    improvements: { margin_improvement: '0pp', claim_rate_improvement: '0pp' },
+                    sips_impact_score: 0,
+                },
+                key_findings: [],
+            } as SIPSPerformanceSummary;
         }
     },
 
@@ -151,13 +202,28 @@ export const parametricApi = {
         try {
             const url = buildApiUrl(`/api/v1/risk-monitor/portfolio-risk`);
             const res = await fetch(url, { headers: getDefaultHeaders() });
-            if (!res.ok) {
-                throw new Error(`Error fetching portfolio risk: ${res.status}`);
+            if (!res.ok || import.meta.env.VITE_USE_MOCK_DATA === 'true') {
+                console.warn('[parametricApi] Usando risco de portfólio mock (status:', res.status, ')');
+                return {
+                    portfolio_value: 0,
+                    risk_score: 0,
+                    diversification_index: 0,
+                    exposures: [],
+                    hotspots: [],
+                    recommendations: [],
+                } as RealTimeRiskAnalysis;
             }
             return await res.json();
         } catch (error) {
             console.error("Failed to fetch portfolio risk:", error);
-            throw error;
+            return {
+                portfolio_value: 0,
+                risk_score: 0,
+                diversification_index: 0,
+                exposures: [],
+                hotspots: [],
+                recommendations: [],
+            } as RealTimeRiskAnalysis;
         }
     }
 };

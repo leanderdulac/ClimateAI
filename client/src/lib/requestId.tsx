@@ -22,7 +22,7 @@ export function generateRequestId(): string {
  * Se já existir no contexto da sessão, reutiliza; caso contrário, cria um novo
  */
 export function getOrCreateRequestId(): string {
-    const storageKey = 'climateai_request_id';
+    const storageKey = 'climatewise_request_id';
     
     // Tenta obter do sessionStorage (mesma aba/browser)
     let requestId = sessionStorage.getItem(storageKey);
@@ -39,7 +39,7 @@ export function getOrCreateRequestId(): string {
  * Limpa o X-Request-ID atual (útil após completar uma operação)
  */
 export function clearRequestId(): void {
-    sessionStorage.removeItem('climateai_request_id');
+    sessionStorage.removeItem('climatewise_request_id');
 }
 
 /**

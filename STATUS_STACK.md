@@ -1,4 +1,4 @@
-# ✅ ClimateAI - Stack Tier 1 em Execução
+# ✅ ClimateWise - Stack Tier 1 em Execução
 
 ## Status: OPERACIONAL
 
@@ -44,7 +44,7 @@
 - **Extensions:** health_check (:13133)
 
 ### Redes
-- `climateai` - Serviços principais (DB, Redis, Backend)
+- `climatewise` - Serviços principais (DB, Redis, Backend)
 - `monitoring` - Stack de observabilidade
 
 ### Volumes
@@ -79,12 +79,12 @@ podman logs -f
 
 ### Parar Serviços
 ```bash
-podman stop climateai-db climateai-redis otel-collector jaeger prometheus grafana zipkin
+podman stop climatewise-db climatewise-redis otel-collector jaeger prometheus grafana zipkin
 ```
 
 ### Remover Serviços
 ```bash
-podman rm -f climateai-db climateai-redis otel-collector jaeger prometheus grafana zipkin
+podman rm -f climatewise-db climatewise-redis otel-collector jaeger prometheus grafana zipkin
 ```
 
 ### Remover Volumes (CUIDADO: perde dados!)
@@ -106,7 +106,7 @@ podman volume rm postgres_data redis_data prometheus_data grafana_data
 
 ### 2. Verificar Traces no Jaeger
 1. Acesse http://localhost:16686
-2. Service: `climateai-backend`
+2. Service: `climatewise-backend`
 3. Click "Find Traces"
 
 ### 3. Integrar Backend
@@ -115,9 +115,9 @@ Adicionar no `docker-compose.yml` do backend:
 environment:
   - OTEL_ENABLED=true
   - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
-  - OTEL_SERVICE_NAME=climateai-backend
+  - OTEL_SERVICE_NAME=climatewise-backend
 networks:
-  - climateai
+  - climatewise
   - monitoring
 ```
 

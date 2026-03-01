@@ -31,7 +31,7 @@ from services.sips_performance_analytics_service import (
 router = APIRouter()
 
 
-@router.post("/sips-analytics/create-snapshot")
+@router.post("/create-snapshot")
 async def create_performance_snapshot_endpoint(
     snapshot_id: str = Query(..., description="Unique identifier for the snapshot"),
     date: str = Query(
@@ -115,7 +115,7 @@ async def create_performance_snapshot_endpoint(
         )
 
 
-@router.post("/sips-analytics/calculate-deltas")
+@router.post("/calculate-deltas")
 async def calculate_performance_deltas_endpoint(
     before_snapshot_id: str = Query(..., description="Baseline snapshot ID"),
     after_snapshot_id: str = Query(..., description="Compare to snapshot ID"),
@@ -207,7 +207,7 @@ async def calculate_performance_deltas_endpoint(
         )
 
 
-@router.post("/sips-analytics/generate-report")
+@router.post("/generate-report")
 async def generate_performance_report_endpoint(
     report_id: str = Query(..., description="Unique identifier for the report"),
     baseline_snapshot_id: str = Query(..., description="Baseline snapshot ID"),
@@ -308,7 +308,7 @@ async def generate_performance_report_endpoint(
         )
 
 
-@router.get("/sips-analytics/calculate-sips-impact/{snapshot_id}")
+@router.get("/calculate-sips-impact/{snapshot_id}")
 async def calculate_sips_impact_score_endpoint(snapshot_id: str):
     """
     Calculate SIPS-Climate impact score for a specific snapshot
@@ -502,7 +502,7 @@ async def calculate_sips_impact_score_endpoint(snapshot_id: str):
         )
 
 
-@router.get("/sips-analytics/performance-trend/{metric_type}")
+@router.get("/performance-trend/{metric_type}")
 async def get_performance_trend_endpoint(
     metric_type: str,
     days: int = Query(
@@ -559,7 +559,7 @@ async def get_performance_trend_endpoint(
         )
 
 
-@router.get("/sips-analytics/dashboard-summary")
+@router.get("/dashboard-summary")
 async def get_dashboard_summary():
     """
     Get a comprehensive dashboard summary of SIPS-Climate performance
@@ -570,10 +570,35 @@ async def get_dashboard_summary():
 
         if not snapshots:
             return {
-                "dashboard_summary": "No performance data available",
-                "snapshots_count": 0,
-                "last_update": datetime.now().isoformat(),
+                "dashboard_summary": {
+                    "period_analyzed": {
+                        "start_date": datetime.now().isoformat(),
+                        "end_date": datetime.now().isoformat(),
+                        "days_spanned": 0,
+                    },
+                    "current_metrics": {
+                        "taxa_sinistralidade": 0,
+                        "sinistralidade_climatica": 0,
+                        "margem_liquida": 0,
+                        "rejeicoes": 0,
+                        "premio_medio": 0,
+                        "retencao_clientes": 0,
+                        "capital_economico": 0,
+                    },
+                    "improvements": {
+                        "claim_rate_improvement": "0.00%",
+                        "climate_loss_improvement": "0.00%",
+                        "margin_improvement": "0.00%",
+                        "retention_improvement": "0.00%",
+                        "premium_growth": "0.00%",
+                    },
+                    "sips_impact_score": 0,
+                    "snapshots_count": 0,
+                },
+                "statistics": {},
+                "key_findings": [],
                 "status": "no_data",
+                "timestamp": datetime.now().isoformat(),
             }
 
         # Sort snapshots by date
@@ -727,7 +752,7 @@ async def get_dashboard_summary():
         )
 
 
-@router.get("/sips-analytics/specification")
+@router.get("/specification")
 async def get_performance_analytics_specification():
     """
     Get specification and requirements for SIPS-Climate performance analytics

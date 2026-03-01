@@ -1,5 +1,5 @@
 #!/bin/bash
-# Script de monitoramento contínuo do stack ClimateAI
+# Script de monitoramento contínuo do stack ClimateWise
 # Reinicia frontend automaticamente se porta 3000 estiver ocupada e serviço não responder
 # Reinicia backend se health check falhar
 # Loga eventos e status

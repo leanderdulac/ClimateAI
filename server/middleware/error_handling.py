@@ -1,5 +1,5 @@
 """
-Advanced Error Handling Middleware for ClimateAI
+Advanced Error Handling Middleware for ClimateWise
 """
 
 import logging

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Database Restore Script for ClimateAI
+# Database Restore Script for ClimateWise
 # This script restores PostgreSQL database from backup
 
 set -e
@@ -8,7 +8,7 @@ set -e
 if [ $# -eq 0 ]; then
     echo "Usage: $0 <backup_file>"
     echo "Available backups:"
-    ls -la /opt/climateai/backups/climateai_backup_*.sql 2>/dev/null || echo "No backups found"
+    ls -la /opt/climatewise/backups/climatewise_backup_*.sql 2>/dev/null || echo "No backups found"
     exit 1
 fi
 
@@ -36,8 +36,8 @@ docker-compose -f docker-compose.prod.yml stop backend
 echo "Restoring database..."
 PGPASSWORD=$DB_PASSWORD pg_restore \
     -h db \
-    -U climateai_user \
-    -d climateai \
+    -U climatewise_user \
+    -d climatewise \
     --no-password \
     --clean \
     --if-exists \

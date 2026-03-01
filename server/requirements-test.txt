@@ -1,4 +1,4 @@
-# Testing requirements for ClimateAI
+# Testing requirements for ClimateWise
 # Install with: pip install -r requirements-test.txt
 
 # Core testing

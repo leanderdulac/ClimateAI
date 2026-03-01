@@ -27,7 +27,7 @@ class GeocodingService:
         integrações com os Correios para CEP e um índice local de capitais brasileiras
         para operação offline.
         """
-        self.geolocator = Nominatim(user_agent="climateai/1.0", timeout=10)
+        self.geolocator = Nominatim(user_agent="climatewise/1.0", timeout=10)
         self.cache: Dict[str, Dict] = {}
         self.city_data = self._load_city_dataset()
         self.city_index = {

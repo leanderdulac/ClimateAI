@@ -220,7 +220,7 @@ except Exception as e:
 
 ---
 
-## 🔄 **INTEGRAÇÃO COM CLIMATEAI**
+## 🔄 **INTEGRAÇÃO COM CLIMATEWISE**
 
 ### **ClimateDataWidget**
 ```typescript
@@ -298,9 +298,9 @@ lxml>=4.9.0
 - Alertas: https://alertas2.inmet.gov.br/
 - API: https://apiprevmet3.inmet.gov.br/
 
-### **ClimateAI Team**
-- GitHub: https://github.com/leanderdulac/ClimateAI
-- Issues: https://github.com/leanderdulac/ClimateAI/issues
+### **ClimateWise Team**
+- GitHub: https://github.com/leanderdulac/ClimateWise
+- Issues: https://github.com/leanderdulac/ClimateWise/issues
 
 ---
 

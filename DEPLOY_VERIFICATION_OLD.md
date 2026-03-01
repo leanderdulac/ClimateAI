@@ -1,4 +1,4 @@
-# 🔍 ClimateAI - Relatório de Verificação e Preparação para Deploy
+# 🔍 ClimateWise - Relatório de Verificação e Preparação para Deploy
 
 **Data:** 14 de outubro de 2025
 **Status:** ✅ **PRONTO PARA DEPLOY**
@@ -139,7 +139,7 @@
 ssh root@YOUR_DROPLET_IP
 
 # 3. Executar script de deploy
-wget https://raw.githubusercontent.com/leanderdulac/ClimateAI/main/deploy/deploy_digitalocean.sh
+wget https://raw.githubusercontent.com/leanderdulac/ClimateWise/main/deploy/deploy_digitalocean.sh
 chmod +x deploy_digitalocean.sh
 
 export DOMAIN="seu-dominio.com"
@@ -224,7 +224,7 @@ vercel --prod
 
 ## 🎯 Conclusão
 
-**ClimateAI está 100% pronto para deploy em produção!**
+**ClimateWise está 100% pronto para deploy em produção!**
 
 Todos os erros foram corrigidos, as dependências estão atualizadas, e o código foi testado. A plataforma pode ser deployada no DigitalOcean, Vercel, ou qualquer outra plataforma que suporte Docker.
 

@@ -21,7 +21,7 @@ class PrevisaoService:
         self.clima_service = ClimaService()
         self.dynamical_climate_service = dynamical_climate_service
 
-    def obter_previsao_clima(
+    async def obter_previsao_clima(
         self, latitude: float, longitude: float, dias: int
     ) -> PrevisaoClima:
         """
@@ -35,7 +35,7 @@ class PrevisaoService:
         historico_inicio = data_inicio - timedelta(
             days=30
         )  # Use last 30 days for initialization
-        historico = self.clima_service.obter_historico(
+        historico = await self.clima_service.obter_historico(
             latitude=latitude,
             longitude=longitude,
             data_inicio=historico_inicio,
@@ -175,7 +175,7 @@ class PrevisaoService:
 
         return initial_conditions
 
-    def obter_previsao_eventos(
+    async def obter_previsao_eventos(
         self, latitude: float, longitude: float, dias: int
     ) -> List[str]:
         """
@@ -186,7 +186,7 @@ class PrevisaoService:
 
         # Get dynamical systems prediction to identify extreme events
         historico_inicio = datetime.now() - timedelta(days=30)
-        historico = self.clima_service.obter_historico(
+        historico = await self.clima_service.obter_historico(
             latitude=latitude,
             longitude=longitude,
             data_inicio=historico_inicio,

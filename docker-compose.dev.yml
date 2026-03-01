@@ -13,7 +13,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql+asyncpg://climateai:climateai123@db:5432/climateai
+      - DATABASE_URL=postgresql+asyncpg://climatewise:climatewise123@db:5432/climatewise
       - REDIS_URL=redis://redis:6379
       - SECRET_KEY=dev-secret-key-not-for-production
       - ALLOW_ORIGINS=http://localhost:3000,http://localhost:5173,http://localhost:8080
@@ -47,15 +47,15 @@ services:
   db:
     image: postgres:13
     environment:
-      POSTGRES_USER: climateai
-      POSTGRES_PASSWORD: climateai123
-      POSTGRES_DB: climateai
+      POSTGRES_USER: climatewise
+      POSTGRES_PASSWORD: climatewise123
+      POSTGRES_DB: climatewise
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U climateai" ]
+      test: [ "CMD-SHELL", "pg_isready -U climatewise" ]
       interval: 10s
       timeout: 5s
       retries: 5

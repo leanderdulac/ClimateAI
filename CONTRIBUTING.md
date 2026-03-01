@@ -1,6 +1,6 @@
 # Contribution Guide
 
-Thank you for your interest in contributing to the ClimateAI project! To ensure consistency and quality across the codebase, please follow these guidelines.
+Thank you for your interest in contributing to the ClimateWise project! To ensure consistency and quality across the codebase, please follow these guidelines.
 
 ## 1. Language
 

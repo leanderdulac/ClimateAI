@@ -44,7 +44,7 @@ def testar_blockchain_tokens():
 
     # Testar criação de token
     print("🏭 Criando token blockchain...")
-    wallet_address = "climateai_wallet_test_001"
+    wallet_address = "climatewise_wallet_test_001"
 
     resultado_mint = blockchain_service.mint_climate_token(
         evento=evento_teste,
@@ -108,7 +108,7 @@ def testar_blockchain_tokens():
 
         # Testar transferência
         print("💸 Testando transferência de tokens...")
-        recipient_address = "climateai_wallet_recipient_001"
+        recipient_address = "climatewise_wallet_recipient_001"
 
         transfer_result = blockchain_service.transfer_token(
             token_uid=token_uid,
@@ -167,7 +167,7 @@ def testar_blockchain_tokens():
     print()
 
     # Estatísticas da blockchain
-    print("📊 Estatísticas da blockchain ClimateAI:")
+    print("📊 Estatísticas da blockchain ClimateWise:")
     stats = blockchain_service.blockchain_registry
     transactions = [
         item for item in stats.values() if isinstance(item, dict) and "tx_id" in item

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ============================================
-# Script de Setup e Configuração do ClimateAI
+# Script de Setup e Configuração do ClimateWise
 # ============================================
 # Este script configura automaticamente o ambiente
 # ============================================
@@ -11,7 +11,7 @@ set -e  # Exit on error
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
-echo "🚀 ClimateAI - Setup e Configuração Inicial"
+echo "🚀 ClimateWise - Setup e Configuração Inicial"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# ClimateAI - Master Deployment Script
+# ClimateWise - Master Deployment Script
 # Orchestrates Frontend (Vercel), Backend (GCP), and Blockchain deployment.
 
 set -e
@@ -13,7 +13,7 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 echo -e "${BLUE}============================================================${NC}"
-echo -e "${BLUE}       ClimateAI - Master Deployment Orchestrator           ${NC}"
+echo -e "${BLUE}       ClimateWise - Master Deployment Orchestrator           ${NC}"
 echo -e "${BLUE}============================================================${NC}"
 echo ""
 echo "Este script irá guiá-lo através dos 5 passos de deploy."
@@ -56,7 +56,7 @@ if [[ "$do_frontend" == "y" ]]; then
     cat vercel_output.txt
     echo ""
     echo -e "${GREEN}Deploy Frontend concluído (verifique saída acima).${NC}"
-    read -p "Cole a URL final do Frontend (ex: https://climateai.vercel.app): " FRONTEND_URL
+    read -p "Cole a URL final do Frontend (ex: https://climatewise.vercel.app): " FRONTEND_URL
     cd ../deploy
 else
     read -p "Insira a URL do Frontend existente (para configurar CORS no backend): " FRONTEND_URL
@@ -68,7 +68,7 @@ fi
 echo -e "${YELLOW}>> [2/5] Iniciando Deploy do Backend (Google Cloud Run)...${NC}"
 read -p "Deseja realizar o deploy do Backend agora? (y/n): " do_backend
 
-BACKEND_SERVICE_NAME="climateai-backend"
+BACKEND_SERVICE_NAME="climatewise-backend"
 REGION="us-central1"
 
 if [[ "$do_backend" == "y" ]]; then

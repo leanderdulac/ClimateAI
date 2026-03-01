@@ -6,8 +6,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { parametricApi, RealTimeRiskAnalysis } from '@/lib/parametricApi';
 import { AlertTriangle, ShieldAlert, TrendingUp, Info, MapPin, DollarSign } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useTranslation } from "@/hooks/useTranslation";
 
 export function RealTimeRiskMonitor() {
+    const { t, language } = useTranslation();
     const [data, setData] = useState<RealTimeRiskAnalysis | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -33,7 +35,17 @@ export function RealTimeRiskMonitor() {
     }
 
     const formatCurrency = (val: number) => {
-        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+        return `${t('common.currency')} ${val.toLocaleString(language, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    };
+
+    const getRiskLabel = (level: string) => {
+        switch (level.toLowerCase()) {
+            case 'high': return t('audit.risk.high');
+            case 'medium': return t('audit.risk.medium');
+            case 'low': return t('audit.risk.low');
+            case 'critical': return t('audit.risk.critical');
+            default: return level;
+        }
     };
 
     const getRiskColor = (level: string) => {
@@ -52,15 +64,15 @@ export function RealTimeRiskMonitor() {
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium flex items-center gap-2">
                             <ShieldAlert className="h-4 w-4 text-red-600" />
-                            Exposição Iminente
+                            {t('risk.monitor.exposure')}
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-red-700">
-                            {formatCurrency(data?.summary.total_exposure || 0)}
+                            {formatCurrency(data?.summary?.total_exposure || 0)}
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
-                            Valor total de apólices sob alerta
+                            {t('risk.monitor.exposureDesc')}
                         </p>
                     </CardContent>
                 </Card>
@@ -69,15 +81,15 @@ export function RealTimeRiskMonitor() {
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium flex items-center gap-2">
                             <TrendingUp className="h-4 w-4 text-amber-600" />
-                            Payout Estimado (Live)
+                            {t('risk.monitor.payout')}
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-amber-700">
-                            {formatCurrency(data?.summary.potential_payout || 0)}
+                            {formatCurrency(data?.summary?.potential_payout || 0)}
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
-                            {data?.summary.impacted_policies_count} apólices afetadas
+                            {t('risk.monitor.policiesAffected', { count: data?.summary?.impacted_policies_count || 0 })}
                         </p>
                     </CardContent>
                 </Card>
@@ -86,15 +98,15 @@ export function RealTimeRiskMonitor() {
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium flex items-center gap-2">
                             <Info className="h-4 w-4 text-blue-600" />
-                            Alertas Ativos
+                            {t('risk.monitor.activeAlerts')}
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-blue-700">
-                            {data?.summary.total_alerts || 0}
+                            {data?.summary?.total_alerts || 0}
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
-                            Alertas meteorológicos em tempo real
+                            {t('risk.monitor.alertsDesc')}
                         </p>
                     </CardContent>
                 </Card>
@@ -105,10 +117,10 @@ export function RealTimeRiskMonitor() {
                     <CardHeader>
                         <CardTitle className="text-lg font-semibold flex items-center gap-2">
                             <AlertTriangle className="h-5 w-5 text-red-600" />
-                            Monitoramento de Apólices sob Risco
+                            {t('risk.monitor.title')}
                         </CardTitle>
                         <CardDescription>
-                            Apólices cujos gatilhos coincidem com alertas severos em andamento.
+                            {t('risk.monitor.description')}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -116,11 +128,11 @@ export function RealTimeRiskMonitor() {
                             <Table>
                                 <TableHeader className="bg-muted/50">
                                     <TableRow>
-                                        <TableHead>Apólice</TableHead>
-                                        <TableHead>Localização</TableHead>
-                                        <TableHead>Evento</TableHead>
-                                        <TableHead>Severidade</TableHead>
-                                        <TableHead className="text-right">Payout Potencial</TableHead>
+                                        <TableHead>{t('risk.monitor.table.policy')}</TableHead>
+                                        <TableHead>{t('risk.monitor.table.location')}</TableHead>
+                                        <TableHead>{t('risk.monitor.table.event')}</TableHead>
+                                        <TableHead>{t('risk.monitor.table.severity')}</TableHead>
+                                        <TableHead className="text-right">{t('risk.monitor.table.potentialPayout')}</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -138,7 +150,7 @@ export function RealTimeRiskMonitor() {
                                             </TableCell>
                                             <TableCell>
                                                 <Badge className={getRiskColor(policy.severity)}>
-                                                    {policy.severity}
+                                                    {getRiskLabel(policy.severity)}
                                                 </Badge>
                                             </TableCell>
                                             <TableCell className="text-right font-semibold text-red-600">
@@ -156,9 +168,9 @@ export function RealTimeRiskMonitor() {
             {(!data?.impacted_policies || data.impacted_policies.length === 0) && (
                 <Alert className="border-emerald-200 bg-emerald-50/50">
                     <AlertTriangle className="h-4 w-4 text-emerald-600" />
-                    <AlertTitle className="text-emerald-800">Cenário Estabilizado</AlertTitle>
+                    <AlertTitle className="text-emerald-800">{t('risk.monitor.stable.title')}</AlertTitle>
                     <AlertDescription className="text-emerald-700/80">
-                        Nenhuma apólice do portfólio está sob risco iminente de gatilho no momento.
+                        {t('risk.monitor.stable.desc')}
                     </AlertDescription>
                 </Alert>
             )}

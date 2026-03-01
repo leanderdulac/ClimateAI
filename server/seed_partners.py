@@ -14,20 +14,20 @@ async def seed_partners():
     
     async for session in get_db_session():
         print("Checking for existing partners...")
-        stmt = select(Partner).where(Partner.slug == "climateai-demo")
+        stmt = select(Partner).where(Partner.slug == "climatewise-demo")
         result = await session.execute(stmt)
         existing = result.scalars().first()
         
         if existing:
-            print(f"Partner 'ClimateAI Demo' already exists (ID: {existing.id})")
+            print(f"Partner 'ClimateWise Demo' already exists (ID: {existing.id})")
             partner_id = existing.id
         else:
-            print("Creating 'ClimateAI Demo' partner...")
+            print("Creating 'ClimateWise Demo' partner...")
             new_partner = Partner(
                 id=str(uuid.uuid4()),
-                name="ClimateAI Demo",
-                slug="climateai-demo",
-                contact_email="demo@climateai.io",
+                name="ClimateWise Demo",
+                slug="climatewise-demo",
+                contact_email="demo@climatewise.io",
                 api_enabled=True
             )
             session.add(new_partner)

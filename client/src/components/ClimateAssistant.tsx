@@ -7,6 +7,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './ui/card'
 import { ScrollArea } from './ui/scroll-area';
 import { MessageCircle, X, Send, Loader2, Minimize2, Maximize2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface Message {
     id: string;
@@ -16,6 +17,7 @@ interface Message {
 }
 
 export function ClimateAssistant() {
+    const { t, language } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
     const [isMinimized, setIsMinimized] = useState(false);
     const { selectedLocation } = useLocation();
@@ -39,9 +41,6 @@ export function ClimateAssistant() {
             const fetchDetailedData = async () => {
                 setIsLoading(true);
                 try {
-                    // Debug: print selectedLocation
-                    console.log('[DEBUG] selectedLocation:', selectedLocation);
-
                     // Fetch current weather data
                     const data = await embrapaApi.getDadosAtuais(selectedLocation.latitude, selectedLocation.longitude);
                     setWeatherData(data);
@@ -66,7 +65,7 @@ export function ClimateAssistant() {
                     const windyDays = historicalData.filter(d => (d.vento_velocidade || 0) > 20).length;
 
                     // Determine microclimate type based on historical patterns
-                    let microclimateType = 'normal';
+                    let microclimateType = 'default';
                     if (dryDays > 200 && hotDays > 50) {
                         microclimateType = 'arid';
                     } else if (heavyRainDays > 20 || totalRainfall > 2000) {
@@ -76,7 +75,7 @@ export function ClimateAssistant() {
                     } else if (selectedLocation.cidade?.toLowerCase().includes('serra') ||
                         selectedLocation.cidade?.toLowerCase().includes('alto') ||
                         (selectedLocation.latitude && Math.abs(selectedLocation.latitude) > 1000)) { // High altitude indicator
-                        microclimateType = 'montanha';
+                        microclimateType = 'mountain';
                     }
 
                     // Create microclimate analysis data
@@ -100,8 +99,8 @@ export function ClimateAssistant() {
                     // Proactive Analysis with concise message
                     const context = {
                         page: window.location.pathname,
+                        language: language,
                         timestamp: new Date().toISOString(),
-                        // Debug: print context before sending to Gemini
                         location: selectedLocation ? {
                             city: selectedLocation.cidade,
                             state: selectedLocation.estado,
@@ -120,17 +119,15 @@ export function ClimateAssistant() {
                             historicalData: microclimateInfo
                         } : null
                     };
-                    console.log('[DEBUG] Context sent to Gemini:', context);
-
 
                     const systemInstruction = `
-                        O usuário selecionou a localização: ${selectedLocation.cidade}, ${selectedLocation.estado}.
-                        Dados climáticos atuais: Temperatura ${data.temperatura}°C, Precipitação ${data.precipitacao}mm, Umidade ${data.umidade}%.
-
-                        Microclima local: ${getMicroclimateDescription(microclimateType)}
-
-                        Forneça uma análise direta e útil, mencionando brevemente a cidade e evitando introduções longas.
-                        Baseie-se nos dados de microclima para sugerir o tipo de seguro mais apropriado.
+                        The user selected location: ${selectedLocation.cidade}, ${selectedLocation.estado}.
+                        Current weather data: Temperature ${data.temperatura}°C, Precipitation ${data.precipitacao}mm, Humidity ${data.umidade}%.
+                        Local microclimate: ${getMicroclimateDescription(microclimateType)}
+                        
+                        IMPORTANT: Respond in ${language} language.
+                        Provide a direct and useful analysis, briefly mentioning the city and avoiding long introductions.
+                        Based on microclimate data, suggest the most appropriate type of insurance.
                     `;
 
                     const response = await geminiApi.chat(systemInstruction, context);
@@ -156,33 +153,16 @@ export function ClimateAssistant() {
             };
             fetchDetailedData();
         }
-    }, [selectedLocation]);
+    }, [selectedLocation, language]);
 
     // Helper function to get microclimate descriptions
     const getMicroclimateDescription = (type: string) => {
-        switch (type) {
-            case 'arid': return 'Zona árida com alta frequência de dias sem chuva e temperaturas elevadas';
-            case 'humid': return 'Zona úmida com alta precipitação e risco de alagamentos';
-            case 'windy': return 'Zona com ventos fortes frequentes';
-            case 'montanha': return 'Zona de montanha com microclima específico de altitude';
-            default: return 'Microclima típico da região';
-        }
+        return t(`assistant.microclimate.${type}`);
     };
 
     // Helper function to get microclimate characteristics
     const getMicroclimateCharacteristics = (type: string) => {
-        switch (type) {
-            case 'arid':
-                return ['Alta evapotranspiração', 'Risco de estiagem', 'Necessidade de irrigação', 'Maior variabilidade térmica'];
-            case 'humid':
-                return ['Alta precipitação', 'Risco de encharcamento', 'Maior umidade do solo', 'Menor amplitude térmica'];
-            case 'windy':
-                return ['Ventos fortes frequentes', 'Risco de danos estruturais', 'Evapotranspiração elevada', 'Dificuldade na aplicação de defensivos'];
-            case 'montanha':
-                return ['Altitude elevada', 'Maior amplitude térmica', 'Formação de geadas', 'Correntes de ar específicas'];
-            default:
-                return ['Clima temperado', 'Precipitação moderada', 'Condições típicas da região'];
-        }
+        return t(`assistant.characteristics.${type}`).split(', ');
     };
 
     // Auto-scroll to bottom
@@ -210,6 +190,7 @@ export function ClimateAssistant() {
             // Build rich context with microclimate data and historical analysis
             const context = {
                 page: window.location.pathname,
+                language: language,
                 timestamp: new Date().toISOString(),
                 location: selectedLocation ? {
                     city: selectedLocation.cidade,
@@ -246,7 +227,7 @@ export function ClimateAssistant() {
             const errorMessage: Message = {
                 id: (Date.now() + 1).toString(),
                 role: 'assistant',
-                content: 'Desculpe, encontrei um erro ao processar sua mensagem. Por favor, tente novamente.',
+                content: t('assistant.error'),
                 timestamp: new Date()
             };
             setMessages(prev => [...prev, errorMessage]);
@@ -279,7 +260,9 @@ export function ClimateAssistant() {
             <CardHeader className="p-4 bg-primary text-primary-foreground rounded-t-lg flex flex-row items-center justify-between space-y-0 cursor-pointer" onClick={() => setIsMinimized(!isMinimized)}>
                 <div className="flex items-center gap-2">
                     <MessageCircle className="h-5 w-5" />
-                    <CardTitle className="text-base font-medium">Climate Assistant</CardTitle>
+                    <CardTitle className="text-base font-medium">
+                        {isMinimized ? t('assistant.minimizedTitle') : t('assistant.title')}
+                    </CardTitle>
                 </div>
                 <div className="flex items-center gap-1">
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-primary-foreground hover:bg-primary-foreground/20" onClick={(e) => { e.stopPropagation(); setIsMinimized(!isMinimized); }}>
@@ -313,7 +296,7 @@ export function ClimateAssistant() {
                                                 </ReactMarkdown>
                                             </div>
                                             <span className="text-[10px] opacity-70 block mt-1 text-right">
-                                                {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                {msg.timestamp.toLocaleTimeString(language, { hour: '2-digit', minute: '2-digit' })}
                                             </span>
                                         </div>
                                     </div>
@@ -322,7 +305,7 @@ export function ClimateAssistant() {
                                     <div className="flex justify-start">
                                         <div className="bg-muted rounded-lg px-4 py-2 flex items-center gap-2">
                                             <Loader2 className="h-4 w-4 animate-spin" />
-                                            <span className="text-xs text-muted-foreground">Digitando...</span>
+                                            <span className="text-xs text-muted-foreground">{t('assistant.typing')}</span>
                                         </div>
                                     </div>
                                 )}
@@ -332,7 +315,7 @@ export function ClimateAssistant() {
                     <CardFooter className="p-3 border-t bg-background rounded-b-lg">
                         <div className="flex w-full gap-2">
                             <Input
-                                placeholder="Digite sua mensagem..."
+                                placeholder={t('assistant.placeholder')}
                                 value={inputValue}
                                 onChange={(e) => setInputValue(e.target.value)}
                                 onKeyDown={handleKeyDown}

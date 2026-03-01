@@ -180,7 +180,7 @@ Todas as 8 tarefas recomendadas foram **100% implementadas e validadas**:
 from lib.vault_secrets import get_vault
 
 vault = get_vault()
-api_key = vault.get_secret("secret/data/climateai/api-keys")
+api_key = vault.get_secret("secret/data/climatewise/api-keys")
 ```
 
 ---
@@ -335,7 +335,7 @@ MLFLOW_TRACKING_URI=http://localhost:5000
 
 **Todas as 8 tarefas foram 100% implementadas e validadas!**
 
-O ClimateAI agora possui:
+O ClimateWise agora possui:
 - ✅ Resiliência completa (Circuit Breaker)
 - ✅ Performance otimizada (Caching Redis)
 - ✅ Proteção contra abuso (Rate Limiting)

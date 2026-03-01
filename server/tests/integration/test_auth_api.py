@@ -35,14 +35,14 @@ async def admin_user(db_session: AsyncSession):
     from services.auth_service import auth_service
 
     # Check if admin user exists
-    existing_user = await auth_service.get_user_by_email(db_session, "admin@climateai.com")
+    existing_user = await auth_service.get_user_by_email(db_session, "admin@climatewise.com")
     if existing_user:
         return existing_user
 
     # Create admin user
     user = User(
         id="admin-user-id",
-        email="admin@climateai.com",
+        email="admin@climatewise.com",
         full_name="Admin User",
         hashed_password=auth_service.get_password_hash("admin123"),
         is_active=True,
@@ -65,7 +65,7 @@ class TestAuthAPI:
     @pytest.mark.asyncio
     async def test_login_success(self, client, admin_user):
         """Testa login bem-sucedido"""
-        login_data = {"email": "admin@climateai.com", "password": "admin123"}
+        login_data = {"email": "admin@climatewise.com", "password": "admin123"}
 
         response = client.post("/api/v1/auth/login", json=login_data)
 
@@ -77,7 +77,7 @@ class TestAuthAPI:
         assert "token_type" in data
         assert "expires_in" in data
         assert "user" in data
-        assert data["user"]["email"] == "admin@climateai.com"
+        assert data["user"]["email"] == "admin@climatewise.com"
         assert data["user"]["role"] == "admin"
 
     @pytest.mark.asyncio
@@ -94,7 +94,7 @@ class TestAuthAPI:
     @pytest.mark.asyncio
     async def test_login_failure_missing_fields(self, client, admin_user):
         """Testa login com campos faltando"""
-        login_data = {"email": "admin@climateai.com"}  # Senha faltando
+        login_data = {"email": "admin@climatewise.com"}  # Senha faltando
 
         response = client.post("/api/v1/auth/login", json=login_data)
 
@@ -104,7 +104,7 @@ class TestAuthAPI:
     async def test_refresh_token_success(self, client, admin_user):
         """Testa refresh token bem-sucedido"""
         # Primeiro fazer login
-        login_data = {"email": "admin@climateai.com", "password": "admin123"}
+        login_data = {"email": "admin@climatewise.com", "password": "admin123"}
         login_response = client.post("/api/v1/auth/login", json=login_data)
         refresh_token = login_response.json()["refresh_token"]
 
@@ -143,7 +143,7 @@ class TestAuthAPI:
     async def test_get_current_user_authorized(self, client, admin_user):
         """Testa acesso a endpoint protegido com token válido"""
         # Fazer login primeiro
-        login_data = {"email": "admin@climateai.com", "password": "admin123"}
+        login_data = {"email": "admin@climatewise.com", "password": "admin123"}
         login_response = client.post("/api/v1/auth/login", json=login_data)
         access_token = login_response.json()["access_token"]
 
@@ -153,14 +153,14 @@ class TestAuthAPI:
 
         assert response.status_code == 200
         data = response.json()
-        assert data["email"] == "admin@climateai.com"
+        assert data["email"] == "admin@climatewise.com"
         assert data["role"] == "admin"
 
     @pytest.mark.asyncio
     async def test_get_user_permissions(self, client, admin_user):
         """Testa obtenção de permissões do usuário"""
         # Fazer login primeiro
-        login_data = {"email": "admin@climateai.com", "password": "admin123"}
+        login_data = {"email": "admin@climatewise.com", "password": "admin123"}
         login_response = client.post("/api/v1/auth/login", json=login_data)
         access_token = login_response.json()["access_token"]
 
@@ -183,7 +183,7 @@ class TestAuthAPI:
     async def test_create_user_admin_only(self, client, admin_user):
         """Testa criação de usuário (apenas admin)"""
         # Fazer login como admin
-        login_data = {"email": "admin@climateai.com", "password": "admin123"}
+        login_data = {"email": "admin@climatewise.com", "password": "admin123"}
         login_response = client.post("/api/v1/auth/login", json=login_data)
         access_token = login_response.json()["access_token"]
 
@@ -233,7 +233,7 @@ class TestAuthAPI:
     async def test_cache_endpoints(self, client, admin_user):
         """Testa endpoints de cache"""
         # Fazer login primeiro
-        login_data = {"email": "admin@climateai.com", "password": "admin123"}
+        login_data = {"email": "admin@climatewise.com", "password": "admin123"}
         login_response = client.post("/api/v1/auth/login", json=login_data)
         access_token = login_response.json()["access_token"]
 

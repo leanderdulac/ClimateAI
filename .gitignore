@@ -70,3 +70,5 @@ client/playwright-report/
 client/test-results/
 client/dist/
 kimi-cli/
+venv_playwright/
+venv_playwright/

@@ -2,8 +2,8 @@
   "dashboard": {
     "id": null,
     "uid": "slo-overview",
-    "title": "SLO Overview - ClimateAI",
-    "tags": ["slo", "platform", "climateai"],
+    "title": "SLO Overview - ClimateWise",
+    "tags": ["slo", "platform", "climatewise"],
     "timezone": "America/Sao_Paulo",
     "schemaVersion": 38,
     "version": 1,
@@ -24,8 +24,8 @@
           "query": "label_values(service_name)",
           "refresh": 2,
           "current": {
-            "text": "climateai-backend",
-            "value": "climateai-backend"
+            "text": "climatewise-backend",
+            "value": "climatewise-backend"
           }
         },
         {
@@ -238,7 +238,7 @@
         "title": "Circuit Breaker Status by External Service",
         "targets": [
           {
-            "expr": "climateai_circuit_breaker_state{service_name=\"$service\"}",
+            "expr": "climatewise_circuit_breaker_state{service_name=\"$service\"}",
             "legendFormat": "{{external_service}} - {{state}}",
             "refId": "A"
           }
@@ -264,7 +264,7 @@
         "title": "External API Health",
         "targets": [
           {
-            "expr": "climateai_external_api_latency_seconds{service_name=\"$service\"}",
+            "expr": "climatewise_external_api_latency_seconds{service_name=\"$service\"}",
             "format": "table",
             "instant": true,
             "refId": "A"
@@ -302,7 +302,7 @@
           "name": "Deployments",
           "datasource": "Prometheus",
           "enable": true,
-          "expr": "climateai_deployments{service_name=\"$service\"}",
+          "expr": "climatewise_deployments{service_name=\"$service\"}",
           "iconColor": "blue",
           "titleFormat": "Deployment"
         }

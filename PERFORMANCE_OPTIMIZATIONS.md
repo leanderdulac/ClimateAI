@@ -1,4 +1,4 @@
-# 🚀 Otimizações de Performance - ClimateAI
+# 🚀 Otimizações de Performance - ClimateWise
 
 ## Status: ✅ IMPLEMENTADAS
 

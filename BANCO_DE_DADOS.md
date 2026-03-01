@@ -1,4 +1,4 @@
-# 🗄️ Banco de Dados - ClimateAI
+# 🗄️ Banco de Dados - ClimateWise
 
 ## ✅ Status: CONFIGURADO
 
@@ -27,8 +27,8 @@ Banco de dados inicializado com tabelas e usuários de teste.
 
 | Email | Senha | Role |
 |-------|-------|------|
-| `admin@climateai.com` | `admin123` | Admin |
-| `user@climateai.com` | `user123` | User |
+| `admin@climatewise.com` | `admin123` | Admin |
+| `user@climatewise.com` | `user123` | User |
 
 ### ⚠️ Importante
 As senhas acima são **apenas para desenvolvimento**. Em produção, use hashes bcrypt seguros.
@@ -45,30 +45,30 @@ As senhas acima são **apenas para desenvolvimento**. Em produção, use hashes 
 ### Acessar PostgreSQL
 ```bash
 # Shell interativo
-podman exec -it climateai-db psql -U postgres -d climateai
+podman exec -it climatewise-db psql -U postgres -d climatewise
 
 # Executar comando
-podman exec -it climateai-db psql -U postgres -d climateai -c "SELECT * FROM users;"
+podman exec -it climatewise-db psql -U postgres -d climatewise -c "SELECT * FROM users;"
 ```
 
 ### Listar Tabelas
 ```bash
-podman exec climateai-db psql -U postgres -d climateai -c "\dt"
+podman exec climatewise-db psql -U postgres -d climatewise -c "\dt"
 ```
 
 ### Resetar Banco (CUIDADO: apaga dados!)
 ```bash
-podman exec -i climateai-db psql -U postgres -d climateai < server/init-db.sql
+podman exec -i climatewise-db psql -U postgres -d climatewise < server/init-db.sql
 ```
 
 ### Backup
 ```bash
-podman exec climateai-db pg_dump -U postgres -d climateai > backup_$(date +%Y%m%d).sql
+podman exec climatewise-db pg_dump -U postgres -d climatewise > backup_$(date +%Y%m%d).sql
 ```
 
 ### Restore
 ```bash
-podman exec -i climateai-db psql -U postgres -d climateai < backup_20260217.sql
+podman exec -i climatewise-db psql -U postgres -d climatewise < backup_20260217.sql
 ```
 
 ---
@@ -82,8 +82,8 @@ services:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: climateai123
-      POSTGRES_DB: climateai
+      POSTGRES_PASSWORD: climatewise123
+      POSTGRES_DB: climatewise
     ports:
       - "5432:5432"
     volumes:
@@ -92,10 +92,10 @@ services:
 
 ### Application (.env)
 ```bash
-DATABASE_URL=postgresql+asyncpg://postgres:climateai123@localhost:5432/climateai
+DATABASE_URL=postgresql+asyncpg://postgres:climatewise123@localhost:5432/climatewise
 DB_USER=postgres
-DB_PASSWORD=climateai123
-DB_NAME=climateai
+DB_PASSWORD=climatewise123
+DB_NAME=climatewise
 DB_HOST=localhost
 DB_PORT=5432
 ```
@@ -148,24 +148,24 @@ LIMIT 100;
 **Solução:**
 ```bash
 # Recriar tabelas e usuários
-podman exec -i climateai-db psql -U postgres -d climateai < server/init-db.sql
+podman exec -i climatewise-db psql -U postgres -d climatewise < server/init-db.sql
 ```
 
 ### Erro: "banco de dados não existe"
 
-**Causa:** Banco climateai não foi criado.
+**Causa:** Banco climatewise não foi criado.
 
 **Solução:**
 ```bash
 # Criar banco
-podman exec -it climateai-db psql -U postgres -c "CREATE DATABASE climateai;"
+podman exec -it climatewise-db psql -U postgres -c "CREATE DATABASE climatewise;"
 
 # Ou recriar container
-podman rm -f climateai-db
-podman run -d --name climateai-db \
+podman rm -f climatewise-db
+podman run -d --name climatewise-db \
   -e POSTGRES_USER=postgres \
-  -e POSTGRES_PASSWORD=climateai123 \
-  -e POSTGRES_DB=climateai \
+  -e POSTGRES_PASSWORD=climatewise123 \
+  -e POSTGRES_DB=climatewise \
   -p 5432:5432 \
   postgres:16-alpine
 ```

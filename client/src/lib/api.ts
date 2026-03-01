@@ -11,12 +11,9 @@ export function buildApiUrl(path: string): string {
         return `/mock${path}`;
     }
 
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
     // Ensure proper path joining: if baseUrl is empty, return just the path
     // If baseUrl is provided, ensure it ends with a slash and then append the path
-    if (!baseUrl) {
-        return path;
-    }
     // Ensure baseUrl ends with a slash and path doesn't start with a slash
     const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
     const normalizedPath = path.startsWith('/') ? path.substring(1) : path;
@@ -1122,6 +1119,7 @@ export interface PolicyPricingResult {
         regime: string;
         complexity: number;
     };
+    risk_factors?: Record<string, number>;
     decision_flow: string;
 }
 

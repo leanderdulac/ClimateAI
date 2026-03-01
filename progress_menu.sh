@@ -1,5 +1,5 @@
 #!/bin/bash
-# Menu Interativo de Progresso - ClimateAI Modernization
+# Menu Interativo de Progresso - ClimateWise Modernization
 
 # Cores
 GREEN='\033[0;32m'
@@ -14,7 +14,7 @@ clear
 
 echo -e "${MAGENTA}╔══════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${MAGENTA}║                                                              ║${NC}"
-echo -e "${MAGENTA}║   🎯 CLIMATEAI - PROJECT MODERNIZATION STATUS REPORT 🎯     ║${NC}"
+echo -e "${MAGENTA}║   🎯 CLIMATEWISE - PROJECT MODERNIZATION STATUS REPORT 🎯     ║${NC}"
 echo -e "${MAGENTA}║                                                              ║${NC}"
 echo -e "${MAGENTA}║        7 de 8 Etapas Concluídas (87.5% Progresso)            ║${NC}"
 echo -e "${MAGENTA}║                                                              ║${NC}"

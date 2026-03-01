@@ -122,7 +122,7 @@ class VaultSecretsManager:
         Recupera um secret do Vault
         
         Args:
-            path: Caminho do secret (ex: 'secret/data/climateai/api-keys')
+            path: Caminho do secret (ex: 'secret/data/climatewise/api-keys')
             version: Versão específica (para KV v2)
         
         Returns:
@@ -345,7 +345,7 @@ def vault_secret(vault_path: str, key: Optional[str] = None):
     Decorator para injetar secrets do Vault
     
     Usage:
-        @vault_secret('secret/data/climateai/api-keys', 'noaa_key')
+        @vault_secret('secret/data/climatewise/api-keys', 'noaa_key')
         def my_function(noaa_key):
             ...
     """
@@ -385,20 +385,20 @@ if __name__ == "__main__":
         print(f"✓ Vault enabled: {vault.is_healthy()}")
         
         # Example: Store a secret
-        vault.set_secret("secret/data/climateai/test", {
+        vault.set_secret("secret/data/climatewise/test", {
             "api_key": "test-key-123",
             "password": "secret-password"
         })
         
         # Example: Retrieve a secret
-        secret = vault.get_secret("secret/data/climateai/test")
+        secret = vault.get_secret("secret/data/climatewise/test")
         print(f"Retrieved secret: {secret}")
         
         # Example: Rotate a secret
-        vault.rotate_secret("secret/data/climateai/test", "api_key")
+        vault.rotate_secret("secret/data/climatewise/test", "api_key")
         
         # Example: List secrets
-        secrets = vault.list_secrets("secret/data/climateai")
+        secrets = vault.list_secrets("secret/data/climatewise")
         print(f"Available secrets: {secrets}")
     else:
         print("✗ Vault not enabled")

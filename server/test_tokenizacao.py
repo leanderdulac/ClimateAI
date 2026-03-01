@@ -13,7 +13,9 @@ from models.schemas import EventoClimatico, EventoClimaticoTipo
 from services.tokenizacao_eventos_service import TokenizacaoEventosService
 
 
-def testar_tokenizacao():
+import asyncio
+
+async def testar_tokenizacao():
     """Testa a funcionalidade básica de tokenização"""
 
     print("🧪 Testando Tokenização de Eventos Climáticos")
@@ -44,7 +46,7 @@ def testar_tokenizacao():
 
     # Gerar token
     print("🔄 Gerando token...")
-    token = token_service.gerar_token_evento(evento_teste)
+    token = await token_service.gerar_token_evento(evento_teste)
 
     print("✅ Token gerado com sucesso!")
     print(f"  Token ID: {token.token_id}")
@@ -95,7 +97,7 @@ def testar_tokenizacao():
         ),
     ]
 
-    tokens_multiplos = token_service.tokenizar_multiplos_eventos(eventos_teste)
+    tokens_multiplos = await token_service.tokenizar_multiplos_eventos(eventos_teste)
     print(f"✅ {len(tokens_multiplos)} tokens gerados!")
 
     for i, t in enumerate(tokens_multiplos, 1):
@@ -127,4 +129,5 @@ def testar_tokenizacao():
 
 
 if __name__ == "__main__":
-    testar_tokenizacao()
+    asyncio.run(testar_tokenizacao())
+

@@ -1,4 +1,4 @@
-# ClimateAI: Complete Mathematical Architecture Implementation
+# ClimateWise: Complete Mathematical Architecture Implementation
 
 ## Summary of Implementation
 

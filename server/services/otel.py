@@ -25,7 +25,7 @@ def init_otel(app):
 
     resource = Resource.create(
         {
-            "service.name": os.getenv("OTEL_SERVICE_NAME", "climateai-backend"),
+            "service.name": os.getenv("OTEL_SERVICE_NAME", "climatewise-backend"),
             "service.version": os.getenv("OTEL_SERVICE_VERSION", "1.0.0"),
             "deployment.environment": os.getenv("ENV", "local"),
         }

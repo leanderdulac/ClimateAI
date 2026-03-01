@@ -1,5 +1,5 @@
 /**
- * Supabase Client for ClimateAI Frontend
+ * Supabase Client for ClimateWise Frontend
  * Provides database and authentication integration with Supabase.
  */
 
@@ -64,16 +64,8 @@ export const getSupabaseClient = (): SupabaseClient | null => {
     }
 };
 
-// Export a default client instance
-export const supabase = isSupabaseConfigured()
-    ? createClient(supabaseUrl, supabaseAnonKey, {
-        auth: {
-            autoRefreshToken: true,
-            persistSession: true,
-            detectSessionInUrl: true,
-        },
-    })
-    : null;
+// Export a shared client instance (avoids múltiplas instâncias em GoTrue)
+export const supabase = getSupabaseClient();
 
 // Auth helper functions
 export const signUp = async (email: string, password: string) => {

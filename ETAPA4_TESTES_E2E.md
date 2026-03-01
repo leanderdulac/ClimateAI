@@ -2,7 +2,7 @@
 
 ## 📋 Resumo
 
-Implementação completa de testes End-to-End (E2E) para a aplicação ClimateAI usando Playwright. Os testes cobrem:
+Implementação completa de testes End-to-End (E2E) para a aplicação ClimateWise usando Playwright. Os testes cobrem:
 - ✅ Fluxo de autenticação
 - ✅ Navegação entre páginas
 - ✅ Componentes UI

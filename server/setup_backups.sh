@@ -46,7 +46,7 @@ BACKUP_COMPRESS=true
 BACKUP_VERIFY=true
 # DATABASE_URL configurada em /etc/default/fimce ou na aplicação
 # S3
-BACKUP_S3_BUCKET=climateai-backups
+BACKUP_S3_BUCKET=climatewise-backups
 AWS_REGION=us-east-1
 # GCS
 BACKUP_GCS_BUCKET=

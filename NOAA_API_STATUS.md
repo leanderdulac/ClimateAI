@@ -1,4 +1,4 @@
-# ✅ Status API NOAA - ClimateAI
+# ✅ Status API NOAA - ClimateWise
 
 **Data**: Fevereiro 2026  
 **Token**: `WDjhFaVSxFFpLelfYoKaQjnaTorOMcfV` ✅ Configurado

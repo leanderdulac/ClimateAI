@@ -12,16 +12,15 @@ import sys
 from dotenv import load_dotenv
 load_dotenv()
 
-DB_PASSWORD = os.getenv("DB_PASSWORD", "brBU04YrEeJiXUne")
-DB_HOST = os.getenv("DB_HOST", "db.tyzmywhvpmdfepxdtyes.supabase.co")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "postgres")
+DB_HOST = os.getenv("DB_HOST", "localhost")
 
-USERS = ["postgres", "postgres.tyzmywhvpmdfepxdtyes"]
-DATABASES = ["postgres"]
-PORTS = [5432, 6543]
+USERS = [os.getenv("DB_USER", "postgres")]
+DATABASES = [os.getenv("DB_NAME", "postgres")]
+PORTS = [int(os.getenv("DB_PORT", "5432"))]
 HOSTS = [
     DB_HOST,
-    "aws-0-sa-east-1.pooler.supabase.com",
-    "54.94.90.106" 
+    os.getenv("DB_READONLY_HOST", DB_HOST),
 ]
 
 async def test_all():

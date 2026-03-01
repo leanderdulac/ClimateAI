@@ -1,5 +1,5 @@
 """
-Internationalization (i18n) Service for ClimateAI
+Internationalization (i18n) Service for ClimateWise
 Provides language translations and localization for English and Portuguese
 """
 
@@ -155,7 +155,7 @@ class I18nService:
                 "model_performance": "Desempenho do Modelo",
                 "user_satisfaction": "Satisfação do Usuário",
                 # General terms
-                "climate_ai_system": "Sistema ClimateAI",
+                "climate_ai_system": "Sistema ClimateWise",
                 "climate_analytics": "Análise Climática",
                 "risk_modelling": "Modelagem de Risco",
                 "insurance_pricing": "Precificação de Seguros",
@@ -185,7 +185,7 @@ class I18nService:
                 "calculation_completed_in_time": "Cálculo concluído em {time_taken:.2f} segundos",
                 "data_refreshed_at_time": "Dados atualizados às {timestamp}",
                 "error_processing_request": "Erro ao processar requisição: {error_message}",
-                "welcome_user_to_climateai": "Bem-vindo ao ClimateAI, {username}!",
+                "welcome_user_to_climatewise": "Bem-vindo ao ClimateWise, {username}!",
                 "premium_calculated_for_coverage": "Prêmio calculado para cobertura de R$ {amount:,.2f}",
                 "risk_assessment_generated": "Avaliação de risco gerada para localização {location}",
                 "report_generated_successfully": "Relatório '{report_type}' gerado com sucesso",
@@ -324,7 +324,7 @@ class I18nService:
                 "model_performance": "Model Performance",
                 "user_satisfaction": "User Satisfaction",
                 # General terms
-                "climate_ai_system": "ClimateAI System",
+                "climate_ai_system": "ClimateWise System",
                 "climate_analytics": "Climate Analytics",
                 "risk_modelling": "Risk Modelling",
                 "insurance_pricing": "Insurance Pricing",
@@ -354,7 +354,7 @@ class I18nService:
                 "calculation_completed_in_time": "Calculation completed in {time_taken:.2f} seconds",
                 "data_refreshed_at_time": "Data refreshed at {timestamp}",
                 "error_processing_request": "Error processing request: {error_message}",
-                "welcome_user_to_climateai": "Welcome to ClimateAI, {username}!",
+                "welcome_user_to_climatewise": "Welcome to ClimateWise, {username}!",
                 "premium_calculated_for_coverage": "Premium calculated for coverage of ${amount:,.2f}",
                 "risk_assessment_generated": "Risk assessment generated for location {location}",
                 "report_generated_successfully": "Report '{report_type}' generated successfully",

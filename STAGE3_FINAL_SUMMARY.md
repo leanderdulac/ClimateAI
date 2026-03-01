@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-**Etapa 3** has been successfully completed with full implementation of lazy loading and code splitting for the ClimateAI frontend. All page components now load on-demand, providing better initial load times and improved user experience.
+**Etapa 3** has been successfully completed with full implementation of lazy loading and code splitting for the ClimateWise frontend. All page components now load on-demand, providing better initial load times and improved user experience.
 
 ---
 

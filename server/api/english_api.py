@@ -1,6 +1,6 @@
 """
-English API for ClimateAI System
-Comprehensive English interface for all ClimateAI services
+English API for ClimateWise System
+Comprehensive English interface for all ClimateWise services
 Demonstrating the full English version of the climate risk analytics platform
 """
 
@@ -38,12 +38,12 @@ router = APIRouter()
 
 
 @router.get("/english/about")
-async def get_climateai_english_info():
+async def get_climatewise_english_info():
     """
-    Get information about the English version of ClimateAI system
+    Get information about the English version of ClimateWise system
     """
     return {
-        "title": "ClimateAI English Version",
+        "title": "ClimateWise English Version",
         "description": "Comprehensive climate risk analytics platform in English",
         "version": "1.0.0",
         "language": "English",
@@ -432,11 +432,11 @@ async def english_translation_service_status():
 @router.get("/english/system-overview")
 async def english_system_overview():
     """
-    Complete English overview of the ClimateAI system capabilities
+    Complete English overview of the ClimateWise system capabilities
     """
     return {
-        "climateai_system_overview": {
-            "name": "ClimateAI Platform",
+        "climatewise_system_overview": {
+            "name": "ClimateWise Platform",
             "language": "English Interface",
             "purpose": "Comprehensive climate risk analytics for insurance applications",
             "core_capabilities": [

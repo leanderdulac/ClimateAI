@@ -1,4 +1,4 @@
-# ClimateAI ML Requirements
+# ClimateWise ML Requirements
 # DESENVOLVIMENTO E TREINAMENTO APENAS
 # Inclui dependências pesadas de machine learning
 # Use: pip install -r requirements-base.txt -r requirements-ml.txt

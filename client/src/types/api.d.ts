@@ -1,5 +1,5 @@
 /**
- * Tipos TypeScript gerados a partir do OpenAPI Schema do ClimateAI
+ * Tipos TypeScript gerados a partir do OpenAPI Schema do ClimateWise
  * 
  * Para regenerar: npm run api:types
  * Ou manualmente: npx openapi-typescript http://localhost:8000/openapi.json -o src/types/api.d.ts

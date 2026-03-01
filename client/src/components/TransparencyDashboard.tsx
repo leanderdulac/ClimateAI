@@ -9,12 +9,14 @@ import {
     ExternalLink,
     ChevronRight
 } from 'lucide-react';
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface TransparencyDashboardProps {
     txHash?: string;
 }
 
 const TransparencyDashboard: React.FC<TransparencyDashboardProps> = ({ txHash }) => {
+    const { t, language } = useTranslation();
     const { loading, error, fetchAuditTrail, fetchVaultStats } = useClimateRWA();
     const [auditData, setAuditData] = useState<any>(null);
     const [vaultStats, setVaultStats] = useState<any>(null);
@@ -36,14 +38,14 @@ const TransparencyDashboard: React.FC<TransparencyDashboardProps> = ({ txHash })
             <header className="flex justify-between items-center bg-slate-800 p-6 rounded-2xl border border-slate-700">
                 <div>
                     <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-                        Transparency & Audit Engine
+                        {t('transparency.title')}
                     </h1>
-                    <p className="text-slate-400 text-sm mt-1">Institutional Proof of Climate RWA Settlement</p>
+                    <p className="text-slate-400 text-sm mt-1">{t('transparency.description')}</p>
                 </div>
                 <div className="flex space-x-4">
                     <div className="flex items-center space-x-2 px-4 py-2 bg-emerald-500/10 rounded-full border border-emerald-500/20">
                         <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                        <span className="text-xs font-medium text-emerald-400 uppercase tracking-wider">Verified by GCP</span>
+                        <span className="text-xs font-medium text-emerald-400 uppercase tracking-wider">{t('transparency.verifiedBy')}</span>
                     </div>
                 </div>
             </header>
@@ -52,34 +54,34 @@ const TransparencyDashboard: React.FC<TransparencyDashboardProps> = ({ txHash })
                 <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl">
                     <div className="flex items-center space-x-3 mb-4">
                         <Activity className="w-5 h-5 text-cyan-400" />
-                        <h3 className="font-semibold">Vault TVL</h3>
+                        <h3 className="font-semibold">{t('transparency.stats.tvl')}</h3>
                     </div>
                     <p className="text-3xl font-bold font-mono">
-                        {vaultStats ? `$${(vaultStats.tvl_usdc / 1000000).toFixed(2)}M` : 'Loading...'}
+                        {vaultStats ? `${t('common.currency')} ${(vaultStats.tvl_usdc / 1000000).toLocaleString(language, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}M` : t('common.loading')}
                     </p>
-                    <div className="mt-2 text-xs text-slate-400">Locked in RWA Risk Pools</div>
+                    <div className="mt-2 text-xs text-slate-400">{t('transparency.stats.tvlDesc')}</div>
                 </div>
 
                 <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl">
                     <div className="flex items-center space-x-3 mb-4">
                         <Globe className="w-5 h-5 text-emerald-400" />
-                        <h3 className="font-semibold">Current Yield (APY)</h3>
+                        <h3 className="font-semibold">{t('transparency.stats.apy')}</h3>
                     </div>
                     <p className="text-3xl font-bold text-emerald-400 font-mono">
-                        {vaultStats ? vaultStats.current_apy : 'Loading...'}
+                        {vaultStats ? vaultStats.current_apy : t('common.loading')}
                     </p>
-                    <div className="mt-2 text-xs text-slate-400">Based on Global Premiums</div>
+                    <div className="mt-2 text-xs text-slate-400">{t('transparency.stats.apyDesc')}</div>
                 </div>
 
                 <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl">
                     <div className="flex items-center space-x-3 mb-4">
                         <AlertTriangle className="w-5 h-5 text-amber-400" />
-                        <h3 className="font-semibold">Active Claims</h3>
+                        <h3 className="font-semibold">{t('transparency.stats.claims')}</h3>
                     </div>
                     <p className="text-3xl font-bold font-mono">
-                        {vaultStats ? `$${(vaultStats.total_claims_paid / 1000).toFixed(1)}k` : 'Loading...'}
+                        {vaultStats ? `${t('common.currency')} ${(vaultStats.total_claims_paid / 1000).toLocaleString(language, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}k` : t('common.loading')}
                     </p>
-                    <div className="mt-2 text-xs text-slate-400">Automated Payouts to Date</div>
+                    <div className="mt-2 text-xs text-slate-400">{t('transparency.stats.claimsDesc')}</div>
                 </div>
             </div>
 
@@ -88,7 +90,7 @@ const TransparencyDashboard: React.FC<TransparencyDashboardProps> = ({ txHash })
                     <div className="p-6 border-b border-slate-700 bg-slate-800/50 flex justify-between items-center">
                         <div className="flex items-center space-x-3">
                             <Database className="w-5 h-5 text-indigo-400" />
-                            <h2 className="text-xl font-semibold">Transaction Proof of Evidence</h2>
+                            <h2 className="text-xl font-semibold">{t('transparency.proof.title')}</h2>
                         </div>
                         <a
                             href={`https://polygonscan.com/tx/${txHash}`}
@@ -96,7 +98,7 @@ const TransparencyDashboard: React.FC<TransparencyDashboardProps> = ({ txHash })
                             rel="noopener noreferrer"
                             className="flex items-center space-x-2 text-sm text-indigo-400 hover:text-indigo-300 transition-colors"
                         >
-                            <span>View on Chain</span>
+                            <span>{t('transparency.proof.viewOnChain')}</span>
                             <ExternalLink className="w-4 h-4" />
                         </a>
                     </div>
@@ -104,16 +106,16 @@ const TransparencyDashboard: React.FC<TransparencyDashboardProps> = ({ txHash })
                     <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-12">
                         <div className="space-y-6">
                             <div>
-                                <label className="text-xs uppercase tracking-widest text-slate-500 font-bold">Satellite Data (GEE)</label>
+                                <label className="text-xs uppercase tracking-widest text-slate-500 font-bold">{t('transparency.proof.satelliteData')}</label>
                                 <div className="mt-4 p-6 bg-slate-900 rounded-xl border border-slate-700">
                                     <div className="flex justify-between items-center mb-6">
-                                        <span className="text-slate-400">Source</span>
+                                        <span className="text-slate-400">{t('transparency.proof.source')}</span>
                                         <span className="font-mono text-emerald-400">{auditData.satellite_evidence.source}</span>
                                     </div>
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-center">
-                                            <span className="text-slate-400 text-sm font-semibold">NDVI Index (Relative)</span>
-                                            <span className="font-mono text-amber-400 font-bold">{auditData.satellite_evidence.ndvi_at_payout}</span>
+                                            <span className="text-slate-400 text-sm font-semibold">{t('transparency.proof.ndvi')}</span>
+                                            <span className="font-mono text-amber-400 font-bold">{auditData.satellite_evidence.ndvi_at_payout.toLocaleString(language, { minimumFractionDigits: 3, maximumFractionDigits: 3 })}</span>
                                         </div>
                                         <div className="w-full bg-slate-800 rounded-full h-2">
                                             <div
@@ -128,14 +130,14 @@ const TransparencyDashboard: React.FC<TransparencyDashboardProps> = ({ txHash })
 
                         <div className="space-y-6">
                             <div>
-                                <label className="text-xs uppercase tracking-widest text-slate-500 font-bold">Actuarial Validation (Vertex AI)</label>
+                                <label className="text-xs uppercase tracking-widest text-slate-500 font-bold">{t('transparency.proof.actuarialValidation')}</label>
                                 <div className="mt-4 p-6 bg-slate-900 rounded-xl border border-slate-700">
                                     <div className="flex justify-between items-center mb-6">
-                                        <span className="text-slate-400">Severity Score</span>
-                                        <span className="text-2xl font-bold text-red-400 font-mono">{auditData.actuarial_proof.severity_score} / 5</span>
+                                        <span className="text-slate-400">{t('transparency.proof.severityScore')}</span>
+                                        <span className="text-2xl font-bold text-red-400 font-mono">{auditData.actuarial_proof.severity_score.toLocaleString(language, { maximumFractionDigits: 1 })} / 5</span>
                                     </div>
                                     <div className="p-4 bg-emerald-500/10 rounded-lg border border-emerald-500/20 flex justify-between items-center">
-                                        <span className="text-xs text-emerald-400">Monte Carlo Confidence</span>
+                                        <span className="text-xs text-emerald-400">{t('transparency.proof.confidence')}</span>
                                         <span className="font-mono text-emerald-400 text-sm font-bold">{auditData.actuarial_proof.monte_carlo_confidence}</span>
                                     </div>
                                 </div>
@@ -144,7 +146,7 @@ const TransparencyDashboard: React.FC<TransparencyDashboardProps> = ({ txHash })
                     </div>
 
                     <div className="px-8 py-4 bg-indigo-500 text-white flex justify-between items-center">
-                        <span className="text-xs font-bold tracking-tight uppercase">Immutable Audit Hash (BigQuery)</span>
+                        <span className="text-xs font-bold tracking-tight uppercase">{t('transparency.proof.auditHash')}</span>
                         <span className="text-xs font-mono opacity-80">{auditData.tx_hash}</span>
                     </div>
                 </section>

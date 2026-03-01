@@ -19,7 +19,7 @@ services:
       # OpenTelemetry Configuration
       - OTEL_ENABLED=${OTEL_ENABLED:-true}
       - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318/v1/traces}
-      - OTEL_SERVICE_NAME=climateai-backend
+      - OTEL_SERVICE_NAME=climatewise-backend
       - OTEL_SERVICE_VERSION=${APP_VERSION:-1.0.0}
       - ENVIRONMENT=${ENVIRONMENT:-development}
     depends_on:
@@ -32,7 +32,7 @@ services:
       retries: 3
       start_period: 40s
     networks:
-      - climateai
+      - climatewise
       - monitoring
 
   frontend:
@@ -47,7 +47,7 @@ services:
     depends_on:
       - backend
     networks:
-      - climateai
+      - climatewise
 
   db:
     image: postgres:16-alpine
@@ -65,7 +65,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - climateai
+      - climatewise
       - monitoring
 
   redis:
@@ -78,14 +78,14 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - climateai
+      - climatewise
       - monitoring
 
 volumes:
   postgres_data:
 
 networks:
-  climateai:
+  climatewise:
     driver: bridge
   monitoring:
     driver: bridge

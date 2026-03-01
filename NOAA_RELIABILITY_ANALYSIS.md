@@ -1,4 +1,4 @@
-# 📊 Análise: Confiabilidade da NOAA para Modelos ClimateAI
+# 📊 Análise: Confiabilidade da NOAA para Modelos ClimateWise
 
 **Data**: Fevereiro 2026  
 **Token NOAA**: ✅ Configurado (`WDjhFaVSxFFpLelfYoKaQjnaTorOMcfV`)
@@ -214,7 +214,7 @@ Motivo: Embrapa tem variáveis agrícolas específicas
 
 ---
 
-## 📈 **Implementação de Ensemble no ClimateAI**
+## 📈 **Implementação de Ensemble no ClimateWise**
 
 ### **Código Sugerido**
 

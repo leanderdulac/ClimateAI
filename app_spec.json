@@ -1,10 +1,10 @@
 {
-  "name": "climateai",
+  "name": "climatewise",
   "services": [
     {
       "name": "backend",
       "github": {
-        "repo": "leanderdulac/ClimateAI",
+        "repo": "leanderdulac/ClimateWise",
         "branch": "main",
         "deploy_on_push": true
       },
@@ -39,7 +39,7 @@
     {
       "name": "frontend",
       "github": {
-        "repo": "leanderdulac/ClimateAI",
+        "repo": "leanderdulac/ClimateWise",
         "branch": "main",
         "deploy_on_push": true
       },

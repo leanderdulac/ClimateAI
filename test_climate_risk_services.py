@@ -98,7 +98,7 @@ def test_climate_scr():
     print("  🎉 Climate SCR Service functionality verified!")
 
 def main():
-    print("🔬 ClimateAI: Climate Systemic Risk & SCR Services Test\n")
+    print("🔬 ClimateWise: Climate Systemic Risk & SCR Services Test\n")
 
     test_climate_systemic_risk()
     test_climate_scr()

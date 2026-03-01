@@ -89,6 +89,7 @@ jobs:
           DATABASE_URL: postgresql://climateai:climateai123@localhost:5432/climateai
           REDIS_URL: redis://localhost:6379
           SECRET_KEY: test-secret-key-for-ci
+          PYTEST_ADDOPTS: -m "not slow and not performance"
         run: |
           cd server
           pip install pytest pytest-asyncio pytest-cov

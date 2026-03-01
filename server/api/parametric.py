@@ -23,6 +23,8 @@ from core.parametric_actuary import (
 from services.gee_service import GoogleEarthEngineService
 from services.data_lake_service import BigQueryDataLakeService
 from services.vertex_scoring_service import VertexScoringService
+from services.blockchain_token_service import BlockchainTokenService
+from models.schemas import EventoClimatico, EventoClimaticoTipo
 from models.rwa import RWAPolicy
 from config.database import get_db_session
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -98,6 +100,7 @@ class SimulationResponse(BaseModel):
     ep_curve: Optional[Dict[str, List[float]]] = None
     payouts_history: List[Dict[str, Any]]
     warnings: List[str] = []
+    tokenization_summary: Optional[Dict[str, Any]] = None
 
 @router.post("/parametric/simulate", response_model=SimulationResponse)
 async def simulate_parametric_contract(request: SimulationRequest, db: AsyncSession = Depends(get_db_session)):
@@ -236,6 +239,63 @@ async def simulate_parametric_contract(request: SimulationRequest, db: AsyncSess
                 "loss": ep_curve_df['OCC_EP'].tolist()
             }
             
+        # 8. Tokenize the Simulated Policy
+        try:
+            # Map index type to event type
+            event_type_str = request.contract.index_type.lower()
+            if "rain" in event_type_str or "enchente" in event_type_str:
+                event_type = EventoClimaticoTipo.ENCHENTE
+            elif "heat" in event_type_str or "calor" in event_type_str:
+                event_type = EventoClimaticoTipo.ONDA_CALOR
+            elif "frost" in event_type_str or "geada" in event_type_str:
+                event_type = EventoClimaticoTipo.GEADA
+            else:
+                event_type = EventoClimaticoTipo.SECA # Default for drought/rainfall deficit
+                
+            simulated_event = EventoClimatico(
+                tipo=event_type,
+                latitude=request.latitude,
+                longitude=request.longitude,
+                data_inicio=start_date,
+                data_fim=end_date,
+                intensidade=severity_analysis['score'],
+                probabilidade=base_metrics['p_positive'],
+                descricao=f"Simulated policy contract for {request.contract.area_id}",
+                nivel_alerta=int(np.ceil(severity_analysis['score']))
+            )
+            
+            token_service = BlockchainTokenService()
+            wallet_addr = "0x" + "0" * 38 + "A1" # Mock address for now
+            
+            # Integrate all data sources into the token metadata
+            mixed_metadata = {
+                "pricing": pricing,
+                "satellite_metrics": satellite_metrics,
+                "benchmark_data": benchmark_data,
+                "contract_params": request.contract.dict(),
+                "simulation_aal": base_metrics['AAL']
+            }
+            
+            # Mint the token!
+            mint_result = token_service.mint_climate_token(
+                evento=simulated_event,
+                wallet_address=wallet_addr,
+                token_supply=int(request.contract.max_payout),
+                decimals=0,
+                metadata=mixed_metadata
+            )
+            
+            if mint_result.get("success"):
+                logger.info(f"Successfully tokenized simulation. Tx: {mint_result.get('transaction_id')}")
+                res.tokenization_summary = mint_result
+            else:
+                logger.warning(f"Tokenization failed: {mint_result.get('error')}")
+                res.warnings.append("Tokenization failed during simulation.")
+                
+        except Exception as e:
+            logger.error(f"Error during simulation tokenization: {e}")
+            res.warnings.append("Tokenization service unavailable or failed.")
+
         return res
 
     except HTTPException as he:

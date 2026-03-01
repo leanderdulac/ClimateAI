@@ -1,5 +1,5 @@
 """
-Middleware de Autenticação para ClimateAI
+Middleware de Autenticação para ClimateWise
 """
 
 from typing import Optional

@@ -9,13 +9,13 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql+asyncpg://climateai:climateai123@db:5432/climateai
+      - DATABASE_URL=postgresql+asyncpg://climatewise:climatewise123@db:5432/climatewise
       - REDIS_URL=redis://redis:6379
     depends_on:
       - db
       - redis
     networks:
-      - climateai
+      - climatewise
       - monitoring
 
   frontend:
@@ -27,22 +27,22 @@ services:
     depends_on:
       - backend
     networks:
-      - climateai
+      - climatewise
 
   # Database Services
   db:
     image: postgres:13
     environment:
-      POSTGRES_USER: climateai
-      POSTGRES_PASSWORD: climateai123
-      POSTGRES_DB: climateai
+      POSTGRES_USER: climatewise
+      POSTGRES_PASSWORD: climatewise123
+      POSTGRES_DB: climatewise
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./server/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
-      - climateai
+      - climatewise
       - monitoring
 
   redis:
@@ -53,7 +53,7 @@ services:
     volumes:
       - redis_data:/data
     networks:
-      - climateai
+      - climatewise
       - monitoring
 
   # Monitoring Stack
@@ -147,7 +147,7 @@ services:
       - elasticsearch
     networks:
       - logging
-      - climateai
+      - climatewise
 
   kibana:
     image: docker.elastic.co/kibana/kibana:8.11.0
@@ -169,7 +169,7 @@ volumes:
 
 
 networks:
-  climateai:
+  climatewise:
     driver: bridge
   monitoring:
     driver: bridge

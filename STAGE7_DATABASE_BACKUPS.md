@@ -21,7 +21,7 @@ backup.py backup
 ### 2. **Restauração de Backups** ✅
 ```bash
 # Restaurar de um backup
-backup.py restore backup_20251020_020000.sql.gz --database climateai_restored
+backup.py restore backup_20251020_020000.sql.gz --database climatewise_restored
 
 # Suporta:
 # - Descompressão automática
@@ -113,19 +113,19 @@ export BACKUP_COMPRESS=true
 export BACKUP_VERIFY=true
 
 # Database (obrigatório)
-export DATABASE_URL=postgresql://user:pass@host:5432/climateai
+export DATABASE_URL=postgresql://user:pass@host:5432/climatewise
 
 # S3 (opcional)
-export BACKUP_S3_BUCKET=climateai-backups
+export BACKUP_S3_BUCKET=climatewise-backups
 export AWS_REGION=us-east-1
 
 # GCS (opcional)
-export BACKUP_GCS_BUCKET=climateai-backups-gcs
+export BACKUP_GCS_BUCKET=climatewise-backups-gcs
 export GCP_PROJECT_ID=my-project-id
 
 # Notificações (opcional)
 export SLACK_WEBHOOK_URL=https://hooks.slack.com/services/...
-export BACKUP_EMAIL_TO=ops@climateai.com
+export BACKUP_EMAIL_TO=ops@climatewise.com
 ```
 
 ### 3. Testando
@@ -149,7 +149,7 @@ backup.py list
 
 # Restaurar em novo banco de dados
 backup.py restore /var/backups/fimce/backup_20251020_020000.sql.gz \
-  --database climateai_backup_restored
+  --database climatewise_backup_restored
 
 # Depois, migrar dados conforme necessário
 ```
@@ -236,7 +236,7 @@ chmod 600 /var/backups/fimce/backup_*.sql.gz
 ```bash
 # Não armazenar password em texto plano
 # Usar .pgpass:
-echo "localhost:5432:climateai:user:password" > ~/.pgpass
+echo "localhost:5432:climatewise:user:password" > ~/.pgpass
 chmod 600 ~/.pgpass
 
 # OU usar PGPASSWORD via environment (menos seguro)

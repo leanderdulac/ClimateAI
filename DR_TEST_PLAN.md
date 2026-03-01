@@ -2,7 +2,7 @@
 
 ## 📊 Visão Geral
 
-Este documento descreve os procedimentos de teste de Disaster Recovery para a plataforma ClimateAI.
+Este documento descreve os procedimentos de teste de Disaster Recovery para a plataforma ClimateWise.
 
 ## 🎯 Objetivos do DR
 
@@ -64,7 +64,7 @@ Este documento descreve os procedimentos de teste de Disaster Recovery para a pl
 #!/bin/bash
 # Testa integridade do backup mais recente
 
-BACKUP_BUCKET="climateai-backups-prod"
+BACKUP_BUCKET="climatewise-backups-prod"
 LATEST_BACKUP=$(aws s3 ls s3://${BACKUP_BUCKET}/ | tail -1 | awk '{print $4}')
 
 echo "Testing backup: ${LATEST_BACKUP}"
@@ -84,7 +84,7 @@ else
 fi
 
 # Test restore
-gunzip -c /tmp/test_backup.sql.gz | psql -h localhost -U climateai_admin -d climateai_test
+gunzip -c /tmp/test_backup.sql.gz | psql -h localhost -U climatewise_admin -d climatewise_test
 
 if [ $? -eq 0 ]; then
     echo "✓ Restore test OK"
@@ -109,12 +109,12 @@ echo "Starting failover test to ${DR_REGION}..."
 # 1. Promover replica de banco de dados
 echo "Promoting database replica..."
 aws rds promote-read-replica \
-  --db-instance-identifier climateai-db-prod-dr \
+  --db-instance-identifier climatewise-db-prod-dr \
   --region ${DR_REGION}
 
 # Aguardar promoção
 aws rds wait db-instance-available \
-  --db-instance-identifier climateai-db-prod-dr \
+  --db-instance-identifier climatewise-db-prod-dr \
   --region ${DR_REGION}
 
 # 2. Atualizar DNS
@@ -126,7 +126,7 @@ aws route53 change-resource-record-sets \
 # 3. Escalar aplicação em DR
 echo "Scaling application in DR..."
 aws ecs update-service \
-  --cluster climateai-dr \
+  --cluster climatewise-dr \
   --service backend \
   --desired-count 3 \
   --region ${DR_REGION}
@@ -134,7 +134,7 @@ aws ecs update-service \
 # 4. Validar saúde
 echo "Validating health..."
 for i in {1..10}; do
-    RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" https://api.climateai.com/health)
+    RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" https://api.climatewise.com/health)
     if [ "${RESPONSE}" == "200" ]; then
         echo "✓ Health check OK"
         break
@@ -178,19 +178,19 @@ aws route53 change-resource-record-sets \
 # Database failover
 echo "[4/8] Failing over database..."
 aws rds promote-read-replica \
-  --db-instance-identifier climateai-db-prod-dr \
+  --db-instance-identifier climatewise-db-prod-dr \
   --region us-west-2
 
 # Wait for DB
 echo "[5/8] Waiting for database..."
 aws rds wait db-instance-available \
-  --db-instance-identifier climateai-db-prod-dr \
+  --db-instance-identifier climatewise-db-prod-dr \
   --region us-west-2
 
 # Scale application
 echo "[6/8] Scaling application..."
 aws ecs update-service \
-  --cluster climateai-dr \
+  --cluster climatewise-dr \
   --service backend \
   --desired-count 3 \
   --region us-west-2
@@ -198,7 +198,7 @@ aws ecs update-service \
 # Health validation
 echo "[7/8] Validating health..."
 for i in {1..30}; do
-    RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" https://api-dr.climateai.com/health/full)
+    RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" https://api-dr.climatewise.com/health/full)
     if [ "${RESPONSE}" == "200" ]; then
         echo "✓ Health check passed"
         break
@@ -250,7 +250,7 @@ START=$(date +%s)
 ./scripts/dr/trigger_failover.sh
 
 # Wait for healthy
-until curl -s https://api.climateai.com/health | jq -r '.status' | grep -q healthy; do
+until curl -s https://api.climatewise.com/health | jq -r '.status' | grep -q healthy; do
     sleep 5
 done
 
@@ -301,8 +301,8 @@ echo "RTO: ${RTO} seconds"
 
 ### Contatos de Emergência
 - **On-Call**: +1-XXX-XXX-XXXX
-- **Slack**: #climateai-incidents
-- **PagerDuty**: climateai-production
+- **Slack**: #climatewise-incidents
+- **PagerDuty**: climatewise-production
 
 ## 📚 Documentação Relacionada
 

@@ -7,7 +7,7 @@ import requests
 import json
 import time
 
-SUPABASE_URL = "https://tyzmywhvpmdfepxdtyes.supabase.co"
+SUPABASE_URL = os.getenv("SUPABASE_URL", "")
 SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR5em15d2h2cG1kZmVweGR0eWVzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4NzAzNjcsImV4cCI6MjA4NDQ0NjM2N30.14R4jz5hzgx6u3pPnMDrnBEUmgorb0Iqlb8spQRgzaI"
 
 def create_test_user():
@@ -21,14 +21,14 @@ def create_test_user():
     
     # Criar email único com timestamp
     timestamp = int(time.time())
-    email = f"teste+{timestamp}@climateai.com"
+    email = f"teste+{timestamp}@climatewise.com"
     
     payload = {
         "email": email,
         "password": "Teste123!",
         "data": {
             "full_name": "Usuário Teste",
-            "company_name": "ClimateAI"
+            "company_name": "ClimateWise"
         }
     }
     

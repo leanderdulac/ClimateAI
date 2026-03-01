@@ -118,7 +118,7 @@ class XWeatherService:
             request = urllib.request.Request(
                 url,
                 headers={
-                    'User-Agent': 'ClimateAI/1.0',
+                    'User-Agent': 'ClimateWise/1.0',
                     'Accept': 'application/json'
                 }
             )
@@ -299,7 +299,7 @@ class XWeatherService:
     ) -> Dict[str, Any]:
         """
         Obter dados climáticos completos (atuais + previsão)
-        Método principal para integração com ClimateAI
+        Método principal para integração com ClimateWise
     
         Args:
             latitude: Latitude

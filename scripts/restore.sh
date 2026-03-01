@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ============================================
-# Script de Restore de Backup do ClimateAI
+# Script de Restore de Backup do ClimateWise
 # ============================================
 # Restaura um backup específico do PostgreSQL
 # ============================================
@@ -12,7 +12,7 @@ set -e
 BACKUP_DIR="${BACKUP_DIR:-./backups}"
 DB_HOST="${DB_HOST:-localhost}"
 DB_PORT="${DB_PORT:-5432}"
-DB_NAME="${DB_NAME:-climateai}"
+DB_NAME="${DB_NAME:-climatewise}"
 DB_USER="${DB_USER:-postgres}"
 
 # Cores para output
@@ -42,7 +42,7 @@ log_step() {
 # Show usage
 if [ $# -eq 0 ]; then
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "🔄 ClimateAI - Restore de Backup"
+    echo "🔄 ClimateWise - Restore de Backup"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
     echo "Uso: $0 <arquivo_backup.sql.gz>"
@@ -51,14 +51,14 @@ if [ $# -eq 0 ]; then
     echo ""
     
     if [ -d "$BACKUP_DIR" ]; then
-        ls -lht "$BACKUP_DIR"/climateai_*.sql.gz 2>/dev/null | head -10 || echo "  Nenhum backup encontrado"
+        ls -lht "$BACKUP_DIR"/climatewise_*.sql.gz 2>/dev/null | head -10 || echo "  Nenhum backup encontrado"
     else
         echo "  Diretório de backups não existe: $BACKUP_DIR"
     fi
     
     echo ""
     echo "Exemplo:"
-    echo "  $0 ./backups/climateai_20250120_020000.sql.gz"
+    echo "  $0 ./backups/climatewise_20250120_020000.sql.gz"
     echo ""
     exit 1
 fi

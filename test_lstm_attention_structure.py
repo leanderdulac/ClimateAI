@@ -59,7 +59,7 @@ def test_lstm_attention_structure():
             raise e
 
 def main():
-    print("🔬 ClimateAI: LSTM Attention Service Structure Test\n")
+    print("🔬 ClimateWise: LSTM Attention Service Structure Test\n")
 
     test_lstm_attention_structure()
 

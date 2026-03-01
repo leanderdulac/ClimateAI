@@ -186,7 +186,7 @@ data = service.get_historical_data(
 
 ---
 
-## 📝 **COMO USAR NO CLIMATEAI**
+## 📝 **COMO USAR NO CLIMATEWISE**
 
 ### **Exemplo 1: Dados Históricos**
 ```python
@@ -322,7 +322,7 @@ HGBRASIL_KEY=your_hgbrazil_key_here
 **Status**: ✅ **Funcional e testado**  
 **Recomendação**: Usar OpenMeteo como primária
 
-**Impacto no ClimateAI**:
+**Impacto no ClimateWise**:
 - ✅ Dados meteorológicos confiáveis
 - ✅ Fallback automático implementado
 - ✅ Sem dependência do INMET direto

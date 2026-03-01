@@ -2,7 +2,7 @@ import asyncio, asyncpg
 
 async def main():
     urls = [
-        'postgresql://postgres.tyzmywhvpmdfepxdtyes:brBU04YrEeJiXUne@aws-1-sa-east-1.pooler.supabase.com:6543/postgres'
+        os.getenv("TEST_AWS1_POOLER_URL", "postgresql://postgres:postgres@localhost:5432/postgres")
     ]
     for url in urls:
         print(f"Testing {url} ...")

@@ -1,4 +1,4 @@
-# Monitoramento e automação do stack ClimateAI
+# Monitoramento e automação do stack ClimateWise
 
 ## monitor_stack.sh
 Script que monitora continuamente o backend, frontend e landing page:

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Sistema de Backup Automático para ClimateAI
+Sistema de Backup Automático para ClimateWise
 
 Suporta:
 - PostgreSQL backups
@@ -47,7 +47,7 @@ class BackupConfig:
 
     # Database
     DATABASE_URL = os.getenv(
-        "DATABASE_URL", "postgresql://user:pass@localhost:5432/climateai"
+        "DATABASE_URL", "postgresql://user:pass@localhost:5432/climatewise"
     )
 
     # Retenção
@@ -63,7 +63,7 @@ class BackupConfig:
 
     # S3
     S3_BUCKET = os.getenv("BACKUP_S3_BUCKET", "")
-    S3_PREFIX = os.getenv("BACKUP_S3_PREFIX", "backups/climateai")
+    S3_PREFIX = os.getenv("BACKUP_S3_PREFIX", "backups/climatewise")
     AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
 
     # GCS
@@ -473,7 +473,7 @@ class BackupNotification:
                 "attachments": [
                     {
                         "color": color,
-                        "title": f"ClimateAI Backup {status.upper()}",
+                        "title": f"ClimateWise Backup {status.upper()}",
                         "text": message,
                         "fields": [
                             {
@@ -587,7 +587,7 @@ class BackupOrchestrator:
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Sistema de Backup para ClimateAI")
+    parser = argparse.ArgumentParser(description="Sistema de Backup para ClimateWise")
     subparsers = parser.add_subparsers(dest="command", help="Comando")
 
     # Comando: backup
@@ -598,7 +598,7 @@ if __name__ == "__main__":
     restore_parser.add_argument("backup_file", help="Caminho do arquivo de backup")
     restore_parser.add_argument(
         "--database",
-        default="climateai_restored",
+        default="climatewise_restored",
         help="Nome do banco de dados destino",
     )
 

@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# ClimateAI - Quick Deploy Fix Script
+# ClimateWise - Quick Deploy Fix Script
 # Este script corrige problemas comuns de deploy
 
 set -e
 
-echo "🔧 ClimateAI - Script de Correção de Deploy"
+echo "🔧 ClimateWise - Script de Correção de Deploy"
 echo "=========================================="
 echo ""
 

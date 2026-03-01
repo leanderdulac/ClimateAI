@@ -31,5 +31,5 @@ images:
   - 'gcr.io/$PROJECT_ID/$_SERVICE_NAME:$COMMIT_SHA'
 
 substitutions:
-  _SERVICE_NAME: climateai-backend
+  _SERVICE_NAME: climatewise-backend
   _REGION: us-central1

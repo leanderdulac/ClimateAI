@@ -1,7 +1,7 @@
 """
 Integração com xAI Grok para análises complementares e assistência técnica
 Utiliza a API do Grok para tarefas de linguagem natural e análise de texto
-que complementam o sistema especializado de IA climática do ClimateAI
+que complementam o sistema especializado de IA climática do ClimateWise
 """
 
 import logging
@@ -24,7 +24,7 @@ class GrokAnalysisResult:
     processing_timestamp: datetime
     analysis_type: str  # Tipo de análise realizada
     sources_considered: List[str]
-    complementary_to: str  # Qual componente do ClimateAI esta análise complementa
+    complementary_to: str  # Qual componente do ClimateWise esta análise complementa
 
 
 class GrokIntegrationService:
@@ -173,7 +173,7 @@ class GrokIntegrationService:
                 processing_timestamp=datetime.now(),
                 analysis_type=analysis_type,
                 sources_considered=["Grok AI", "Climate Data"],
-                complementary_to="ClimateAI Core Analysis"
+                complementary_to="ClimateWise Core Analysis"
             )
 
         except Exception as e:
@@ -472,7 +472,7 @@ class GrokIntegrationService:
             processing_timestamp=datetime.now(),
             analysis_type=analysis_type,
             sources_considered=["Histórico Climático Brasileiro (1994-2024)", "Normas SUSEP", "Cálculos Atuariais"],
-            complementary_to="ClimateAI Core Analysis"
+            complementary_to="ClimateWise Core Analysis"
         )
 
         response = mock_responses.get(analysis_type, mock_responses["general"])
@@ -483,7 +483,7 @@ class GrokIntegrationService:
             processing_timestamp=datetime.now(),
             analysis_type=analysis_type,
             sources_considered=["Mock Data", "Climate Models"],
-            complementary_to="ClimateAI Core Analysis"
+            complementary_to="ClimateWise Core Analysis"
         )
 
     def _mock_climate_insights(self, location: str, time_period: str) -> GrokAnalysisResult:

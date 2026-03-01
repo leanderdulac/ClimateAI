@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ============================================
-# Script de Verificação Completa do ClimateAI
+# Script de Verificação Completa do ClimateWise
 # ============================================
 # Verifica todos os componentes da plataforma
 # ============================================
@@ -41,7 +41,7 @@ log_info() {
 }
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "🔍 ClimateAI - Verificação Completa"
+echo "🔍 ClimateWise - Verificação Completa"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 

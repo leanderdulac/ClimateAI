@@ -2,17 +2,17 @@ import { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { NavigationMenu } from "@/components/NavigationMenu";
 import { useAuth } from "@/lib/AuthContext";
-import { Globe, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { Link } from "react-router-dom";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useTranslation } from "@/hooks/useTranslation";
+import { Logo } from "@/components/Logo";
 
 interface DashboardLayoutProps {
   children: ReactNode;
   title?: string;
   subtitle?: string;
 }
-
 
 export function DashboardLayout({ children, title, subtitle }: DashboardLayoutProps) {
   const { user, logout } = useAuth();
@@ -25,13 +25,8 @@ export function DashboardLayout({ children, title, subtitle }: DashboardLayoutPr
         <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center gap-8">
-              <Link to="/" className="flex items-center gap-2">
-                <div className="rounded-lg bg-primary/10 p-1.5 ring-1 ring-primary/20">
-                  <Globe className="h-5 w-5 text-primary" />
-                </div>
-                <span className="text-lg font-bold tracking-tight text-foreground font-display">
-                  {t('app.name')}
-                </span>
+              <Link to="/" className="flex items-center transition-opacity hover:opacity-80">
+                <Logo size={32} />
               </Link>
               <NavigationMenu />
             </div>

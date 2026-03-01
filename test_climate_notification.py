@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Final verification test for the complete ClimateAI system with all 14 mathematical engines
+Final verification test for the complete ClimateWise system with all 14 mathematical engines
 """
 import sys
 import os
@@ -97,11 +97,11 @@ def test_climate_notification_system():
     print("  🎉 Climate Risk Notification System functionality verified!")
 
 def main():
-    print("🔬 ClimateAI: Complete System Verification Test\n")
+    print("🔬 ClimateWise: Complete System Verification Test\n")
 
     test_climate_notification_system()
 
-    print("\n📋 Complete ClimateAI System Status:")
+    print("\n📋 Complete ClimateWise System Status:")
     print("   - 14 sophisticated mathematical engines implemented")
     print("   - Climate risk push notifications: Notificação_push = I{ΔPrêmio_7d > 20% OR P(evento_severo_72h) > 5%}")
     print("   - Immediate mitigation recommendations")

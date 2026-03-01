@@ -6,9 +6,9 @@ set -e
 
 STAGE=${1:-production}
 VERSION="1.0.0"
-REGISTRY="climateai"
+REGISTRY="climatewise"
 
-echo "🐳 ClimateAI Docker Build Script"
+echo "🐳 ClimateWise Docker Build Script"
 echo "=================================="
 
 # Cores

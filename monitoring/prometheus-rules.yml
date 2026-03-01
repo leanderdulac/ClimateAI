@@ -1,5 +1,5 @@
 # Prometheus Recording Rules e Alertas para SLOs
-# ClimateAI Platform
+# ClimateWise Platform
 
 groups:
   # ============================================
@@ -98,17 +98,17 @@ groups:
       # Circuit Breaker State (0=CLOSED, 1=OPEN, 2=HALF_OPEN)
       - record: circuit_breaker:state
         expr: |
-          climateai_circuit_breaker_state
+          climatewise_circuit_breaker_state
 
       # Circuit Breaker Failures
       - record: circuit_breaker:failure_count:rate5m
         expr: |
-          rate(climateai_circuit_breaker_failures_total[5m])
+          rate(climatewise_circuit_breaker_failures_total[5m])
 
       # Circuit Breaker State Changes
       - record: circuit_breaker:state_changes:rate5m
         expr: |
-          rate(climateai_circuit_breaker_state_changes_total[5m])
+          rate(climatewise_circuit_breaker_state_changes_total[5m])
 
   # ============================================
   # SLO ALERTS
@@ -125,7 +125,7 @@ groups:
         annotations:
           summary: "SLO de Disponibilidade Crítico"
           description: "Disponibilidade em {{ $value | humanizePercentage }} (SLO: 99.9%)"
-          runbook_url: "https://wiki.climateai.ai/runbooks/slo-availability"
+          runbook_url: "https://wiki.climatewise.ai/runbooks/slo-availability"
 
       # Warning: Disponibilidade abaixo de 99.95%
       - alert: SLOAvailabilityWarning

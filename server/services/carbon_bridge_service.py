@@ -7,13 +7,13 @@ logger = logging.getLogger(__name__)
 
 class CarbonCreditBridgeService:
     """
-    Service to bridge ClimateAI with Environmental Markets.
+    Service to bridge ClimateWise with Environmental Markets.
     Enables automatic carbon offsetting from insurance premiums.
     """
 
     def __init__(self):
         # In production, this would integrate with Toucan Protocol or Celo-based carbon bridges
-        self.registry_url = "https://mock-registry.climateai.com"
+        self.registry_url = "https://mock-registry.climatewise.com"
         self.active_pools = ["BCT", "NCT", "MCO2"]
 
     async def retire_carbon_credits(self, amount_usd: float, beneficiary: str) -> Dict[str, Any]:

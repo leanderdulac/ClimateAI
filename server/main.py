@@ -180,7 +180,7 @@ try:
 except ImportError:
     dynamical_climate_router = None
 from api.english_api import router as english_api_router
-from api.english_climateai import router as english_climateai_router
+from api.english_climatewise import router as english_climatewise_router
 from api.ensemble_pricing import router as ensemble_pricing_router
 from api.eventos import router as eventos_router
 from api.external import router as external_router
@@ -192,8 +192,15 @@ from api.model_governance import router as model_governance_router
 from api.regulatory_reporting import router as regulatory_reporting_router
 from api.inmet_alertas import router as inmet_alertas_router
 from api.brazil_disaster_alerts import router as brazil_disaster_alerts_router
+from api.atlas_disasters import router as atlas_disasters_router
+from api.atlas_integration import router as atlas_integration_router
+from api.atlas_oracle_simulation import router as atlas_oracle_simulation_router
+from api.atlas_realtime_climate import router as atlas_realtime_climate_router
+from api.unified_platform import router as unified_platform_router
 from api.parametric_trigger_verification import router as parametric_trigger_router
 from api.i18n import router as i18n_router
+from api.news_crawler import router as news_crawler_router
+from api.climate_data import router as climate_data_router
 from api.ia_analytics_agent import router as ia_analytics_agent_router
 from api.integrated_pipeline import router as integrated_pipeline_router
 from api.integrated_pricing_framework import (
@@ -236,7 +243,8 @@ from api.tcfd_issb import router as tcfd_issb_router
 from api.tokenizacao import router as tokenizacao_router
 from api.transition_risk import router as transition_risk_router
 from api.unified_pricing import router as unified_pricing_router
-from api.xweather_forecast import router as xweather_forecast_router
+from api.hathor_blockchain import router as hathor_blockchain_router
+from api.celestrak import router as celestrak_router
 from config.database import close_db, init_db
 from services.audit_service import (
     get_audit_logs,
@@ -274,122 +282,12 @@ except ImportError:
     train_ml_models = None
 
 
-class PricingRequest(BaseModel):
-    location_id: str
-    coverage_amount: float
-    coverage_period: int = 1  # em anos
-    user_id: Optional[str] = None
-    session_id: Optional[str] = None
+
+# Pricing logic moved to api/pricing.py
 
 
 # Função de cálculo de pricing aprimorada com análise dinâmica de lucratividade
-def calculate_pricing(request: PricingRequest) -> Dict[str, Any]:
-    """
-    Calcula preço de seguro baseado em dados climáticos e fatores de risco
-    Incorpora análise dinâmica de lucratividade e otimização de portfólio
-    """
-    from services.clima_service import ClimaService
-    from services.previsao_service import PrevisaoService
-
-    clima_service = ClimaService()
-    previsao_service = PrevisaoService()
-
-    # Obter dados climáticos para a localização
-    try:
-        # Obter dados históricos para análise de risco
-        historico_inicio = datetime.now() - timedelta(days=365)  # Último ano
-        historico_fim = datetime.now()
-
-        # Obter dados reais de clima para análise de risco
-        dados_clima = clima_service.obter_historico(
-            latitude=-23.5507,  # São Paulo como exemplo
-            longitude=-46.6339,
-            data_inicio=historico_inicio,
-            data_fim=historico_fim,
-        )
-
-        # Calcular fatores de risco com base nos dados históricos
-        climatic_risk = 0.0
-        economic_risk = 0.2  # Mantém valor padrão
-        location_risk = 0.3  # Avaliado por sistema de microsegmentação
-
-        if dados_clima:
-            # Análise da variabilidade climática
-            temps = [d.temperatura for d in dados_clima if d.temperatura is not None]
-            precip = [d.precipitacao for d in dados_clima if d.precipitacao is not None]
-
-            if temps:
-                temp_variability = (
-                    np.std(temps) / np.mean(temps) if np.mean(temps) != 0 else 0
-                )
-                climatic_risk = min(
-                    1.0, temp_variability * 2
-                )  # Ajuste baseado na variabilidade
-
-            if precip:
-                precip_variability = (
-                    np.std(precip) / np.mean(precip) if np.mean(precip) != 0 else 0
-                )
-                climatic_risk = max(climatic_risk, min(1.0, precip_variability * 1.5))
-
-        # Atualizar fatores de risco com base em dados reais
-        risk_factors = {
-            "climatic_risk": climatic_risk,
-            "economic_risk": economic_risk,
-            "location_risk": location_risk,
-        }
-
-        # Calcular prêmio dinâmico usando o novo sistema de análise
-        dynamic_pricing_result = dynamic_analysis_service.calculate_dynamic_premium(
-            coverage_amount=request.coverage_amount,
-            risk_factors=risk_factors,
-            base_loading_factor=0.20,  # 20% de loading base
-        )
-
-        # Retornar o resultado com todas as informações de análise
-        return {
-            "final_price": dynamic_pricing_result["final_premium"],
-            "expected_claims": dynamic_pricing_result["expected_claims"],
-            "profit": dynamic_pricing_result["profit"],
-            "profit_margin": dynamic_pricing_result["profit_margin"],
-            "break_even_premium": dynamic_pricing_result["break_even_premium"],
-            "risk_score": (climatic_risk + economic_risk + location_risk) / 3,
-            "risk_factors": risk_factors,
-            "is_profitable": dynamic_pricing_result["is_profitable"],
-            "recommendations": [
-                f"Margem de lucro esperada: {dynamic_pricing_result['profit_margin']:.1%}",
-                f"Prêmio mínimo para equilíbrio: R$ {dynamic_pricing_result['break_even_premium']:,.2f}",
-                (
-                    "Considerar cobertura adicional contra inundações"
-                    if climatic_risk > 0.5
-                    else ""
-                ),
-                (
-                    "Avaliar período de cobertura mais longo"
-                    if request.coverage_period == 1
-                    else ""
-                ),
-            ],
-            "compliance_flags": [],
-        }
-    except Exception as e:
-        logger.error(f"Error in enhanced pricing calculation: {str(e)}")
-        # Fallback para cálculo original em caso de erro
-        return {
-            "final_price": request.coverage_amount * 0.05,  # 5% do valor coberto
-            "risk_score": 0.3,
-            "risk_factors": {
-                "climatic_risk": 0.4,
-                "economic_risk": 0.2,
-                "location_risk": 0.3,
-            },
-            "recommendations": [
-                "Considerar cobertura adicional contra inundações",
-                "Avaliar período de cobertura mais longo",
-            ],
-            "compliance_flags": [],
-            "error": f"Fallback pricing used due to error: {str(e)}",
-        }
+# calculate_pricing function moved to api/pricing.py
 
 
 # Verificar variáveis de ambiente críticas
@@ -428,7 +326,7 @@ init_otel(app)
 # Configuração de CORS
 # Em produção, ALLOW_ORIGINS deve ser configurado com a URL do frontend (ex: https://meu-app.netlify.app)
 # Se não configurado, permite todas as origens (*) por padrão para facilitar deploy inicial
-allow_origins_str = os.getenv("ALLOW_ORIGINS", "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173")
+allow_origins_str = os.getenv("ALLOW_ORIGINS", "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:3000")
 allow_origins = allow_origins_str.split(",") if allow_origins_str != "*" else ["*"]
 
 # Security headers middleware (Register early to ensure headers are set even for errors)
@@ -549,7 +447,7 @@ async def get_vault_secret(path: str, version: Optional[int] = None):
     Recupera um secret do Vault
     
     Args:
-        path: Caminho do secret (ex: secret/data/climateai/api-keys)
+        path: Caminho do secret (ex: secret/data/climatewise/api-keys)
         version: Versão específica (opcional)
     
     Returns:
@@ -708,455 +606,19 @@ async def transition_mlflow_model(model_name: str, version: str, stage: str):
     }
 
 
-# Machine Learning Endpoints
-@app.post(f"{API_PREFIX}/ml/predict-sinistrality")
-async def predict_sinistrality_endpoint(features: Dict[str, Any]):
-    """
-    Prediz frequência e severidade de sinistros usando machine learning
-
-    Args:
-        features: Dicionário com características para predição
-            - rainfall: Precipitação (mm)
-            - temperature: Temperatura (°C)
-            - humidity: Umidade (%)
-            - inflation_rate: Taxa de inflação
-            - gdp_growth: Crescimento do PIB
-            - latitude: Latitude
-            - longitude: Longitude
-            - month: Mês (opcional)
-
-    Returns:
-        Predições de frequência e severidade com intervalos de confiança
-    """
-    try:
-        result = predict_sinistrality(features)
-
-        # Registrar operação de auditoria
-        log_operation(
-            operation="ml_prediction",
-            resource_type="risk_model",
-            action="predict",
-            status="success",
-            details={"features": features, "predictions": result},
-            risk_score=result.get("risk_score", 0),
-        )
-
-        return result
-    except Exception as e:
-        # Registrar erro de auditoria
-        log_operation(
-            operation="ml_prediction",
-            resource_type="risk_model",
-            action="predict",
-            status="error",
-            details={"error": str(e), "features": features},
-            compliance_flags=["ml_prediction_error"],
-        )
-        logger.error(f"Erro na predição ML: {e}")
-        raise HTTPException(status_code=500, detail=f"Erro na predição: {str(e)}")
+# Machine Learning Endpoints managed in api/ml.py
 
 
-@app.post(f"{API_PREFIX}/ml/train-models")
-async def train_ml_models_endpoint(data: Optional[List[Dict[str, Any]]] = None):
-    """
-    Treina os modelos de machine learning para predição de sinistralidade
-
-    Args:
-        data: Dados históricos opcionais para treinamento (se não fornecidos, usa dados sintéticos)
-
-    Returns:
-        Métricas de treinamento e status
-    """
-    try:
-        import pandas as pd
-
-        df = pd.DataFrame(data) if data else None
-        result = train_ml_models(df)
-        return result
-    except Exception as e:
-        logger.error(f"Erro no treinamento ML: {e}")
-        raise HTTPException(status_code=500, detail=f"Erro no treinamento: {str(e)}")
+# External API Endpoints managed in api/external.py
 
 
-@app.get(f"{API_PREFIX}/ml/model-info")
-async def get_ml_model_info_endpoint():
-    """
-    Retorna informações sobre os modelos de machine learning
-
-    Returns:
-        Status dos modelos e informações de treinamento
-    """
-    try:
-        return get_ml_model_info()
-    except Exception as e:
-        logger.error(f"Erro ao obter info do modelo: {e}")
-        raise HTTPException(status_code=500, detail=f"Erro ao obter info: {str(e)}")
+# Microsegmentation Endpoints managed in api/microsegmentation.py
 
 
-# External API Endpoints
-@app.get(f"{API_PREFIX}/external/weather")
-async def get_weather_endpoint(latitude: float, longitude: float):
-    """
-    Obter dados meteorológicos em tempo real
-
-    Args:
-        latitude: Latitude da localização
-        longitude: Longitude da localização
-
-    Returns:
-        Dados meteorológicos atuais
-    """
-    try:
-        result = await get_weather_data(latitude, longitude)
-        return result
-    except Exception as e:
-        logger.error(f"Erro ao obter dados meteorológicos: {e}")
-        raise HTTPException(status_code=500, detail=f"Erro meteorológico: {str(e)}")
+# Audit and Compliance Endpoints managed in api/audit.py
 
 
-@app.get(f"{API_PREFIX}/external/economic-indicators")
-async def get_economic_indicators_endpoint():
-    """
-    Obter indicadores econômicos atuais
-
-    Returns:
-        Taxa de inflação e crescimento do PIB
-    """
-    try:
-        result = await get_economic_indicators()
-        return result
-    except Exception as e:
-        logger.error(f"Erro ao obter indicadores econômicos: {e}")
-        raise HTTPException(status_code=500, detail=f"Erro econômico: {str(e)}")
-
-
-@app.get(f"{API_PREFIX}/external/commodity-prices")
-async def get_commodity_prices_endpoint(
-    symbols: List[str] = Query(..., description="Símbolos das commodities")
-):
-    """
-    Obter preços de commodities
-
-    Args:
-        symbols: Lista de símbolos de commodities
-
-    Returns:
-        Preços atuais das commodities
-    """
-    try:
-        result = await get_commodity_prices(symbols)
-        return result
-    except Exception as e:
-        logger.error(f"Erro ao obter preços de commodities: {e}")
-        raise HTTPException(status_code=500, detail=f"Erro commodities: {str(e)}")
-
-
-@app.get(f"{API_PREFIX}/external/real-time-data")
-async def get_real_time_data_endpoint(
-    latitude: float,
-    longitude: float,
-    commodities: List[str] = Query(
-        ["CORN", "SOYBEAN"], description="Símbolos das commodities"
-    ),
-):
-    """
-    Obter dados abrangentes em tempo real de todas as APIs externas
-
-    Args:
-        latitude: Latitude da localização
-        longitude: Longitude da localização
-        commodities: Lista de símbolos de commodities
-
-    Returns:
-        Dados combinados de clima, economia e commodities
-    """
-    try:
-        result = await get_real_time_data(latitude, longitude, commodities)
-
-        # Registrar operação de auditoria
-        log_operation(
-            operation="external_data_retrieval",
-            resource_type="external_api",
-            action="fetch",
-            status="success",
-            resource_id=f"lat_{latitude}_lon_{longitude}",
-            details={
-                "latitude": latitude,
-                "longitude": longitude,
-                "commodities": commodities,
-                "data_sources": ["weather", "economic", "commodity"],
-            },
-        )
-
-        return result
-    except Exception as e:
-        # Registrar erro de auditoria
-        log_operation(
-            operation="external_data_retrieval",
-            resource_type="external_api",
-            action="fetch",
-            status="error",
-            resource_id=f"lat_{latitude}_lon_{longitude}",
-            details={
-                "error": str(e),
-                "latitude": latitude,
-                "longitude": longitude,
-                "commodities": commodities,
-            },
-            compliance_flags=["external_api_error"],
-        )
-        logger.error(f"Erro ao obter dados em tempo real: {e}")
-        raise HTTPException(status_code=500, detail=f"Erro dados tempo real: {str(e)}")
-
-
-# Microsegmentation Endpoints
-@app.post(f"{API_PREFIX}/microsegmentation/create")
-async def create_microsegments_endpoint(
-    region_bounds: Dict[str, Any],
-    n_segments: int = Query(20, description="Número de microsegmentos"),
-):
-    """
-    Criar microsegmentos para uma região geográfica
-
-    Args:
-        region_bounds: Limites e características da região
-        n_segments: Número de microsegmentos a criar
-
-    Returns:
-        Definições dos microsegmentos criados
-    """
-    try:
-        result = create_microsegments(region_bounds, n_segments)
-        return result
-    except Exception as e:
-        logger.error(f"Erro ao criar microsegmentos: {e}")
-        raise HTTPException(status_code=500, detail=f"Erro microsegmentação: {str(e)}")
-
-
-@app.get(f"{API_PREFIX}/microsegmentation/analyze-location")
-async def analyze_location_risk_endpoint(
-    latitude: float,
-    longitude: float,
-    region_id: str = Query("default", description="ID da região"),
-):
-    """
-    Analisar risco de uma localização específica usando microsegmentação
-
-    Args:
-        latitude: Latitude da localização
-        longitude: Longitude da localização
-        region_id: ID da região para análise
-
-    Returns:
-        Análise de risco detalhada para a localização
-    """
-    try:
-        result = analyze_location_risk(latitude, longitude, region_id)
-
-        # Registrar operação de auditoria
-        log_operation(
-            operation="microsegmentation_analysis",
-            resource_type="location_risk",
-            action="analyze",
-            status="success",
-            resource_id=f"lat_{latitude}_lon_{longitude}",
-            details={
-                "latitude": latitude,
-                "longitude": longitude,
-                "region_id": region_id,
-                "risk_score": result.get("risk_score", 0),
-                "segment_id": result.get("segment_id"),
-            },
-            risk_score=result.get("risk_score", 0),
-        )
-
-        return result
-    except Exception as e:
-        # Registrar erro de auditoria
-        log_operation(
-            operation="microsegmentation_analysis",
-            resource_type="location_risk",
-            action="analyze",
-            status="error",
-            resource_id=f"lat_{latitude}_lon_{longitude}",
-            details={"error": str(e), "latitude": latitude, "longitude": longitude},
-            compliance_flags=["microsegmentation_error"],
-        )
-        logger.error(f"Erro ao analisar risco da localização: {e}")
-        raise HTTPException(status_code=500, detail=f"Erro análise risco: {str(e)}")
-
-
-@app.get(f"{API_PREFIX}/microsegmentation/summary")
-async def get_microsegmentation_summary_endpoint(
-    region_id: str = Query("default", description="ID da região")
-):
-    """
-    Obter resumo estatístico da análise de microsegmentação
-
-    Args:
-        region_id: ID da região
-
-    Returns:
-        Estatísticas resumidas da microsegmentação
-    """
-    try:
-        result = get_microsegmentation_summary(region_id)
-        return result
-    except Exception as e:
-        logger.error(f"Erro ao obter resumo de microsegmentação: {e}")
-        raise HTTPException(status_code=500, detail=f"Erro resumo: {str(e)}")
-
-
-# Audit and Compliance Endpoints
-@app.get(f"{API_PREFIX}/audit/logs")
-async def get_audit_logs_endpoint(
-    start_date: Optional[str] = Query(None, description="Data inicial (ISO format)"),
-    end_date: Optional[str] = Query(None, description="Data final (ISO format)"),
-    operation: Optional[str] = Query(None, description="Tipo de operação"),
-    user_id: Optional[str] = Query(None, description="ID do usuário"),
-    status: Optional[str] = Query(None, description="Status da operação"),
-    limit: int = Query(100, description="Limite de registros"),
-):
-    """
-    Obter logs de auditoria com filtros opcionais
-
-    Returns:
-        Lista de entradas do log de auditoria
-    """
-    try:
-        start = datetime.fromisoformat(start_date) if start_date else None
-        end = datetime.fromisoformat(end_date) if end_date else None
-
-        result = get_audit_logs(
-            start_date=start,
-            end_date=end,
-            operation=operation,
-            user_id=user_id,
-            status=status,
-            limit=limit,
-        )
-        return result
-    except Exception as e:
-        logger.error(f"Erro ao obter logs de auditoria: {e}")
-        raise HTTPException(status_code=500, detail=f"Erro logs auditoria: {str(e)}")
-
-
-@app.get(f"{API_PREFIX}/compliance/report")
-async def get_compliance_report_endpoint(
-    start_date: Optional[str] = Query(None, description="Data inicial (ISO format)"),
-    end_date: Optional[str] = Query(None, description="Data final (ISO format)"),
-):
-    """
-    Obter relatório de compliance
-
-    Returns:
-        Relatório de compliance com violações e estatísticas
-    """
-    try:
-        start = datetime.fromisoformat(start_date) if start_date else None
-        end = datetime.fromisoformat(end_date) if end_date else None
-
-        result = get_compliance_report(start_date=start, end_date=end)
-        return result
-    except Exception as e:
-        logger.error(f"Erro ao obter relatório de compliance: {e}")
-        raise HTTPException(
-            status_code=500, detail=f"Erro relatório compliance: {str(e)}"
-        )
-
-
-@app.post(f"{API_PREFIX}/audit/log-operation")
-async def log_operation_endpoint(
-    operation: str,
-    resource_type: str,
-    action: str,
-    status: str = "success",
-    user_id: Optional[str] = None,
-    session_id: Optional[str] = None,
-    resource_id: Optional[str] = None,
-    details: Optional[Dict[str, Any]] = None,
-    risk_score: Optional[float] = None,
-    compliance_flags: Optional[List[str]] = None,
-):
-    """
-    Registrar uma operação para auditoria
-
-    Returns:
-        ID do registro de auditoria
-    """
-    try:
-        audit_id = log_operation(
-            operation=operation,
-            resource_type=resource_type,
-            action=action,
-            status=status,
-            user_id=user_id,
-            session_id=session_id,
-            resource_id=resource_id,
-            details=details,
-            risk_score=risk_score,
-            compliance_flags=compliance_flags,
-        )
-        return {"audit_id": audit_id, "message": "Operação registrada com sucesso"}
-    except Exception as e:
-        logger.error(f"Erro ao registrar operação: {e}")
-        raise HTTPException(status_code=500, detail=f"Erro registro operação: {str(e)}")
-
-
-# Pricing Endpoints
-@app.post(f"{API_PREFIX}/pricing/calculate")
-async def calculate_pricing_endpoint(request: PricingRequest):
-    """
-    Calcular preço de seguro baseado em dados climáticos e fatores de risco
-
-    Args:
-        request: Dados da solicitação de pricing
-
-    Returns:
-        Resultado do cálculo de pricing com recomendações
-    """
-    try:
-        # Calcular pricing
-        result = calculate_pricing(request)
-
-        # Registrar operação de auditoria
-        audit_id = log_operation(
-            operation="pricing_calculation",
-            resource_type="insurance_policy",
-            action="calculate",
-            status="success",
-            user_id=request.user_id,
-            session_id=request.session_id,
-            resource_id=f"location_{request.location_id}",
-            details={
-                "location_id": request.location_id,
-                "coverage_period": request.coverage_period,
-                "coverage_amount": request.coverage_amount,
-                "risk_factors": result.get("risk_factors", {}),
-                "final_price": result.get("final_price", 0),
-            },
-            risk_score=result.get("risk_score", 0),
-            compliance_flags=result.get("compliance_flags", []),
-        )
-
-        # Adicionar ID de auditoria ao resultado
-        result["audit_id"] = audit_id
-
-        return result
-    except Exception as e:
-        # Registrar erro de auditoria
-        log_operation(
-            operation="pricing_calculation",
-            resource_type="insurance_policy",
-            action="calculate",
-            status="error",
-            user_id=getattr(request, "user_id", None),
-            session_id=getattr(request, "session_id", None),
-            details={"error": str(e)},
-            compliance_flags=["calculation_error"],
-        )
-        logger.error(f"Erro no cálculo de pricing: {e}")
-        raise HTTPException(status_code=500, detail=f"Erro cálculo: {str(e)}")
+# Additional pricing endpoints moved to api/pricing.py
 
 
 # Função utilitária para cache com decorator
@@ -1448,9 +910,6 @@ try:
         noaa_integration_router, prefix=f"{API_PREFIX}/noaa", tags=["noaa"]
     )
     app.include_router(
-        xweather_forecast_router, prefix=f"{API_PREFIX}/xweather", tags=["xweather"]
-    )
-    app.include_router(
         model_governance_router, prefix=f"{API_PREFIX}/model-governance", tags=["model-governance"]
     )
     app.include_router(
@@ -1461,6 +920,27 @@ try:
     )
     app.include_router(
         brazil_disaster_alerts_router, prefix=f"{API_PREFIX}/brazil-alerts", tags=["brazil-alerts"]
+    )
+    app.include_router(
+        atlas_disasters_router, tags=["atlas-disasters"]
+    )
+    app.include_router(
+        atlas_integration_router, tags=["atlas-integration"]
+    )
+    app.include_router(
+        atlas_oracle_simulation_router, tags=["atlas-simulation"]
+    )
+    app.include_router(
+        atlas_realtime_climate_router, tags=["atlas-realtime"]
+    )
+    app.include_router(
+        news_crawler_router, tags=["news-crawler"]
+    )
+    app.include_router(
+        climate_data_router, tags=["climate-data"]
+    )
+    app.include_router(
+        unified_platform_router, tags=["unified-platform"]
     )
     app.include_router(
         parametric_trigger_router, prefix=f"{API_PREFIX}/parametric-triggers", tags=["parametric-triggers"]
@@ -1490,9 +970,9 @@ try:
         english_api_router, prefix=f"{API_PREFIX}/english", tags=["english"]
     )
     app.include_router(
-        english_climateai_router,
-        prefix=f"{API_PREFIX}/english-climateai",
-        tags=["english-climateai"],
+        english_climatewise_router,
+        prefix=f"{API_PREFIX}/english-climatewise",
+        tags=["english-climatewise"],
     )
     # New refactored routers
     app.include_router(cache_router, prefix=f"{API_PREFIX}/cache", tags=["cache"])
@@ -1517,9 +997,14 @@ try:
         backtesting_router, prefix=f"{API_PREFIX}", tags=["backtesting"]
     )
     app.include_router(
+        hathor_blockchain_router, prefix=f"{API_PREFIX}/blockchain/hathor", tags=["hathor_blockchain"]
+    )
+    app.include_router(
+        celestrak_router, prefix=f"{API_PREFIX}/celestrak", tags=["celestrak"]
+    )
+    app.include_router(
         audit_router, prefix=f"{API_PREFIX}/audit", tags=["audit"]
     )
-    # app.include_router(audit_router, prefix=f"{API_PREFIX}/audit", tags=["audit"])
 except Exception as e:
     logger.error(f"Erro ao incluir routers: {str(e)}")
     raise
@@ -1531,7 +1016,7 @@ async def startup_event():
     """Evento executado na inicialização do servidor"""
     global health_checker
 
-    logger.info("Inicializando ClimateAI...")
+    logger.info("Inicializando ClimateWise...")
 
     # Verificar variáveis de ambiente críticas
     if missing_vars:
@@ -1542,8 +1027,12 @@ async def startup_event():
 
     # Inicializar banco de dados
     if settings.DATABASE_ENABLED:
-        await init_db()
-        logger.info("Banco de dados inicializado")
+        try:
+            await init_db()
+            logger.info("Banco de dados inicializado")
+        except Exception as e:
+            logger.warning(f"⚠ Falha ao inicializar banco de dados (modo degradado): {e}")
+            logger.warning("O servidor continuará sem conexão ao banco de dados externo.")
 
     # Inicializar o health checker
     try:
@@ -1572,15 +1061,40 @@ async def startup_event():
         logger.info(f"✓ MLflow Model Registry: {mlflow_registry.tracking_uri}")
     else:
         logger.warning("⚠ MLflow Model Registry: Não configurado")
-    
+
+    from blockchain.hathor.hathor_service import get_hathor_service
+    try:
+        get_hathor_service().initialize(address="0xClimateWiseHathorOracleMock")
+        logger.info("✓ Hathor Blockchain Service initialized (Development Mode)")
+    except Exception as e:
+        logger.warning(f"⚠ Hathor Service initialization failed: {e}")
+
+    # News Crawler - Background RSS Scraping
+    try:
+        from services.news_crawler_service import get_news_crawler_service
+        news_crawler = get_news_crawler_service()
+        await news_crawler.start_background_crawl()
+        logger.info("✓ News Crawler Service initialized (Background RSS Scraping)")
+    except Exception as e:
+        logger.warning(f"⚠ News Crawler initialization failed: {e}")
+
+    # Climate Data Service - Open-Meteo + CEMADEN + Embrapa
+    try:
+        from services.climate_data_service import get_climate_data_service
+        climate_svc = get_climate_data_service()
+        await climate_svc.start_background_scan()
+        logger.info("✓ Climate Data Service initialized (Open-Meteo + CEMADEN + Embrapa)")
+    except Exception as e:
+        logger.warning(f"⚠ Climate Data Service initialization failed: {e}")
+
     logger.info("=" * 60)
-    logger.info("Servidor ClimateAI iniciado com sucesso")
+    logger.info("Servidor ClimateWise iniciado com sucesso")
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Evento executado no encerramento do servidor"""
-    logger.info("Encerrando ClimateAI...")
+    logger.info("Encerrando ClimateWise...")
     if settings.DATABASE_ENABLED:
         await close_db()
         logger.info("Conexões de banco de dados fechadas")

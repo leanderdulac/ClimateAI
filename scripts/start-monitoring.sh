@@ -1,5 +1,5 @@
 #!/bin/bash
-# ClimateAI - Startup do Stack de Monitoramento Tier 1
+# ClimateWise - Startup do Stack de Monitoramento Tier 1
 # Este script inicia todo o stack de observabilidade (OTel, Prometheus, Grafana, Jaeger)
 
 set -e
@@ -15,7 +15,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 echo -e "${BLUE}========================================${NC}"
-echo -e "${BLUE}ClimateAI - Monitoring Stack Startup${NC}"
+echo -e "${BLUE}ClimateWise - Monitoring Stack Startup${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo ""
 
@@ -121,7 +121,7 @@ echo "  2. Importe o dashboard de SLO:"
 echo "     monitoring/grafana/dashboards/slo-overview.json"
 echo ""
 echo "  3. Verifique os traces no Jaeger:"
-echo "     Service: climateai-backend"
+echo "     Service: climatewise-backend"
 echo ""
 echo "  4. Para ver logs do OTel Collector:"
 echo "     $COMPOSE_CMD -f docker-compose.yml -f docker-compose.otel.yml logs -f otel-collector"

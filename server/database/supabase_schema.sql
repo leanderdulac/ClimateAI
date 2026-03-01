@@ -1,5 +1,5 @@
 -- =====================================================
--- ClimateAI Database Schema for Supabase
+-- ClimateWise Database Schema for Supabase
 -- Execute this in Supabase SQL Editor
 -- =====================================================
 
@@ -458,5 +458,245 @@ CREATE TRIGGER set_claim_number
     EXECUTE FUNCTION generate_claim_number();
 
 -- =====================================================
--- DONE! Schema created successfully
+-- PARTNERS TABLE (API partner organizations)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS partners (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name TEXT NOT NULL,
+    slug TEXT UNIQUE NOT NULL,
+    contact_email TEXT,
+    api_enabled BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- =====================================================
+-- API_KEYS TABLE (partner API keys)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS api_keys (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    partner_id UUID NOT NULL REFERENCES partners(id) ON DELETE CASCADE,
+    key_hash TEXT UNIQUE NOT NULL,
+    prefix TEXT NOT NULL,
+    name TEXT,
+    is_active BOOLEAN DEFAULT TRUE,
+    expires_at TIMESTAMPTZ,
+    last_used_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- =====================================================
+-- ORACLE_EVENTS TABLE (Atlas Oracle disaster events)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS oracle_events (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    event_id TEXT UNIQUE NOT NULL,
+    token_id TEXT,
+    municipio TEXT,
+    uf TEXT CHECK (char_length(uf) <= 2),
+    latitude DECIMAL(10, 8),
+    longitude DECIMAL(11, 8),
+    disaster_type TEXT,
+    severity_score DECIMAL(5, 2),
+    ndvi DECIMAL(8, 6),
+    soil_moisture DECIMAL(8, 6),
+    payout_triggered BOOLEAN DEFAULT FALSE,
+    payout_percentage DECIMAL(5, 2),
+    payout_amount DECIMAL(15, 2),
+    blockchain_tx_id TEXT,
+    description TEXT,
+    source TEXT DEFAULT 'Atlas Simulation',
+    status TEXT DEFAULT 'active',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- =====================================================
+-- BLOCKCHAIN_TRANSACTIONS TABLE
+-- =====================================================
+CREATE TABLE IF NOT EXISTS blockchain_transactions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    tx_hash TEXT UNIQUE NOT NULL,
+    token_uid TEXT,
+    from_address TEXT,
+    to_address TEXT,
+    amount DECIMAL(20, 4),
+    block_height INTEGER,
+    confirmations INTEGER DEFAULT 0,
+    status TEXT DEFAULT 'pending',
+    message TEXT,
+    explorer_url TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- =====================================================
+-- ATLAS_DISASTERS TABLE (Historical disaster database)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS atlas_disasters (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    record_id_original TEXT,
+    ano INTEGER NOT NULL,
+    uf TEXT NOT NULL CHECK (char_length(uf) <= 2),
+    municipio TEXT NOT NULL,
+    codigo_municipio TEXT,
+    latitude DECIMAL(10, 8),
+    longitude DECIMAL(11, 8),
+    tipo_desastre TEXT NOT NULL,
+    subtipo_desastre TEXT,
+    intensidade TEXT CHECK (intensidade IN ('baixa', 'media', 'alta', 'muito_alta')),
+    data_inicio DATE,
+    data_fim DATE,
+    mortes_diretas INTEGER DEFAULT 0,
+    mortes_indiretas INTEGER DEFAULT 0,
+    feridos INTEGER DEFAULT 0,
+    desabrigados INTEGER DEFAULT 0,
+    desalojados INTEGER DEFAULT 0,
+    afetados INTEGER DEFAULT 0,
+    prejuizo_estimado DECIMAL(15, 2),
+    fonte TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- =====================================================
+-- ATLAS_MUNICIPIOS_GEOCODE TABLE (Municipality geocodes)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS atlas_municipios_geocode (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    codigo_municipio_ibge TEXT UNIQUE NOT NULL,
+    municipio TEXT NOT NULL,
+    uf TEXT NOT NULL CHECK (char_length(uf) <= 2),
+    latitude DECIMAL(10, 8) NOT NULL,
+    longitude DECIMAL(11, 8) NOT NULL,
+    populacao INTEGER,
+    area_km2 DECIMAL(12, 4),
+    regiao TEXT,
+    mesorregiao TEXT,
+    microrregiao TEXT,
+    fonte_geocodigo TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- =====================================================
+-- SPACE_WEATHER_LOGS TABLE (CelesTrak space weather data)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS space_weather_logs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    timestamp TIMESTAMPTZ NOT NULL,
+    kp_index DECIMAL(4, 2),
+    ap_index DECIMAL(6, 2),
+    solar_flux DECIMAL(8, 2),
+    geomagnetic_storm BOOLEAN DEFAULT FALSE,
+    storm_level TEXT,
+    solar_radiation_storm BOOLEAN DEFAULT FALSE,
+    radiation_level TEXT,
+    radio_blackout BOOLEAN DEFAULT FALSE,
+    blackout_level TEXT,
+    conjunction_risk_level TEXT,
+    anomaly_flag BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- =====================================================
+-- NEW INDEXES
+-- =====================================================
+
+-- Oracle events
+CREATE INDEX IF NOT EXISTS idx_oracle_events_event_id ON oracle_events(event_id);
+CREATE INDEX IF NOT EXISTS idx_oracle_events_token_id ON oracle_events(token_id);
+CREATE INDEX IF NOT EXISTS idx_oracle_events_disaster_type ON oracle_events(disaster_type);
+CREATE INDEX IF NOT EXISTS idx_oracle_events_uf ON oracle_events(uf);
+CREATE INDEX IF NOT EXISTS idx_oracle_events_created_at ON oracle_events(created_at);
+
+-- Blockchain transactions
+CREATE INDEX IF NOT EXISTS idx_blockchain_transactions_tx_hash ON blockchain_transactions(tx_hash);
+CREATE INDEX IF NOT EXISTS idx_blockchain_transactions_token_uid ON blockchain_transactions(token_uid);
+CREATE INDEX IF NOT EXISTS idx_blockchain_transactions_status ON blockchain_transactions(status);
+
+-- Atlas disasters
+CREATE INDEX IF NOT EXISTS idx_atlas_disasters_uf ON atlas_disasters(uf);
+CREATE INDEX IF NOT EXISTS idx_atlas_disasters_municipio ON atlas_disasters(municipio);
+CREATE INDEX IF NOT EXISTS idx_atlas_disasters_ano ON atlas_disasters(ano);
+CREATE INDEX IF NOT EXISTS idx_atlas_disasters_tipo ON atlas_disasters(tipo_desastre);
+CREATE INDEX IF NOT EXISTS idx_atlas_disasters_coords ON atlas_disasters(latitude, longitude);
+
+-- Atlas geocode
+CREATE INDEX IF NOT EXISTS idx_atlas_geocode_uf ON atlas_municipios_geocode(uf);
+CREATE INDEX IF NOT EXISTS idx_atlas_geocode_municipio ON atlas_municipios_geocode(municipio);
+
+-- Space weather
+CREATE INDEX IF NOT EXISTS idx_space_weather_timestamp ON space_weather_logs(timestamp);
+CREATE INDEX IF NOT EXISTS idx_space_weather_storm ON space_weather_logs(geomagnetic_storm);
+
+-- Partners / API keys
+CREATE INDEX IF NOT EXISTS idx_api_keys_partner_id ON api_keys(partner_id);
+CREATE INDEX IF NOT EXISTS idx_api_keys_prefix ON api_keys(prefix);
+
+-- =====================================================
+-- ROW LEVEL SECURITY for new tables
+-- =====================================================
+
+ALTER TABLE partners ENABLE ROW LEVEL SECURITY;
+ALTER TABLE api_keys ENABLE ROW LEVEL SECURITY;
+ALTER TABLE oracle_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE blockchain_transactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE atlas_disasters ENABLE ROW LEVEL SECURITY;
+ALTER TABLE atlas_municipios_geocode ENABLE ROW LEVEL SECURITY;
+ALTER TABLE space_weather_logs ENABLE ROW LEVEL SECURITY;
+
+-- Partners: Only admins can manage
+CREATE POLICY "Admins can manage partners" ON partners
+    FOR ALL USING (
+        EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    );
+
+-- API Keys: Only admins can manage
+CREATE POLICY "Admins can manage api_keys" ON api_keys
+    FOR ALL USING (
+        EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    );
+
+-- Oracle events: Authenticated users can read, admins can write
+CREATE POLICY "Authenticated users can view oracle_events" ON oracle_events
+    FOR SELECT USING (auth.uid() IS NOT NULL);
+
+CREATE POLICY "Admins can write oracle_events" ON oracle_events
+    FOR INSERT WITH CHECK (
+        EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('admin', 'underwriter'))
+    );
+
+-- Blockchain transactions: Authenticated users can read
+CREATE POLICY "Authenticated users can view blockchain_transactions" ON blockchain_transactions
+    FOR SELECT USING (auth.uid() IS NOT NULL);
+
+-- Atlas disasters: Public read access
+CREATE POLICY "Anyone can view atlas_disasters" ON atlas_disasters
+    FOR SELECT USING (true);
+
+-- Atlas geocode: Public read access
+CREATE POLICY "Anyone can view atlas_municipios_geocode" ON atlas_municipios_geocode
+    FOR SELECT USING (true);
+
+-- Space weather: Public read access
+CREATE POLICY "Anyone can view space_weather_logs" ON space_weather_logs
+    FOR SELECT USING (true);
+
+-- updated_at triggers for new tables
+CREATE TRIGGER update_partners_updated_at
+    BEFORE UPDATE ON partners
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_atlas_disasters_updated_at
+    BEFORE UPDATE ON atlas_disasters
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_atlas_municipios_geocode_updated_at
+    BEFORE UPDATE ON atlas_municipios_geocode
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- =====================================================
+-- DONE! Schema created successfully (v2 — updated 2026-02-27)
 -- =====================================================

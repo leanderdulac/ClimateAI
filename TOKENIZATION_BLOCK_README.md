@@ -1,11 +1,11 @@
-# 🌍 ClimateAI: Tokenização de Índices Climáticos & Blockchain
+# 🌍 ClimateWise: Tokenização de Índices Climáticos & Blockchain
 
 Este documento descreve a arquitetura, regras de negócio e integração técnica para a tokenização de ativos climáticos (RWA - Real World Assets) utilizando a infraestrutura do **Google Cloud Blockchain**.
 
 ---
 
 ## 🏛️ Panorama Geral
-O ClimateAI transforma dados climáticos brutos em ativos digitais líquidos. Através da tokenização, eventos de risco (seca, inundação, geada) são convertidos em tokens ERC-20, permitindo a criação de seguros paramétricos automáticos e derivativos financeiros transparentes.
+O ClimateWise transforma dados climáticos brutos em ativos digitais líquidos. Através da tokenização, eventos de risco (seca, inundação, geada) são convertidos em tokens ERC-20, permitindo a criação de seguros paramétricos automáticos e derivativos financeiros transparentes.
 
 ### Benefícios:
 - **Liquidação Instantânea**: Payouts automáticos via Smart Contracts.
@@ -41,7 +41,7 @@ Apenas eventos que ultrapassam limiares de impacto são tokenizados:
 
 ## ☁️ Integração com Google Cloud Blockchain
 
-O ClimateAI utiliza o **Google Cloud Blockchain Node Engine (BNE)** para garantir estabilidade empresarial:
+O ClimateWise utiliza o **Google Cloud Blockchain Node Engine (BNE)** para garantir estabilidade empresarial:
 
 ### Configuração da Rede (RPC)
 A plataforma conecta-se a um nó dedicado no BNE, garantindo maior taxa de transferência e menor latência comparado a provedores compartilhados.

@@ -467,7 +467,7 @@ async def get_policy_valuation_service_info():
     Get information about the policy valuation service.
     """
     return {
-        "service_name": "ClimateAI Policy Valuation Service",
+        "service_name": "ClimateWise Policy Valuation Service",
         "description": "Intelligent policy valuation with automatic notifications and interactive recommendations",
         "features": [
             "Automatic policy valuation with tier classification",

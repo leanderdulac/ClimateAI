@@ -65,7 +65,7 @@ def testar_endpoints_blockchain():
 
     mint_data = {
         "evento_id": evento_id,
-        "wallet_address": "climateai_wallet_test_api_001",
+        "wallet_address": "climatewise_wallet_test_api_001",
         "token_supply": 1000000,
         "decimals": 0,
         "metadata": {
@@ -142,8 +142,8 @@ def testar_endpoints_blockchain():
 
     transfer_data = {
         "token_uid": token_uid,
-        "from_address": "climateai_wallet_test_api_001",
-        "to_address": "climateai_wallet_recipient_api_001",
+        "from_address": "climatewise_wallet_test_api_001",
+        "to_address": "climatewise_wallet_recipient_api_001",
         "amount": 50000,
     }
 
@@ -165,7 +165,7 @@ def testar_endpoints_blockchain():
 
     try:
         response = requests.get(
-            f"{BASE_URL}/blockchain/tokens/owner/climateai_wallet_recipient_api_001"
+            f"{BASE_URL}/blockchain/tokens/owner/climatewise_wallet_recipient_api_001"
         )
         if response.status_code == 200:
             owner_tokens = response.json()

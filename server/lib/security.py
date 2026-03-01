@@ -1,5 +1,5 @@
 """
-Módulo de Segurança Centralizado para ClimateAI
+Módulo de Segurança Centralizado para ClimateWise
 Implementa funcionalidades críticas de segurança da aplicação
 """
 

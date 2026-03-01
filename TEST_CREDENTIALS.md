@@ -1,4 +1,4 @@
-# 🔐 Credenciais de Teste - ClimateAI
+# 🔐 Credenciais de Teste - ClimateWise
 
 ## ✅ Login com Dados Mock (Habilitado)
 
@@ -9,7 +9,7 @@ Para testes e desenvolvimento, o modo **MOCK DATA** está habilitado.
 Use **qualquer** email e senha com comprimento mínimo:
 
 ```
-Email: teste@climateai.com
+Email: teste@climatewise.com
 Senha: teste123
 ```
 
@@ -60,7 +60,7 @@ Para usar autenticação real:
 
 | Modo | Status | Email | Senha |
 |------|--------|-------|-------|
-| **Mock** | ✅ Habilitado | teste@climateai.com | teste123 |
+| **Mock** | ✅ Habilitado | teste@climatewise.com | teste123 |
 | **Supabase Real** | ⚠ Requer confirmação | - | - |
 
 ---

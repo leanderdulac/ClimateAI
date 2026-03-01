@@ -1,5 +1,5 @@
 """
-ClimateAI - Servidor Demo Simplificado
+ClimateWise - Servidor Demo Simplificado
 Para demonstração das funcionalidades Tier 1
 """
 
@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import time
 import uuid
 
-app = FastAPI(title="ClimateAI Demo", version="1.0.0")
+app = FastAPI(title="ClimateWise Demo", version="1.0.0")
 
 # CORS
 app.add_middleware(
@@ -37,7 +37,7 @@ async def request_id_middleware(request: Request, call_next):
 @app.get("/")
 async def root():
     return {
-        "message": "ClimateAI API - Tier 1 Demo",
+        "message": "ClimateWise API - Tier 1 Demo",
         "version": "1.0.0",
         "status": "running"
     }
@@ -46,7 +46,7 @@ async def root():
 async def health():
     return {
         "status": "healthy",
-        "service": "climateai-backend",
+        "service": "climatewise-backend",
         "timestamp": time.time(),
         "checks": {
             "api": "ok",

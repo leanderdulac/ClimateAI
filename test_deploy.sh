@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# ClimateAI - Local Deploy Test Script
+# ClimateWise - Local Deploy Test Script
 # Test deployment locally before pushing to production
 
 set -e
 
-echo "🧪 Testing ClimateAI deployment locally..."
+echo "🧪 Testing ClimateWise deployment locally..."
 
 # Colors
 GREEN='\033[0;32m'
@@ -74,7 +74,7 @@ else
 fi
 
 # Check database connection
-if docker-compose -f docker-compose.prod.yml exec -T db pg_isready -U climateai_user -d climateai > /dev/null 2>&1; then
+if docker-compose -f docker-compose.prod.yml exec -T db pg_isready -U climatewise_user -d climatewise > /dev/null 2>&1; then
     print_status "Database is ready"
 else
     print_error "Database connection failed"

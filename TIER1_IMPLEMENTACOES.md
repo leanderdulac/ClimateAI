@@ -1,8 +1,8 @@
-# ClimateAI - Implementações Tier 1 Realizadas
+# ClimateWise - Implementações Tier 1 Realizadas
 
 ## 📋 Resumo Executivo
 
-Este documento resume as implementações realizadas para preparar o ClimateAI para atendimento a seguradoras globais (Tier 1).
+Este documento resume as implementações realizadas para preparar o ClimateWise para atendimento a seguradoras globais (Tier 1).
 
 ---
 

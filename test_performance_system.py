@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test script for the ClimateAI Performance Testing System
+Test script for the ClimateWise Performance Testing System
 Verifies: Climate backtesting, stress testing (200% CMIP6 + Black Swan), robustness analysis (20% → ΔPrêmio < 10%)
 """
 import sys
@@ -12,7 +12,7 @@ from services.performance_testing_service import climate_performance_testing_ser
 
 def test_climate_performance_system():
     """Test the complete climate performance testing system"""
-    print("🧪 Testing ClimateAI Performance Testing System...")
+    print("🧪 Testing ClimateWise Performance Testing System...")
 
     # Simulate historical event data for backtesting
     np.random.seed(42)
@@ -103,11 +103,11 @@ def test_climate_performance_system():
     print("  🎉 Climate Performance Testing System functionality verified!")
 
 def main():
-    print("🔬 ClimateAI: Performance Testing & Validation System Test\n")
+    print("🔬 ClimateWise: Performance Testing & Validation System Test\n")
 
     test_climate_performance_system()
 
-    print("\n📋 ClimateAI Performance Testing Implementation Status:")
+    print("\n📋 ClimateWise Performance Testing Implementation Status:")
     print("   - Climate backtesting: Validation against historical events (Ian, RS floods)")
     print("   - Stress testing: 200% of worst CMIP6 scenario + Black Swan events")
     print("   - Robustness analysis: 20% parameter perturbation → ΔPrêmio < 10%")

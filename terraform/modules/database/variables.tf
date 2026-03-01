@@ -35,13 +35,13 @@ variable "db_allocated_storage" {
 variable "db_name" {
   description = "Nome do banco de dados"
   type        = string
-  default     = "climateai"
+  default     = "climatewise"
 }
 
 variable "db_username" {
   description = "Username do banco"
   type        = string
-  default     = "climateai_admin"
+  default     = "climatewise_admin"
   sensitive   = true
 }
 

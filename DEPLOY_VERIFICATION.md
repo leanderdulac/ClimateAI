@@ -12,7 +12,7 @@
 **Deve mostrar:**
 - ✅ Página HTML completa com design azul/roxo
 - ✅ Botão "Acessar Dashboard"
-- ✅ Seções sobre ClimateAI
+- ✅ Seções sobre ClimateWise
 - ✅ **SEM erro 404**
 
 ### 2. Dashboard

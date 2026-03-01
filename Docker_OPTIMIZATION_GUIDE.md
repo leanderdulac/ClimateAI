@@ -1,8 +1,8 @@
-# Guia de Otimização do Docker para ClimateAI
+# Guia de Otimização do Docker para ClimateWise
 
 ## Visão Geral
 
-Este guia descreve as otimizações realizadas nas imagens Docker do ClimateAI para melhorar desempenho, segurança e eficiência de recursos.
+Este guia descreve as otimizações realizadas nas imagens Docker do ClimateWise para melhorar desempenho, segurança e eficiência de recursos.
 
 ## Otimizações Realizadas
 
@@ -55,10 +55,10 @@ Este guia descreve as otimizações realizadas nas imagens Docker do ClimateAI p
 ### Para Produção
 ```bash
 # Backend
-docker build -f Dockerfile.optimized --target production -t climateai/backend:prod .
+docker build -f Dockerfile.optimized --target production -t climatewise/backend:prod .
 
 # Frontend
-docker build -f Dockerfile.client.optimized -t climateai/frontend:prod .
+docker build -f Dockerfile.client.optimized -t climatewise/frontend:prod .
 
 # Compose
 docker-compose -f docker-compose.optimized.yml up -d
@@ -67,7 +67,7 @@ docker-compose -f docker-compose.optimized.yml up -d
 ### Para Desenvolvimento
 ```bash
 # Backend
-docker build -f Dockerfile.optimized --target development -t climateai/backend:dev .
+docker build -f Dockerfile.optimized --target development -t climatewise/backend:dev .
 
 # Compose com modo dev
 docker-compose -f docker-compose.optimized.yml --profile dev up

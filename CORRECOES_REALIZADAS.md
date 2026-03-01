@@ -4,7 +4,7 @@
 
 ### Problemas Identificados e Corrigidos:
 1. **Conflito de porta 4317** - Tempo e OTel Collector usavam a mesma porta
-2. **Rede climateai inexistente** - Removida referência à rede não definida
+2. **Rede climatewise inexistente** - Removida referência à rede não definida
 3. **Configuração complexa** - Simplificada para usar `otel-collector-config-simple.yaml`
 4. **Tempo removido** - Para evitar conflitos, mantido apenas Jaeger/Zipkin para tracing
 

@@ -1,6 +1,6 @@
 """
 Serviço de tokenização blockchain para eventos climáticos
-Adaptação do conceito Hathor para o sistema ClimateAI
+Adaptação do conceito Hathor para o sistema ClimateWise
 """
 
 import hashlib
@@ -17,15 +17,15 @@ from services.tokenizacao_eventos_service import TokenizacaoEventosService
 class BlockchainTokenService:
     """
     Serviço para tokenização de eventos climáticos com conceito blockchain.
-    Adapta o conceito de tokens Hathor para o sistema ClimateAI.
+    Adapta o conceito de tokens Hathor para o sistema ClimateWise.
     """
 
     def __init__(self):
         self.token_service = TokenizacaoEventosService()
         self.blockchain_registry = {}  # Simulação de registro blockchain
-        self.network = "climateai-testnet"  # Rede do ClimateAI
+        self.network = "climatewise-testnet"  # Rede do ClimateWise
 
-    def mint_climate_token(
+    async def mint_climate_token(
         self,
         evento: EventoClimatico,
         wallet_address: str,
@@ -47,8 +47,9 @@ class BlockchainTokenService:
             Dict com informações da transação de mint
         """
         try:
-            # Gerar token estruturado do ClimateAI
-            climate_token = self.token_service.gerar_token_evento(evento)
+            # Gerar token estruturado do ClimateWise
+            # Passamos o metadata para que os risk_factors sejam persistidos no BD
+            climate_token = await self.token_service.gerar_token_evento(evento, extra_metadata=metadata)
 
             # Criar token blockchain baseado no evento
             blockchain_token = self._create_blockchain_token(
@@ -88,7 +89,7 @@ class BlockchainTokenService:
         metadata: Dict[str, Any],
     ) -> Dict[str, Any]:
         """
-        Cria estrutura do token blockchain baseada no token ClimateAI
+        Cria estrutura do token blockchain baseada no token ClimateWise
         """
         # Gerar UID único para o token (similar ao Hathor)
         token_uid = self._generate_token_uid(climate_token)
@@ -128,7 +129,7 @@ class BlockchainTokenService:
 
     def _generate_token_uid(self, climate_token: EventoToken) -> str:
         """
-        Gera UID único para o token (hash do token ClimateAI + timestamp)
+        Gera UID único para o token (hash do token ClimateWise + timestamp)
         """
         content = f"{climate_token.token_id}_{datetime.now().isoformat()}"
         return hashlib.sha256(content.encode()).hexdigest()[:32]
@@ -289,7 +290,7 @@ class BlockchainTokenService:
         return tokens
 
 
-# Exemplo de uso adaptado para o ClimateAI
+# Exemplo de uso adaptado para o ClimateWise
 if __name__ == "__main__":
     # Inicializar serviço
     blockchain_service = BlockchainTokenService()
@@ -307,7 +308,7 @@ if __name__ == "__main__":
     )
 
     # Endereço da carteira (simulado)
-    wallet_address = "climateai_wallet_001"
+    wallet_address = "climatewise_wallet_001"
 
     # Criar token blockchain
     resultado = blockchain_service.mint_climate_token(

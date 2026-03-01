@@ -1,8 +1,8 @@
-# ClimateAI: Advanced Mathematical Architecture Implementation
+# ClimateWise: Advanced Mathematical Architecture Implementation
 
 ## Overview
 
-The ClimateAI system implements a sophisticated architecture with 7 data layers and 4 mathematical engines to provide comprehensive climate risk assessment and dynamic premium calculation.
+The ClimateWise system implements a sophisticated architecture with 7 data layers and 4 mathematical engines to provide comprehensive climate risk assessment and dynamic premium calculation.
 
 ## 1. Seven Data Layers Implementation
 
@@ -178,7 +178,7 @@ The system provides RESTful endpoints for each mathematical engine:
 
 ## 4. Integration with Existing Architecture
 
-The new mathematical engines integrate seamlessly with the existing ClimateAI architecture:
+The new mathematical engines integrate seamlessly with the existing ClimateWise architecture:
 
 - **Data Input Layer**: Uses existing external API service for real-time data
 - **Preprocessing Layer**: Leverages existing climate service for data normalization
@@ -259,7 +259,7 @@ assessment = comprehensive_climate_risk_assessment(
 
 ## 21. Integration with Existing Architecture
 
-The new mathematical engines integrate seamlessly with the existing ClimateAI architecture:
+The new mathematical engines integrate seamlessly with the existing ClimateWise architecture:
 
 - **Data Input Layer**: Uses existing external API service for real-time data
 - **Preprocessing Layer**: Leverages specialized climate feature extraction
@@ -353,7 +353,7 @@ detailed_results = predict_with_attention_visualization(
 
 ## 23. Integration with Existing Architecture
 
-The LSTM attention engine integrates with the existing ClimateAI architecture:
+The LSTM attention engine integrates with the existing ClimateWise architecture:
 
 - **Data Input Layer**: Uses climate features including teleconnection indices (NAO, ENSO)
 - **Attention Layer**: Provides interpretable attention weights for temporal patterns
@@ -427,7 +427,7 @@ contract_result = calculate_parametric_insurance_contract(
 
 ## 9. Integration with Existing Architecture
 
-The parametric insurance engine integrates with the existing ClimateAI architecture:
+The parametric insurance engine integrates with the existing ClimateWise architecture:
 
 - **Data Input Layer**: Uses climate data to compute indices
 - **Index Layer**: Combines wind, precipitation, and temperature metrics
@@ -495,7 +495,7 @@ hmm_results = compute_climate_regime_model(
 
 ## 10. Integration with Existing Architecture
 
-The climate regime HMM engine integrates with the existing ClimateAI architecture:
+The climate regime HMM engine integrates with the existing ClimateWise architecture:
 
 - **Forcing Layer**: Processes climate forcings (CO₂, CH₄, aerosols) affecting regime transitions
 - **Transition Layer**: Computes time-varying regime transition probabilities
@@ -575,7 +575,7 @@ update_model_performance("gev_model", log_likelihood=-150.5, n_params=5, n_obser
 
 ## 11. Integration with Existing Architecture
 
-The ensemble pricing engine integrates with the existing ClimateAI architecture:
+The ensemble pricing engine integrates with the existing ClimateWise architecture:
 
 - **Model Selection Layer**: Uses BIC for model comparison and selection
 - **Prior Integration Layer**: Incorporates expert knowledge via Dirichlet priors
@@ -718,7 +718,7 @@ regulatory_result = calculate_regulatory_compliant_scr(
 
 ## 13. Integration with Existing Architecture
 
-The climate systemic risk and SCR engines integrate with the existing ClimateAI architecture:
+The climate systemic risk and SCR engines integrate with the existing ClimateWise architecture:
 
 - **Risk Layer**: Calculates conditional risk measures for extreme climate events
 - **Portfolio Layer**: Analyzes multiple portfolios simultaneously for systemic risk
@@ -840,7 +840,7 @@ scenarios_result = calculate_premium_scenarios(
 
 ## 17. Integration with Existing Architecture
 
-The climate-inclusive premium engine integrates with the existing ClimateAI architecture:
+The climate-inclusive premium engine integrates with the existing ClimateWise architecture:
 
 - **Loss Layer**: Integrates with expected loss calculations from other engines
 - **Cost Layer**: Incorporates loading, operational costs, and mitigation factors
@@ -974,7 +974,7 @@ multi_result = calculate_contract_uncertainty_ranges(contracts_data)
 
 ## 21. Integration with Existing Architecture
 
-The Bayesian bootstrap premium engine integrates with the existing ClimateAI architecture:
+The Bayesian bootstrap premium engine integrates with the existing ClimateWise architecture:
 
 - **Parameter Layer**: Samples from posterior distributions using historical data
 - **Simulation Layer**: Runs Monte Carlo simulation with Bayesian uncertainty
@@ -1126,7 +1126,7 @@ notification_actions = process_climate_notifications(
 
 ## 25. Integration with Existing Architecture
 
-The climate alert engine integrates with the existing ClimateAI architecture:
+The climate alert engine integrates with the existing ClimateWise architecture:
 
 - **Monitoring Layer**: Continuously monitors premium changes and severe event probabilities
 - **Trigger Layer**: Evaluates Boolean condition for notification activation
@@ -1230,7 +1230,7 @@ comprehensive_result = comprehensive_performance_evaluation(
 
 ## 25. Integration with Existing Architecture
 
-The performance testing engine integrates with the existing ClimateAI architecture:
+The performance testing engine integrates with the existing ClimateWise architecture:
 
 - **Validation Layer**: Validates model predictions against historical events
 - **Stress Layer**: Tests models with extreme scenarios

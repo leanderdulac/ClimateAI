@@ -1,4 +1,4 @@
-# 🚀 Guia de Deploy em Produção - ClimateAI
+# 🚀 Guia de Deploy em Produção - ClimateWise
 
 ## Status: ✅ PRONTO PARA PRODUÇÃO
 
@@ -15,7 +15,7 @@
 - **Docker Compose**: 2.0+
 
 ### Domínio e SSL
-- Domínio configurado (ex: climateai.com)
+- Domínio configurado (ex: climatewise.com)
 - Certificado SSL (Let's Encrypt recomendado)
 
 ---
@@ -52,9 +52,9 @@ newgrp docker
 
 ```bash
 cd /var/www
-sudo git clone https://github.com/leanderdulac/ClimateAI.git
-sudo chown -R $USER:$USER ClimateAI
-cd ClimateAI
+sudo git clone https://github.com/leanderdulac/ClimateWise.git
+sudo chown -R $USER:$USER ClimateWise
+cd ClimateWise
 ```
 
 ---
@@ -89,12 +89,12 @@ DEBUG=false
 ENVIRONMENT=production
 
 # Database
-DATABASE_URL=postgresql+asyncpg://user:password@db:5432/climateai
+DATABASE_URL=postgresql+asyncpg://user:password@db:5432/climatewise
 DB_PASSWORD=<senha_forte>
 POSTGRES_PASSWORD=<senha_forte>
 
 # CORS (SEU DOMÍNIO REAL)
-ALLOW_ORIGINS=https://climateai.com,https://www.climateai.com
+ALLOW_ORIGINS=https://climatewise.com,https://www.climatewise.com
 
 # APIs Externas
 EMBRAPA_API_KEY=sua_chave
@@ -102,7 +102,7 @@ NOAA_API_KEY=sua_chave
 GEMINI_API_KEY=sua_chave
 
 # Domínio
-DOMAIN=climateai.com
+DOMAIN=climatewise.com
 ```
 
 ### 2.3. Configurar Firewall
@@ -174,7 +174,7 @@ docker-compose exec backend python seed_db.py
 ### 4.1. Criar Configuração do Nginx
 
 ```bash
-sudo nano /etc/nginx/sites-available/climateai
+sudo nano /etc/nginx/sites-available/climatewise
 ```
 
 **Configuração**:
@@ -182,7 +182,7 @@ sudo nano /etc/nginx/sites-available/climateai
 ```nginx
 server {
     listen 80;
-    server_name climateai.com www.climateai.com;
+    server_name climatewise.com www.climatewise.com;
     
     # Redirecionar para HTTPS
     return 301 https://$server_name$request_uri;
@@ -190,11 +190,11 @@ server {
 
 server {
     listen 443 ssl http2;
-    server_name climateai.com www.climateai.com;
+    server_name climatewise.com www.climatewise.com;
     
     # SSL (preencher após criar certificado)
-    ssl_certificate /etc/letsencrypt/live/climateai.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/climateai.com/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/climatewise.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/climatewise.com/privkey.pem;
     
     # Security headers
     add_header X-Frame-Options "SAMEORIGIN" always;
@@ -230,13 +230,13 @@ server {
     
     # Landing Page
     location /landing {
-        alias /var/www/ClimateAI/landing-page.html;
+        alias /var/www/ClimateWise/landing-page.html;
         index landing-page.html;
     }
     
     # Static files
     location /static {
-        alias /var/www/ClimateAI/server/static;
+        alias /var/www/ClimateWise/server/static;
         expires 1y;
         add_header Cache-Control "public, immutable";
     }
@@ -247,7 +247,7 @@ server {
 
 ```bash
 # Criar link simbólico
-sudo ln -s /etc/nginx/sites-available/climateai /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/climatewise /etc/nginx/sites-enabled/
 
 # Testar configuração
 sudo nginx -t
@@ -265,7 +265,7 @@ sudo systemctl reload nginx
 sudo apt install -y certbot python3-certbot-nginx
 
 # Obter certificado
-sudo certbot --nginx -d climateai.com -d www.climateai.com
+sudo certbot --nginx -d climatewise.com -d www.climatewise.com
 
 # Verificar renovação automática
 sudo certbot renew --dry-run
@@ -284,9 +284,9 @@ docker-compose -f docker-compose.monitoring.yml up -d
 
 ### 6.2. Acessar Dashboards
 
-- **Grafana**: http://climateai.com:3001 (admin/admin)
-- **Prometheus**: http://climateai.com:9090
-- **Kibana**: http://climateai.com:5601
+- **Grafana**: http://climatewise.com:3001 (admin/admin)
+- **Prometheus**: http://climatewise.com:9090
+- **Kibana**: http://climatewise.com:5601
 
 ### 6.3. Configurar Alertas
 
@@ -316,7 +316,7 @@ chmod +x scripts/backup.sh
 crontab -e
 
 # Adicionar backup diário às 2 AM
-0 2 * * * cd /var/www/ClimateAI && ./scripts/backup.sh >> ./logs/backup_cron.log 2>&1
+0 2 * * * cd /var/www/ClimateWise && ./scripts/backup.sh >> ./logs/backup_cron.log 2>&1
 ```
 
 ### 7.3. Configurar Upload para S3 (Opcional)
@@ -350,15 +350,15 @@ AWS_REGION=us-east-1
 
 ```bash
 # Health check
-curl https://climateai.com/health
+curl https://climatewise.com/health
 
 # API docs
-curl https://climateai.com/docs
+curl https://climatewise.com/docs
 
 # Testar login
-curl -X POST https://climateai.com/api/v1/auth/login \
+curl -X POST https://climatewise.com/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@climateai.com","password":"senha"}'
+  -d '{"email":"admin@climatewise.com","password":"senha"}'
 ```
 
 ### 8.3. Verificar Logs
@@ -391,7 +391,7 @@ O projeto já inclui workflows em `.github/workflows/`:
 ```bash
 # Configurar webhook no GitHub
 # Settings > Webhooks > Add webhook
-# Payload URL: https://climateai.com/hooks/deploy
+# Payload URL: https://climatewise.com/hooks/deploy
 # Secret: <webhook_secret>
 # Events: Push
 ```
@@ -420,7 +420,7 @@ docker-compose -f docker-compose.prod.yml up -d --build
 ls -lh backups/
 
 # Restaurar
-./scripts/restore.sh backups/climateai_YYYYMMDD_HHMMSS.sql.gz
+./scripts/restore.sh backups/climatewise_YYYYMMDD_HHMMSS.sql.gz
 ```
 
 ### 10.3. Emergency Contacts
@@ -487,8 +487,8 @@ engine = create_engine(
 
 ## 📚 Recursos Adicionais
 
-- **Documentação da API**: https://climateai.com/docs
-- **Status Page**: https://status.climateai.com
+- **Documentação da API**: https://climatewise.com/docs
+- **Status Page**: https://status.climatewise.com
 - **Runbook**: /docs/RUNBOOK.md
 - **Playbooks**: /docs/playbooks/
 

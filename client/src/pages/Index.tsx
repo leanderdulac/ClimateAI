@@ -139,7 +139,7 @@ export function IndexPage() {
                 <Cloud className="h-6 w-6 text-primary" />
               </div>
               <h2 className="text-3xl font-display font-bold text-foreground">
-                Climate Dashboard
+                {t('dashboard.title')}
               </h2>
             </div>
             <PeriodButtons />
@@ -183,13 +183,13 @@ export function IndexPage() {
             <div className="flex-1">
               <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full mb-6">
                 <Sparkles className="h-4 w-4 text-primary" />
-                <span className="text-sm font-semibold text-primary">Blockchain Powered</span>
+                <span className="text-sm font-semibold text-primary">{t('dashboard.tokenization.badge')}</span>
               </div>
               <h2 className="text-3xl md:text-4xl font-display font-bold mb-4 text-foreground">
-                Tokenização & Smart Contracts
+                {t('dashboard.tokenization.title')}
               </h2>
               <p className="text-muted-foreground mb-8 text-lg leading-relaxed max-w-xl">
-                Sistema avançado de tokenização de eventos climáticos e execução de contratos inteligentes com transparência total.
+                {t('dashboard.tokenization.desc')}
               </p>
               <Button
                 onClick={() => window.location.href = '/tokenization'}
@@ -197,7 +197,7 @@ export function IndexPage() {
                 className="rounded-full px-8 shadow-lg shadow-primary/20"
               >
                 <Zap className="mr-2 h-5 w-5" />
-                Acessar Tokenização
+                {t('dashboard.tokenization.cta')}
               </Button>
             </div>
             <div className="hidden md:block relative">
@@ -214,10 +214,10 @@ export function IndexPage() {
         <div className="text-center py-20 bg-muted/30 rounded-3xl">
           <div className="max-w-3xl mx-auto px-4">
             <h3 className="text-4xl font-display font-bold text-foreground mb-6">
-              Ready to Transform Climate Risk?
+              {t('dashboard.footer.cta.title')}
             </h3>
             <p className="text-xl text-muted-foreground mb-10 font-light">
-              Join thousands of users leveraging ClimateWise for advanced climate analytics and risk management
+              {t('dashboard.footer.cta.desc')}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button
@@ -225,7 +225,7 @@ export function IndexPage() {
                 className="rounded-full px-10 h-14 text-lg shadow-xl hover:scale-105 transition-all"
               >
                 <Sparkles className="mr-2 h-5 w-5" />
-                Get Started
+                {t('dashboard.footer.cta.primary')}
               </Button>
               <Button
                 size="lg"
@@ -233,7 +233,7 @@ export function IndexPage() {
                 className="rounded-full px-10 h-14 text-lg border-2 bg-background hover:bg-muted/50 hover:scale-105 transition-all"
               >
                 <Globe className="mr-2 h-5 w-5" />
-                Schedule Demo
+                {t('dashboard.footer.cta.secondary')}
               </Button>
             </div>
           </div>

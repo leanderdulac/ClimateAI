@@ -277,7 +277,7 @@ print(f"Source: {data['source']}")
 
 ---
 
-## 🎯 Integração com ClimateAI
+## 🎯 Integração com ClimateWise
 
 ### **ClimateDataWidget (Frontend)**
 ```typescript

@@ -40,6 +40,7 @@ const { mockSupabase } = vi.hoisted(() => {
 
 vi.mock('./supabase', () => ({
   supabase: mockSupabase,
+  getSupabaseClient: () => mockSupabase,
   isSupabaseConfigured: () => true,
 }));
 
@@ -83,7 +84,7 @@ describe('AuthContext', () => {
     mockSupabase.auth.signUp.mockResolvedValueOnce({
       data: {
         user: { id: '123', email: 'test@test.com', user_metadata: { full_name: 'Test User' } },
-        session: { user: { id: '123', email: 'test@test.com' } }
+        session: { user: { id: '123', email: 'test@test.com' }, access_token: 'token-1', refresh_token: 'refresh-1' }
       },
       error: null
     });
@@ -92,7 +93,7 @@ describe('AuthContext', () => {
     mockSupabase.auth.signInWithPassword.mockResolvedValueOnce({
       data: {
         user: { id: '123', email: 'test@test.com', user_metadata: { full_name: 'Test User' } },
-        session: { user: { id: '123', email: 'test@test.com' } }
+        session: { user: { id: '123', email: 'test@test.com' }, access_token: 'token-1', refresh_token: 'refresh-1' }
       },
       error: null
     });

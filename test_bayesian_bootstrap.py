@@ -159,7 +159,7 @@ def test_multiple_contracts_analysis():
         traceback.print_exc()
 
 def main():
-    print("🔬 ClimateAI: Bayesian Bootstrap Premium Calculation Test\n")
+    print("🔬 ClimateWise: Bayesian Bootstrap Premium Calculation Test\n")
 
     test_bayesian_bootstrap_functionality()
     test_multiple_contracts_analysis()

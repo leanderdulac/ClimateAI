@@ -1,7 +1,7 @@
 """
 Integração com Google Gemini para análises complementares e assistência técnica
 Utiliza a API do Gemini para tarefas de linguagem natural e análise de texto
-que complementam o sistema especializado de IA climática do ClimateAI
+que complementam o sistema especializado de IA climática do ClimateWise
 """
 
 import logging
@@ -24,7 +24,7 @@ class GeminiAnalysisResult:
     processing_timestamp: datetime
     analysis_type: str  # Tipo de análise realizada
     sources_considered: List[str]
-    complementary_to: str  # Qual componente do ClimateAI esta análise complementa
+    complementary_to: str  # Qual componente do ClimateWise esta análise complementa
 
 
 class GeminiIntegrationService:
@@ -104,7 +104,7 @@ class GeminiIntegrationService:
                 # Se não conseguir importar, continuar sem a funcionalidade de cálculo
                 calculate_climate_inclusive_premium = None
 
-            system_prompt = """Você é o Climate Assistant, um especialista em seguros climáticos e análise de risco agrícola do ClimateAI.
+            system_prompt = """Você é o Climate Assistant, um especialista em seguros climáticos e análise de risco agrícola do ClimateWise.
 
             DIRETRIZES CRÍTICAS:
             1. MEMÓRIA: Você TEM acesso ao histórico da conversa. NÃO pergunte coisas que o usuário JÁ respondeu.

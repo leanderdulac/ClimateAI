@@ -12,22 +12,22 @@ kubernetes_deployment = """
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: climateai-api
+  name: climatewise-api
   labels:
-    app: climateai
+    app: climatewise
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: climateai
+      app: climatewise
   template:
     metadata:
       labels:
-        app: climateai
+        app: climatewise
     spec:
       containers:
       - name: api
-        image: climateai-api:latest
+        image: climatewise-api:latest
         ports:
         - containerPort: 8000
           name: http
@@ -35,12 +35,12 @@ spec:
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:
-              name: climateai-secrets
+              name: climatewise-secrets
               key: database-url
         - name: REDIS_URL
           valueFrom:
             secretKeyRef:
-              name: climateai-secrets
+              name: climatewise-secrets
               key: redis-url
 
         # Liveness probe - detecta se o container está vivo
@@ -76,7 +76,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: climateai-api
+  name: climatewise-api
 spec:
   type: LoadBalancer
   ports:
@@ -84,7 +84,7 @@ spec:
     targetPort: 8000
     protocol: TCP
   selector:
-    app: climateai
+    app: climatewise
 """
 
 # ============================================================================
@@ -101,7 +101,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: postgresql://postgres:password@db:5432/climateai
+      DATABASE_URL: postgresql://postgres:password@db:5432/climatewise
       REDIS_URL: redis://redis:6379
     depends_on:
       db:
@@ -120,7 +120,7 @@ services:
     image: postgres:15-alpine
     environment:
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: climateai
+      POSTGRES_DB: climatewise
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -167,7 +167,7 @@ CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
 # 4. NGINX LOAD BALANCER COM HEALTH CHECK
 # ============================================================================
 nginx_config = """
-upstream climateai_backend {
+upstream climatewise_backend {
     server localhost:8001;
     server localhost:8002;
     server localhost:8003;
@@ -180,10 +180,10 @@ upstream climateai_backend {
 
 server {
     listen 80;
-    server_name api.climateai.local;
+    server_name api.climatewise.local;
 
     location / {
-        proxy_pass http://climateai_backend;
+        proxy_pass http://climatewise_backend;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -223,7 +223,7 @@ jobs:
         image: postgres:15-alpine
         env:
           POSTGRES_PASSWORD: password
-          POSTGRES_DB: climateai
+          POSTGRES_DB: climatewise
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -252,7 +252,7 @@ jobs:
 
     - name: Start API server
       env:
-        DATABASE_URL: postgresql://postgres:password@localhost:5432/climateai
+        DATABASE_URL: postgresql://postgres:password@localhost:5432/climatewise
         REDIS_URL: redis://localhost:6379
       run: |
         cd server
@@ -291,12 +291,12 @@ jobs:
     - name: Deploy to Kubernetes
       run: |
         kubectl apply -f k8s/deployment.yaml
-        kubectl rollout status deployment/climateai-api -n production
+        kubectl rollout status deployment/climatewise-api -n production
 
     - name: Verify Deployment Health
       run: |
-        kubectl get pods -n production -l app=climateai
-        kubectl logs -n production -l app=climateai --tail=10
+        kubectl get pods -n production -l app=climatewise
+        kubectl logs -n production -l app=climatewise --tail=10
 """
 
 # ============================================================================
@@ -437,7 +437,7 @@ async def send_slack_alert(webhook_url: str, status: str, health_data: dict):
         "attachments": [
             {
                 "color": color,
-                "title": f"ClimateAI API Health - {status.upper()}",
+                "title": f"ClimateWise API Health - {status.upper()}",
                 "fields": [
                     {
                         "title": "Database",
@@ -478,11 +478,11 @@ async def send_pagerduty_alert(integration_key: str, health_data: dict):
     payload = {
         "routing_key": integration_key,
         "event_action": "trigger",
-        "dedup_key": f"climateai-health-{int(health_data.get('timestamp', 0))}",
+        "dedup_key": f"climatewise-health-{int(health_data.get('timestamp', 0))}",
         "payload": {
-            "summary": f"ClimateAI API Health: {status}",
+            "summary": f"ClimateWise API Health: {status}",
             "severity": severity,
-            "source": "ClimateAI API",
+            "source": "ClimateWise API",
             "custom_details": health_data
         }
     }

@@ -1,0 +1,58 @@
+Metadata-Version: 2.4
+Name: hathorlib
+Version: 0.14.0
+Summary: Hathor Network base objects library
+License: Apache-2.0
+License-File: LICENSE.txt
+Author: Hathor Team
+Author-email: contact@hathor.network
+Requires-Python: >=3.9,<4
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Programming Language :: Python :: 3.13
+Classifier: Programming Language :: Python :: 3.14
+Provides-Extra: client
+Requires-Dist: aiohttp (>=3.9.3,<3.10.0) ; extra == "client"
+Requires-Dist: base58 (>=2.1.1,<2.2.0)
+Requires-Dist: cryptography (>=42.0.5,<42.1.0)
+Requires-Dist: pycoin (>=0.92,<0.93)
+Requires-Dist: structlog (>=22.3.0,<22.4.0) ; extra == "client"
+Project-URL: Homepage, https://hathor.network/
+Project-URL: Repository, https://github.com/HathorNetwork/python-hathorlib/
+Description-Content-Type: text/markdown
+
+hathorlib
+=========
+
+Hathor Network base library.
+
+## Configuration
+
+To install dependencies, including optionals, run:
+
+    poetry install -E client
+
+## Running the tests
+
+To run the tests using poetry virtualenv:
+
+    poetry run make tests
+
+If are managing virtualenvs without poetry, make sure it's activated and run:
+
+    make tests
+
+## Running linters
+
+To run linters:
+
+    poetry run make check
+
+Or without poetry venv:
+
+    make check

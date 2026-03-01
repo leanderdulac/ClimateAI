@@ -1,5 +1,5 @@
 /**
- * ClimateAI - Accessibility Tests (a11y)
+ * ClimateWise - Accessibility Tests (a11y)
  * Testes de acessibilidade usando axe-core e Playwright
  */
 

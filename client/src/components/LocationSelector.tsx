@@ -58,7 +58,6 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
   const [error, setError] = useState<string | null>(null);
   const [city, setCity] = useState<string>('');
   const [state, setState] = useState<string>('');
-  const [cep, setCep] = useState<string>('');
   const [recentLocations, setRecentLocations] = useState<SavedLocation[]>([]);
   const [citySuggestions, setCitySuggestions] = useState<LocalizacaoData[]>([]);
   const [showSuggestions, setShowSuggestions] = useState<boolean>(false);
@@ -113,7 +112,7 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
       );
     } catch (err) {
       console.error('Erro ao selecionar cidade:', err);
-      setError('Erro ao carregar dados da cidade selecionada');
+      setError(t('location.errors.cityLoad'));
       setLoading(false);
     }
   };
@@ -184,7 +183,7 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
 
       (err) => {
         console.error('Erro de geolocalização:', err);
-        setError(`Não foi possível obter sua localização: ${err.message}`);
+        setError(`${t('location.errors.geoFail')}: ${err.message}`);
         setLoading(false);
       },
       {
@@ -226,47 +225,7 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
       );
     } catch (err) {
       console.error('Erro ao buscar coordenadas:', err);
-      setError(`Cidade "${city}" ${t('location.errors.cityNotFound')} ${estadoValido.nome} (${state.toUpperCase()}). Verifique o nome da cidade e estado.`);
-      setLoading(false);
-    }
-  };
-
-  const searchLocationByCEP = async () => {
-    const sanitizedCep = cep.replace(/\D/g, '');
-    if (!sanitizedCep || !/^\d{8}$/.test(sanitizedCep)) {
-      setError(t('location.errors.invalidCep'));
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const locationData = await embrapaApi.getLocalizacaoPorCep(sanitizedCep);
-      if (!locationData.latitude || !locationData.longitude) {
-        setError(t('location.errors.cepNotFound'));
-        setLoading(false);
-        return;
-      }
-
-      if (locationData.cidade) {
-        setCity(locationData.cidade);
-      }
-      if (locationData.estado) {
-        setState(locationData.estado);
-      }
-      if (locationData.cep) {
-        setCep(locationData.cep);
-      }
-
-      await handleLocationData(
-        locationData.latitude,
-        locationData.longitude,
-        locationData.formattedAddress || `${locationData.cidade}, ${locationData.estado}`
-      );
-    } catch (err) {
-      console.error('Erro ao buscar CEP:', err);
-      setError(t('location.errors.cepFailed'));
+      setError(`Cidade "${city}" ${t('location.errors.cityNotFound')} ${estadoValido.nome} (${state.toUpperCase()}). ${t('location.errors.cityNotFoundDetails')}`);
       setLoading(false);
     }
   };
@@ -400,26 +359,6 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
               <Search className="h-4 w-4 mr-2" />
               {t('location.searchByCity')}
             </Button>
-
-            {/* Busca por CEP */}
-            <div className="space-y-2">
-              <Label>{t('location.cep')}</Label>
-              <div className="flex gap-2">
-                <Input
-                  placeholder={t('location.cepPlaceholder')}
-                  value={cep}
-                  onChange={(e) => setCep(e.target.value)}
-                  maxLength={9}
-                />
-                <Button
-                  onClick={searchLocationByCEP}
-                  variant="outline"
-                  disabled={loading}
-                >
-                  <Search className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
 
             {/* Coordenadas manuais */}
             <div className="space-y-2 pt-2 border-t border-neutral-200">

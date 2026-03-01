@@ -1,4 +1,4 @@
-# ClimateAI - Tier 1 Implementation Roadmap
+# ClimateWise - Tier 1 Implementation Roadmap
 ## Preparação para Seguradoras Globais
 
 Este documento descreve o plano de implementação dos requisitos necessários para atender seguradoras globais (Tier 1), incluindo compliance com regulamentações internacionais (Solvency II, ORSA, TCFD, ISSB).

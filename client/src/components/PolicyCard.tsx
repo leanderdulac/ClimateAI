@@ -31,7 +31,7 @@ export function PolicyCard({
     tags = [],
     onSelect
 }: PolicyCardProps) {
-    const { t } = useTranslation();
+    const { t, language } = useTranslation();
 
     const getStatusConfig = (status: PolicyStatus) => {
         switch (status) {
@@ -85,7 +85,7 @@ export function PolicyCard({
                     </div>
                     <div className="text-right">
                         <div className="text-2xl font-bold text-gray-900">
-                            R$ {premium.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                            {t('common.currency')} {premium.toLocaleString(language, { maximumFractionDigits: 0 })}
                         </div>
                         <div className="text-xs text-gray-500">{t('policy.labels.annualPremium')}</div>
                     </div>

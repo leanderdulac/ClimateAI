@@ -125,7 +125,7 @@ class RedisCache:
         redis_url: str = "redis://localhost:6379",
         default_ttl: int = 3600,
         max_memory_mb: int = 512,
-        key_prefix: str = "climateai",
+        key_prefix: str = "climatewise",
         enabled: bool = True,
     ):
         self.redis_url = redis_url

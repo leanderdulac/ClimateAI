@@ -37,7 +37,7 @@ class BigQueryDataLakeService:
     def __init__(self):
         self.client = None
         self.project_id = os.getenv("GCP_PROJECT_ID", os.getenv("GOOGLE_CLOUD_PROJECT"))
-        self.dataset = os.getenv("BQ_DATASET", "climateai_institutional")
+        self.dataset = os.getenv("BQ_DATASET", "climatewise_institutional")
 
         if BQ_AVAILABLE:
             self._init_client()

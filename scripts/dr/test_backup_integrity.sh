@@ -1,14 +1,14 @@
 #!/bin/bash
-# ClimateAI - Backup Integrity Test
+# ClimateWise - Backup Integrity Test
 # Valida integridade do backup mais recente
 
 set -e
 
-BACKUP_BUCKET="${BACKUP_BUCKET:-climateai-backups-prod}"
-TEST_DB="climateai_test_$(date +%Y%m%d_%H%M%S)"
+BACKUP_BUCKET="${BACKUP_BUCKET:-climatewise-backups-prod}"
+TEST_DB="climatewise_test_$(date +%Y%m%d_%H%M%S)"
 
 echo "=========================================="
-echo "ClimateAI - Backup Integrity Test"
+echo "ClimateWise - Backup Integrity Test"
 echo "=========================================="
 echo "Backup Bucket: ${BACKUP_BUCKET}"
 echo "Time: $(date)"
@@ -58,15 +58,15 @@ echo ""
 echo "[4/5] Testing restore..."
 
 # Create test database
-psql -h localhost -U climateai_admin -d postgres -c "CREATE DATABASE ${TEST_DB};"
+psql -h localhost -U climatewise_admin -d postgres -c "CREATE DATABASE ${TEST_DB};"
 
 # Restore backup
-gunzip -c "/tmp/${LATEST_BACKUP}" | psql -h localhost -U climateai_admin -d "${TEST_DB}"
+gunzip -c "/tmp/${LATEST_BACKUP}" | psql -h localhost -U climatewise_admin -d "${TEST_DB}"
 
 if [ $? -ne 0 ]; then
     echo "✗ Restore test FAILED"
     # Cleanup
-    psql -h localhost -U climateai_admin -d postgres -c "DROP DATABASE ${TEST_DB};"
+    psql -h localhost -U climatewise_admin -d postgres -c "DROP DATABASE ${TEST_DB};"
     exit 1
 fi
 
@@ -77,7 +77,7 @@ echo ""
 echo "[5/5] Validating data..."
 
 # Check table counts
-TABLES=$(psql -h localhost -U climateai_admin -d "${TEST_DB}" -t -c "
+TABLES=$(psql -h localhost -U climatewise_admin -d "${TEST_DB}" -t -c "
     SELECT COUNT(*) 
     FROM information_schema.tables 
     WHERE table_schema = 'public';
@@ -87,21 +87,21 @@ echo "Tables found: ${TABLES}"
 
 if [ "${TABLES}" -lt 1 ]; then
     echo "✗ Data validation FAILED - no tables found"
-    psql -h localhost -U climateai_admin -d postgres -c "DROP DATABASE ${TEST_DB};"
+    psql -h localhost -U climatewise_admin -d postgres -c "DROP DATABASE ${TEST_DB};"
     exit 1
 fi
 
 # Check row counts for critical tables
 CRITICAL_TABLES="users policies claims"
 for table in ${CRITICAL_TABLES}; do
-    COUNT=$(psql -h localhost -U climateai_admin -d "${TEST_DB}" -t -c "SELECT COUNT(*) FROM ${table};" 2>/dev/null || echo "0")
+    COUNT=$(psql -h localhost -U climatewise_admin -d "${TEST_DB}" -t -c "SELECT COUNT(*) FROM ${table};" 2>/dev/null || echo "0")
     echo "  - ${table}: ${COUNT} rows"
 done
 
 # Cleanup
 echo ""
 echo "Cleaning up..."
-psql -h localhost -U climateai_admin -d postgres -c "DROP DATABASE ${TEST_DB};"
+psql -h localhost -U climatewise_admin -d postgres -c "DROP DATABASE ${TEST_DB};"
 rm -f "/tmp/${LATEST_BACKUP}" "/tmp/${CHECKSUM_FILE}"
 
 echo ""
@@ -115,7 +115,7 @@ if [ -n "${SLACK_WEBHOOK_URL}" ]; then
     curl -X POST "${SLACK_WEBHOOK_URL}" \
         -H 'Content-Type: application/json' \
         -d "{
-            \"text\": \"ClimateAI Backup Test\",
+            \"text\": \"ClimateWise Backup Test\",
             \"attachments\": [{
                 \"color\": \"good\",
                 \"text\": \"Backup ${LATEST_BACKUP} validated successfully\"

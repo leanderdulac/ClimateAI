@@ -1,7 +1,7 @@
 #!/bin/bash
-# GitHub Backup Script for ClimateAI with New Features
+# GitHub Backup Script for ClimateWise with New Features
 
-echo "🔄 Starting GitHub backup for ClimateAI with new features..."
+echo "🔄 Starting GitHub backup for ClimateWise with new features..."
 
 # Change to the project directory
 cd /home/artha/climateAI

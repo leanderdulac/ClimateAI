@@ -14,7 +14,7 @@ from services.audit_trail_service import AuditTrailService, AuditEntry, AuditCha
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/v1/audit", tags=["audit"])
+router = APIRouter()
 
 # Instância global do serviço
 audit_service = AuditTrailService()

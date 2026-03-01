@@ -26,7 +26,13 @@ async def tokenizar_evento(evento: EventoClimatico = Body(...)):
     incluindo informações de severidade, localização e temporalidade.
     """
     try:
-        token = token_service.gerar_token_evento(evento)
+        token = await token_service.gerar_token_evento(evento)
+        # Assuming 'request' and 'destination_address' would be passed or derived
+        # For now, this line is added as per instruction, but it needs context for 'request'
+        # and 'destination_address' to be fully functional.
+        # Placeholder for demonstration:
+        # resultado = await token_service.mint_token_on_chain(token, request.destination_address)
+        # return resultado
         return token
     except Exception as e:
         raise HTTPException(
@@ -43,7 +49,7 @@ async def tokenizar_multiplos_eventos(eventos: List[EventoClimatico] = Body(...)
     Eventos com erro são ignorados e o processamento continua.
     """
     try:
-        tokens = token_service.tokenizar_multiplos_eventos(eventos)
+        tokens = await token_service.tokenizar_multiplos_eventos(eventos)
         return tokens
     except Exception as e:
         raise HTTPException(
@@ -104,7 +110,7 @@ async def analisar_tokens(
         )
 
         # Tokenizar eventos
-        tokens = token_service.tokenizar_multiplos_eventos(eventos)
+        tokens = await token_service.tokenizar_multiplos_eventos(eventos)
 
         # Realizar análise
         analysis = token_service.analisar_tokens(tokens)
@@ -147,7 +153,7 @@ async def agrupar_tokens(
         )
 
         # Tokenizar eventos
-        tokens = token_service.tokenizar_multiplos_eventos(eventos)
+        tokens = await token_service.tokenizar_multiplos_eventos(eventos)
 
         # Agrupar tokens
         grupos = token_service.agrupar_tokens(tokens)

@@ -9,6 +9,10 @@ from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
 
+from config.database import get_db_session
+from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, HTTPException, Depends
+
 from services.oracle_service import OracleService, SeverityEvent
 from services.kms_signer_service import KMSSigner
 
@@ -43,7 +47,7 @@ class ConsensusVoteRequest(BaseModel):
 # ─── Endpoints ─────────────────────────────────────────────────────
 
 @router.post("/evaluate")
-async def evaluate_severity_event(request: SeverityEventRequest):
+async def evaluate_severity_event(request: SeverityEventRequest, db: AsyncSession = Depends(get_db_session)):
     """
     Evaluate a climate severity event and decide whether to trigger payout.
 
@@ -59,12 +63,12 @@ async def evaluate_severity_event(request: SeverityEventRequest):
         soil_moisture=request.soil_moisture,
         source=request.source
     )
-    result = await oracle.evaluate_event(event)
+    result = await oracle.evaluate_event(event, db=db)
     return result
 
 
 @router.post("/evaluate/batch")
-async def evaluate_batch(request: BatchEvalRequest):
+async def evaluate_batch(request: BatchEvalRequest, db: AsyncSession = Depends(get_db_session)):
     """Evaluate multiple severity events in batch (e.g. from scheduled scan)."""
     events = [
         SeverityEvent(
@@ -78,7 +82,7 @@ async def evaluate_batch(request: BatchEvalRequest):
         )
         for e in request.events
     ]
-    results = await oracle.evaluate_batch(events)
+    results = await oracle.evaluate_batch(events, db=db)
     return {"results": results, "total": len(results)}
 
 

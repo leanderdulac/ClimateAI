@@ -3,6 +3,7 @@ import { lazy, Suspense } from 'react';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { PageLoader } from '@/components/PageLoader';
 import { ParametricSimulator } from '@/components/ParametricSimulator';
+import { RouteError } from '@/components/RouteError';
 
 // Lazy load all pages
 const IndexPage = lazy(() => import('@/pages/Index').then(m => ({ default: m.IndexPage })));
@@ -11,13 +12,25 @@ const TokenizationPage = lazy(() => import('@/pages/TokenizationPage').then(m =>
 const AnalyticsPage = lazy(() => import('@/pages/AnalyticsPage').then(m => ({ default: m.AnalyticsPage })));
 const AuthPage = lazy(() => import('@/pages/AuthPage').then(m => ({ default: m.AuthPage })));
 const ActuarialLabPage = lazy(() => import('@/pages/ActuarialLabPage').then(m => ({ default: m.ActuarialLabPage })));
+const OraclePage = lazy(() => import('@/pages/OraclePage').then(m => ({ default: m.OraclePage })));
+const AtlasPage = lazy(() => import('@/pages/AtlasPage'));
+const DemoPage = lazy(() => import('@/pages/DemoPage').then(m => ({ default: m.DemoPage })));
 
 const router = createBrowserRouter([
   {
     path: "/",
+    errorElement: <RouteError />,
     element: (
       <Suspense fallback={<PageLoader />}>
         <WelcomePage />
+      </Suspense>
+    ),
+  },
+  {
+    path: "/demo",
+    element: (
+      <Suspense fallback={<PageLoader />}>
+        <DemoPage />
       </Suspense>
     ),
   },
@@ -73,6 +86,27 @@ const router = createBrowserRouter([
       <ProtectedRoute>
         <Suspense fallback={<PageLoader />}>
           <ActuarialLabPage />
+        </Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/oracle",
+    element: (
+      <ProtectedRoute>
+        <Suspense fallback={<PageLoader />}>
+          <OraclePage />
+        </Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/atlas",
+    errorElement: <RouteError />,
+    element: (
+      <ProtectedRoute>
+        <Suspense fallback={<PageLoader />}>
+          <AtlasPage />
         </Suspense>
       </ProtectedRoute>
     ),

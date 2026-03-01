@@ -1,5 +1,5 @@
--- ClimateAI - Script de Inicialização do Banco de Dados
--- Executar: podman exec -i climateai-db psql -U postgres -d climateai < init-db.sql
+-- ClimateWise - Script de Inicialização do Banco de Dados
+-- Executar: podman exec -i climatewise-db psql -U postgres -d climatewise < init-db.sql
 
 -- Habilitar extensão UUID
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -76,8 +76,8 @@ CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON audit_logs(action);
 -- Hash gerado com bcrypt
 INSERT INTO users (email, password_hash, full_name, role) 
 VALUES 
-    ('admin@climateai.com', '$2b$10$KIXxhQmQ7QkQzQxQzQxQzOQkQ7QkQzQxQzQxQzOQkQ7QkQzQxQzQx', 'Admin User', 'admin'),
-    ('user@climateai.com', '$2b$10$KIXxhQmQ7QkQzQxQzQxQzOQkQ7QkQzQxQzQxQzOQkQ7QkQzQxQzQx', 'Test User', 'user')
+    ('admin@climatewise.com', '$2b$10$KIXxhQmQ7QkQzQxQzQxQzOQkQ7QkQzQxQzQxQzOQkQ7QkQzQxQzQx', 'Admin User', 'admin'),
+    ('user@climatewise.com', '$2b$10$KIXxhQmQ7QkQzQxQzQxQzOQkQ7QkQzQxQzQxQzOQkQ7QkQzQxQzQx', 'Test User', 'user')
 ON CONFLICT (email) DO NOTHING;
 
 -- Inserir dados de exemplo
@@ -90,7 +90,7 @@ SELECT
     1485.00,
     'active'
 FROM users u
-WHERE u.email = 'user@climateai.com'
+WHERE u.email = 'user@climatewise.com'
 ON CONFLICT (policy_number) DO NOTHING;
 
 -- Verificar dados inseridos

@@ -156,7 +156,7 @@ Resposta:
 
 ```bash
 # Obrigatória
-DATABASE_URL=postgresql://user:pass@host:5432/climateai
+DATABASE_URL=postgresql://user:pass@host:5432/climatewise
 # ou
 DATABASE_URL=sqlite:///./test.db
 

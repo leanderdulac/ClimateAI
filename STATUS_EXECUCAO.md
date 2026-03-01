@@ -1,4 +1,4 @@
-# 🚀 ClimateAI - Status de Execução Tier 1
+# 🚀 ClimateWise - Status de Execução Tier 1
 
 ## Resumo da Sessão
 

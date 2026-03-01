@@ -1,4 +1,4 @@
-# 🔍 Análise Completa do Projeto ClimateAI
+# 🔍 Análise Completa do Projeto ClimateWise
 
 ## Relatório Gerado: 20 de Outubro de 2025
 
@@ -348,7 +348,7 @@ test('complete auth flow', async ({ page }) => {
 **Implementar**:
 ```bash
 # server/.env.example
-DATABASE_URL=postgresql+asyncpg://climateai:climateai123@localhost/climateai
+DATABASE_URL=postgresql+asyncpg://climatewise:climatewise123@localhost/climatewise
 DATABASE_ENABLED=true
 SECRET_KEY=change-me-in-production
 ALLOW_ORIGINS=http://localhost:3000,http://localhost:5173
@@ -471,7 +471,7 @@ export function ThemeProvider({ children }) {
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: climateai-backend
+  name: climatewise-backend
 spec:
   replicas: 3
   strategy:
@@ -483,7 +483,7 @@ spec:
     spec:
       containers:
       - name: api
-        image: climateai-backend:latest
+        image: climatewise-backend:latest
         resources:
           requests:
             memory: "512Mi"
@@ -531,8 +531,8 @@ async def get_forecast(request: Request):
 ```bash
 # backup-db.sh (já existe mas melhorar)
 #!/bin/bash
-pg_dump -U climateai -h localhost climateai | \
-  gzip > ./backups/climateai_$(date +%Y%m%d_%H%M%S).sql.gz
+pg_dump -U climatewise -h localhost climatewise | \
+  gzip > ./backups/climatewise_$(date +%Y%m%d_%H%M%S).sql.gz
 
 # Adicionar a cron:
 # 0 2 * * * /path/to/backup-db.sh
@@ -632,7 +632,7 @@ ruff==0.1.8             # Fast linting
 
 ## 📝 CONCLUSÃO
 
-O projeto **ClimateAI** tem uma **arquitetura sólida** com:
+O projeto **ClimateWise** tem uma **arquitetura sólida** com:
 - ✅ Separação clara de responsabilidades
 - ✅ Testes bem estruturados
 - ✅ CI/CD pipeline implementado

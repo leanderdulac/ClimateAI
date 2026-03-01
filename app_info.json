@@ -3,12 +3,12 @@
     "id": "aecec78d-15e2-4ce4-b017-2cf748005571",
     "owner_uuid": "f994026b1e7705094000936698c28c9f5d5499cb",
     "spec": {
-      "name": "climateai",
+      "name": "climatewise",
       "services": [
         {
           "name": "backend",
           "github": {
-            "repo": "leanderdulac/ClimateAI",
+            "repo": "leanderdulac/ClimateWise",
             "branch": "main",
             "deploy_on_push": true
           },
@@ -38,7 +38,7 @@
         {
           "name": "frontend",
           "github": {
-            "repo": "leanderdulac/ClimateAI",
+            "repo": "leanderdulac/ClimateWise",
             "branch": "main",
             "deploy_on_push": true
           },
@@ -87,13 +87,13 @@
     "active_deployment": {
       "id": "eba24487-33cd-4c7f-8860-b508c6c0b238",
       "spec": {
-        "name": "climateai",
+        "name": "climatewise",
         "services": [
           {
             "name": "backend",
             "image": {
               "registry_type": "DOCR",
-              "registry": "climateai-registry-v1",
+              "registry": "climatewise-registry-v1",
               "repository": "backend",
               "tag": "v2"
             },
@@ -121,7 +121,7 @@
           {
             "name": "frontend",
             "github": {
-              "repo": "leanderdulac/ClimateAI",
+              "repo": "leanderdulac/ClimateWise",
               "branch": "main",
               "deploy_on_push": true
             },
@@ -209,7 +209,7 @@
       "phase_last_updated_at": "2026-02-20T02:54:17Z",
       "created_at": "2026-02-20T02:49:49Z",
       "updated_at": "2026-02-20T02:54:17Z",
-      "cause": "commit 8720a85 pushed to github.com/leanderdulac/ClimateAI/tree/main",
+      "cause": "commit 8720a85 pushed to github.com/leanderdulac/ClimateWise/tree/main",
       "progress": {
         "pending_steps": 1,
         "success_steps": 5,
@@ -349,7 +349,7 @@
       "cause_details": {
         "git_push": {
           "github": {
-            "repo": "leanderdulac/ClimateAI",
+            "repo": "leanderdulac/ClimateWise",
             "branch": "main"
           },
           "username": "leanderdulac",

@@ -68,18 +68,18 @@ class DatabaseHealthCheck:
             # Importar engine do SQLAlchemy async
             from sqlalchemy.ext.asyncio import create_async_engine
             from sqlalchemy import text
-            
+
             # Se for SQLite na memória, adicionar connect_args
             is_sqlite = self.database_url.startswith("sqlite")
             connect_args = {"check_same_thread": False} if is_sqlite else {}
-            
-            if db_url.startswith("postgresql"):
-                if "asyncpg" in db_url:
+
+            if self.database_url.startswith("postgresql"):
+                if "asyncpg" in self.database_url:
                     connect_args["prepared_statement_cache_size"] = 0
                     connect_args["statement_cache_size"] = 0
-            
-            print(f"CRITICAL HEALTHCHECK URL: {db_url}")
-            engine = create_async_engine(db_url, connect_args=connect_args)
+
+            logger.debug(f"Database health check URL: {self.database_url}")
+            engine = create_async_engine(self.database_url, connect_args=connect_args)
 
             # Teste de conexão assíncrono
             async with engine.connect() as connection:

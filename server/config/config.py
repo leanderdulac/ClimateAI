@@ -79,6 +79,20 @@ class Settings(BaseSettings):
     REDIS_ENABLED: bool = os.getenv("REDIS_ENABLED", "false").lower() == "true"
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379")
 
+    # ============================================
+    # ATLAS DIGITAL DE DESASTRES - Configurações
+    # ============================================
+    ATLAS_DATA_URL: str = os.getenv(
+        "ATLAS_DATA_URL",
+        "https://arquivos.atlasdigital.mdr.gov.br/dados-abertos/atlas-digital-desastres-naturais-brasil-1991-2024.csv"
+    )
+    ATLAS_DATA_DIR: str = os.getenv(
+        "ATLAS_DATA_DIR",
+        os.path.join(os.path.dirname(__file__), "..", "data", "atlas")
+    )
+    ATLAS_CACHE_TIMEOUT_MINUTES: int = int(os.getenv("ATLAS_CACHE_TIMEOUT_MINUTES", "60"))
+    ATLAS_DB_ENABLED: bool = os.getenv("ATLAS_DB_ENABLED", "true").lower() == "true"
+
     # ==============================================
     # Banco de Dados (Supabase como fonte primária)
     # ==============================================
@@ -103,8 +117,8 @@ class Settings(BaseSettings):
         # Constrói a URL apenas se host e senha estiverem presentes
         if self.SUPABASE_DB_HOST and self.SUPABASE_DB_PASSWORD:
             return (
-                f"postgresql+asyncpg://{self.SUPABASE_DB_USER}:"
-                f"{self.SUPABASE_DB_PORT}/{self.SUPABASE_DB_NAME}"
+                f"postgresql+asyncpg://{self.SUPABASE_DB_USER}:{self.SUPABASE_DB_PASSWORD}@"
+                f"{self.SUPABASE_DB_HOST}:{self.SUPABASE_DB_PORT}/{self.SUPABASE_DB_NAME}"
             )
 
         return None
@@ -121,8 +135,10 @@ class Settings(BaseSettings):
             
         if not self.DATABASE_URL:
             supabase_url = self._build_supabase_database_url()
-            if not self.DATABASE_URL:
-                self.DATABASE_URL = "postgresql+asyncpg://climateai:climateai123@localhost:5432/climateai"
+            if supabase_url:
+                self.DATABASE_URL = supabase_url
+            else:
+                self.DATABASE_URL = "postgresql+asyncpg://climatewise:climatewise123@localhost:5432/climatewise"
                 
         # Fix for asyncpg: remove ?sslmode=require which is not supported natively in the connection string
         if self.DATABASE_URL and "?sslmode=require" in self.DATABASE_URL:
@@ -138,7 +154,7 @@ class Settings(BaseSettings):
     # OpenTelemetry
     OTEL_ENABLED: bool = os.getenv("OTEL_ENABLED", "false").lower() == "true"
     OTEL_EXPORTER_OTLP_ENDPOINT: str = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4318/v1/traces")
-    OTEL_SERVICE_NAME: str = os.getenv("OTEL_SERVICE_NAME", "climateai-backend")
+    OTEL_SERVICE_NAME: str = os.getenv("OTEL_SERVICE_NAME", "climatewise-backend")
     OTEL_SERVICE_VERSION: str = os.getenv("OTEL_SERVICE_VERSION", "1.0.0")
 
     # Configurações adicionais

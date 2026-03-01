@@ -6,11 +6,11 @@
 set -e
 
 # Default values
-SERVICE_NAME="climateai-backend"
+SERVICE_NAME="climatewise-backend"
 REGION="us-central1"
 
 echo "============================================="
-echo "   ClimateAI - Google Cloud Run Deployer     "
+echo "   ClimateWise - Google Cloud Run Deployer     "
 echo "============================================="
 
 # Check if gcloud is installed

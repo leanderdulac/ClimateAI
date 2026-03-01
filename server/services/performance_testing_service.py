@@ -1,5 +1,5 @@
 """
-ClimateAI Performance Testing Service
+ClimateWise Performance Testing Service
 Implements:
 - Climate backtesting: Validation against historical events (Hurricane Ian, RS Floods 2024)
 - Stress testing: 200% of worst CMIP6 scenario + Black Swan climate event
@@ -40,7 +40,7 @@ class PerformanceTestResult:
 
 class ClimatePerformanceTestingService:
     """
-    Service for comprehensive performance testing of ClimateAI models:
+    Service for comprehensive performance testing of ClimateWise models:
     - Climate backtesting against historical events
     - Stress testing with extreme scenarios
     - Robustness analysis with parameter perturbations

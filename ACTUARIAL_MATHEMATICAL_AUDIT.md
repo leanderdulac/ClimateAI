@@ -259,7 +259,7 @@ Falta:
 
 ### **vs Lloyd's of London**
 
-| Critério | ClimateAI | Lloyd's Minimum | Status |
+| Critério | ClimateWise | Lloyd's Minimum | Status |
 |----------|-----------|-----------------|--------|
 | **EVT Implementation** | ✅ GEV-GPD | ✅ Requerido | ✅ OK |
 | **Monte Carlo** | ✅ 50k iterações | ✅ 10k mínimo | ✅ Excede |
@@ -273,7 +273,7 @@ Falta:
 
 ### **vs Swiss Re**
 
-| Critério | ClimateAI | Swiss Re Standard | Status |
+| Critério | ClimateWise | Swiss Re Standard | Status |
 |----------|-----------|-------------------|--------|
 | **Bayesian Methods** | ✅ Bootstrap | ✅ Bayesian | ✅ OK |
 | **Catastrophe Modeling** | ✅ EVT | ✅ Cat models | ✅ OK |
@@ -287,7 +287,7 @@ Falta:
 
 ### **vs Munich Re**
 
-| Critério | ClimateAI | Munich Re Standard | Status |
+| Critério | ClimateWise | Munich Re Standard | Status |
 |----------|-----------|-------------------|--------|
 | **Spatial Analysis** | ✅ KDE + Gaussian | ✅ Geo models | ✅ OK |
 | **Ensemble Methods** | ✅ Dynamic weights | ✅ Multi-model | ✅ OK |

@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# ClimateAI Monitoring Stack Stop Script
+# ClimateWise Monitoring Stack Stop Script
 
-echo "🛑 Stopping ClimateAI Monitoring Stack..."
+echo "🛑 Stopping ClimateWise Monitoring Stack..."
 
 # Stop monitoring stack
 docker-compose -f docker-compose.monitoring.yml down

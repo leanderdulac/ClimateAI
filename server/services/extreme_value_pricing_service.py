@@ -1,7 +1,7 @@
 
 """
 Extreme Value Pricing Service
-ClimateAI v2.0 - Financial Survival Architecture
+ClimateWise v2.0 - Financial Survival Architecture
 
 Este módulo implementa a lógica de precificação baseada em Teoria de Valores Extremos (EVT),
 focando na sobrevivência financeira da seguradora frente a riscos catastróficos (Cisnes Negros).
@@ -59,6 +59,7 @@ class PricingOutput(BaseModel):
     calculation_timestamp: datetime = Field(default_factory=datetime.now)
     divergence_factor: float = Field(..., description="Divergência percentual entre modelos")
     fractal_metrics: Optional['FractalAnalysisResult'] = Field(None, description="Métricas de análise fractal e caos")
+    reinsurance_metrics: Optional[Dict[str, float]] = Field(None, description="Métricas de resseguro (Ceded vs Net)")
 
 class FractalAnalysisResult(BaseModel):
     hurst_exponent: float
@@ -358,9 +359,10 @@ class FractalRiskEngine:
         # Interpretação do Regime Fractal
         if hurst > 0.65:
             regime = "Super-Persistent (Danger Zone)"
-            # Se H é alto, o desvio padrão da GEV vai subestimar o futuro.
-            # Aumentamos o prêmio agressivamente.
-            multiplier = 1.0 + (hurst - 0.5) * 6  # Ex: H=0.75 -> +150% preço
+            # Ajuste Quadrático para Regimes Persistentes:
+            # Reflete o aumento não-linear da incerteza de cauda.
+            excess_hurst = hurst - 0.5
+            multiplier = 1.0 + (excess_hurst ** 2) * 20.0  # Ex: H=0.75 -> 1.0 + (0.0625 * 20) = 2.25x
         elif hurst < 0.40:
             regime = "Mean Reverting (Safe)"
             multiplier = 0.90 # Desconto leve, tendência de estabilidade
@@ -406,6 +408,26 @@ class SpatialRiskEngine:
                     total_risk_boost += correlation * 0.5
                     
         return 1.0 + min(total_risk_boost, 2.0)
+
+# ==============================================================================
+# 2.9 REINSURANCE ENGINE
+# ==============================================================================
+
+@dataclass
+class ReinsuranceLayer:
+    name: str
+    attachment: float      # Ponto de Anexo (Deductible)
+    limit: float           # Limite de Cobertura
+    rate_on_line: float    # Taxa de Prêmio (% do limite)
+    
+    def ceded_loss(self, gross_loss: float) -> float:
+        if gross_loss <= self.attachment:
+            return 0.0
+        excess = gross_loss - self.attachment
+        return min(excess, self.limit)
+    
+    def premium(self) -> float:
+        return self.rate_on_line * self.limit
 
 # ==============================================================================
 # 3. DEFENSIVE PRICING ORCHESTRATOR
@@ -460,9 +482,9 @@ class DefensivePricingOrchestrator:
         except:
             return 1.0
 
-    def price_contract(self, data: pd.DataFrame, asset_value: float = 10000.0, severity_amount: float = 1000.0, frequency_pct: float = 10.0, duration_years: int = 1, nearby_risks: List[dict] = None) -> PricingOutput:
+    def price_contract(self, data: pd.DataFrame, asset_value: float = 10000.0, severity_amount: float = 1000.0, frequency_pct: float = 10.0, duration_years: int = 1, nearby_risks: List[dict] = None, reinsurance_layers: List[ReinsuranceLayer] = None) -> PricingOutput:
         """
-        Executa a precificação defensiva integrando Teoria de Valores Extremos e Parâmetros de Apólice.
+        Executa a precificação defensiva integrando Teoria de Valores Extremos, Parâmetros de Apólice e Resseguro.
         """
         # 1. Fit EVT
         self.evt_model.fit(data)
@@ -532,13 +554,25 @@ class DefensivePricingOrchestrator:
         if trend_multiplier > 1.1:
             warnings.append(f"INFO: Tendência de aquecimento secular detectada. Prêmio ajustado preventivamente.")
 
+        # 10. Reinsurance Integration
+        effective_re_layers = reinsurance_layers or getattr(self, 'reinsurance_layers', None)
+        re_metrics = None
+        if effective_re_layers:
+            total_re_premium = sum(L.premium() for L in effective_re_layers)
+            re_metrics = {
+                "total_reinsurance_premium": round(total_re_premium * duration_years, 2),
+                "net_premium_income": round((final_price - total_re_premium * duration_years), 2),
+                "protection_layers": len(effective_re_layers)
+            }
+
         return PricingOutput(
             final_premium=round(final_price, 2),
             strategy=strategy,
             risk_metrics=metrics,
             warnings=warnings,
             divergence_factor=round(divergence * 100, 1),
-            fractal_metrics=fractal_metrics
+            fractal_metrics=fractal_metrics,
+            reinsurance_metrics=re_metrics
         )
 
 # ==============================================================================
@@ -565,8 +599,12 @@ class StressTester:
         
         # 1. Precificar ANTES do choque (Estado atual)
         # Assumindo valores padrão para o stress test
-        pricing_result = orchestrator.price_contract(data, duration_years=n_years)
-        premium_collected = pricing_result.final_premium
+        stress_result = orchestrator.price_contract(
+            data, 
+            duration_years=n_years, 
+            reinsurance_layers=getattr(orchestrator, 'reinsurance_layers', None)
+        )
+        premium_collected = stress_result.final_premium
         
         # 2. Simular Choque (Futuro Distópico)
         # Adiciona shift na média e aumenta volatilidade
@@ -592,20 +630,34 @@ class StressTester:
         losses = future_data[future_data['temperature'] > hist_threshold]
         total_loss_payout = (losses['temperature'] - hist_threshold).sum() * 50.0 # Custo por grau
         
+        # Balance with Reinsurance
+        net_loss_payout = total_loss_payout
+        reinsurance_recovery = 0.0
+        
+        re_layers = getattr(orchestrator, 'reinsurance_layers', None)
+        if re_layers:
+            for layer in re_layers:
+                recovery = layer.ceded_loss(total_loss_payout)
+                reinsurance_recovery += recovery
+            net_loss_payout = total_loss_payout - reinsurance_recovery
+        
         # Balanço
         old_model_balance = gaussian_premium - total_loss_payout
         new_model_balance = premium_collected - total_loss_payout
+        net_model_balance = (premium_collected - (stress_result.reinsurance_metrics['total_reinsurance_premium'] if stress_result.reinsurance_metrics else 0)) - net_loss_payout
         
         return StressTestResult(
             scenario_name=f"Climate Shift +{temp_shift}°C ({n_years} anos)",
             temperature_shift=temp_shift,
             old_model_loss=round(old_model_balance, 2),
-            new_model_profit_or_loss=round(new_model_balance, 2),
-            solvency_maintained=new_model_balance >= 0,
+            new_model_profit_or_loss=round(net_model_balance, 2), # Now showing NET
+            solvency_maintained=net_model_balance >= 0,
             details={
-                "premium_collected_new": premium_collected,
-                "premium_collected_old": gaussian_premium,
-                "total_payout_needed": total_loss_payout,
+                "premium_collected_gross": premium_collected,
+                "reinsurance_premium_paid": stress_result.reinsurance_metrics['total_reinsurance_premium'] if stress_result.reinsurance_metrics else 0,
+                "reinsurance_recovery": reinsurance_recovery,
+                "total_payout_gross": total_loss_payout,
+                "total_payout_net": net_loss_payout,
                 "years_simulated": n_years
             }
         )

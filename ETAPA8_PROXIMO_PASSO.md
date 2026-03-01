@@ -8,7 +8,7 @@
 
 ## 📋 Resumo do Que Foi Realizado
 
-Você completou com sucesso **7 de 8 etapas** do projeto ClimateAI Modernization:
+Você completou com sucesso **7 de 8 etapas** do projeto ClimateWise Modernization:
 
 ✅ Etapa 1: Security Hardening
 ✅ Etapa 2: Docker Optimization

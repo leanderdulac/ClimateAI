@@ -1,4 +1,4 @@
-# ClimateAI - Desenvolvimento Environment
+# ClimateWise - Desenvolvimento Environment
 
 # ============================================
 # PROVIDERS
@@ -33,7 +33,7 @@ terraform {
 
 variable "project_name" {
   type    = string
-  default = "climateai"
+  default = "climatewise"
 }
 
 variable "environment" {
@@ -79,7 +79,7 @@ locals {
 # DATABASE (Docker para dev)
 # ============================================
 
-resource "docker_network" "climateai" {
+resource "docker_network" "climatewise" {
   name = "${var.project_name}-${var.environment}"
 }
 
@@ -96,7 +96,7 @@ resource "docker_container" "postgres" {
   image = "postgres:15-alpine"
 
   networks_advanced {
-    name = docker_network.climateai.name
+    name = docker_network.climatewise.name
   }
 
   volumes {
@@ -105,9 +105,9 @@ resource "docker_container" "postgres" {
   }
 
   env = [
-    "POSTGRES_DB=climateai",
-    "POSTGRES_USER=climateai_admin",
-    "POSTGRES_PASSWORD=climateai_dev_123",
+    "POSTGRES_DB=climatewise",
+    "POSTGRES_USER=climatewise_admin",
+    "POSTGRES_PASSWORD=climatewise_dev_123",
     "PGDATA=/var/lib/postgresql/data/pgdata"
   ]
 
@@ -119,7 +119,7 @@ resource "docker_container" "postgres" {
   restart = "unless-stopped"
 
   healthcheck {
-    test         = ["CMD-SHELL", "pg_isready -U climateai_admin -d climateai"]
+    test         = ["CMD-SHELL", "pg_isready -U climatewise_admin -d climatewise"]
     interval     = "10s"
     timeout      = "5s"
     retries      = 5
@@ -132,7 +132,7 @@ resource "docker_container" "redis" {
   image = "redis:7-alpine"
 
   networks_advanced {
-    name = docker_network.climateai.name
+    name = docker_network.climatewise.name
   }
 
   volumes {
@@ -170,7 +170,7 @@ resource "docker_container" "mlflow" {
   image = "ghcr.io/mlflow/mlflow:latest"
 
   networks_advanced {
-    name = docker_network.climateai.name
+    name = docker_network.climatewise.name
   }
 
   volumes {
@@ -208,7 +208,7 @@ resource "docker_container" "vault" {
   image = "hashicorp/vault:latest"
 
   networks_advanced {
-    name = docker_network.climateai.name
+    name = docker_network.climatewise.name
   }
 
   volumes {
@@ -236,7 +236,7 @@ resource "docker_container" "vault" {
 # ============================================
 
 output "postgres_connection" {
-  value = "postgresql://climateai_admin:climateai_dev_123@localhost:5432/climateai"
+  value = "postgresql://climatewise_admin:climatewise_dev_123@localhost:5432/climatewise"
 }
 
 output "redis_connection" {

@@ -53,7 +53,7 @@ class MLflowModelRegistry:
         self,
         tracking_uri: Optional[str] = None,
         registry_uri: Optional[str] = None,
-        experiment_name: str = "climateai",
+        experiment_name: str = "climatewise",
     ):
         """
         Inicializa o MLflow
@@ -536,7 +536,7 @@ if __name__ == "__main__":
     # Initialize MLflow
     registry = MLflowModelRegistry(
         tracking_uri="http://localhost:5000",
-        experiment_name="climateai-demo",
+        experiment_name="climatewise-demo",
     )
     
     if registry.is_enabled():

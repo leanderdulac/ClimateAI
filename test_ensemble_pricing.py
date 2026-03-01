@@ -78,7 +78,7 @@ def test_ensemble_pricing_functionality():
     print("  🎉 Ensemble Pricing Service functionality verified!")
 
 def main():
-    print("🔬 ClimateAI: Ensemble Pricing Service Test\n")
+    print("🔬 ClimateWise: Ensemble Pricing Service Test\n")
 
     test_ensemble_pricing_functionality()
 

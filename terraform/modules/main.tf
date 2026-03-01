@@ -1,4 +1,4 @@
-# ClimateAI - Main Infrastructure Module
+# ClimateWise - Main Infrastructure Module
 
 # ============================================
 # LOCALS

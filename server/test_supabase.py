@@ -372,7 +372,7 @@ async def test_claims_table():
 
 async def main():
     print("\n" + "="*60)
-    print("  SUPABASE INTEGRATION TEST - ClimateAI")
+    print("  SUPABASE INTEGRATION TEST - ClimateWise")
     print("="*60)
     print(f"  Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"  URL: {os.getenv('SUPABASE_URL', 'Not set')}")

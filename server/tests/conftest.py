@@ -58,6 +58,7 @@ from config.database import (
 )
 
 from services.auth_service import AuthService, auth_service
+from lib.security import rate_limiter
 
 # Import FastAPI app after path fix
 from main import app  # noqa: E402
@@ -115,7 +116,7 @@ async def sample_user(db_session: AsyncSession) -> User:
     import uuid
 
     user = User(
-        id=f"test-user-id-{uuid.uuid4()}",
+        id=str(uuid.uuid4()),
         email=f"test-{uuid.uuid4()}@example.com",
         full_name="Test User",
         hashed_password="hashed_password_123",
@@ -309,6 +310,9 @@ def setup_test_environment():
     os.environ["ENVIRONMENT"] = "test"
     os.environ["DEBUG"] = "True"
     os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+
+    # Disable rate limiting for tests
+    rate_limiter.max_requests = 10000
 
     yield
 

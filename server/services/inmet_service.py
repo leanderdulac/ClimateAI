@@ -72,7 +72,7 @@ class INMETService:
         self.api_key = api_key
         self.session = requests.Session()
         self.session.headers.update({
-            'User-Agent': 'ClimateAI/1.0',
+            'User-Agent': 'ClimateWise/1.0',
             'Accept': 'application/json'
         })
         

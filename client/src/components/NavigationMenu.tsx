@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
+import { useTranslation } from "@/hooks/useTranslation";
 import {
   Globe,
   Home,
@@ -10,49 +11,50 @@ import {
   BarChart3,
   Menu,
   X,
-  ChevronDown,
   FlaskConical as Lab,
-  LogOut
+  LogOut,
+  User,
+  Settings
 } from "lucide-react";
-
-interface NavigationItem {
-  label: string;
-  href: string;
-  icon: React.ComponentType<{ className?: string }>;
-  description?: string;
-}
-
-const navigationItems: NavigationItem[] = [
-  {
-    label: "Dashboard",
-    href: "/dashboard",
-    icon: Home,
-    description: "Visão geral e analytics"
-  },
-  {
-    label: "Tokenização",
-    href: "/tokenization",
-    icon: Coins,
-    description: "Criar e gerenciar tokens"
-  },
-  {
-    label: "Analytics",
-    href: "/analytics",
-    icon: BarChart3,
-    description: "Portfolio & Riscos"
-  },
-  {
-    label: "Lab Atuarial",
-    href: "/actuarial-lab",
-    icon: Lab,
-    description: "Design & Backtesting"
-  }
-];
 
 export function NavigationMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const { user, logout } = useAuth();
+  const { t } = useTranslation();
+
+  const navigationItems = [
+    {
+      labelKey: 'nav.dashboard',
+      descKey: 'nav.dashboard.desc',
+      href: "/dashboard",
+      icon: Home,
+    },
+    {
+      labelKey: 'nav.tokenization',
+      descKey: 'nav.tokenization.desc',
+      href: "/tokenization",
+      icon: Coins,
+    },
+    {
+      labelKey: 'nav.analytics',
+      descKey: 'nav.analytics.desc',
+      href: "/analytics",
+      icon: BarChart3,
+    },
+    {
+      labelKey: 'nav.actuarialLab',
+      descKey: 'nav.actuarialLab.desc',
+      href: "/actuarial-lab",
+      icon: Lab,
+    },
+    {
+      labelKey: 'nav.atlas',
+      descKey: 'nav.atlas.desc',
+      href: "/atlas",
+      icon: Globe,
+    },
+  ];
 
   const isActive = (href: string) => {
     if (href === "/dashboard" && location.pathname === "/") return true;
@@ -81,7 +83,7 @@ export function NavigationMenu() {
                 }`}
             >
               <Icon className={`h-4 w-4 ${isItemActive ? "text-primary" : "text-muted-foreground"}`} />
-              {item.label}
+              {t(item.labelKey)}
             </Link>
           );
         })}
@@ -110,7 +112,7 @@ export function NavigationMenu() {
             <Card className="border-border shadow-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
               <div className="p-4 space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold text-foreground">Menu</span>
+                  <span className="font-semibold text-foreground">{t('nav.menu')}</span>
                   <Button
                     variant="ghost"
                     size="icon"
@@ -137,10 +139,8 @@ export function NavigationMenu() {
                       >
                         <Icon className={`h-5 w-5 mt-0.5 ${isItemActive ? "text-primary" : "text-muted-foreground"}`} />
                         <div>
-                          <div className="font-medium text-sm">{item.label}</div>
-                          {item.description && (
-                            <div className="text-xs text-muted-foreground/80 mt-0.5">{item.description}</div>
-                          )}
+                          <div className="font-medium text-sm">{t(item.labelKey)}</div>
+                          <div className="text-xs text-muted-foreground/80 mt-0.5">{t(item.descKey)}</div>
                         </div>
                       </Link>
                     );
@@ -151,7 +151,6 @@ export function NavigationMenu() {
                   {user && (
                     <div className="mb-4 p-3 bg-muted/50 rounded-lg">
                       <div className="flex items-center gap-3">
-                        {/* UserCircle removed: unused icon */}
                         <div>
                           <p className="font-medium text-sm text-foreground">{user.name}</p>
                           <p className="text-xs text-muted-foreground">{user.email}</p>
@@ -165,11 +164,11 @@ export function NavigationMenu() {
                   <div className="space-y-2">
                     <Button variant="ghost" className="w-full justify-start gap-3 hover:bg-muted/50">
                       <User className="h-4 w-4" />
-                      Perfil
+                      {t('nav.profile')}
                     </Button>
                     <Button variant="ghost" className="w-full justify-start gap-3 hover:bg-muted/50">
                       <Settings className="h-4 w-4" />
-                      Configurações
+                      {t('nav.settings')}
                     </Button>
                     <Button
                       variant="ghost"
@@ -177,7 +176,7 @@ export function NavigationMenu() {
                       onClick={handleLogout}
                     >
                       <LogOut className="h-4 w-4" />
-                      Sair
+                      {t('nav.logout')}
                     </Button>
                   </div>
                 </div>

@@ -1,4 +1,4 @@
-# ClimateAI Production Requirements with Essential ML
+# ClimateWise Production Requirements with Essential ML
 # Production requirements including essential ML libraries (but not heavy TensorFlow)
 # Use this for production services that need PyTorch but not TensorFlow
 

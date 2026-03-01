@@ -6,13 +6,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
-import { Globe, Mail, Lock, User, Eye, EyeOff } from "lucide-react";
+import { useTranslation } from "@/hooks/useTranslation";
+import { Mail, Lock, User, Eye, EyeOff } from "lucide-react";
+import { Logo } from "@/components/Logo";
 
 export function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const navigate = useNavigate();
   const { login, register, isLoading } = useAuth();
+  const { t } = useTranslation();
 
   const [loginData, setLoginData] = useState({
     email: "",
@@ -34,14 +37,14 @@ export function AuthPage() {
 
     try {
       if (!loginData.email || !loginData.password) {
-        setErrorMessage("Por favor, preencha todos os campos");
+        setErrorMessage(t('auth.errors.fillAll'));
         return;
       }
 
       await login(loginData.email, loginData.password);
       navigate("/dashboard");
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Erro ao fazer login");
+      setErrorMessage(error instanceof Error ? error.message : t('auth.errors.loginFailed'));
     }
   };
 
@@ -51,32 +54,30 @@ export function AuthPage() {
 
     try {
       if (!registerData.name || !registerData.email || !registerData.password) {
-        setErrorMessage("Por favor, preencha todos os campos obrigatórios");
+        setErrorMessage(t('auth.errors.fillRequired'));
         return;
       }
 
       if (registerData.password !== registerData.confirmPassword) {
-        setErrorMessage("As senhas não coincidem!");
+        setErrorMessage(t('auth.errors.passwordMatch'));
         return;
       }
 
       if (!registerData.acceptTerms) {
-        setErrorMessage("Você deve aceitar os Termos de Uso");
+        setErrorMessage(t('auth.errors.acceptTerms'));
         return;
       }
 
-      // ✅ SEGURANÇA: Não enviar senha em plain text
-      // Apenas enviar para registro e deixar o backend fazer o hashing
       await register({
         name: registerData.name,
         email: registerData.email,
-        password: registerData.password,  // Backend irá fazer hash com bcrypt
+        password: registerData.password,
         company: registerData.company
       });
 
       navigate("/dashboard");
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Erro ao criar conta");
+      setErrorMessage(error instanceof Error ? error.message : t('auth.errors.registerFailed'));
     }
   };
 
@@ -89,11 +90,8 @@ export function AuthPage() {
 
         {/* Logo */}
         <div className="relative z-10">
-          <Link to="/" className="inline-flex items-center gap-2 text-2xl font-display font-bold text-foreground">
-            <div className="rounded-lg bg-primary/10 p-2 ring-1 ring-primary/20">
-              <Globe className="h-6 w-6 text-primary" />
-            </div>
-            ClimateWise
+          <Link to="/" className="inline-flex items-center gap-2">
+            <Logo size={32} showText={true} />
           </Link>
         </div>
 
@@ -123,25 +121,24 @@ export function AuthPage() {
       <div className="flex items-center justify-center p-8 bg-background">
         <div className="w-full max-w-md space-y-8">
           <div className="lg:hidden text-center mb-8">
-            <Link to="/" className="inline-flex items-center gap-2 text-2xl font-bold text-foreground">
-              <Globe className="h-8 w-8 text-primary" />
-              ClimateWise
+            <Link to="/" className="inline-flex items-center justify-center gap-2">
+              <Logo size={36} showText={true} />
             </Link>
           </div>
 
           <div className="flex flex-col space-y-2 text-center">
             <h1 className="text-2xl font-semibold tracking-tight font-display">
-              Bem-vindo de volta
+              {t('auth.welcome')}
             </h1>
             <p className="text-sm text-muted-foreground">
-              Entre com suas credenciais ou crie uma conta para começar
+              {t('auth.welcomeSubtitle')}
             </p>
           </div>
 
           <Tabs defaultValue="login" className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-8">
-              <TabsTrigger value="login">Entrar</TabsTrigger>
-              <TabsTrigger value="register">Cadastrar</TabsTrigger>
+              <TabsTrigger value="login">{t('auth.login')}</TabsTrigger>
+              <TabsTrigger value="register">{t('auth.register')}</TabsTrigger>
             </TabsList>
 
             {/* Login Tab */}
@@ -154,13 +151,13 @@ export function AuthPage() {
               )}
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="login-email">E-mail</Label>
+                  <Label htmlFor="login-email">{t('auth.email')}</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="login-email"
                       type="email"
-                      placeholder="seu@email.com"
+                      placeholder={t('auth.emailPlaceholder')}
                       className="pl-10 h-11"
                       value={loginData.email}
                       onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
@@ -170,13 +167,13 @@ export function AuthPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="login-password">Senha</Label>
+                  <Label htmlFor="login-password">{t('auth.password')}</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="login-password"
                       type={showPassword ? "text" : "password"}
-                      placeholder="••••••••"
+                      placeholder={t('auth.passwordPlaceholder')}
                       className="pl-10 pr-10 h-11"
                       value={loginData.password}
                       onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
@@ -195,15 +192,15 @@ export function AuthPage() {
                 <div className="flex items-center justify-between">
                   <label className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-foreground cursor-pointer transition-colors">
                     <input type="checkbox" className="rounded border-border text-primary focus:ring-primary" />
-                    <span>Lembrar-me</span>
+                    <span>{t('auth.rememberMe')}</span>
                   </label>
                   <Link to="/forgot-password" className="text-sm font-medium text-primary hover:text-primary/80 transition-colors">
-                    Esqueceu a senha?
+                    {t('auth.forgotPassword')}
                   </Link>
                 </div>
 
                 <Button type="submit" className="w-full h-11 text-base shadow-lg shadow-primary/20" disabled={isLoading}>
-                  {isLoading ? "Entrando..." : "Entrar"}
+                  {isLoading ? t('auth.loginLoading') : t('auth.loginButton')}
                 </Button>
               </form>
             </TabsContent>
@@ -218,13 +215,13 @@ export function AuthPage() {
               )}
               <form onSubmit={handleRegister} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="register-name">Nome completo</Label>
+                  <Label htmlFor="register-name">{t('auth.fullName')}</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="register-name"
                       type="text"
-                      placeholder="Seu nome completo"
+                      placeholder={t('auth.fullNamePlaceholder')}
                       className="pl-10 h-11"
                       value={registerData.name}
                       onChange={(e) => setRegisterData({ ...registerData, name: e.target.value })}
@@ -234,13 +231,13 @@ export function AuthPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="register-email">E-mail</Label>
+                  <Label htmlFor="register-email">{t('auth.email')}</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="register-email"
                       type="email"
-                      placeholder="seu@email.com"
+                      placeholder={t('auth.emailPlaceholder')}
                       className="pl-10 h-11"
                       value={registerData.email}
                       onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
@@ -250,11 +247,11 @@ export function AuthPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="register-company">Empresa (opcional)</Label>
+                  <Label htmlFor="register-company">{t('auth.company')}</Label>
                   <Input
                     id="register-company"
                     type="text"
-                    placeholder="Nome da empresa"
+                    placeholder={t('auth.companyPlaceholder')}
                     className="h-11"
                     value={registerData.company}
                     onChange={(e) => setRegisterData({ ...registerData, company: e.target.value })}
@@ -262,13 +259,13 @@ export function AuthPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="register-password">Senha</Label>
+                  <Label htmlFor="register-password">{t('auth.password')}</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="register-password"
                       type={showPassword ? "text" : "password"}
-                      placeholder="••••••••"
+                      placeholder={t('auth.passwordPlaceholder')}
                       className="pl-10 pr-10 h-11"
                       value={registerData.password}
                       onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
@@ -285,13 +282,13 @@ export function AuthPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="register-confirm-password">Confirmar senha</Label>
+                  <Label htmlFor="register-confirm-password">{t('auth.confirmPassword')}</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="register-confirm-password"
                       type={showPassword ? "text" : "password"}
-                      placeholder="••••••••"
+                      placeholder={t('auth.passwordPlaceholder')}
                       className="pl-10 pr-10 h-11"
                       value={registerData.confirmPassword}
                       onChange={(e) => setRegisterData({ ...registerData, confirmPassword: e.target.value })}
@@ -310,19 +307,19 @@ export function AuthPage() {
                     required
                   />
                   <label htmlFor="accept-terms" className="text-sm text-muted-foreground leading-none">
-                    Aceito os{" "}
+                    {t('auth.acceptTerms')}{" "}
                     <Link to="/terms" className="text-primary hover:text-primary/80 transition-colors">
-                      Termos de Uso
+                      {t('auth.termsLink')}
                     </Link>{" "}
-                    e{" "}
+                    {t('auth.and')}{" "}
                     <Link to="/privacy" className="text-primary hover:text-primary/80 transition-colors">
-                      Política de Privacidade
+                      {t('auth.privacyLink')}
                     </Link>
                   </label>
                 </div>
 
                 <Button type="submit" className="w-full h-11 text-base shadow-lg shadow-primary/20" disabled={isLoading}>
-                  {isLoading ? "Criando conta..." : "Criar conta"}
+                  {isLoading ? t('auth.registerLoading') : t('auth.registerButton')}
                 </Button>
               </form>
             </TabsContent>
@@ -330,9 +327,9 @@ export function AuthPage() {
 
           <div className="text-center text-sm text-muted-foreground">
             <p>
-              Precisa de ajuda?{" "}
+              {t('auth.needHelp')}{" "}
               <Link to="/support" className="text-primary hover:text-primary/80 font-medium transition-colors">
-                Entre em contato
+                {t('auth.contact')}
               </Link>
             </p>
           </div>

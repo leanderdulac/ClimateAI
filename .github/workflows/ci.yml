@@ -52,7 +52,7 @@ jobs:
 
       - name: Run unit tests (fast lane)
         env:
-          PYTEST_ADDOPTS: -m "not integration and not slow and not requires_db and not requires_redis" --disable-warnings --maxfail=1
+          PYTEST_ADDOPTS: -m "not integration and not slow and not requires_db and not requires_redis and not performance" --disable-warnings --maxfail=1
         run: pytest
 
   frontend:

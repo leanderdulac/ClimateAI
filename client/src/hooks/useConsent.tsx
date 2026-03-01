@@ -17,7 +17,7 @@ export interface ConsentPreferences {
     version?: string;        // Versão da política de privacidade
 }
 
-const CONSENT_STORAGE_KEY = 'climateai_consent';
+const CONSENT_STORAGE_KEY = 'climatewise_consent';
 const CONSENT_VERSION = '1.0.0';
 
 // Consentimento padrão (apenas necessário)

@@ -1,8 +1,8 @@
-# ♿ Validação de Acessibilidade (a11y) - ClimateAI
+# ♿ Validação de Acessibilidade (a11y) - ClimateWise
 
 ## 📊 Visão Geral
 
-Este documento descreve os procedimentos e ferramentas para validação de acessibilidade da plataforma ClimateAI, seguindo as diretrizes WCAG 2.1 nível AA.
+Este documento descreve os procedimentos e ferramentas para validação de acessibilidade da plataforma ClimateWise, seguindo as diretrizes WCAG 2.1 nível AA.
 
 ## 🎯 Objetivos
 
@@ -237,12 +237,12 @@ test.describe('Main Navigation Accessibility', () => {
 ### run-a11y-tests.sh
 ```bash
 #!/bin/bash
-# ClimateAI - Accessibility Validation Script
+# ClimateWise - Accessibility Validation Script
 
 set -e
 
 echo "=========================================="
-echo "ClimateAI - Accessibility Validation"
+echo "ClimateWise - Accessibility Validation"
 echo "=========================================="
 echo "Time: $(date)"
 echo "=========================================="
@@ -304,7 +304,7 @@ echo "Time: $(date)"
 ### Manual Review Checklist
 ```bash
 #!/bin/bash
-# ClimateAI - Manual Accessibility Review
+# ClimateWise - Manual Accessibility Review
 
 cat << 'EOF'
 ==========================================
@@ -357,7 +357,7 @@ EOF
 
 ### Template de Relatório
 ```markdown
-# ClimateAI - Accessibility Conformance Report
+# ClimateWise - Accessibility Conformance Report
 
 ## Date
 2026-02-18

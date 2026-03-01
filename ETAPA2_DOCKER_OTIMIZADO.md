@@ -152,8 +152,8 @@ docker-compose build --target production
 docker-compose up -d
 
 # Tamanho resultante
-docker images | grep climateai
-# climateai:production-v1.0.0  500MB
+docker images | grep climatewise
+# climatewise:production-v1.0.0  500MB
 ```
 
 ### Desenvolvimento com ML
@@ -178,8 +178,8 @@ docker-compose -f docker-compose.dev.yml up -d
 
 # Output:
 # TAG                          SIZE
-# climateai:production-v1.0.0  500MB
-# climateai:development-v1.0.0 2GB
+# climatewise:production-v1.0.0  500MB
+# climatewise:development-v1.0.0 2GB
 ```
 
 ---

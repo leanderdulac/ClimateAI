@@ -89,7 +89,7 @@ def test_climate_hmm_functionality():
     print("  🎉 Climate Regime HMM Service functionality verified!")
 
 def main():
-    print("🔬 ClimateAI: Climate Regime Hidden Markov Model Test\n")
+    print("🔬 ClimateWise: Climate Regime Hidden Markov Model Test\n")
 
     test_climate_hmm_functionality()
 

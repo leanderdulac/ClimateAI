@@ -323,7 +323,7 @@ Você implementou com sucesso um **sistema profissional de health checks** que:
 - ✅ Integra com toda a stack moderna
 - ✅ Segue best practices de produção
 
-Você está agora **62.5% do caminho** para ter um sistema ClimateAI **production-grade**!
+Você está agora **62.5% do caminho** para ter um sistema ClimateWise **production-grade**!
 
 ---
 

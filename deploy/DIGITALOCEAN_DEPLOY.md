@@ -1,6 +1,6 @@
-# 🚀 ClimateAI - Deploy no DigitalOcean
+# 🚀 ClimateWise - Deploy no DigitalOcean
 
-Este guia mostra como fazer deploy completo da plataforma ClimateAI no DigitalOcean.
+Este guia mostra como fazer deploy completo da plataforma ClimateWise no DigitalOcean.
 
 ## 📋 Pré-requisitos
 
@@ -20,7 +20,7 @@ Este guia mostra como fazer deploy completo da plataforma ClimateAI no DigitalOc
    - **Plan**: Basic ($24/mês - 2GB RAM, 2 vCPU) para produção inicial
    - **Datacenter**: São Paulo (SP) - menor latência para usuários brasileiros
 4. **Adicione** SSH Key (recomendado)
-5. **Nomeie** como `climateai-prod`
+5. **Nomeie** como `climatewise-prod`
 6. **Create Droplet**
 
 ## 🔐 Passo 2: Acesso Inicial
@@ -39,7 +39,7 @@ ssh -i ~/.ssh/your_key root@YOUR_DROPLET_IP
 
 ```bash
 # Baixe o script de deploy
-wget https://raw.githubusercontent.com/leanderdulac/ClimateAI/main/deploy/deploy_digitalocean.sh
+wget https://raw.githubusercontent.com/leanderdulac/ClimateWise/main/deploy/deploy_digitalocean.sh
 chmod +x deploy_digitalocean.sh
 
 # Configure variáveis de ambiente
@@ -66,8 +66,8 @@ sudo usermod -aG docker $USER
 # exit e reconnect
 
 # Clone o repositório
-git clone https://github.com/leanderdulac/ClimateAI.git
-cd ClimateAI
+git clone https://github.com/leanderdulac/ClimateWise.git
+cd ClimateWise
 
 # Configure ambiente
 cp .env.example .env
@@ -91,7 +91,7 @@ docker-compose -f docker-compose.prod.yml up -d --build
 
 ```bash
 # Configure Nginx para o domínio
-sudo nano /etc/nginx/sites-available/climateai
+sudo nano /etc/nginx/sites-available/climatewise
 
 # Adicione:
 server {
@@ -116,7 +116,7 @@ server {
 }
 
 # Habilite o site
-sudo ln -sf /etc/nginx/sites-available/climateai /etc/nginx/sites-enabled/
+sudo ln -sf /etc/nginx/sites-available/climatewise /etc/nginx/sites-enabled/
 sudo nginx -t
 sudo systemctl reload nginx
 
@@ -175,7 +175,7 @@ docker-compose -f docker-compose.prod.yml logs -f [service_name]
 docker-compose -f docker-compose.prod.yml restart [service_name]
 
 # Atualizar aplicação
-cd /opt/climateai
+cd /opt/climatewise
 git pull origin main
 docker-compose -f docker-compose.prod.yml up -d --build
 
@@ -256,4 +256,4 @@ Para problemas específicos:
 4. **Configure** auto-scaling quando crescer
 5. **Monitore** performance e custos
 
-**Sua ClimateAI está pronta para produção! 🚀**
+**Sua ClimateWise está pronta para produção! 🚀**

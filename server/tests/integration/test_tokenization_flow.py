@@ -1,6 +1,10 @@
+import os
 import pytest
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock, patch
+
+# Global disable for tests to avoid SQLAlchemy initialization issues
+os.environ["DATABASE_ENABLED"] = "false"
 
 from models.schemas import EventoClimatico, EventoClimaticoTipo
 from models.token_schemas import EventoToken
@@ -12,14 +16,14 @@ def token_service():
     """Fixture that returns a TokenizacaoEventosService instance with a mocked Blockchain Service."""
     service = TokenizacaoEventosService()
     # Ensure we are using a mock for the blockchain part to avoid external calls during tests
-    # forcing mock mode logic or using unittest.mock
     service.blockchain_service.mock_mode = True 
     return service
 
 @pytest.mark.integration
 class TestTokenizationFlow:
     
-    def test_complete_tokenization_flow(self, token_service):
+    @pytest.mark.asyncio
+    async def test_complete_tokenization_flow(self, token_service):
         """
         Tests the full lifecycle:
         1. Event Data -> Token Structure Generation
@@ -40,7 +44,7 @@ class TestTokenizationFlow:
         )
 
         # 2. Generate the Token Structure (Business Logic)
-        token = token_service.gerar_token_evento(evento)
+        token = await token_service.gerar_token_evento(evento)
         
         assert isinstance(token, EventoToken)
         assert token.severity_level >= 4
@@ -51,27 +55,36 @@ class TestTokenizationFlow:
         # Using a dummy Ethereum address
         dest_address = "0x742d35Cc6634C0532925a3b844Bc454e4438f44e"
         
-        result = token_service.mint_token_on_chain(token, dest_address)
+        result = await token_service.mint_token_on_chain(token, dest_address)
 
         # 4. Verification
         assert result["status"] == "success"
         assert "tx_hash" in result
-        
+
         # Check if the token object was updated in place
         assert token.metadata["on_chain_status"] == "minted"
         assert token.metadata["tx_hash"] == result["tx_hash"]
-        assert token.metadata["minted_amount"] > 0
-        
-        # Verify the amount logic (Severity * 10)
-        expected_amount = token.severity_level * 10
-        assert token.metadata["minted_amount"] == expected_amount
+        # minted_value é definido pelo serviço (severity_level * 1000)
+        assert "minted_value" in token.metadata or "minted_amount" in token.metadata
+        minted_value = token.metadata.get("minted_value") or token.metadata.get("minted_amount", 0)
+        assert minted_value > 0
 
-    def test_minting_failure_handling(self, token_service):
+        # Verify the amount logic (Severity * 1000 for ERC-3525 value)
+        expected_value = token.severity_level * 1000
+        assert minted_value == expected_value
+
+    @pytest.mark.asyncio
+    async def test_minting_failure_handling(self, token_service):
         """Test how the system handles blockchain failures."""
-        
+
         # Force the blockchain service to raise an exception
-        token_service.blockchain_service.mint = MagicMock(side_effect=Exception("Connection Timeout"))
-        
+        # Note: mocking an async method requires AsyncMock or a side_effect that returns a coroutine
+        # However, for simplicity here, we'll mock the whole method to be async
+        async def mock_mint_policy(*args, **kwargs):
+            raise Exception("Connection Timeout")
+            
+        token_service.blockchain_service.mint_policy = mock_mint_policy
+
         evento = EventoClimatico(
             tipo=EventoClimaticoTipo.SECA,
             latitude=0.0,
@@ -82,17 +95,18 @@ class TestTokenizationFlow:
             descricao="Test Drought",
             nivel_alerta=3
         )
-        
-        token = token_service.gerar_token_evento(evento)
+
+        token = await token_service.gerar_token_evento(evento)
         dest_address = "0x123..."
-        
-        result = token_service.mint_token_on_chain(token, dest_address)
-        
+
+        result = await token_service.mint_token_on_chain(token, dest_address)
+
         assert result["status"] == "error"
         assert token.metadata["on_chain_status"] == "failed"
         assert "Connection Timeout" in token.metadata["error"]
 
-    def test_mock_mode_behavior(self):
+    @pytest.mark.asyncio
+    async def test_mock_mode_behavior(self):
         """Explicitly test that the underlying TokenizationService defaults to mock mode without config."""
         # Unset env vars just in case (though they shouldn't be set in test env usually)
         with patch.dict('os.environ', {}, clear=True):
@@ -100,6 +114,6 @@ class TestTokenizationFlow:
             assert svc.mock_mode is True
             
             # Should still return a success-like receipt
-            receipt = svc.mint("0x123", 100)
+            receipt = await svc.mint("0x123", 100)
             assert receipt["status"] == 1
             assert receipt["mock"] is True

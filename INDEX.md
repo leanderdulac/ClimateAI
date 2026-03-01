@@ -1,4 +1,4 @@
-# 📚 Índice Mestre de Documentação - ClimateAI
+# 📚 Índice Mestre de Documentação - ClimateWise
 
 **Última atualização**: Fevereiro 2026  
 **Status**: ✅ 100% Funcional - Pronto para Produção
@@ -196,8 +196,8 @@ GROK_API_KEY=sua_chave
 ## 📞 SUPORTE
 
 ### Links Úteis
-- **GitHub**: https://github.com/leanderdulac/ClimateAI
-- **Issues**: https://github.com/leanderdulac/ClimateAI/issues
+- **GitHub**: https://github.com/leanderdulac/ClimateWise
+- **Issues**: https://github.com/leanderdulac/ClimateWise/issues
 - **API Docs**: http://localhost:8000/docs
 
 ### Contatos
@@ -210,8 +210,8 @@ GROK_API_KEY=sua_chave
 ### Primeira Instalação
 ```bash
 # 1. Clone
-git clone https://github.com/leanderdulac/ClimateAI.git
-cd ClimateAI
+git clone https://github.com/leanderdulac/ClimateWise.git
+cd ClimateWise
 
 # 2. Setup
 ./quick_start.sh
@@ -254,7 +254,7 @@ crontab scripts/backup-cron.txt
 ls -lh backups/
 
 # Restaurar
-./scripts/restore.sh backups/climateai_YYYYMMDD_HHMMSS.sql.gz
+./scripts/restore.sh backups/climatewise_YYYYMMDD_HHMMSS.sql.gz
 ```
 
 ---
@@ -262,7 +262,7 @@ ls -lh backups/
 ## 📊 ESTRUTURA DE DIRETÓRIOS
 
 ```
-ClimateAI/
+ClimateWise/
 ├── server/                 # Backend FastAPI
 │   ├── api/               # Endpoints (38 arquivos)
 │   ├── services/          # Serviços (40+ módulos)
@@ -313,4 +313,4 @@ ClimateAI/
 
 **Última atualização**: Fevereiro 2026  
 **Versão**: 1.0.0  
-**Manutenção**: ClimateAI Team
+**Manutenção**: ClimateWise Team

@@ -1,6 +1,6 @@
-# 🎭 Prompt Maestro: Ecossistema ClimateAI (RWA)
+# 🎭 Prompt Maestro: Ecossistema ClimateWise (RWA)
 
-Este documento apresenta o panorama técnico definitivo para o desenvolvimento da plataforma **ClimateAI**, uma infraestrutura de nível institucional para tokenização de índices climáticos (Real World Assets), potencializada pelo Google Cloud.
+Este documento apresenta o panorama técnico definitivo para o desenvolvimento da plataforma **ClimateWise**, uma infraestrutura de nível institucional para tokenização de índices climáticos (Real World Assets), potencializada pelo Google Cloud.
 
 ---
 
@@ -81,4 +81,4 @@ sequenceDiagram
 | **Custódia** | Vazamento de chaves privadas. | Uso exclusivo de **Cloud KMS HSM**. Nenhuma pessoa física possui acesso à chave; o acesso é via IAM roles de máquinas. |
 
 ---
-*Documento gerado pelo Maestro ClimateAI. Pronto para execução.*
+*Documento gerado pelo Maestro ClimateWise. Pronto para execução.*

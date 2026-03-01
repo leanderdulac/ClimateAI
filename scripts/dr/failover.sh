@@ -1,5 +1,5 @@
 #!/bin/bash
-# ClimateAI - Disaster Recovery Failover Script
+# ClimateWise - Disaster Recovery Failover Script
 # Uso: ./scripts/dr/failover.sh [--rollback]
 
 set -e
@@ -23,7 +23,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 echo "=========================================="
-echo "ClimateAI - DR Failover"
+echo "ClimateWise - DR Failover"
 echo "=========================================="
 echo "DR Region: ${DR_REGION}"
 echo "Primary Region: ${PRIMARY_REGION}"
@@ -60,7 +60,7 @@ send_notification() {
         curl -X POST "${SLACK_WEBHOOK_URL}" \
             -H 'Content-Type: application/json' \
             -d "{
-                \"text\": \"ClimateAI DR ${status}\",
+                \"text\": \"ClimateWise DR ${status}\",
                 \"attachments\": [{
                     \"color\": \"${status == 'SUCCESS' ? 'good' : 'danger'}\",
                     \"text\": \"${message}\"
@@ -84,7 +84,7 @@ if [ "${ROLLBACK}" = true ]; then
             "Changes": [{
                 "Action": "UPSERT",
                 "ResourceRecordSet": {
-                    "Name": "api.climateai.com",
+                    "Name": "api.climatewise.com",
                     "Type": "A",
                     "AliasTarget": {
                         "HostedZoneId": "Z123456",
@@ -98,7 +98,7 @@ if [ "${ROLLBACK}" = true ]; then
     # Scale down DR
     echo "[2/4] Scaling down DR environment..."
     aws ecs update-service \
-        --cluster climateai-dr \
+        --cluster climatewise-dr \
         --service backend \
         --desired-count 0 \
         --region "${DR_REGION}" 2>/dev/null || echo "ECS scale down skipped"
@@ -106,7 +106,7 @@ if [ "${ROLLBACK}" = true ]; then
     # Scale up primary
     echo "[3/4] Scaling up primary environment..."
     aws ecs update-service \
-        --cluster climateai-prod \
+        --cluster climatewise-prod \
         --service backend \
         --desired-count 3 \
         --region "${PRIMARY_REGION}" 2>/dev/null || echo "ECS scale up skipped"
@@ -114,8 +114,8 @@ if [ "${ROLLBACK}" = true ]; then
     # Re-establish replication
     echo "[4/4] Re-establishing database replication..."
     aws rds create-db-instance-read-replica \
-        --db-instance-identifier climateai-db-prod-dr \
-        --source-db-instance-identifier climateai-db-prod \
+        --db-instance-identifier climatewise-db-prod-dr \
+        --source-db-instance-identifier climatewise-db-prod \
         --source-region "${PRIMARY_REGION}" \
         --region "${DR_REGION}" 2>/dev/null || echo "DB replica creation skipped"
     
@@ -128,13 +128,13 @@ else
     # Promote DB replica
     echo "[1/5] Promoting database replica..."
     aws rds promote-read-replica \
-        --db-instance-identifier climateai-db-prod-dr \
+        --db-instance-identifier climatewise-db-prod-dr \
         --region "${DR_REGION}" || echo "DB promotion skipped"
     
     # Wait for DB
     echo "[2/5] Waiting for database to be available..."
     aws rds wait db-instance-available \
-        --db-instance-identifier climateai-db-prod-dr \
+        --db-instance-identifier climatewise-db-prod-dr \
         --region "${DR_REGION}" 2>/dev/null || echo "DB wait skipped"
     
     # Update DNS
@@ -145,7 +145,7 @@ else
             "Changes": [{
                 "Action": "UPSERT",
                 "ResourceRecordSet": {
-                    "Name": "api.climateai.com",
+                    "Name": "api.climatewise.com",
                     "Type": "A",
                     "AliasTarget": {
                         "HostedZoneId": "Z789012",
@@ -159,14 +159,14 @@ else
     # Scale DR application
     echo "[4/5] Scaling DR application..."
     aws ecs update-service \
-        --cluster climateai-dr \
+        --cluster climatewise-dr \
         --service backend \
         --desired-count 3 \
         --region "${DR_REGION}" 2>/dev/null || echo "ECS scale up skipped"
     
     # Health check
     echo "[5/5] Running health checks..."
-    if check_health "https://api-dr.climateai.com/health/full"; then
+    if check_health "https://api-dr.climatewise.com/health/full"; then
         send_notification "Failover completed successfully" "SUCCESS"
     else
         send_notification "Failover completed with warnings" "WARNING"

@@ -1,5 +1,5 @@
 #!/bin/bash
-# ClimateAI - Startup com Podman Nativo
+# ClimateWise - Startup com Podman Nativo
 # Alternativa quando docker-compose não funciona
 
 set -e
@@ -15,7 +15,7 @@ RED='\033[0;31m'
 NC='\033[0m'
 
 echo -e "${BLUE}========================================${NC}"
-echo -e "${BLUE}ClimateAI - Startup com Podman${NC}"
+echo -e "${BLUE}ClimateWise - Startup com Podman${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo ""
 
@@ -28,15 +28,15 @@ if [ -f ".env" ]; then
 else
     echo -e "${YELLOW}⚠ .env não encontrado, usando padrões${NC}"
     export DB_USER=postgres
-    export DB_PASSWORD=climateai123
-    export DB_NAME=climateai
+    export DB_PASSWORD=climatewise123
+    export DB_NAME=climatewise
     export SECRET_KEY=$(python3 -c "import secrets; print(secrets.token_urlsafe(32))")
     export OTEL_ENABLED=true
 fi
 
 # Criar rede
 echo -e "${BLUE}Criando rede...${NC}"
-podman network create climateai 2>/dev/null || echo "Rede já existe"
+podman network create climatewise 2>/dev/null || echo "Rede já existe"
 podman network create monitoring 2>/dev/null || echo "Rede já existe"
 
 # Criar volumes
@@ -52,25 +52,25 @@ echo -e "${BLUE}Iniciando serviços base...${NC}"
 # PostgreSQL
 echo -e "  ${GREEN}✓${NC} PostgreSQL"
 podman run -d \
-    --name climateai-db \
-    --network climateai \
+    --name climatewise-db \
+    --network climatewise \
     -e POSTGRES_USER=${DB_USER:-postgres} \
-    -e POSTGRES_PASSWORD=${DB_PASSWORD:-climateai123} \
-    -e POSTGRES_DB=${DB_NAME:-climateai} \
+    -e POSTGRES_PASSWORD=${DB_PASSWORD:-climatewise123} \
+    -e POSTGRES_DB=${DB_NAME:-climatewise} \
     -p 5432:5432 \
     -v postgres_data:/var/lib/postgresql/data \
     --restart unless-stopped \
-    postgres:16-alpine 2>/dev/null || podman restart climateai-db
+    postgres:16-alpine 2>/dev/null || podman restart climatewise-db
 
 # Redis
 echo -e "  ${GREEN}✓${NC} Redis"
 podman run -d \
-    --name climateai-redis \
-    --network climateai \
+    --name climatewise-redis \
+    --network climatewise \
     -p 6379:6379 \
     -v redis_data:/data \
     --restart unless-stopped \
-    redis:7-alpine 2>/dev/null || podman restart climateai-redis
+    redis:7-alpine 2>/dev/null || podman restart climatewise-redis
 
 # OTel Collector
 echo -e "  ${GREEN}✓${NC} OTel Collector"
@@ -165,8 +165,8 @@ echo "  # Ver logs"
 echo "  podman logs -f otel-collector"
 echo ""
 echo "  # Parar todos"
-echo "  podman stop climateai-db climateai-redis otel-collector jaeger prometheus grafana zipkin tempo"
+echo "  podman stop climatewise-db climatewise-redis otel-collector jaeger prometheus grafana zipkin tempo"
 echo ""
 echo "  # Remover todos"
-echo "  podman rm -f climateai-db climateai-redis otel-collector jaeger prometheus grafana zipkin tempo"
+echo "  podman rm -f climatewise-db climatewise-redis otel-collector jaeger prometheus grafana zipkin tempo"
 echo ""

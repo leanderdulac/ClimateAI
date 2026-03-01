@@ -1,4 +1,4 @@
-# ✅ Verificação de APIs - ClimateAI
+# ✅ Verificação de APIs - ClimateWise
 
 **Data**: Fevereiro 2026  
 **Status**: ✅ APIs Carregando Corretamente

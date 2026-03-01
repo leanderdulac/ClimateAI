@@ -1,8 +1,8 @@
-# ClimateAI Infrastructure as Code (IaC) - Terraform
+# ClimateWise Infrastructure as Code (IaC) - Terraform
 
 ## 📊 Visão Geral
 
-Este diretório contém a configuração Terraform para deploy da plataforma ClimateAI em múltiplos ambientes.
+Este diretório contém a configuração Terraform para deploy da plataforma ClimateWise em múltiplos ambientes.
 
 ## 🏗️ Estrutura
 
@@ -58,7 +58,7 @@ terraform destroy
 
 ```bash
 # Required
-export TF_VAR_project_name="climateai"
+export TF_VAR_project_name="climatewise"
 export TF_VAR_environment="dev"
 export TF_VAR_region="us-east-1"
 

@@ -290,7 +290,7 @@ async def get_gemini_capabilities():
     Get information about Gemini integration capabilities
     """
     return {
-        "service_name": "ClimateAI Gemini Integration",
+        "service_name": "ClimateWise Gemini Integration",
         "description": "Natural Language Processing integration with Google Gemini to complement specialized climate risk AI",
         "primary_use_cases": [
             "Summarize technical climate reports",
@@ -299,7 +299,7 @@ async def get_gemini_capabilities():
             "Analyze policy language for climate clauses",
             "Interpret climate data trends",
         ],
-        "integration_approach": "Complementary to specialized ClimateAI models",
+        "integration_approach": "Complementary to specialized ClimateWise models",
         "models_available": ["gemini-pro", "gemini-1.5-pro"],
         "confidentiality_note": "Use with care for sensitive data - data sent to external Gemini API",
         "api_key_required": bool(os.getenv("GEMINI_API_KEY")),

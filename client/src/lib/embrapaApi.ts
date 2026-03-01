@@ -131,9 +131,6 @@ class EmbrapaApiService {
           'accept-language': 'pt-BR,en'
         },
         timeout: 5000,
-        headers: {
-          'User-Agent': 'ClimateAI/1.0'
-        }
       });
       return response.data;
     } catch (error) {
@@ -155,7 +152,7 @@ class EmbrapaApiService {
         },
         timeout: 5000,
         headers: {
-          'User-Agent': 'ClimateAI/1.0'
+          'User-Agent': 'ClimateWise/1.0'
         }
       });
       return response.data;

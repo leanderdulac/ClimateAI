@@ -1,23 +1,23 @@
 groups:
-  - name: climateai_alerts
+  - name: climatewise_alerts
     rules:
       # Backend alerts
       - alert: BackendDown
-        expr: up{job="climateai-backend"} == 0
+        expr: up{job="climatewise-backend"} == 0
         for: 5m
         labels:
           severity: critical
         annotations:
-          summary: "ClimateAI Backend is down"
-          description: "ClimateAI Backend has been down for more than 5 minutes."
+          summary: "ClimateWise Backend is down"
+          description: "ClimateWise Backend has been down for more than 5 minutes."
 
       - alert: BackendHighErrorRate
-        expr: rate(http_requests_total{job="climateai-backend", status=~"5.."}[5m]) / rate(http_requests_total{job="climateai-backend"}[5m]) > 0.05
+        expr: rate(http_requests_total{job="climatewise-backend", status=~"5.."}[5m]) / rate(http_requests_total{job="climatewise-backend"}[5m]) > 0.05
         for: 5m
         labels:
           severity: warning
         annotations:
-          summary: "High error rate on ClimateAI Backend"
+          summary: "High error rate on ClimateWise Backend"
           description: "Error rate is {{ $value }}% which is above 5%."
 
       # Database alerts

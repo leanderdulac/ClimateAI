@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ============================================
-# Quick Start - ClimateAI
+# Quick Start - ClimateWise
 # ============================================
 # Inicialização rápida da plataforma
 # ============================================
@@ -16,7 +16,7 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "🚀 ClimateAI - Quick Start"
+echo "🚀 ClimateWise - Quick Start"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 

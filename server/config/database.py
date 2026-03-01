@@ -1,5 +1,5 @@
 """
-Configuração de Banco de Dados para ClimateAI
+Configuração de Banco de Dados para ClimateWise
 """
 
 import os
@@ -44,18 +44,30 @@ def _create_engine_and_session_maker(database_url: str):
 
         # Add support for pgbouncer (transaction mode pooler) which conflicts with asyncpg caching
         connect_args = {
-            "server_settings": {"jit": "off"},
-            "ssl": ssl_context
+            "ssl": ssl_context,
+            "statement_cache_size": 0,
+            "prepared_statement_cache_size": 0,
+            "server_settings": {
+                "prepared_statement_cache_size": "0"
+            }
         }
-        if "asyncpg" in database_url: # Check if asyncpg driver is implied by the URL
-            connect_args["prepared_statement_cache_size"] = 0
-            connect_args["statement_cache_size"] = 0
+
+        # Adiciona parâmetro para pgbouncer/asyncpg
+        if "asyncpg" in database_url:
+            separator = "&" if "?" in database_url else "?"
+            if "prepared_statement_cache_size" not in database_url:
+                database_url += f"{separator}prepared_statement_cache_size=0"
+            separator = "&"
+            if "statement_cache_size" not in database_url:
+                database_url += f"{separator}statement_cache_size=0"
+
 
         engine = create_async_engine(
             database_url,
-            echo=False,
-            pool_size=10,
-            max_overflow=20,
+            pool_pre_ping=True,
+            pool_recycle=3600,
+            pool_size=getattr(settings, "DB_POOL_SIZE", 10),
+            max_overflow=getattr(settings, "DB_MAX_OVERFLOW", 20),
             connect_args=connect_args,
         )
         async_session_maker = sessionmaker(
@@ -83,7 +95,12 @@ async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
     if engine is None or async_session_maker is None:
         # Em ambiente de teste, o DATABASE_URL é definido em conftest.py
         # Caso contrário, usamos o settings.DATABASE_URL já calculado (Supabase como primário)
+        # Se DATABASE_ENABLED for false, usamos sempre o sqlite local
+        database_enabled = os.getenv("DATABASE_ENABLED", "true").lower() == "true"
         current_db_url = os.getenv("DATABASE_URL", settings.DATABASE_URL)
+        if not database_enabled:
+            current_db_url = "sqlite+aiosqlite:///test.db"
+            
         if current_db_url and "?sslmode=require" in current_db_url:
             current_db_url = current_db_url.replace("?sslmode=require", "")
         _create_engine_and_session_maker(current_db_url)
@@ -102,7 +119,12 @@ async def init_db():
     """
     # Garante que o engine e o session_maker foram inicializados
     if engine is None or async_session_maker is None:
+        # Se DATABASE_ENABLED for false, usamos sempre o sqlite local
+        database_enabled = os.getenv("DATABASE_ENABLED", "true").lower() == "true"
         current_db_url = os.getenv("DATABASE_URL", settings.DATABASE_URL)
+        if not database_enabled:
+            current_db_url = "sqlite+aiosqlite:///local_dev.db"
+            
         if current_db_url and "?sslmode=require" in current_db_url:
             current_db_url = current_db_url.replace("?sslmode=require", "")
         _create_engine_and_session_maker(current_db_url)

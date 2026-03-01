@@ -96,7 +96,7 @@ test.describe('Authentication Flow', () => {
     await page.goto('/auth');
 
     // Use environment variables for credentials for security
-    const adminEmail = process.env.E2E_ADMIN_EMAIL || 'admin@climateai.com';
+    const adminEmail = process.env.E2E_ADMIN_EMAIL || 'admin@climatewise.com';
     const adminPassword = process.env.E2E_ADMIN_PASSWORD || 'admin123';
 
     // Fill in valid credentials

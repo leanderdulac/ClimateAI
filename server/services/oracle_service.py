@@ -80,7 +80,7 @@ class OracleService:
 
     # ─── Core Pipeline ─────────────────────────────────────────────────
 
-    async def evaluate_event(self, event: SeverityEvent) -> Dict[str, Any]:
+    async def evaluate_event(self, event: SeverityEvent, db: Any = None) -> Dict[str, Any]:
         """
         Evaluates a climate severity event and decides whether to trigger payout.
 
@@ -90,10 +90,15 @@ class OracleService:
         3. If severity >= threshold → trigger settlement
         4. Log to audit trail
         """
+        import uuid
+        from models.sqlalchemy_models import OracleEvent, BlockchainTransaction
+        
         logger.info(
             f"Oracle evaluating event: token={event.token_id} "
             f"severity={event.severity_score} at ({event.latitude:.4f}, {event.longitude:.4f})"
         )
+
+        event_uuid = f"evt_or_{uuid.uuid4().hex[:12]}"
 
         result = {
             "token_id": event.token_id,
@@ -124,14 +129,48 @@ class OracleService:
             result["decision"] = "NO_ACTION"
             result["reason"] = f"Severity {event.severity_score} < threshold {self.SEVERITY_THRESHOLD}"
 
+        if db:
+            db_event = OracleEvent(
+                event_id=event_uuid,
+                token_id=str(event.token_id),
+                latitude=event.latitude,
+                longitude=event.longitude,
+                disaster_type=event.source,
+                severity_score=event.severity_score,
+                ndvi=event.ndvi,
+                soil_moisture=event.soil_moisture,
+                payout_triggered=(result.get("decision") == "TRIGGER_PAYOUT"),
+                payout_percentage=result.get("payout_percentage", 0.0),
+                blockchain_tx_id=result.get("tx_hash"),
+                status="TRIGGERED" if result.get("decision") == "TRIGGER_PAYOUT" else "EVALUATED"
+            )
+            db.add(db_event)
+            
+            if result.get("tx_hash") and result.get("decision") == "TRIGGER_PAYOUT":
+                db_tx = BlockchainTransaction(
+                    tx_hash=result["tx_hash"],
+                    token_uid=str(event.token_id),
+                    from_address="oracle",
+                    to_address="policy_holder",
+                    amount=result.get("payout_bps", 0) / 10000.0,
+                    status="PENDING" if result.get("execution") == "simulated" else "CONFIRMED"
+                )
+                db.add(db_tx)
+                
+            try:
+                await db.commit()
+            except Exception as e:
+                await db.rollback()
+                logger.error(f"Failed to persist Oracle Event to DB: {e}")
+
         self.processed_events.append(result)
         return result
 
-    async def evaluate_batch(self, events: List[SeverityEvent]) -> List[Dict[str, Any]]:
+    async def evaluate_batch(self, events: List[SeverityEvent], db: Any = None) -> List[Dict[str, Any]]:
         """Evaluate multiple events (e.g. from a scheduled scan)."""
         results = []
         for event in events:
-            r = await self.evaluate_event(event)
+            r = await self.evaluate_event(event, db=db)
             results.append(r)
         return results
 

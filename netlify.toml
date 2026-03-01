@@ -26,7 +26,7 @@
 # API proxy to backend service
 [[redirects]]
   from = "/api/*"
-  to = "https://climateai-backend-f7a8.onrender.com/api/:splat"
+  to = "https://climatewise-backend-f7a8.onrender.com/api/:splat"
   status = 200
   force = true
 

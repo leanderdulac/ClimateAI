@@ -1,8 +1,8 @@
-# Documentação Técnica do ClimateAI
+# Documentação Técnica do ClimateWise
 
 ## Visão Geral
 
-ClimateAI é uma plataforma full-stack para análise e previsão de dados climáticos, utilizando inteligência artificial e machine learning para fornecer insights e modelos preditivos avançados.
+ClimateWise é uma plataforma full-stack para análise e previsão de dados climáticos, utilizando inteligência artificial e machine learning para fornecer insights e modelos preditivos avançados.
 
 ## Arquitetura
 

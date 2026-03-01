@@ -1,5 +1,5 @@
 """
-Router for ClimateAI Performance Testing Service
+Router for ClimateWise Performance Testing Service
 Implements:
 - Climate backtesting against historical events
 - Stress testing with 200% CMIP6 + Black Swan scenarios

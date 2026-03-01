@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# ClimateAI - Deploy Script for DigitalOcean
-# This script automates the deployment of ClimateAI to DigitalOcean Droplet
+# ClimateWise - Deploy Script for DigitalOcean
+# This script automates the deployment of ClimateWise to DigitalOcean Droplet
 
 set -euo pipefail
 
@@ -13,7 +13,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-APP_NAME="climateai"
+APP_NAME="climatewise"
 DOMAIN="${DOMAIN:-your-domain.com}"
 EMAIL="${EMAIL:-admin@your-domain.com}"
 DB_PASSWORD="${DB_PASSWORD:-CHANGE_THIS_STRONG_PASSWORD}"
@@ -41,7 +41,7 @@ if [[ $EUID -eq 0 ]]; then
     exit 1
 fi
 
-print_status "🚀 Starting ClimateAI DigitalOcean Deployment..."
+print_status "🚀 Starting ClimateWise DigitalOcean Deployment..."
 print_status "Domain: $DOMAIN"
 print_status "Email: $EMAIL"
 
@@ -93,10 +93,10 @@ sudo mkdir -p /opt/$APP_NAME
 sudo chown -R $USER:$USER /opt/$APP_NAME
 
 # Clone repository
-print_step "6. Cloning ClimateAI repository..."
+print_step "6. Cloning ClimateWise repository..."
 cd /opt/$APP_NAME
 if [ ! -d ".git" ]; then
-    git clone https://github.com/leanderdulac/ClimateAI.git .
+    git clone https://github.com/leanderdulac/ClimateWise.git .
 else
     print_warning "Repository already exists, pulling latest changes..."
     git pull origin main
@@ -123,7 +123,7 @@ print_warning "Please update the .env file with your actual API keys and secrets
 
 # Create Docker environment file for production
 cat > server/.env << EOF
-DATABASE_URL=postgresql+asyncpg://climateai_user:$DB_PASSWORD@db:5432/climateai
+DATABASE_URL=postgresql+asyncpg://climatewise_user:$DB_PASSWORD@db:5432/climatewise
 REDIS_URL=redis://redis:6379
 SECRET_KEY=$(openssl rand -hex 32)
 DEBUG=False
@@ -143,7 +143,7 @@ sudo chown -R 472:472 monitoring/grafana/data
 sudo chown -R 65534:65534 monitoring/prometheus/data
 
 # Start the application
-print_step "9. Starting ClimateAI application..."
+print_step "9. Starting ClimateWise application..."
 docker-compose -f docker-compose.prod.yml up -d --build
 
 # Wait for services to be ready
@@ -212,14 +212,14 @@ print_step "15. Setting up automated backup..."
 sudo mkdir -p /opt/backup
 sudo tee /opt/backup/backup.sh > /dev/null <<EOF
 #!/bin/bash
-# ClimateAI Database Backup Script
+# ClimateWise Database Backup Script
 
 BACKUP_DIR="/opt/backup"
 DATE=\$(date +%Y%m%d_%H%M%S)
-BACKUP_FILE="\$BACKUP_DIR/climateai_backup_\$DATE.sql"
+BACKUP_FILE="\$BACKUP_DIR/climatewise_backup_\$DATE.sql"
 
 # Create backup
-docker exec climateai-db-1 pg_dump -U climateai_user -h localhost climateai > \$BACKUP_FILE
+docker exec climatewise-db-1 pg_dump -U climatewise_user -h localhost climatewise > \$BACKUP_FILE
 
 # Compress backup
 gzip \$BACKUP_FILE
@@ -239,7 +239,7 @@ print_status "✅ Automated daily backup configured!"
 
 # Final status
 print_status ""
-print_status "🎉 ClimateAI deployment completed successfully!"
+print_status "🎉 ClimateWise deployment completed successfully!"
 print_status ""
 print_status "📊 Service Status:"
 docker-compose -f docker-compose.prod.yml ps
@@ -275,4 +275,4 @@ print_warning "4. Test the application thoroughly before going live"
 print_warning "5. Monitor logs and resources regularly"
 
 print_status ""
-print_status "🚀 Deployment completed! Your ClimateAI is ready for production."
+print_status "🚀 Deployment completed! Your ClimateWise is ready for production."

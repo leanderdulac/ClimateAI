@@ -10,8 +10,31 @@ import logging
 from services.extreme_value_pricing_service import DefensivePricingOrchestrator
 from services.openmeteo_service import OpenMeteoService
 from services.noaa_service import NOAAService
+from services.sgb_service import GeologicalRiskAdjuster
+from services.celestrak_service import CelesTrakService
+from services.news_crawler_service import NewsCrawlerService
+from services.sgb_service import GeologicalRiskAdjuster
 
 logger = logging.getLogger(__name__)
+
+# Instância global para ajustes geológicos
+try:
+    sgb_adjuster = GeologicalRiskAdjuster()
+except Exception as e:
+    logger.warning(f"Failed to initialize GeologicalRiskAdjuster: {e}")
+    sgb_adjuster = None
+
+try:
+    celestrak_service = CelesTrakService()
+except Exception as e:
+    logger.warning(f"Failed to initialize CelesTrakService: {e}")
+    celestrak_service = None
+
+try:
+    news_crawler = NewsCrawlerService()
+except Exception as e:
+    logger.warning(f"Failed to initialize NewsCrawlerService: {e}")
+    news_crawler = None
 
 # This entire file is created based on the user-provided Python script,
 # adapted for a FastAPI router.
@@ -80,8 +103,8 @@ class PricingResult(BaseModel):
     rejection_reason: Optional[str]
     financials: FinancialBreakdown
     fractal_metrics: Optional[FractalMetrics] = None
+    risk_factors: Optional[dict] = None
     decision_flow: str
-
 
 # --- MOTOR DE PRECIFICAÇÃO (SERVICE) ---
 
@@ -132,6 +155,67 @@ class ClimatePricingService:
         extra_flow_loading = pure_premium * flow_loading_factor
 
         total_premium = pure_premium + base_loadings + risk_margin + extra_flow_loading
+        
+        geo_status = ""
+        space_status = ""
+        news_status = ""
+        
+        risk_factors = {
+            "base_multiplier": 1.0,
+            "geo_risk": 1.0,
+            "space_weather": 1.0,
+            "news_alerts": 1.0
+        }
+
+        if sgb_adjuster and request.latitude and request.longitude:
+            try:
+                # Capture the original before modification to derive multiplier
+                original_premium = total_premium
+                adj = sgb_adjuster.adjust_premium(total_premium, request.latitude, request.longitude)
+                total_premium = adj["adjusted_premium"]
+                risk_factors["geo_risk"] = total_premium / original_premium if original_premium > 0 else 1.0
+                geo_status = f" (Risco Geo: {adj['risk_classification']})"
+            except Exception as e:
+                logger.warning(f"Error applying geological risk: {e}")
+
+        # Celestrak Space Weather Adjustment
+        if celestrak_service:
+            try:
+                sw = celestrak_service.get_space_weather()
+                if sw:
+                    if sw.kp_index >= 8:
+                        # Extreme geomagnetic storm
+                        total_premium *= 1.30
+                        risk_factors["space_weather"] = 1.30
+                        space_status = " (Space Weather: EXTREMO G" + str(int(sw.kp_index - 4)) + ")"
+                    elif sw.kp_index >= 6:
+                        # High geomagnetic storm, affects climate predictability and electronics.
+                        total_premium *= 1.15
+                        risk_factors["space_weather"] = 1.15
+                        space_status = " (Space Weather: ALERTA G" + str(int(sw.kp_index - 4)) + ")"
+                    elif sw.kp_index >= 5:
+                        # Minor storm
+                        total_premium *= 1.05
+                        risk_factors["space_weather"] = 1.05
+                        space_status = " (Space Weather: Atenção G" + str(int(sw.kp_index - 4)) + ")"
+            except Exception as e:
+                logger.warning(f"Error applying space weather risk: {e}")
+
+        # News Crawler Sentiment / Event Match Adjustment
+        if news_crawler:
+            try:
+                alerts = news_crawler.get_recent_alerts(limit=10)
+                critical_count = sum(1 for a in alerts if a.get('severity') == 'critica')
+                high_count = sum(1 for a in alerts if a.get('severity') == 'alta')
+                
+                # Apply 5% for critical and 2% for high, cap at 25% max multiplier increase
+                multiplier_increase = min(0.25, (critical_count * 0.05) + (high_count * 0.02))
+                if multiplier_increase > 0:
+                    total_premium *= (1.0 + multiplier_increase)
+                    risk_factors["news_alerts"] = 1.0 + multiplier_increase
+                    news_status = f" (News Alert: +{multiplier_increase*100:.0f}% risk, {critical_count}C {high_count}H)"
+            except Exception as e:
+                logger.warning(f"Error applying news crawler risk: {e}")
 
         cost_sub = (
             PricingConstants.COST_SUBSCRIPTION_MANUAL
@@ -178,12 +262,14 @@ class ClimatePricingService:
             )
 
         status = "REVIEW" if flow == DecisionFlow.ORANGE else "APPROVED"
+        status += geo_status + space_status + news_status
 
         return PricingResult(
             is_approved=True,
             status=status,
             rejection_reason=None,
             financials=financials,
+            risk_factors=risk_factors,
             decision_flow=flow.value,
         )
 
@@ -259,6 +345,61 @@ async def _calculate_evt_pricing(request: PolicyRequest) -> Optional[PricingResu
             * min(request.severity_amount, request.asset_value)
             * request.coverage_period_years
         )
+        
+        geo_status = ""
+        space_status = ""
+        news_status = ""
+        
+        risk_factors = {
+            "base_multiplier": 1.0,
+            "geo_risk": 1.0,
+            "space_weather": 1.0,
+            "news_alerts": 1.0
+        }
+
+        if sgb_adjuster and request.latitude and request.longitude:
+            try:
+                original_premium = final_price
+                adj = sgb_adjuster.adjust_premium(final_price, request.latitude, request.longitude)
+                final_price = adj["adjusted_premium"]
+                risk_factors["geo_risk"] = final_price / original_premium if original_premium > 0 else 1.0
+                geo_status = f" (Risco Geo: {adj['risk_classification']})"
+            except Exception as e:
+                logger.warning(f"Error applying geological risk: {e}")
+
+        if celestrak_service:
+            try:
+                sw = celestrak_service.get_space_weather()
+                if sw:
+                    if sw.kp_index >= 8: # Extreme storm
+                        final_price *= 1.30
+                        risk_factors["space_weather"] = 1.30
+                        space_status = " (Space Weather: EXTREMO G" + str(int(sw.kp_index - 4)) + ")"
+                    elif sw.kp_index >= 6: # Strong storm
+                        final_price *= 1.15
+                        risk_factors["space_weather"] = 1.15
+                        space_status = " (Space Weather: ALERTA G" + str(int(sw.kp_index - 4)) + ")"
+                    elif sw.kp_index >= 5: # Minor storm
+                        final_price *= 1.05
+                        risk_factors["space_weather"] = 1.05
+                        space_status = " (Space Weather: Atenção G" + str(int(sw.kp_index - 4)) + ")"
+            except Exception as e:
+                logger.warning(f"Error applying space weather risk: {e}")
+
+        if news_crawler:
+            try:
+                alerts = news_crawler.get_recent_alerts(limit=10)
+                critical_count = sum(1 for a in alerts if a.get('severity') == 'critica')
+                high_count = sum(1 for a in alerts if a.get('severity') == 'alta')
+                
+                # Apply 5% for critical and 2% for high, cap at +25% max multiplier
+                multiplier_increase = min(0.25, (critical_count * 0.05) + (high_count * 0.02))
+                if multiplier_increase > 0:
+                    final_price *= (1.0 + multiplier_increase)
+                    risk_factors["news_alerts"] = 1.0 + multiplier_increase
+                    news_status = f" (News Alert: +{multiplier_increase*100:.0f}% risk, {critical_count}C {high_count}H)"
+            except Exception as e:
+                logger.warning(f"Error applying news crawler risk: {e}")
 
         total_loading = max(0, final_price - pure_premium_base)
         risk_padding = total_loading * 0.4
@@ -301,6 +442,7 @@ async def _calculate_evt_pricing(request: PolicyRequest) -> Optional[PricingResu
             )
 
         status = "APPROVED" if net_profit > 0 else "REVIEW"
+        status += geo_status + space_status + news_status
 
         return PricingResult(
             is_approved=True,
@@ -310,6 +452,7 @@ async def _calculate_evt_pricing(request: PolicyRequest) -> Optional[PricingResu
             else "Lucratividade Marginal em Stress Climático",
             financials=financials,
             fractal_metrics=fractal_metrics,
+            risk_factors=risk_factors,
             decision_flow="EVT_FRACTAL_MODEL",
         )
     except Exception as e:

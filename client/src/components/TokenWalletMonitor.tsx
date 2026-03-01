@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useEffect } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import {
   Wallet,
   TrendingUp,
@@ -23,7 +24,8 @@ import {
 } from "lucide-react";
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8000/api/v1/blockchain';
+const apiHost = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+const API_BASE_URL = `${apiHost.replace(/\/$/, '')}/api/v1/blockchain`;
 
 interface TokenBalance {
   tokenUid: string;
@@ -59,7 +61,9 @@ interface WalletStats {
 }
 
 export function TokenWalletMonitor() {
-  const [walletAddress] = useState('climateai_wallet_001');
+  const { t, language } = useTranslation();
+  const [walletAddress] = useState('climatewise_wallet_001');
+  const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<WalletStats>({
     totalTokens: 0,
     totalValue: 0,
@@ -105,7 +109,7 @@ export function TokenWalletMonitor() {
 
     } catch (error) {
       console.error('Erro ao carregar dados da carteira:', error);
-      setError('Erro ao carregar dados da carteira. Verifique se o servidor está rodando.');
+      setError(t('tokenization.wallet.errors.load'));
     } finally {
       setLoading(false);
     }
@@ -130,14 +134,16 @@ export function TokenWalletMonitor() {
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
+    return new Intl.NumberFormat(language || 'pt-BR', {
       style: 'currency',
-      currency: 'BRL'
+      currency: language === 'pt-BR' ? 'BRL' :
+        language === 'en-US' ? 'USD' :
+          language === 'es-419' ? 'USD' : 'CNY'
     }).format(value);
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR', {
+    return new Date(dateString).toLocaleDateString(language || 'pt-BR', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
@@ -161,19 +167,19 @@ export function TokenWalletMonitor() {
             </div>
             <div>
               <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">
-                Climate Token Exchange
+                {t('tokenization.wallet.title')}
               </h1>
-              <p className="text-blue-200 mt-1">Dashboard profissional de tokens climáticos</p>
+              <p className="text-blue-200 mt-1">{t('tokenization.wallet.subtitle')}</p>
               <div className="flex items-center gap-2 mt-2">
                 <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                <span className="text-sm text-green-400">Conectado à Blockchain ClimateAI</span>
+                <span className="text-sm text-green-400">{t('tokenization.wallet.connected')}</span>
               </div>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
             <div className="text-right">
-              <p className="text-sm text-blue-200">Carteira</p>
+              <p className="text-sm text-blue-200">{t('tokenization.wallet.label')}</p>
               <p className="text-lg font-semibold">{walletAddress.slice(0, 12)}...{walletAddress.slice(-8)}</p>
             </div>
             <Button
@@ -182,7 +188,7 @@ export function TokenWalletMonitor() {
               className="bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-sm"
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-              Atualizar
+              {t('tokenization.wallet.update')}
             </Button>
           </div>
         </div>
@@ -195,9 +201,9 @@ export function TokenWalletMonitor() {
           <CardContent className="p-6 relative">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-blue-100 text-sm font-medium">Total de Tokens</p>
+                <p className="text-blue-100 text-sm font-medium">{t('tokenization.wallet.stats.totalTokens')}</p>
                 <p className="text-3xl font-bold mt-1">{stats.totalTokens}</p>
-                <p className="text-blue-200 text-xs mt-1">Tokens ativos na carteira</p>
+                <p className="text-blue-200 text-xs mt-1">{t('tokenization.wallet.stats.totalTokensDesc')}</p>
               </div>
               <div className="p-3 bg-white/20 rounded-xl">
                 <Package className="h-6 w-6" />
@@ -211,11 +217,11 @@ export function TokenWalletMonitor() {
           <CardContent className="p-6 relative">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-emerald-100 text-sm font-medium">Valor Total</p>
+                <p className="text-emerald-100 text-sm font-medium">{t('tokenization.wallet.stats.totalValue')}</p>
                 <p className="text-3xl font-bold mt-1">{formatCurrency(stats.totalValue)}</p>
                 <div className="flex items-center mt-1">
                   <TrendingUp className="h-3 w-3 text-emerald-200 mr-1" />
-                  <span className="text-emerald-200 text-xs">+{stats.portfolioChange24h}% 24h</span>
+                  <span className="text-emerald-200 text-xs">+{stats.portfolioChange24h}% {t('tokenization.wallet.stats.totalValueDesc')}</span>
                 </div>
               </div>
               <div className="p-3 bg-white/20 rounded-xl">
@@ -230,9 +236,9 @@ export function TokenWalletMonitor() {
           <CardContent className="p-6 relative">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-purple-100 text-sm font-medium">Transações</p>
+                <p className="text-purple-100 text-sm font-medium">{t('tokenization.wallet.stats.transactions')}</p>
                 <p className="text-3xl font-bold mt-1">{stats.totalTransactions}</p>
-                <p className="text-purple-200 text-xs mt-1">Total realizadas</p>
+                <p className="text-purple-200 text-xs mt-1">{t('tokenization.wallet.stats.transactionsDesc')}</p>
               </div>
               <div className="p-3 bg-white/20 rounded-xl">
                 <Activity className="h-6 w-6" />
@@ -246,9 +252,9 @@ export function TokenWalletMonitor() {
           <CardContent className="p-6 relative">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-orange-100 text-sm font-medium">Tokens Ativos</p>
+                <p className="text-orange-100 text-sm font-medium">{t('tokenization.wallet.stats.activeTokens')}</p>
                 <p className="text-3xl font-bold mt-1">{stats.activeTokens}</p>
-                <p className="text-orange-200 text-xs mt-1">Com saldo positivo</p>
+                <p className="text-orange-200 text-xs mt-1">{t('tokenization.wallet.stats.activeTokensDesc')}</p>
               </div>
               <div className="p-3 bg-white/20 rounded-xl">
                 <BarChart3 className="h-6 w-6" />
@@ -263,15 +269,15 @@ export function TokenWalletMonitor() {
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="portfolio" className="flex items-center gap-2">
             <PieChart className="h-4 w-4" />
-            Portfólio
+            {t('tokenization.wallet.tabs.portfolio')}
           </TabsTrigger>
           <TabsTrigger value="transactions" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
-            Transações
+            {t('tokenization.wallet.tabs.transactions')}
           </TabsTrigger>
           <TabsTrigger value="analytics" className="flex items-center gap-2">
             <TrendingUp className="h-4 w-4" />
-            Analytics
+            {t('tokenization.wallet.tabs.analytics')}
           </TabsTrigger>
         </TabsList>
 
@@ -281,10 +287,10 @@ export function TokenWalletMonitor() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Package className="h-5 w-5" />
-                Tokens Climáticos
+                {t('tokenization.wallet.portfolio.title')}
               </CardTitle>
               <CardDescription>
-                Seus tokens representando eventos climáticos tokenizados
+                {t('tokenization.wallet.portfolio.desc')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -302,10 +308,10 @@ export function TokenWalletMonitor() {
                             <p className="text-gray-600 text-sm mb-2">{token.name}</p>
                             <div className="flex items-center gap-2">
                               <Badge className={`${getEventTypeColor(token.eventType)} text-white border-0`}>
-                                {token.eventType.toUpperCase()}
+                                {t(`pricing.events.${token.eventType.toLowerCase()}`) || token.eventType.toUpperCase()}
                               </Badge>
                               <Badge variant="outline" className={getSeverityColor(token.severity)}>
-                                Nível {token.severity}
+                                {t('tokenization.eventTypes.severity')} {token.severity}
                               </Badge>
                             </div>
                           </div>
@@ -324,30 +330,30 @@ export function TokenWalletMonitor() {
 
                       <div className="grid grid-cols-2 gap-4 mb-4">
                         <div className="bg-blue-50 rounded-lg p-3">
-                          <p className="text-xs text-blue-600 font-medium">Saldo</p>
-                          <p className="text-lg font-bold text-blue-800">{token.balance.toLocaleString()}</p>
-                          <p className="text-xs text-blue-600">tokens</p>
+                          <p className="text-xs text-blue-600 font-medium">{t('tokenization.wallet.portfolio.balance')}</p>
+                          <p className="text-lg font-bold text-blue-800">{token.balance.toLocaleString(language)}</p>
+                          <p className="text-xs text-blue-600">{t('tokenization.wallet.portfolio.tokens')}</p>
                         </div>
                         <div className="bg-green-50 rounded-lg p-3">
-                          <p className="text-xs text-green-600 font-medium">Valor</p>
+                          <p className="text-xs text-green-600 font-medium">{t('tokenization.wallet.portfolio.value')}</p>
                           <p className="text-lg font-bold text-green-800">{formatCurrency(token.value)}</p>
-                          <p className="text-xs text-green-600">estimado</p>
+                          <p className="text-xs text-green-600">{t('tokenization.wallet.portfolio.estimated')}</p>
                         </div>
                       </div>
 
                       <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
                         <span>📍 {token.location}</span>
-                        <span>📅 {new Date(token.createdAt).toLocaleDateString('pt-BR')}</span>
+                        <span>📅 {new Date(token.createdAt).toLocaleDateString(language || 'pt-BR')}</span>
                       </div>
 
                       <div className="flex gap-2">
                         <Button variant="outline" size="sm" className="flex-1 hover:bg-blue-50">
                           <Eye className="h-4 w-4 mr-2" />
-                          Detalhes
+                          {t('tokenization.wallet.portfolio.details')}
                         </Button>
                         <Button variant="outline" size="sm" className="flex-1 hover:bg-purple-50">
                           <Send className="h-4 w-4 mr-2" />
-                          Transferir
+                          {t('tokenization.wallet.portfolio.transfer')}
                         </Button>
                         <Button variant="outline" size="sm" className="hover:bg-green-50">
                           <Download className="h-4 w-4" />
@@ -367,10 +373,10 @@ export function TokenWalletMonitor() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Activity className="h-5 w-5" />
-                Histórico de Transações
+                {t('tokenization.wallet.transactions.title')}
               </CardTitle>
               <CardDescription>
-                Todas as transações realizadas com seus tokens climáticos
+                {t('tokenization.wallet.transactions.desc')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -381,8 +387,8 @@ export function TokenWalletMonitor() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                           <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl shadow-lg ${tx.type === 'mint' ? 'bg-gradient-to-br from-green-400 to-green-600 text-white' :
-                              tx.type === 'transfer' ? 'bg-gradient-to-br from-blue-400 to-blue-600 text-white' :
-                                'bg-gradient-to-br from-red-400 to-red-600 text-white'
+                            tx.type === 'transfer' ? 'bg-gradient-to-br from-blue-400 to-blue-600 text-white' :
+                              'bg-gradient-to-br from-red-400 to-red-600 text-white'
                             }`}>
                             {tx.type === 'mint' ? '🪙' : tx.type === 'transfer' ? '↗️' : '🔥'}
                           </div>
@@ -400,12 +406,12 @@ export function TokenWalletMonitor() {
 
                         <div className="text-right">
                           <div className="flex items-center gap-2 mb-2">
-                            <span className="text-2xl font-bold text-gray-800">{tx.amount.toLocaleString()}</span>
-                            <span className="text-gray-600">tokens</span>
+                            <span className="text-2xl font-bold text-gray-800">{tx.amount.toLocaleString(language)}</span>
+                            <span className="text-gray-600">{t('tokenization.wallet.transactions.tokens')}</span>
                           </div>
                           <p className="text-sm text-gray-600">{formatCurrency(tx.value)}</p>
                           <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
-                            <span>{tx.from === 'system' ? 'Sistema' : `${tx.from.slice(0, 6)}...${tx.from.slice(-4)}`}</span>
+                            <span>{tx.from === 'system' ? t('lp.footer.platform') : `${tx.from.slice(0, 6)}...${tx.from.slice(-4)}`}</span>
                             <span>→</span>
                             <span>{`${tx.to.slice(0, 6)}...${tx.to.slice(-4)}`}</span>
                           </div>
@@ -426,7 +432,7 @@ export function TokenWalletMonitor() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <PieChart className="h-5 w-5" />
-                  Distribuição por Tipo
+                  {t('tokenization.wallet.analytics.distribution')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -438,11 +444,13 @@ export function TokenWalletMonitor() {
                       <div key={type} className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-white rounded-lg border">
                         <div className="flex items-center gap-3">
                           <div className={`w-4 h-4 rounded-full ${getEventTypeColor(type)}`} />
-                          <span className="capitalize font-medium text-gray-800">{type}</span>
+                          <span className="capitalize font-medium text-gray-800">
+                            {t(`pricing.events.${type.toLowerCase()}`) || type}
+                          </span>
                         </div>
                         <div className="flex items-center gap-3">
                           <Progress value={percentage} className="w-24" />
-                          <span className="text-sm font-bold text-gray-700">{count} tokens</span>
+                          <span className="text-sm font-bold text-gray-700">{count} {t('tokenization.wallet.transactions.tokens')}</span>
                         </div>
                       </div>
                     );
@@ -455,7 +463,7 @@ export function TokenWalletMonitor() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BarChart3 className="h-5 w-5" />
-                  Performance por Token
+                  {t('tokenization.wallet.analytics.performance')}
                 </CardTitle>
               </CardHeader>
               <CardContent>

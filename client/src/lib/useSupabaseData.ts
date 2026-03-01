@@ -1,5 +1,5 @@
 /**
- * Supabase Data Hooks for ClimateAI
+ * Supabase Data Hooks for ClimateWise
  * Provides React hooks for CRUD operations on all database tables
  */
 

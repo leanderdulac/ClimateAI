@@ -1,5 +1,5 @@
 """
-Supabase Client Configuration for ClimateAI
+Supabase Client Configuration for ClimateWise
 Provides database and authentication integration with Supabase.
 """
 

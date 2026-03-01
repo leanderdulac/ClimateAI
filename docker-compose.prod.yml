@@ -10,7 +10,7 @@ services:
     env_file:
       - ./server/.env
     environment:
-      - DATABASE_URL=postgresql+asyncpg://climateai_user:${DB_PASSWORD}@db:5432/climateai
+      - DATABASE_URL=postgresql+asyncpg://climatewise_user:${DB_PASSWORD}@db:5432/climatewise
       - REDIS_URL=redis://redis:6379
     depends_on:
       - db
@@ -35,15 +35,15 @@ services:
   db:
     image: postgres:15
     environment:
-      POSTGRES_USER: climateai_user
+      POSTGRES_USER: climatewise_user
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: climateai
+      POSTGRES_DB: climatewise
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./deploy/init.sql:/docker-entrypoint-initdb.d/init.sql
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U climateai_user -d climateai"]
+      test: ["CMD-SHELL", "pg_isready -U climatewise_user -d climatewise"]
       interval: 30s
       timeout: 10s
       retries: 3

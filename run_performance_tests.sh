@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# ClimateAI Performance Testing Script
+# ClimateWise Performance Testing Script
 
 set -e
 
-echo "🏃 Starting ClimateAI Performance Tests..."
+echo "🏃 Starting ClimateWise Performance Tests..."
 
 # Check if Locust is installed
 if ! command -v locust &> /dev/null; then
