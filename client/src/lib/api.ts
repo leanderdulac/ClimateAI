@@ -11,12 +11,19 @@ export function buildApiUrl(path: string): string {
         return `/mock${path}`;
     }
 
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
-    // Ensure proper path joining: if baseUrl is empty, return just the path
-    // If baseUrl is provided, ensure it ends with a slash and then append the path
-    // Ensure baseUrl ends with a slash and path doesn't start with a slash
-    const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
-    const normalizedPath = path.startsWith('/') ? path.substring(1) : path;
+    // In production (DO), VITE_API_BASE_URL is empty so paths stay relative
+    // (e.g. /api/v1/auth/login) and route through the ingress.
+    // In dev, it can be set to http://127.0.0.1:8000 for direct backend access.
+    const baseUrl = (import.meta.env.VITE_API_BASE_URL || '').trim();
+
+    if (!baseUrl) {
+        // Relative URL: just return the path as-is
+        return path.startsWith('/') ? path : `/${path}`;
+    }
+
+    // Ensure proper path joining
+    const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
     return `${normalizedBaseUrl}${normalizedPath}`;
 }
 

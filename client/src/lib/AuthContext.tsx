@@ -5,6 +5,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase, isSupabaseConfigured, getSupabaseClient } from './supabase';
+import { buildApiUrl } from './api';
 import type { User as SupabaseUser, Session } from '@supabase/supabase-js';
 
 // User type for the app
@@ -89,8 +90,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
   };
 
-  // Get status of API (development/production)
-  const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
+  // buildApiUrl handles both production (relative URLs) and development (localhost)
 
   // Initialize auth state
   useEffect(() => {
@@ -158,8 +158,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setSuccess(null);
     try {
       // Tentar login via backend local primeiro (bypass do Supabase)
-      const apiUrl = import.meta.env.VITE_API_BASE_URL || '';
-      const endpoint = apiUrl ? (apiUrl.endsWith('/api/v1') ? `${apiUrl}/auth/login` : `${apiUrl}/api/v1/auth/login`) : 'http://127.0.0.1:8000/api/v1/auth/login';
+      const endpoint = buildApiUrl('/api/v1/auth/login');
 
       try {
         const response = await fetch(endpoint, {

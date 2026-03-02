@@ -70,6 +70,16 @@
           "key": "DEBUG",
           "value": "false",
           "scope": "RUN_AND_BUILD_TIME"
+        },
+        {
+          "key": "SECRET_KEY",
+          "scope": "RUN_TIME",
+          "type": "SECRET"
+        },
+        {
+          "key": "ALLOW_ORIGINS",
+          "value": "*",
+          "scope": "RUN_AND_BUILD_TIME"
         }
       ],
       "instance_size_slug": "professional-xs",
@@ -94,7 +104,7 @@
       "envs": [
         {
           "key": "VITE_API_BASE_URL",
-          "value": "/api",
+          "value": "",
           "scope": "BUILD_TIME"
         }
       ],

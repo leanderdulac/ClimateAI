@@ -23,6 +23,32 @@ services:
         value: "production"
       - key: API_PREFIX
         value: "/v1"
+      - key: DEBUG
+        value: "false"
+      # CRITICAL: SECRET_KEY must be set in DO dashboard as encrypted secret
+      - key: SECRET_KEY
+        type: SECRET
+      - key: ALLOW_ORIGINS
+        value: "*"
+      # Database (Supabase Pooler)
+      - key: DATABASE_URL
+        value: "postgresql+asyncpg://postgres.tyzmywhvpmdfepxdtyes:K9r9s9n9a9###$@aws-1-sa-east-1.pooler.supabase.com:6543/postgres?prepared_statement_cache_size=0"
+      - key: DATABASE_ENABLED
+        value: "true"
+      # Supabase
+      - key: SUPABASE_URL
+        value: "https://tyzmywhvpmdfepxdtyes.supabase.co"
+      - key: SUPABASE_ANON_KEY
+        value: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR5em15d2h2cG1kZmVweGR0eWVzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4NzAzNjcsImV4cCI6MjA4NDQ0NjM2N30.14R4jz5hzgx6u3pPnMDrnBEUmgorb0Iqlb8spQRgzaI"
+      # External APIs
+      - key: EMBRAPA_API_KEY
+        value: "8da8971c-0118-39c9-bb67-07653e6f664b"
+      - key: EMBRAPA_API_URL
+        value: "https://api.cnptia.embrapa.br"
+      - key: EMBRAPA_API_VERSION
+        value: "climapi/v1"
+      - key: NOAA_API_KEY
+        value: "WDjhFaVSxFFpLelfYoKaQjnaTorOMcfV"
 
 static_sites:
   # Frontend React/Vite Static Site
@@ -38,5 +64,5 @@ static_sites:
       - path: /
     envs:
       - key: VITE_API_BASE_URL
-        value: ${backend.PRIVATE_URL}
+        value: ""
     catchall_document: index.html
