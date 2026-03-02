@@ -10,6 +10,7 @@ import logging
 import time
 import traceback
 import uuid
+import warnings
 from contextvars import ContextVar
 from datetime import datetime
 from typing import Any, Dict, Optional
@@ -620,6 +621,11 @@ structured_logger: Optional[StructuredLogger] = None
 def init_logging(app_name: str = "fimce", level: int = logging.INFO):
     """Inicializar logging estruturado"""
     global logger, structured_logger
+
+    # Silenciar avisos de depreciação de bibliotecas externas para o pitch
+    # Mantém os logs limpos de mensagens recorrentes de SDKs
+    warnings.filterwarnings("ignore", category=FutureWarning, module="google.*")
+    warnings.filterwarnings("ignore", category=UserWarning, module="pydantic.*")
 
     logger = setup_json_logging(app_name, level)
     structured_logger = StructuredLogger(logger)

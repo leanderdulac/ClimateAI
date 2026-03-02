@@ -7,7 +7,7 @@ import logging
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict
 from fastapi import APIRouter, HTTPException, Query, Body, Depends
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 import json
 
 from services.audit_trail_service import AuditTrailService, AuditEntry, AuditChainIntegrity
@@ -34,6 +34,8 @@ class AuditEntryRequest(BaseModel):
     model_version: str = Field(..., description="Versão do modelo")
     metadata: Optional[Dict] = Field(default=None, description="Metadados")
 
+    model_config = ConfigDict(protected_namespaces=())
+
 
 class AuditEntryResponse(BaseModel):
     """Resposta de entrada de audit"""
@@ -48,6 +50,8 @@ class AuditEntryResponse(BaseModel):
     model_version: str
     signature: str
     has_metadata: bool
+
+    model_config = ConfigDict(protected_namespaces=())
 
 
 class AuditTrailResponse(BaseModel):

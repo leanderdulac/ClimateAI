@@ -10,7 +10,7 @@ import axios from 'axios';
 import { Zap, Package, TrendingUp, AlertTriangle, Thermometer, MapPin, Calendar, DollarSign, Loader2, Locate, Search, ChevronDown, ChevronUp } from "lucide-react";
 import { useLocation } from '@/lib/LocationContext';
 import { useTokenizationStore } from '@/store/useTokenizationStore';
-import { embrapaApi } from '@/lib/api';
+import { embrapaApi, buildApiUrl } from '@/lib/api';
 import type { LocalizacaoData } from '@/lib/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import {
@@ -21,7 +21,7 @@ import {
   type SavedLocation
 } from '@/lib/geoUtils';
 
-const API_BASE_URL = 'http://127.0.0.1:8000/api/v1/blockchain';
+const API_BASE_URL = buildApiUrl('/api/v1/blockchain');
 
 // Helper: format current datetime for <input type="datetime-local">
 function getCurrentDateTimeLocal(): string {

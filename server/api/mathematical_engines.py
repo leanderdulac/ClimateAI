@@ -549,7 +549,7 @@ async def forecast_arima_endpoint(
 async def fit_copula_model_endpoint(
     data1: List[float],
     data2: List[float],
-    copula_type: str = Query("gaussian", regex="^(gaussian|clayton|gumbel|frank)$"),
+    copula_type: str = Query("gaussian", pattern="^(gaussian|clayton|gumbel|frank)$"),
 ):
     """
     Fit copula model to capture dependence structure between two variables

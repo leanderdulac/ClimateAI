@@ -7,7 +7,7 @@ import logging
 from datetime import datetime
 from typing import List, Optional, Dict
 from fastapi import APIRouter, HTTPException, Query, Body
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 from services.model_governance_service import (
     ModelGovernanceService,
@@ -35,6 +35,8 @@ class RegisterModelRequest(BaseModel):
     validation_report: Optional[str] = Field(default=None, description="Relatório de validação")
     performance_metrics: Optional[Dict] = Field(default=None, description="Métricas de performance")
 
+    model_config = ConfigDict(protected_namespaces=())
+
 
 class ChangeRequestRequest(BaseModel):
     """Request para solicitar mudança"""
@@ -45,6 +47,8 @@ class ChangeRequestRequest(BaseModel):
     impact_analysis: Dict = Field(..., description="Análise de impacto")
     requested_by: str = Field(..., description="Solicitante")
     rollback_plan: Optional[str] = Field(default=None, description="Plano de rollback")
+
+    model_config = ConfigDict(protected_namespaces=())
 
 
 class ApproveChangeRequest(BaseModel):
@@ -72,6 +76,8 @@ class ModelInfoResponse(BaseModel):
     performance_metrics: Dict
     regulatory_approval: Dict
 
+    model_config = ConfigDict(protected_namespaces=())
+
 
 class ChangeRequestResponse(BaseModel):
     """Resposta de change request"""
@@ -86,6 +92,8 @@ class ChangeRequestResponse(BaseModel):
     approved_by: Optional[str]
     approved_at: Optional[str]
     status: str
+
+    model_config = ConfigDict(protected_namespaces=())
 
 
 class GovernanceScoreResponse(BaseModel):
@@ -112,6 +120,8 @@ class GovernanceReportResponse(BaseModel):
     performance_metrics: Dict
     assessment_date: str
     regulatory_compliance: List[str]
+
+    model_config = ConfigDict(protected_namespaces=())
 
 
 # ============================================================================

@@ -103,7 +103,7 @@ async def calculate_regularized_loss_endpoint(
     gamma: float = Query(1.0, description="Time penalty coefficient (γ)"),
     lambda_reg: float = Query(0.01, description="Regularization coefficient (λ)"),
     loss_type: str = Query(
-        "mse", regex="^(mse|mae|huber)$", description="Type of primary loss function"
+        "mse", pattern="^(mse|mae|huber)$", description="Type of primary loss function"
     ),
 ):
     """

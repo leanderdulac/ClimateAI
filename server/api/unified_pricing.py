@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional
 import logging
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 from services.unified_pricing_orchestrator import (
     UnifiedPricingOrchestrator,
@@ -59,6 +59,8 @@ class UnifiedPricingResponse(BaseModel):
     explanation: Dict[str, Any]
     warnings: List[str]
     model_results: List[Dict[str, Any]]
+
+    model_config = ConfigDict(protected_namespaces=())
 
 
 @router.post("/calculate", response_model=UnifiedPricingResponse)

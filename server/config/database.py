@@ -9,7 +9,7 @@ from typing import AsyncGenerator
 from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
+from sqlalchemy.pool import StaticPool, NullPool
 from models.sqlalchemy_models import Base
 
 # Configurações centralizadas
@@ -62,13 +62,25 @@ def _create_engine_and_session_maker(database_url: str):
                 database_url += f"{separator}statement_cache_size=0"
 
 
+        # Use NullPool in production to avoid PgBouncer connection limit issues
+        # and ensure every request gets a fresh connection from the pooler.
+        pool_class = NullPool if os.getenv("ENVIRONMENT") == "production" else None
+        
+        engine_kwargs = {
+            "pool_pre_ping": True,
+            "connect_args": connect_args,
+        }
+        
+        if pool_class:
+            engine_kwargs["poolclass"] = pool_class
+        else:
+            engine_kwargs["pool_size"] = getattr(settings, "DB_POOL_SIZE", 10)
+            engine_kwargs["max_overflow"] = getattr(settings, "DB_MAX_OVERFLOW", 20)
+            engine_kwargs["pool_recycle"] = 3600
+
         engine = create_async_engine(
             database_url,
-            pool_pre_ping=True,
-            pool_recycle=3600,
-            pool_size=getattr(settings, "DB_POOL_SIZE", 10),
-            max_overflow=getattr(settings, "DB_MAX_OVERFLOW", 20),
-            connect_args=connect_args,
+            **engine_kwargs
         )
         async_session_maker = sessionmaker(
             engine, class_=AsyncSession, expire_on_commit=False
