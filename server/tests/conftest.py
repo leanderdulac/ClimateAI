@@ -15,6 +15,8 @@ os.environ.setdefault("GROK_API_KEY", "test-dummy-grok-key")
 os.environ.setdefault("SECRET_KEY", "test-secret-key-for-pytest-only-not-production")
 os.environ.setdefault("SUPABASE_URL", "https://test.supabase.co")
 os.environ.setdefault("SUPABASE_ANON_KEY", "test-dummy-anon-key")
+# Ensure tests default to async sqlite driver before importing app
+os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///./.test_db.sqlite")
 
 # Mock heavy ML libraries to avoid installation in test environment
 sys.modules["torch"] = MagicMock()
@@ -301,7 +303,7 @@ def pytest_configure(config):
 
 
 @pytest.fixture(scope="session", autouse=True)
-def setup_test_environment():
+async def setup_test_environment():
     """Setup test environment"""
     # Initialize logging
     init_logging()
@@ -309,14 +311,26 @@ def setup_test_environment():
     # Set test environment variables
     os.environ["ENVIRONMENT"] = "test"
     os.environ["DEBUG"] = "True"
-    os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+    # Ensure tests use the async sqlite driver so SQLAlchemy asyncio loads correctly
+    os.environ["DATABASE_URL"] = os.environ.get(
+        "DATABASE_URL", "sqlite+aiosqlite:///./.test_db.sqlite"
+    )
 
     # Disable rate limiting for tests
     rate_limiter.max_requests = 10000
 
+    # Ensure engine and tables are initialized for tests
+    _create_engine_and_session_maker(os.environ["DATABASE_URL"])
+    db_engine = db_config.engine
+    async with db_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
     yield
 
     # Cleanup after all tests
+    async with db_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+    await db_engine.dispose()
     app.dependency_overrides.clear()
 
 

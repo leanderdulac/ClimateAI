@@ -77,7 +77,9 @@ class Settings(BaseSettings):
 
     # Configurações de cache
     REDIS_ENABLED: bool = os.getenv("REDIS_ENABLED", "false").lower() == "true"
-    REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379")
+    # Default to the docker-compose service name so deployments using compose/DO
+    # will connect to the Redis container instead of localhost.
+    REDIS_URL: str = os.getenv("REDIS_URL", "redis://redis:6379")
 
     # ============================================
     # ATLAS DIGITAL DE DESASTRES - Configurações
