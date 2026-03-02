@@ -835,9 +835,9 @@ export function AtlasDashboardPanel() {
                 onClick={async () => {
                   setNewsLoading(true);
                   try {
-                    const res = await fetch('http://127.0.0.1:8000/api/v1/news-crawler/refresh', { method: 'POST' });
+                    const res = await fetch(buildApiUrl('/api/v1/news-crawler/refresh'), { method: 'POST' });
                     if (res.ok) {
-                      const alertsRes = await fetch('http://127.0.0.1:8000/api/v1/news-crawler/alerts?limit=20');
+                      const alertsRes = await fetch(buildApiUrl('/api/v1/news-crawler/alerts?limit=20'));
                       if (alertsRes.ok) {
                         const json = await alertsRes.json();
                         setNewsAlerts(json.alerts || []);

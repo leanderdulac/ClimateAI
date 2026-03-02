@@ -12,9 +12,10 @@
  */
 
 import axios from 'axios';
+import { buildApiUrl } from './api';
 
 // API base URL (ajustar para produção)
-const HATHOR_API_BASE = import.meta.env.VITE_HATHOR_API_URL || 'http://127.0.0.1:8000/api/v1/blockchain/hathor';
+const HATHOR_API_BASE = import.meta.env.VITE_HATHOR_API_URL || buildApiUrl('/api/v1/blockchain/hathor');
 
 // Create axios instance
 export const hathorApi = axios.create({
