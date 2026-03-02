@@ -24,7 +24,7 @@ from services.atlas_visualization_service import AtlasVisualizationService
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/v1/atlas", tags=["atlas-disasters"])
+router = APIRouter(prefix="/v1/atlas", tags=["atlas-disasters"])
 
 # Instâncias globais dos serviços
 atlas_service = AtlasDisasterService()

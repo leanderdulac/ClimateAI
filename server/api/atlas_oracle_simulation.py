@@ -12,7 +12,7 @@ from services.atlas_oracle_simulation_service import atlas_oracle_simulation
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/v1/atlas-simulation", tags=["atlas-simulation"])
+router = APIRouter(prefix="/v1/atlas-simulation", tags=["atlas-simulation"])
 
 
 # ============================================================================

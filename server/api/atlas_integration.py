@@ -18,7 +18,7 @@ from services.atlas_disaster_service import AtlasDisasterService
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/v1/atlas-integration", tags=["atlas-integration"])
+router = APIRouter(prefix="/v1/atlas-integration", tags=["atlas-integration"])
 
 # Instâncias dos serviços
 atlas_service = AtlasDisasterService()

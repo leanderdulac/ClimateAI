@@ -13,7 +13,7 @@ from services.xweather_service import XWeatherService
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/v1/xweather", tags=["xweather"])
+router = APIRouter(prefix="", tags=["xweather"])
 
 # Instância global do serviço
 xweather_service = XWeatherService()

@@ -7,7 +7,7 @@ from fastapi import APIRouter, Query
 from typing import Optional
 from services.news_crawler_service import get_news_crawler_service
 
-router = APIRouter(prefix="/api/v1/news-crawler", tags=["News Crawler"])
+router = APIRouter(prefix="/v1/news-crawler", tags=["News Crawler"])
 
 
 @router.get("/alerts")

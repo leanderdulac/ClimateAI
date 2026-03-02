@@ -18,7 +18,7 @@ from services.backtesting_service import (
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/v1/backtesting", tags=["backtesting"])
+router = APIRouter(prefix="", tags=["backtesting"])
 
 # Instância global do serviço
 backtest_service = BacktestingService()

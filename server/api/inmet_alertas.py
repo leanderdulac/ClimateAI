@@ -12,7 +12,7 @@ from services.inmet_alertas_service import INMETAlertService, INMETAlert
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/v1/inmet-alertas", tags=["inmet-alertas"])
+router = APIRouter(prefix="", tags=["inmet-alertas"])
 
 # Instância global do serviço
 alertas_service = INMETAlertService()

@@ -17,7 +17,7 @@ from services.model_governance_service import (
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/v1/model-governance", tags=["model-governance"])
+router = APIRouter(prefix="", tags=["model-governance"])
 
 # Instância global do serviço
 governance_service = ModelGovernanceService()

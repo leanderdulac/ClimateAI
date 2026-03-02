@@ -17,7 +17,7 @@ from services.regulatory_reporting_service import (
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/v1/regulatory-reporting", tags=["regulatory-reporting"])
+router = APIRouter(prefix="", tags=["regulatory-reporting"])
 
 # Instância global do serviço
 reporting_service = RegulatoryReportingService()

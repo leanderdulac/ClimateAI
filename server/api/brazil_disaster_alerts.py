@@ -12,7 +12,7 @@ from services.brazil_disaster_alerts_service import BrazilDisasterAlertService, 
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/v1/brazil-alerts", tags=["brazil-alerts"])
+router = APIRouter(prefix="", tags=["brazil-alerts"])
 
 # Instância global do serviço
 alerts_service = BrazilDisasterAlertService()
