@@ -111,7 +111,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           company: 'Mock Company',
           role: 'user'
         });
-        setSession({ access_token: accessToken, refresh_token: refreshToken });
+        setSession({ access_token: accessToken, refresh_token: refreshToken } as any);
       }
     } else {
       // Try to restore Supabase session first
@@ -131,7 +131,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const accessToken = localStorage.getItem('access_token');
         const refreshToken = localStorage.getItem('refresh_token');
         if (accessToken && refreshToken) {
-          setSession({ access_token: accessToken, refresh_token: refreshToken });
+          setSession({ access_token: accessToken, refresh_token: refreshToken } as any);
           setUser({
             id: 'temp',
             email: 'user@example.com',
@@ -158,8 +158,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setSuccess(null);
     try {
       // Tentar login via backend local primeiro (bypass do Supabase)
-      const apiUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
-      const endpoint = apiUrl.endsWith('/api/v1') ? `${apiUrl}/auth/login` : `${apiUrl}/api/v1/auth/login`;
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || '';
+      const endpoint = apiUrl ? (apiUrl.endsWith('/api/v1') ? `${apiUrl}/auth/login` : `${apiUrl}/api/v1/auth/login`) : 'http://127.0.0.1:8000/api/v1/auth/login';
 
       try {
         const response = await fetch(endpoint, {

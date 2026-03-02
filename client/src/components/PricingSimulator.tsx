@@ -577,7 +577,7 @@ export function PricingSimulator() {
       // Adiciona dicas de troubleshooting
       const troubleshootingTips = [
         '\n\nDicas:',
-        '1. Verifique se o backend está rodando (http://127.0.0.1:8000)',
+        '1. Verifique se o backend está rodando e acessível',
         '2. Verifique o console do navegador para mais detalhes',
         '3. Tente novamente em alguns instantes'
       ].join('\n');

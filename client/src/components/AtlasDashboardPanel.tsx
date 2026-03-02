@@ -8,6 +8,7 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { buildApiUrl } from '@/lib/api';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
@@ -88,14 +89,14 @@ export function AtlasDashboardPanel() {
 
       // Buscar dados de múltiplas fontes
       const [oracleRes, portfolioRes, eventsRes, weatherRes, riskRes, spaceWeatherRes, conjunctionsRes, allCitiesRes] = await Promise.allSettled([
-        fetch('http://127.0.0.1:8000/api/v1/atlas-simulation/oracle-status'),
-        fetch('http://127.0.0.1:8000/api/v1/atlas-simulation/portfolio-risk'),
-        fetch('http://127.0.0.1:8000/api/v1/atlas-simulation/live-events?limit=10'),
-        fetch('http://127.0.0.1:8000/api/v1/atlas-realtime/risk-summary'),
-        fetch('http://127.0.0.1:8000/api/v1/atlas-integration/health'),
-        fetch('http://127.0.0.1:8000/api/v1/celestrak/space-weather'),
-        fetch('http://127.0.0.1:8000/api/v1/celestrak/conjunctions'),
-        fetch('http://127.0.0.1:8000/api/v1/atlas-realtime/all-cities'),
+        fetch(buildApiUrl('/api/v1/atlas-simulation/oracle-status')),
+        fetch(buildApiUrl('/api/v1/atlas-simulation/portfolio-risk')),
+        fetch(buildApiUrl('/api/v1/atlas-simulation/live-events?limit=10')),
+        fetch(buildApiUrl('/api/v1/atlas-realtime/risk-summary')),
+        fetch(buildApiUrl('/api/v1/atlas-integration/health')),
+        fetch(buildApiUrl('/api/v1/celestrak/space-weather')),
+        fetch(buildApiUrl('/api/v1/celestrak/conjunctions')),
+        fetch(buildApiUrl('/api/v1/atlas-realtime/all-cities')),
       ]);
 
       const atlasData: Partial<AtlasData> = {};

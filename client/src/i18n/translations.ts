@@ -426,6 +426,14 @@ export const translations = {
         'analytics.activity.success': 'Sucesso',
         'analytics.activity.alert': 'Alerta',
         'analytics.activity.register': 'Registro',
+        'analytics.insights.title': 'Insights do Motor Atuarial',
+        'analytics.insights.subtitle': 'Recomendações baseadas em modelos de IA',
+        'analytics.activity.portfolioOptimization': 'Otimização de Portfólio',
+        'analytics.activity.portfolioOptimizationDesc': 'Ajuste de pesos baseado em novos modelos de inundação',
+        'analytics.activity.efficiency': 'Eficiência',
+        'analytics.activity.capitalRebalance': 'Rebalanceamento de Capital',
+        'analytics.activity.capitalRebalanceDesc': 'Ajuste de reservas para cobertura de eventos extremos',
+        'analytics.activity.adjustment': 'Ajuste',
 
         // Demo Page
         'demo.nav.interactive': 'Demo Interativo',
@@ -1198,6 +1206,14 @@ export const translations = {
         'analytics.activity.success': 'Success',
         'analytics.activity.alert': 'Alert',
         'analytics.activity.register': 'Register',
+        'analytics.insights.title': 'Actuarial Motor Insights',
+        'analytics.insights.subtitle': 'AI-driven recommendations',
+        'analytics.activity.portfolioOptimization': 'Portfolio Optimization',
+        'analytics.activity.portfolioOptimizationDesc': 'Weight adjustment based on new flood models',
+        'analytics.activity.efficiency': 'Efficiency',
+        'analytics.activity.capitalRebalance': 'Capital Rebalancing',
+        'analytics.activity.capitalRebalanceDesc': 'Adjustment of reserves for extreme event coverage',
+        'analytics.activity.adjustment': 'Adjustment',
 
         // Demo Page
         'demo.nav.interactive': 'Interactive Demo',

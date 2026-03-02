@@ -109,8 +109,8 @@ class ComprehensivePricingService:
         # Supply-demand adjustment thresholds
         self.concentration_thresholds = {
             "low": 0.10,  # <10% concentration
-            "medium": 0.25,  # 10-25% concentration
-            "high": 0.30,  # >25% concentration
+            "medium": 0.20,  # 10-25% concentration
+            "high": 0.25,  # >25% concentration
         }
 
         # Adjustment factors for supply-demand
