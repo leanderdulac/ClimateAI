@@ -14,7 +14,7 @@ jupyter==1.0.0
 notebook==7.0.0
 matplotlib==3.8.0
 seaborn==0.13.0
-plotly==5.17.0
+plotly==6.5.2
 
 # === TESTES E QUALIDADE ===
 pytest==7.4.3
