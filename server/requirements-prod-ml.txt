@@ -4,27 +4,27 @@
 
 --extra-index-url https://download.pytorch.org/whl/cpu
 # === FRAMEWORK WEB ===
-fastapi==0.128.0
-uvicorn[standard]==0.40.0
-python-multipart==0.0.21
+fastapi==0.135.2
+uvicorn[standard]==0.42.0
+python-multipart==0.0.22
 
 # === CONFIGURAÇÃO E VALIDAÇÃO ===
-pydantic==2.9.2
-pydantic-settings==2.6.0
-python-dotenv==1.0.1
+pydantic==2.12.5
+pydantic-settings==2.13.1
+python-dotenv==1.2.2
 
 # === BANCO DE DADOS ===
-sqlalchemy==2.0.36
+sqlalchemy==2.0.48
 psycopg2-binary==2.9.11
-asyncpg==0.29.0
+asyncpg==0.31.0
 aiosqlite==0.22.1
-alembic==1.18.1
+alembic==1.18.4
 
 # === CACHE ===
-redis==7.1.0
+redis==7.4.0
 
 # === APIs EXTERNAS ===
-requests==2.32.5
+requests==2.33.0
 requests-cache
 geopy==2.4.1
 pycep-correios==5.2.0
@@ -43,7 +43,7 @@ psutil
 email-validator>=2.0.0  # Required by Pydantic's EmailStr
 nolds>=0.5.2  # Nonlinear dynamics analysis
 tenacity>=9.0.0  # Retry library with circuit breaker pattern
-hvac==2.3.0  # HashiCorp Vault secrets manager
+hvac==2.4.0  # HashiCorp Vault secrets manager
 feedparser>=6.0.0  # RSS/Atom feed parser for INMET alerts
 beautifulsoup4>=4.12.0  # HTML parser for INMET alert descriptions
 aiohttp>=3.9.0  # Async HTTP client for health checks
@@ -51,10 +51,10 @@ aiohttp>=3.9.0  # Async HTTP client for health checks
 # === DADOS E ML ESSENCIAIS (PRODUÇÃO) ===
 pandas==2.2.3
 numpy>=1.26.0,<2.0.0  # Versão < 2.0 para compatibilidade com PyTorch
-scikit-learn==1.5.2
+scikit-learn==1.8.0
 scipy>=1.11.0,<1.14.0
 statsmodels>=0.14.0
-torch==2.1.1+cpu  # PyTorch for LSTM attention mechanisms - CPU version explicitly specified
+torch==2.11.0+cpu  # PyTorch for LSTM attention mechanisms - CPU version explicitly specified
 python-json-logger==4.0.0  # For structured JSON logging - Updated for security
 # NOTA: TensorFlow NÃO incluído em produção (~500MB)
 
