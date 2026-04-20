@@ -125,6 +125,14 @@ SEVERITY_INDICATORS = {
     },
 }
 
+# Palavras-chave negativas para evitar falsos positivos (como entretenimento, esportes, fofoca)
+NEGATIVE_KEYWORDS = [
+    'rockeiro', 'rock', 'cantor', 'show', 'turnê', 'festival', 'fãs', 'aeroporto',
+    'famosos', 'celebridades', 'novela', 'filme', 'ator', 'atriz', 'fofoca', 
+    'futebol', 'jogo', 'banda', 'foo fighters', 'grohl', 'lollapalooza',
+    'famoso', 'reality', 'bbb'
+]
+
 # Brazilian states for geo-extraction
 UF_MAP: Dict[str, str] = {
     'acre': 'AC', 'alagoas': 'AL', 'amapá': 'AP', 'amazonas': 'AM',
@@ -560,6 +568,12 @@ class NewsCrawlerService:
 
     def _classify_disaster(self, text: str) -> Optional[tuple]:
         """Classifica o tipo de desastre com base em keywords"""
+        
+        # Filtro ativo contra Falsos Positivos de entretenimento
+        for neg_kw in NEGATIVE_KEYWORDS:
+            if neg_kw in text:
+                return None
+                
         best_type = None
         best_score = 0.0
 
