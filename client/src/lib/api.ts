@@ -282,7 +282,6 @@ export const mlApi = {
                 method: 'POST',
                 headers: {
                     ...getDefaultHeaders(),
-                    ...getDefaultHeaders(),
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(features),
@@ -306,7 +305,6 @@ export const mlApi = {
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {
-                    ...getDefaultHeaders(),
                     ...getDefaultHeaders(),
                     'Content-Type': 'application/json',
                 },
@@ -556,7 +554,6 @@ export const microsegmentationApi = {
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {
-                    ...getDefaultHeaders(),
                     ...getDefaultHeaders(),
                     'Content-Type': 'application/json',
                 },

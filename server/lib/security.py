@@ -4,8 +4,9 @@ Implementa funcionalidades críticas de segurança da aplicação
 """
 
 import hashlib
+import os
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Optional
 
 from fastapi import HTTPException, status
@@ -13,8 +14,19 @@ import jwt
 from jwt.exceptions import InvalidTokenError as JWTError
 from passlib.context import CryptContext
 
-# Configurações de segurança
-SECRET_KEY = "your-secret-key-change-in-production"  # Deve vir de env
+# Configurações de segurança — SECRET_KEY DEVE vir de variável de ambiente
+SECRET_KEY = os.getenv("SECRET_KEY", "")
+if not SECRET_KEY:
+    # Em desenvolvimento, gerar uma chave temporária com aviso
+    if os.getenv("ENVIRONMENT", "development") == "development":
+        SECRET_KEY = secrets.token_urlsafe(32)
+        import sys
+        print("⚠️  SECRET_KEY não definida. Usando chave gerada automaticamente (apenas dev).", file=sys.stderr)
+    else:
+        import sys
+        print("❌ ERRO CRÍTICO: SECRET_KEY não está definida em produção!", file=sys.stderr)
+        sys.exit(1)
+
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 REFRESH_TOKEN_EXPIRE_DAYS = 7
@@ -23,6 +35,11 @@ REFRESH_TOKEN_EXPIRE_DAYS = 7
 pwd_context = CryptContext(
     schemes=["bcrypt"], deprecated="auto", bcrypt__default_rounds=12, bcrypt__ident="2b"
 )
+
+
+def _utcnow() -> datetime:
+    """Retorna datetime UTC atual (timezone-aware)."""
+    return datetime.now(timezone.utc)
 
 
 class PasswordManager:
@@ -52,9 +69,9 @@ class TokenManager:
         """Cria token de acesso JWT"""
         to_encode = data.copy()
         if expires_delta:
-            expire = datetime.utcnow() + expires_delta
+            expire = _utcnow() + expires_delta
         else:
-            expire = datetime.utcnow() + timedelta(minutes=self.access_token_expire_minutes)
+            expire = _utcnow() + timedelta(minutes=self.access_token_expire_minutes)
 
         to_encode.update({"exp": expire, "type": "access"})
         encoded_jwt = jwt.encode(to_encode, self.secret_key, algorithm=self.algorithm)
@@ -63,7 +80,7 @@ class TokenManager:
     def create_refresh_token(self, data: Dict[str, str]) -> str:
         """Cria token de refresh JWT"""
         to_encode = data.copy()
-        expire = datetime.utcnow() + timedelta(days=self.refresh_token_expire_days)
+        expire = _utcnow() + timedelta(days=self.refresh_token_expire_days)
         to_encode.update({"exp": expire, "type": "refresh"})
         encoded_jwt = jwt.encode(to_encode, self.secret_key, algorithm=self.algorithm)
         return encoded_jwt
@@ -87,16 +104,36 @@ class TokenManager:
 
 
 class RateLimiter:
-    """Limitador de taxa de requisições"""
+    """Limitador de taxa de requisições com cleanup automático"""
+
+    # Número máximo de IPs rastreados antes de forçar cleanup
+    MAX_TRACKED_IPS = 10000
 
     def __init__(self, max_requests: int = 100, window_seconds: int = 60):
         self.max_requests = max_requests
         self.window_seconds = window_seconds
         self.requests: Dict[str, list] = {}
+        self._cleanup_counter = 0
+
+    def _cleanup_stale_ips(self) -> None:
+        """Remove IPs sem requisições recentes para evitar memory leak."""
+        now = _utcnow()
+        stale_ips = [
+            ip for ip, times in self.requests.items()
+            if not times or (now - times[-1]).total_seconds() > self.window_seconds * 2
+        ]
+        for ip in stale_ips:
+            del self.requests[ip]
 
     def is_allowed(self, client_ip: str) -> bool:
         """Verifica se requisição é permitida para o IP"""
-        now = datetime.utcnow()
+        now = _utcnow()
+
+        # Cleanup periódico a cada 500 requisições ou quando há muitos IPs
+        self._cleanup_counter += 1
+        if self._cleanup_counter >= 500 or len(self.requests) > self.MAX_TRACKED_IPS:
+            self._cleanup_stale_ips()
+            self._cleanup_counter = 0
 
         if client_ip not in self.requests:
             self.requests[client_ip] = []
@@ -104,7 +141,7 @@ class RateLimiter:
         # Remove requisições antigas da janela
         self.requests[client_ip] = [
             req_time for req_time in self.requests[client_ip]
-            if (now - req_time).seconds < self.window_seconds
+            if (now - req_time).total_seconds() < self.window_seconds
         ]
 
         # Verifica limite
@@ -120,10 +157,10 @@ class RateLimiter:
         if client_ip not in self.requests:
             return self.max_requests
 
-        now = datetime.utcnow()
+        now = _utcnow()
         valid_requests = [
             req_time for req_time in self.requests[client_ip]
-            if (now - req_time).seconds < self.window_seconds
+            if (now - req_time).total_seconds() < self.window_seconds
         ]
         return max(0, self.max_requests - len(valid_requests))
 
@@ -156,7 +193,7 @@ class SecurityConfig:
     def __init__(self):
         self.secret_key = SECRET_KEY
         self.allowed_origins = ["http://localhost:3000", "http://localhost:5173"]
-        self.debug = False
+        self.debug = os.getenv("DEBUG", "false").lower() == "true"
 
     def validate_config(self):
         """Valida configurações críticas"""

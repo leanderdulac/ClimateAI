@@ -49,36 +49,32 @@ from services.otel import init_otel
 from middleware.redaction import redact_payload
 
 # ============================================
-# SECRETS MANAGER - HashiCorp Vault (Tier 1)
+# SECRETS MANAGER & MLFLOW (Lazy Initialization)
 # ============================================
-from lib.vault_secrets import get_vault, VaultSecretsManager
+# Serviços pesados inicializados apenas sob demanda para economizar RAM
+vault_manager = None
+mlflow_registry = None
 
-# Inicializar Vault Secrets Manager
-vault_manager: Optional[VaultSecretsManager] = None
-try:
-    vault_manager = get_vault()
-    if vault_manager.is_enabled():
-        logger.info(f"✓ Vault Secrets Manager initialized: {vault_manager.url}")
-    else:
-        logger.warning("⚠ Vault Secrets Manager disabled (VAULT_TOKEN not configured)")
-except Exception as e:
-    logger.warning(f"⚠ Vault Secrets Manager initialization skipped: {e}")
-
-# ============================================
-# MLFLOW MODEL REGISTRY (Tier 1)
-# ============================================
-from lib.mlflow_registry import get_mlflow, MLflowModelRegistry
-
-# Inicializar MLflow Model Registry
-mlflow_registry: Optional[MLflowModelRegistry] = None
-try:
-    mlflow_registry = get_mlflow()
-    if mlflow_registry.is_enabled():
-        logger.info(f"✓ MLflow Model Registry initialized: {mlflow_registry.tracking_uri}")
-    else:
-        logger.warning("⚠ MLflow Model Registry disabled (MLflow not installed)")
-except Exception as e:
-    logger.warning(f"⚠ MLflow Model Registry initialization skipped: {e}")
+def ensure_services():
+    """Garante que serviços pesados sejam inicializados apenas se necessário"""
+    global vault_manager, mlflow_registry
+    if vault_manager is None:
+        try:
+            from lib.vault_secrets import get_vault
+            vault_manager = get_vault()
+        except Exception as e:
+            logger.warning(f"⚠ Vault Secrets Manager unavailable: {e}")
+            vault_manager = None
+            
+    if mlflow_registry is None:
+        try:
+            from lib.mlflow_registry import get_mlflow
+            mlflow_registry = get_mlflow()
+        except Exception as e:
+            logger.warning(f"⚠ MLflow Model Registry unavailable: {e}")
+            mlflow_registry = None
+            
+    return vault_manager, mlflow_registry
 
 # Sistema de Cache Inteligente
 class SmartCache:
@@ -107,17 +103,32 @@ class SmartCache:
             timestamp = self.cache_timestamps.get(key, 0)
             ttl = self._get_ttl(key)
             if time.time() - timestamp < ttl:
+                # Mover para o final para manter ordem LRU
+                val = self.cache.pop(key)
+                self.cache[key] = val
                 logger.info(f"Cache hit for key: {key[:8]}...")
-                return self.cache[key]
+                return val
             else:
                 # Remove entrada expirada
-                del self.cache[key]
-                del self.cache_timestamps[key]
-                self.cache_ttls.pop(key, None)
+                self._remove_entry(key)
         return None
 
+    def _remove_entry(self, key: str) -> None:
+        """Remove uma entrada do cache com segurança"""
+        self.cache.pop(key, None)
+        self.cache_timestamps.pop(key, None)
+        self.cache_ttls.pop(key, None)
+
     def set(self, key: str, value: Any, ttl: Optional[int] = None) -> None:
-        """Armazena dados no cache"""
+        """Armazena dados no cache com limite de tamanho"""
+        # Limite máximo de entradas (ex: 2000)
+        MAX_ENTRIES = 2000
+        if len(self.cache) >= MAX_ENTRIES:
+            # Remover a entrada mais antiga (primeira no dicionário no Python 3.7+)
+            oldest_key = next(iter(self.cache))
+            self._remove_entry(oldest_key)
+            logger.info("Cache eviction: limit reached")
+
         self.cache[key] = value
         self.cache_timestamps[key] = time.time()
         if ttl:
@@ -133,9 +144,7 @@ class SmartCache:
             if current_time - timestamp >= self._get_ttl(key)
         ]
         for key in expired_keys:
-            del self.cache[key]
-            del self.cache_timestamps[key]
-            self.cache_ttls.pop(key, None)
+            self._remove_entry(key)
         if expired_keys:
             logger.info(f"Cleared {len(expired_keys)} expired cache entries")
 
@@ -267,7 +276,10 @@ from services.microsegmentation_service import (
     get_microsegmentation_summary,
 )
 
-# from api.audit import router as audit_router
+# # Lazy imports to save memory on 512MB RAM instances
+# (imported inside functions when needed)
+# from lib.mlflow_registry import get_mlflow, MLflowModelRegistry
+# from services.vault_service import get_vault_manager, VaultManager
 try:
     from services.ml_service import (
         get_ml_model_info,
@@ -387,8 +399,8 @@ API_PREFIX = os.getenv("API_PREFIX", "/api/v1")
 
 # Endpoint para estatísticas do cache
 @app.get(f"{API_PREFIX}/cache/stats")
-async def get_cache_stats():
-    """Retorna estatísticas do sistema de cache"""
+async def get_cache_stats(current_user: User = Depends(require_admin)):
+    """Retorna estatísticas do sistema de cache (Admin only)"""
     return {
         "total_entries": len(smart_cache.cache),
         "cache_size_mb": len(str(smart_cache.cache)) / (1024 * 1024),  # Aproximação
@@ -398,10 +410,11 @@ async def get_cache_stats():
 
 
 @app.post(f"{API_PREFIX}/cache/clear")
-async def clear_cache():
-    """Limpa todo o cache"""
+async def clear_cache(current_user: User = Depends(require_admin)):
+    """Limpa todo o cache (Admin only)"""
     smart_cache.cache.clear()
     smart_cache.cache_timestamps.clear()
+    smart_cache.cache_ttls.clear()
     return {"message": "Cache limpo com sucesso"}
 
 
@@ -409,13 +422,14 @@ async def clear_cache():
 # DEBUG ENDPOINTS
 # ============================================
 @app.get(f"{API_PREFIX}/debug/initialization")
-async def debug_initialization():
-    """Debug endpoint para verificar inicialização"""
+async def debug_initialization(current_user: User = Depends(require_admin)):
+    """Debug endpoint para verificar inicialização (Admin only)"""
+    v_mgr, m_reg = ensure_services()
     return {
-        "vault_manager_initialized": vault_manager is not None,
-        "mlflow_registry_initialized": mlflow_registry is not None,
-        "vault_enabled": vault_manager.is_enabled() if vault_manager else False,
-        "mlflow_enabled": mlflow_registry.is_enabled() if mlflow_registry else False,
+        "vault_manager_initialized": v_mgr is not None,
+        "mlflow_registry_initialized": m_reg is not None,
+        "vault_enabled": v_mgr.is_enabled() if v_mgr else False,
+        "mlflow_enabled": m_reg.is_enabled() if m_reg else False,
     }
 
 
@@ -423,28 +437,29 @@ async def debug_initialization():
 # SECRETS MANAGER ENDPOINTS (HashiCorp Vault)
 # ============================================
 @app.get(f"{API_PREFIX}/vault/status")
-async def get_vault_status():
+async def get_vault_status(current_user: User = Depends(require_admin)):
     """
-    Retorna status do Vault Secrets Manager
+    Retorna status do Vault Secrets Manager (Admin only)
     
     Returns:
         Status de saúde e configuração do Vault
     """
-    if not vault_manager:
+    v_mgr, _ = ensure_services()
+    if not v_mgr:
         return {"enabled": False, "status": "not_configured"}
     
     return {
-        "enabled": vault_manager.is_enabled(),
-        "healthy": vault_manager.is_healthy() if vault_manager.is_enabled() else False,
-        "url": getattr(vault_manager, "url", "N/A"),
-        "cache_ttl": getattr(vault_manager, "cache_ttl", 300),
+        "enabled": v_mgr.is_enabled(),
+        "healthy": v_mgr.is_healthy() if v_mgr.is_enabled() else False,
+        "url": getattr(v_mgr, "url", "N/A"),
+        "cache_ttl": getattr(v_mgr, "cache_ttl", 300),
     }
 
 
 @app.get(f"{API_PREFIX}/vault/secrets/{{path:path}}")
-async def get_vault_secret(path: str, version: Optional[int] = None):
+async def get_vault_secret(path: str, current_user: User = Depends(require_admin), version: Optional[int] = None):
     """
-    Recupera um secret do Vault
+    Recupera um secret do Vault (Admin only)
     
     Args:
         path: Caminho do secret (ex: secret/data/climatewise/api-keys)
@@ -453,10 +468,11 @@ async def get_vault_secret(path: str, version: Optional[int] = None):
     Returns:
         Dados do secret ou erro
     """
-    if not vault_manager or not vault_manager.is_enabled():
+    v_mgr, _ = ensure_services()
+    if not v_mgr or not v_mgr.is_enabled():
         raise HTTPException(status_code=503, detail="Vault not enabled")
     
-    secret_data = vault_manager.get_secret(path, version)
+    secret_data = v_mgr.get_secret(path, version)
     if not secret_data:
         raise HTTPException(status_code=404, detail="Secret not found")
     
@@ -469,9 +485,9 @@ async def get_vault_secret(path: str, version: Optional[int] = None):
 
 
 @app.post(f"{API_PREFIX}/vault/secrets/{{path:path}}")
-async def set_vault_secret(path: str, data: Dict[str, Any]):
+async def set_vault_secret(path: str, data: Dict[str, Any], current_user: User = Depends(require_admin)):
     """
-    Armazena um secret no Vault
+    Armazena um secret no Vault (Admin only)
     
     Args:
         path: Caminho do secret
@@ -480,10 +496,11 @@ async def set_vault_secret(path: str, data: Dict[str, Any]):
     Returns:
         Confirmação de armazenamento
     """
-    if not vault_manager or not vault_manager.is_enabled():
+    v_mgr, _ = ensure_services()
+    if not v_mgr or not v_mgr.is_enabled():
         raise HTTPException(status_code=503, detail="Vault not enabled")
     
-    success = vault_manager.set_secret(path, data)
+    success = v_mgr.set_secret(path, data)
     if not success:
         raise HTTPException(status_code=500, detail="Failed to store secret")
     
@@ -491,9 +508,9 @@ async def set_vault_secret(path: str, data: Dict[str, Any]):
 
 
 @app.delete(f"{API_PREFIX}/vault/secrets/{{path:path}}")
-async def delete_vault_secret(path: str):
+async def delete_vault_secret(path: str, current_user: User = Depends(require_admin)):
     """
-    Deleta um secret do Vault
+    Deleta um secret do Vault (Admin only)
     
     Args:
         path: Caminho do secret
@@ -501,10 +518,11 @@ async def delete_vault_secret(path: str):
     Returns:
         Confirmação de deleção
     """
-    if not vault_manager or not vault_manager.is_enabled():
+    v_mgr, _ = ensure_services()
+    if not v_mgr or not v_mgr.is_enabled():
         raise HTTPException(status_code=503, detail="Vault not enabled")
     
-    success = vault_manager.delete_secret(path)
+    success = v_mgr.delete_secret(path)
     if not success:
         raise HTTPException(status_code=500, detail="Failed to delete secret")
     
@@ -522,16 +540,17 @@ async def get_mlflow_status():
     Returns:
         Status de saúde e configuração do MLflow
     """
-    if not mlflow_registry:
+    _, m_reg = ensure_services()
+    if not m_reg:
         return {"enabled": False, "status": "not_configured"}
     
     return {
-        "enabled": mlflow_registry.is_enabled(),
-        "healthy": mlflow_registry.is_healthy() if mlflow_registry.is_enabled() else False,
-        "tracking_uri": getattr(mlflow_registry, "tracking_uri", "N/A") if mlflow_registry.is_enabled() else "N/A",
-        "registry_uri": getattr(mlflow_registry, "registry_uri", "N/A") if mlflow_registry.is_enabled() else "N/A",
-        "experiment_name": getattr(mlflow_registry, "experiment_name", "N/A") if mlflow_registry.is_enabled() else "N/A",
-        "experiment_id": getattr(mlflow_registry, "experiment_id", "N/A") if mlflow_registry.is_enabled() else "N/A",
+        "enabled": m_reg.is_enabled(),
+        "healthy": m_reg.is_healthy() if m_reg.is_enabled() else False,
+        "tracking_uri": getattr(m_reg, "tracking_uri", "N/A") if m_reg.is_enabled() else "N/A",
+        "registry_uri": getattr(m_reg, "registry_uri", "N/A") if m_reg.is_enabled() else "N/A",
+        "experiment_name": getattr(m_reg, "experiment_name", "N/A") if m_reg.is_enabled() else "N/A",
+        "experiment_id": getattr(m_reg, "experiment_id", "N/A") if m_reg.is_enabled() else "N/A",
     }
 
 
@@ -543,10 +562,11 @@ async def list_mlflow_models():
     Returns:
         Lista de nomes de modelos
     """
-    if not mlflow_registry or not mlflow_registry.is_enabled():
+    _, m_reg = ensure_services()
+    if not m_reg or not m_reg.is_enabled():
         raise HTTPException(status_code=503, detail="MLflow not enabled")
     
-    models = mlflow_registry.list_models()
+    models = m_reg.list_models()
     return {"models": models, "count": len(models)}
 
 
@@ -561,10 +581,11 @@ async def get_mlflow_model_info(model_name: str):
     Returns:
         Informações detalhadas do modelo
     """
-    if not mlflow_registry or not mlflow_registry.is_enabled():
+    _, m_reg = ensure_services()
+    if not m_reg or not m_reg.is_enabled():
         raise HTTPException(status_code=503, detail="MLflow not enabled")
     
-    info = mlflow_registry.get_model_info(model_name)
+    info = m_reg.get_model_info(model_name)
     if not info:
         raise HTTPException(status_code=404, detail="Model not found")
     
@@ -584,7 +605,8 @@ async def transition_mlflow_model(model_name: str, version: str, stage: str):
     Returns:
         Confirmação da transição
     """
-    if not mlflow_registry or not mlflow_registry.is_enabled():
+    _, m_reg = ensure_services()
+    if not m_reg or not m_reg.is_enabled():
         raise HTTPException(status_code=503, detail="MLflow not enabled")
     
     valid_stages = ["Production", "Staging", "Archived"]
@@ -594,7 +616,7 @@ async def transition_mlflow_model(model_name: str, version: str, stage: str):
             detail=f"Invalid stage. Must be one of: {valid_stages}"
         )
     
-    success = mlflow_registry.transition_model_stage(model_name, version, stage)
+    success = m_reg.transition_model_stage(model_name, version, stage)
     if not success:
         raise HTTPException(status_code=500, detail="Failed to transition model")
     

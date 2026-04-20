@@ -25,12 +25,6 @@ if (!supabaseUrl || !supabaseAnonKey) {
     );
 }
 
-console.log('Supabase Config:', {
-    url: supabaseUrl,
-    keyLength: supabaseAnonKey?.length,
-    configured: Boolean(supabaseUrl && supabaseAnonKey)
-});
-
 // Validate configuration
 export const isSupabaseConfigured = (): boolean => {
     return Boolean(supabaseUrl && supabaseAnonKey);

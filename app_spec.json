@@ -33,7 +33,12 @@
         },
         {
           "key": "ALLOW_ORIGINS",
-          "value": "*",
+          "value": "http://localhost:3000,http://localhost:5173,https://hammerhead-app-3payj.ondigitalocean.app",
+          "scope": "RUN_TIME"
+        },
+        {
+          "key": "ENVIRONMENT",
+          "value": "production",
           "scope": "RUN_AND_BUILD_TIME"
         }
       ],
