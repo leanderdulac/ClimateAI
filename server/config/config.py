@@ -28,10 +28,11 @@ def generate_secret_key() -> str:
 
 class Settings(BaseSettings):
     # Configurações do servidor
-    HOST: str = os.getenv("HOST", "0.0.0.0")
+    # Default to loopback; set HOST=0.0.0.0 explicitly in production/Docker for external access
+    HOST: str = os.getenv("HOST", "127.0.0.1")  # nosec B104
     PORT: int = int(os.getenv("PORT", "8000"))
     DEBUG: bool = os.getenv("DEBUG", "false").lower() == "true"
-    API_HOST: str = os.getenv("API_HOST", "0.0.0.0")
+    API_HOST: str = os.getenv("API_HOST", "127.0.0.1")  # nosec B104
     API_PORT: int = int(os.getenv("API_PORT", "8000"))
     
     # SECRET_KEY: Usar do .env ou gerar automaticamente

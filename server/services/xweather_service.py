@@ -114,7 +114,13 @@ class XWeatherService:
             Dict com resposta ou None em caso de erro
         """
         try:
-            logger.info(f"XWeather API request: {url}")
+            # Security: reject non-HTTPS URLs to prevent file:/ or custom-scheme abuse (B310)
+            if not url.startswith("https://"):
+                logger.error("XWeather: URL rejected — only HTTPS is permitted")
+                return None
+            # Log only the path, never the query string (which contains client_secret)
+            safe_log_url = url.split("?")[0]
+            logger.info(f"XWeather API request: {safe_log_url}")
             request = urllib.request.Request(
                 url,
                 headers={
@@ -123,7 +129,7 @@ class XWeatherService:
                 }
             )
             
-            with urllib.request.urlopen(request, timeout=timeout) as response:
+            with urllib.request.urlopen(request, timeout=timeout) as response:  # nosec B310 — HTTPS enforced above
                 data = response.read()
                 result = json.loads(data)
                 

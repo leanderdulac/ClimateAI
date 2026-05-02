@@ -126,12 +126,19 @@ SEVERITY_INDICATORS = {
 }
 
 # Palavras-chave negativas para evitar falsos positivos (como entretenimento, esportes, fofoca)
+# IMPORTANT: use word-boundary matching (\b) to avoid blocking climate terms that contain
+# these substrings (e.g. "rock" would block "rocket launch" or "show de chuva")
 NEGATIVE_KEYWORDS = [
-    'rockeiro', 'rock', 'cantor', 'show', 'turnê', 'festival', 'fãs', 'aeroporto',
-    'famosos', 'celebridades', 'novela', 'filme', 'ator', 'atriz', 'fofoca', 
-    'futebol', 'jogo', 'banda', 'foo fighters', 'grohl', 'lollapalooza',
-    'famoso', 'reality', 'bbb'
+    r'\brockeiro\b', r'\brock\b', r'\bcantor\b', r'\bturnê\b', r'\bfestival\b',
+    r'\bfãs\b', r'\bfamosos\b', r'\bcelebridades\b', r'\bnovela\b', r'\bfilme\b',
+    r'\bator\b', r'\batriz\b', r'\bfofoca\b', r'\bfutebol\b',
+    r'\bbanda\b', r'\bfoo fighters\b', r'\bgrohl\b', r'\blollapalooza\b',
+    r'\bfamoso\b', r'\breality\b', r'\bbbb\b',
 ]
+
+# Pre-compiled negative keyword pattern for efficiency
+import re as _re
+_NEGATIVE_PATTERN = _re.compile('|'.join(NEGATIVE_KEYWORDS), _re.IGNORECASE)
 
 # Brazilian states for geo-extraction
 UF_MAP: Dict[str, str] = {
@@ -521,7 +528,7 @@ class NewsCrawlerService:
         link = getattr(entry, 'link', '') or ''
 
         # Dedup by title hash
-        text_hash = hashlib.md5(title.lower().encode()).hexdigest()
+        text_hash = hashlib.md5(title.lower().encode(), usedforsecurity=False).hexdigest()
         if text_hash in self._seen_hashes:
             return None
 
@@ -570,9 +577,9 @@ class NewsCrawlerService:
         """Classifica o tipo de desastre com base em keywords"""
         
         # Filtro ativo contra Falsos Positivos de entretenimento
-        for neg_kw in NEGATIVE_KEYWORDS:
-            if neg_kw in text:
-                return None
+        # Uses word-boundary regex to avoid blocking legitimate climate terms
+        if _NEGATIVE_PATTERN.search(text):
+            return None
                 
         best_type = None
         best_score = 0.0
