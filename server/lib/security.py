@@ -5,7 +5,6 @@ Implementa funcionalidades críticas de segurança da aplicação
 
 import hashlib
 import os
-import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Dict, Optional
 
@@ -13,19 +12,10 @@ from fastapi import HTTPException, status
 import jwt
 from jwt.exceptions import InvalidTokenError as JWTError
 from passlib.context import CryptContext
+from config.config import settings
 
-# Configurações de segurança — SECRET_KEY DEVE vir de variável de ambiente
-SECRET_KEY = os.getenv("SECRET_KEY", "")
-if not SECRET_KEY:
-    # Em desenvolvimento, gerar uma chave temporária com aviso
-    if os.getenv("ENVIRONMENT", "development") == "development":
-        SECRET_KEY = secrets.token_urlsafe(32)
-        import sys
-        print("⚠️  SECRET_KEY não definida. Usando chave gerada automaticamente (apenas dev).", file=sys.stderr)
-    else:
-        import sys
-        print("❌ ERRO CRÍTICO: SECRET_KEY não está definida em produção!", file=sys.stderr)
-        sys.exit(1)
+# Configurações de segurança — usar a mesma chave já validada em config.settings
+SECRET_KEY = settings.SECRET_KEY
 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30

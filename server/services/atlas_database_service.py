@@ -36,6 +36,7 @@ class AtlasDatabaseService:
         """Inicializar engine do banco de dados"""
         try:
             db_url = settings.DATABASE_URL
+            engine_kwargs = {"pool_pre_ping": True}
             
             if db_url and "asyncpg" in db_url:
                 separator = "&" if "?" in db_url else "?"
@@ -45,11 +46,12 @@ class AtlasDatabaseService:
                 if "statement_cache_size" not in db_url:
                     db_url += f"{separator}statement_cache_size=0"
 
+                engine_kwargs["pool_size"] = 10
+                engine_kwargs["max_overflow"] = 20
+
             self.engine = create_async_engine(
                 db_url,
-                pool_pre_ping=True,
-                pool_size=10,
-                max_overflow=20,
+                **engine_kwargs,
             )
             self.async_session_maker = async_sessionmaker(
                 self.engine,

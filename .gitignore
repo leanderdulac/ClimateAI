@@ -41,8 +41,11 @@ Thumbs.db
 
 # Environment files (NEVER commit these)
 .env
+.env.*
 server/.env
+server/.env.*
 client/.env
+client/.env.*
 client/.env.local
 
 .coverage

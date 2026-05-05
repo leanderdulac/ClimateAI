@@ -4,7 +4,7 @@
  * Integra: Dados climáticos reais, Oracle simulation, Blockchain e Risk analysis
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -35,7 +35,22 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslation } from "@/hooks/useTranslation";
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { GlobeVisualization, GlobeEvent } from './GlobeVisualization';
+
+const GlobeVisualization = lazy(() =>
+  import('./GlobeVisualization').then((module) => ({ default: module.GlobeVisualization }))
+);
+
+interface GlobeEvent {
+  lat: number;
+  lng: number;
+  weight: number;
+  type: string;
+  title: string;
+  description: string;
+  date: string;
+  location?: string;
+  source?: string;
+}
 
 interface AtlasData {
   oracleStatus: any;
@@ -66,6 +81,7 @@ export function AtlasDashboardPanel() {
   const { t, language } = useTranslation();
   const [data, setData] = useState<AtlasData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [shouldRenderGlobe, setShouldRenderGlobe] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [newsAlerts, setNewsAlerts] = useState<NewsAlert[]>([]);
   const [newsLoading, setNewsLoading] = useState(false);
@@ -307,7 +323,44 @@ export function AtlasDashboardPanel() {
 
       {/* 3D Globe Visualization */}
       <div className="w-full mb-8">
-        <GlobeVisualization events={globeEvents} height={500} />
+        {shouldRenderGlobe ? (
+          <div className="space-y-3">
+            <div className="flex justify-end">
+              <Button variant="outline" size="sm" onClick={() => setShouldRenderGlobe(false)}>
+                Ocultar globo 3D
+              </Button>
+            </div>
+            <Suspense fallback={<Skeleton className="h-[500px] w-full" />}>
+              <GlobeVisualization events={globeEvents} height={500} />
+            </Suspense>
+          </div>
+        ) : (
+          <Card className="border-slate-200 bg-slate-50/80">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="h-5 w-5 text-blue-600" />
+                Visualizacao 3D sob demanda
+              </CardTitle>
+              <CardDescription>
+                O globo interativo foi isolado para nao carregar o bundle 3D pesado antes de ser necessario.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div className="space-y-1 text-sm text-muted-foreground">
+                <p>{globeEvents.length} eventos com coordenadas estao prontos para visualizacao.</p>
+                <p>Carregue o globo apenas quando precisar explorar o mapa 3D.</p>
+              </div>
+              <Button
+                onClick={() => {
+                  React.startTransition(() => setShouldRenderGlobe(true));
+                }}
+                disabled={globeEvents.length === 0}
+              >
+                Carregar globo 3D
+              </Button>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* KPI Cards */}

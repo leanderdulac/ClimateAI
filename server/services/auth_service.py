@@ -24,13 +24,7 @@ from models.sqlalchemy_models import User as UserModel
 from config.supabase_client import get_supabase_client, SUPABASE_URL
 
 # Configurações de segurança - usando o módulo centralizado
-if not settings.SECRET_KEY:
-    import warnings
-    warnings.warn(
-        "SECRET_KEY is not set! Authentication will not work securely.",
-        RuntimeWarning,
-    )
-SECRET_KEY = settings.SECRET_KEY or "INSECURE-FALLBACK-KEY-SET-SECRET-KEY-ENV-VAR"  # nosec
+SECRET_KEY = settings.SECRET_KEY
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 REFRESH_TOKEN_EXPIRE_DAYS = 7

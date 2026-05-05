@@ -4,27 +4,22 @@
  */
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { loadEmbrapaApi } from '@/lib/loadEmbrapaApi';
 import { useLocation } from '@/lib/LocationContext';
 import { usePeriod } from '@/lib/PeriodContext';
 import { Sun, Droplets, Wind, Thermometer, AlertTriangle, ShieldCheck, Zap } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { useTranslation } from '@/hooks/useTranslation';
+import type { WeatherChartPoint } from './WeatherWidgetCharts';
 
-interface ClimateDataPoint {
-  date: string;
-  temperature: number;
-  precipitation: number;
-  humidity: number;
-  windSpeed?: number;
-  cloudCover?: number;
-}
+const WeatherWidgetCharts = lazy(() =>
+  import('./WeatherWidgetCharts').then((module) => ({ default: module.WeatherWidgetCharts }))
+);
 
 export function WeatherWidget() {
   const { t } = useTranslation();
-  const [climateData, setClimateData] = useState<ClimateDataPoint[]>([]);
+  const [climateData, setClimateData] = useState<WeatherChartPoint[]>([]);
   const [currentWeather, setCurrentWeather] = useState<{
     temperature: number;
     humidity: number;
@@ -35,6 +30,7 @@ export function WeatherWidget() {
   const [historicalData, setHistoricalData] = useState<any[]>([]);
   const [loadingHistorical, setLoadingHistorical] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [showDetailedCharts, setShowDetailedCharts] = useState(false);
 
   const { selectedLocation, isLoadingLocation } = useLocation();
   const { selectedPeriod } = usePeriod();
@@ -111,12 +107,10 @@ export function WeatherWidget() {
 
           // Usar dados históricos para o gráfico principal
           // Os dados já vêm normalizados do embrapaApi.getClimateData
-          const adaptedHistorical: ClimateDataPoint[] = (historical || []).map(item => ({
+          const adaptedHistorical: WeatherChartPoint[] = (historical || []).map(item => ({
             date: item.date,
             temperature: item.temperature,
             precipitation: item.precipitation,
-            humidity: item.humidity,
-            windSpeed: item.windSpeed
           }));
 
           console.log(`✅ [WeatherWidget] Dados adaptados: ${adaptedHistorical.length} pontos para gráfico`);
@@ -176,6 +170,22 @@ export function WeatherWidget() {
       fetchClimateData();
     }
   }, [selectedLocation, isLoadingLocation, selectedPeriod, t]);
+
+  useEffect(() => {
+    setShowDetailedCharts(false);
+
+    if (loading || isLoadingLocation || climateData.length === 0) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setShowDetailedCharts(true);
+    }, 1200);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [climateData.length, isLoadingLocation, loading, selectedLocation, selectedPeriod]);
 
   if (error) {
     return (
@@ -281,60 +291,22 @@ export function WeatherWidget() {
         )}
       </CardHeader>
       <CardContent className="space-y-8 p-6">
-        <div>
-          <h3 className="mb-4 text-lg font-semibold">{t('weather.temperatureOverTime')}</h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={climateData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis
-                dataKey="date"
-                tickFormatter={(date) => new Date(date).toLocaleDateString(t('locale') || 'pt-BR')}
-              />
-              <YAxis unit="°C" />
-              <Tooltip
-                labelFormatter={(label) => {
-                  const d = new Date(label);
-                  return isNaN(d.getTime()) ? label : d.toLocaleDateString(t('locale') || 'pt-BR');
-                }}
-                formatter={(value: any) => [Number(value).toFixed(1) + "°C", t('weather.temperature')]}
-              />
-              <Line
-                type="monotone"
-                dataKey="temperature"
-                name={t('weather.temperature')}
-                stroke="#10b981"
-                dot={false}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div>
-          <h3 className="mb-4 text-lg font-semibold">{t('weather.precipitation')}</h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={climateData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis
-                dataKey="date"
-                tickFormatter={(date) => new Date(date).toLocaleDateString(t('locale') || 'pt-BR')}
-              />
-              <YAxis unit="mm" />
-              <Tooltip
-                labelFormatter={(label) => {
-                  const d = new Date(label);
-                  return isNaN(d.getTime()) ? label : d.toLocaleDateString(t('locale') || 'pt-BR');
-                }}
-                formatter={(value: any) => [Number(value).toFixed(1) + "mm", t('weather.rain')]}
-              />
-              <Bar
-                dataKey="precipitation"
-                name={t('weather.rain')}
-                fill="#3b82f6"
-                radius={[4, 4, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        {showDetailedCharts ? (
+          <Suspense
+            fallback={
+              <div className="space-y-8">
+                <div className="h-[286px] rounded-lg bg-muted animate-pulse" />
+                <div className="h-[286px] rounded-lg bg-muted animate-pulse" />
+              </div>
+            }
+          >
+            <WeatherWidgetCharts climateData={climateData} />
+          </Suspense>
+        ) : (
+          <div className="rounded-lg border border-dashed border-border bg-muted/40 px-4 py-6 text-sm text-muted-foreground">
+            {t('weather.loadingHistorical')}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

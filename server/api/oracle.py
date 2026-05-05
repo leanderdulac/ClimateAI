@@ -12,6 +12,8 @@ from datetime import datetime
 from config.database import get_db_session
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, HTTPException, Depends
+from middleware.auth_middleware import require_admin
+from models.schemas import User
 
 from services.oracle_service import OracleService, SeverityEvent
 from services.kms_signer_service import KMSSigner
@@ -47,7 +49,11 @@ class ConsensusVoteRequest(BaseModel):
 # ─── Endpoints ─────────────────────────────────────────────────────
 
 @router.post("/evaluate")
-async def evaluate_severity_event(request: SeverityEventRequest, db: AsyncSession = Depends(get_db_session)):
+async def evaluate_severity_event(
+    request: SeverityEventRequest,
+    current_user: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db_session),
+):
     """
     Evaluate a climate severity event and decide whether to trigger payout.
 
@@ -68,7 +74,11 @@ async def evaluate_severity_event(request: SeverityEventRequest, db: AsyncSessio
 
 
 @router.post("/evaluate/batch")
-async def evaluate_batch(request: BatchEvalRequest, db: AsyncSession = Depends(get_db_session)):
+async def evaluate_batch(
+    request: BatchEvalRequest,
+    current_user: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db_session),
+):
     """Evaluate multiple severity events in batch (e.g. from scheduled scan)."""
     events = [
         SeverityEvent(
@@ -87,7 +97,10 @@ async def evaluate_batch(request: BatchEvalRequest, db: AsyncSession = Depends(g
 
 
 @router.post("/consensus/vote")
-async def submit_consensus_vote(request: ConsensusVoteRequest):
+async def submit_consensus_vote(
+    request: ConsensusVoteRequest,
+    current_user: User = Depends(require_admin),
+):
     """
     Submit a vote in the multi-oracle consensus mechanism.
     Payout only triggers when the required number of votes is reached.
@@ -107,7 +120,7 @@ async def submit_consensus_vote(request: ConsensusVoteRequest):
 
 
 @router.get("/status")
-async def get_oracle_status():
+async def get_oracle_status(current_user: User = Depends(require_admin)):
     """Returns the operational status of the Oracle and KMS Signer."""
     return {
         "oracle": oracle.get_status(),
@@ -116,7 +129,7 @@ async def get_oracle_status():
 
 
 @router.get("/history")
-async def get_oracle_history():
+async def get_oracle_history(current_user: User = Depends(require_admin)):
     """Returns the history of processed events."""
     return {
         "events": oracle.processed_events[-50:],  # Last 50 events

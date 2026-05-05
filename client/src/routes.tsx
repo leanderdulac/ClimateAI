@@ -2,7 +2,6 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { PageLoader } from '@/components/PageLoader';
-import { ParametricSimulator } from '@/components/ParametricSimulator';
 import { RouteError } from '@/components/RouteError';
 
 // Lazy load all pages

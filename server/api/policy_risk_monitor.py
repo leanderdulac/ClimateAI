@@ -5,6 +5,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime
 
 from config.database import get_db_session
+from middleware.auth_middleware import get_current_active_user
+from models.schemas import User
 from services.policy_risk_monitor_service import PolicyRiskMonitorService
 from pydantic import BaseModel
 
@@ -36,7 +38,10 @@ class RealTimeRiskResponse(BaseModel):
     active_alerts: List[Dict[str, Any]]
 
 @router.get("/portfolio-risk", response_model=RealTimeRiskResponse)
-async def get_portfolio_risk(db: AsyncSession = Depends(get_db_session)):
+async def get_portfolio_risk(
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db_session),
+):
     """
     Retorna a análise de risco do portfólio em tempo real com base nos alertas meteorológicos ativos.
     """
@@ -49,7 +54,10 @@ async def get_portfolio_risk(db: AsyncSession = Depends(get_db_session)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/live-alerts")
-async def get_live_alerts_impact(db: AsyncSession = Depends(get_db_session)):
+async def get_live_alerts_impact(
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db_session),
+):
     """
     Lista detalhada de alertas e apólices impactadas.
     """

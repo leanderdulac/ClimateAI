@@ -12,6 +12,7 @@ Used for:
 import logging
 import os
 import hashlib
+import re
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 
@@ -22,6 +23,8 @@ except ImportError:
     BQ_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
+
+_BQ_IDENTIFIER_RE = re.compile(r"^[A-Za-z0-9_\-]+$")
 
 
 class BigQueryDataLakeService:
@@ -53,6 +56,12 @@ class BigQueryDataLakeService:
             logger.warning(f"⚠️ BigQuery init failed: {e}. Running in MOCK mode.")
             self.client = None
 
+    def _safe_identifier(self, value: Optional[str], label: str) -> str:
+        """Allow only BigQuery-safe identifiers for project and dataset names."""
+        if not value or not _BQ_IDENTIFIER_RE.fullmatch(value):
+            raise ValueError(f"Invalid BigQuery {label}: {value!r}")
+        return value
+
     # ─── Historical Benchmarks ─────────────────────────────────────────
 
     async def get_historical_benchmarks(
@@ -72,12 +81,12 @@ class BigQueryDataLakeService:
             end_year = datetime.now().year
             start_year = end_year - years_back
 
-            query = f"""  # nosec B608
+            query = """
                 WITH nearest_station AS (
                     SELECT stn, wban, name,
                         ST_DISTANCE(
                             ST_GEOGPOINT(lon, lat),
-                            ST_GEOGPOINT({longitude}, {latitude})
+                            ST_GEOGPOINT(@longitude, @latitude)
                         ) AS dist_m
                     FROM `bigquery-public-data.noaa_gsod.stations`
                     WHERE lat IS NOT NULL AND lon IS NOT NULL
@@ -92,14 +101,23 @@ class BigQueryDataLakeService:
                     COUNT(IF(SAFE_CAST(prcp AS FLOAT64) > 0, 1, NULL)) as rain_days,
                     COUNT(*) as total_obs
                 FROM `bigquery-public-data.noaa_gsod.gsod*`
-                WHERE _TABLE_SUFFIX BETWEEN '{start_year}' AND '{end_year}'
+                WHERE _TABLE_SUFFIX BETWEEN @start_year AND @end_year
                   AND stn = (SELECT stn FROM nearest_station)
                   AND wban = (SELECT wban FROM nearest_station)
                 GROUP BY year
                 ORDER BY year DESC
             """
 
-            job = self.client.query(query)
+            job_config = bigquery.QueryJobConfig(
+                query_parameters=[
+                    bigquery.ScalarQueryParameter("longitude", "FLOAT64", longitude),
+                    bigquery.ScalarQueryParameter("latitude", "FLOAT64", latitude),
+                    bigquery.ScalarQueryParameter("start_year", "STRING", str(start_year)),
+                    bigquery.ScalarQueryParameter("end_year", "STRING", str(end_year)),
+                ]
+            )
+
+            job = self.client.query(query, job_config=job_config)
             rows = list(job.result())
 
             if not rows:
@@ -181,16 +199,20 @@ class BigQueryDataLakeService:
             return self._get_mock_tranche_analytics()
 
         try:
-            query = f"""  # nosec B608
+            project_id = self._safe_identifier(self.project_id, "project_id")
+            dataset = self._safe_identifier(self.dataset, "dataset")
+            table_ref = f"{project_id}.{dataset}.vault_tranches"
+
+            query = f"""
                 SELECT
                     tranche,
                     SUM(deposit_amount) as tvl,
                     AVG(yield_rate) as avg_yield,
                     COUNT(DISTINCT depositor) as depositors,
                     SUM(claims_paid) as total_claims
-                FROM `{self.project_id}.{self.dataset}.vault_tranches`
+                FROM `{table_ref}`
                 GROUP BY tranche
-            """
+            """  # nosec B608
             job = self.client.query(query)
             rows = list(job.result())
 

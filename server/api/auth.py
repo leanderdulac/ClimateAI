@@ -16,6 +16,7 @@ from middleware.auth_middleware import (
 )
 from models.schemas import (
     LoginRequest,
+    PublicRegisterRequest,
     RefreshTokenRequest,
     Token,
     User,
@@ -32,7 +33,7 @@ security = HTTPBearer()
 
 @router.post("/register", response_model=User)
 async def register(
-    user_data: UserCreate,
+    user_data: PublicRegisterRequest,
     db: AsyncSession = Depends(get_db_session),
 ):
     """
@@ -51,7 +52,16 @@ async def register(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Email já cadastrado"
         )
 
-    return await auth_service.create_user(db, user_data)
+    create_data = UserCreate(
+        email=user_data.email,
+        full_name=user_data.full_name,
+        password=user_data.password,
+        organization=user_data.organization,
+        role=UserRole.USER,
+        is_active=True,
+    )
+
+    return await auth_service.create_user(db, create_data)
 
 
 @router.post("/login", response_model=Token)

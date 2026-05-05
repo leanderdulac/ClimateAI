@@ -30,7 +30,7 @@ COPY server/requirements-prod-ml.txt .
 # - Install remaining production requirements
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir "numpy<2.0.0" && \
-    pip install --no-cache-dir --prefer-binary --index-url https://download.pytorch.org/whl/cpu 'torch==2.1.1+cpu' && \
+    pip install --no-cache-dir --prefer-binary --index-url https://download.pytorch.org/whl/cpu 'torch==2.8.0+cpu' && \
     pip install --no-cache-dir -r requirements-prod-ml.txt
 
 # ==========================================

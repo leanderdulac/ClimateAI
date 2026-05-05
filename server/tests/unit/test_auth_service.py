@@ -6,6 +6,7 @@ import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from datetime import datetime, timedelta
+from pydantic import ValidationError
 
 
 class TestAuthService(unittest.TestCase):
@@ -151,6 +152,21 @@ class TestUserPermissions(unittest.TestCase):
         self.assertTrue(user_perms.can_access_climate_data)
         self.assertFalse(user_perms.can_access_pricing_models)
         self.assertFalse(user_perms.can_manage_users)
+
+
+class TestPublicRegistrationSchema(unittest.TestCase):
+    """Testes para o payload de cadastro público."""
+
+    def test_public_registration_rejects_role_injection(self):
+        from models.schemas import PublicRegisterRequest
+
+        with self.assertRaises(ValidationError):
+            PublicRegisterRequest(
+                email='test@example.com',
+                full_name='Test User',
+                password='SecurePassword123!',
+                role='admin',
+            )
 
 
 if __name__ == '__main__':

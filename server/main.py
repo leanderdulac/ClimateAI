@@ -12,8 +12,9 @@ from functools import lru_cache
 from typing import Any, Dict, List, Optional
 
 import uvicorn
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
 
@@ -318,6 +319,12 @@ for var, description in required_env_vars:
 # (Imports e código inicial)
 # from lib.exception_handlers import register_handlers
 from middleware.error_handling import setup_error_middleware
+from middleware.auth_middleware import require_admin
+from models.schemas import User
+
+# Configuração de prefixo da API
+# Em DigitalOcean, o ingress faz stripping de '/api', então o prefixo interno deve ser '/v1'
+API_PREFIX = os.getenv("API_PREFIX", "/api/v1")
 
 # (Código omitido para brevidade)
 
@@ -327,6 +334,9 @@ app = FastAPI(
     description="API do Framework Integrado de Modelagem Climático-Econômica",
     version="1.0.0",
     validate_responses=True,
+    docs_url="/docs" if settings.DEBUG else None,
+    redoc_url="/redoc" if settings.DEBUG else None,
+    openapi_url="/openapi.json" if settings.DEBUG else None,
 )
 
 # Setup advanced error handling middleware
@@ -336,18 +346,23 @@ setup_error_middleware(app)
 init_otel(app)
 
 # Configuração de CORS
-# Em produção, ALLOW_ORIGINS deve ser configurado com a URL do frontend (ex: https://meu-app.netlify.app)
-# Se não configurado, permite todas as origens (*) por padrão para facilitar deploy inicial
-allow_origins_str = os.getenv("ALLOW_ORIGINS", "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:3000")
-allow_origins = allow_origins_str.split(",") if allow_origins_str != "*" else ["*"]
+allow_origins = settings.ALLOW_ORIGINS
+allow_credentials = "*" not in allow_origins
+
+if "*" in allow_origins and not settings.DEBUG:
+    raise RuntimeError("ALLOW_ORIGINS='*' não é permitido fora de DEBUG")
 
 # Security headers middleware (Register early to ensure headers are set even for errors)
 app.add_middleware(SecurityHeadersMiddleware)
 
+if settings.DOMAIN and not settings.DEBUG:
+    trusted_hosts = [settings.DOMAIN, f"*.{settings.DOMAIN}"]
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=trusted_hosts)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allow_origins,
-    allow_credentials=True,
+    allow_credentials=allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -389,10 +404,6 @@ async def redaction_middleware(request: Request, call_next):
     return response
 # Registrar os handlers de exceção customizados
     # register_handlers(app)
-
-# Configuração de prefixo da API
-# Em DigitalOcean, o ingress faz stripping de '/api', então o prefixo interno deve ser '/v1'
-API_PREFIX = os.getenv("API_PREFIX", "/api/v1")
 
 # (Restante do código, incluindo middlewares e routers)
 

@@ -32,9 +32,7 @@ class TransparencyService:
             return self._get_mock_audit(tx_hash)
 
         try:
-            # Concept: Query a table that maps tx_hash to GEE metadata and Severity Scores
-            # In Phase 4, we assume this table is populated by our Oracle Cloud Function
-            query = f"""
+            query = """
                 SELECT 
                     tx_hash,
                     timestamp,
@@ -44,11 +42,34 @@ class TransparencyService:
                     location_lat,
                     location_lon
                 FROM `climatewise-institutional.audit.payouts`
-                WHERE tx_hash = '{tx_hash}'
+                WHERE tx_hash = @tx_hash
                 LIMIT 1
             """
-            
-            # Simulated result for Phase 4
+
+            job_config = bigquery.QueryJobConfig(
+                query_parameters=[
+                    bigquery.ScalarQueryParameter("tx_hash", "STRING", tx_hash)
+                ]
+            )
+            rows = list(self.client.query(query, job_config=job_config).result())
+
+            if rows:
+                row = rows[0]
+                return {
+                    "tx_hash": row.tx_hash,
+                    "satellite_evidence": {
+                        "source": "Sentinel-2 / Google Earth Engine",
+                        "ndvi_at_payout": row.ndvi_value,
+                        "anomaly_detected": True,
+                        "gee_report_id": row.gee_report_id,
+                    },
+                    "actuarial_proof": {
+                        "severity_score": row.severity_score,
+                    },
+                    "timestamp": row.timestamp.isoformat() if hasattr(row.timestamp, "isoformat") else str(row.timestamp),
+                    "status": "Verified on BigQuery"
+                }
+
             return {
                 "tx_hash": tx_hash,
                 "satellite_evidence": {

@@ -201,8 +201,8 @@ class AtlasOracleSimulationService:
         tx = SimulatedBlockchainTransaction(
             tx_id=tx_id,
             token_uid=self.SIMULATED_TOKENS['CLMT']['uid'],
-            from_address='0x' + hashlib.md5(b'oracle').hexdigest(),
-            to_address='0x' + hashlib.md5(uf.encode()).hexdigest(),
+            from_address='0x' + hashlib.md5(b'oracle', usedforsecurity=False).hexdigest(),
+            to_address='0x' + hashlib.md5(uf.encode(), usedforsecurity=False).hexdigest(),
             amount=amount,
             timestamp=datetime.now(),
             block_height=random.randint(1000000, 2000000),
@@ -475,7 +475,7 @@ class AtlasOracleSimulationService:
             'total_blockchain_transactions': len(self.transactions),
             'last_update': self._last_update.isoformat(),
             'network': 'Hathor Testnet (Simulated)',
-            'contract_address': '0x' + hashlib.md5(b'climate_oracle').hexdigest(),
+            'contract_address': '0x' + hashlib.md5(b'climate_oracle', usedforsecurity=False).hexdigest(),
         }
 
     async def trigger_new_event(self, db: Any) -> Dict[str, Any]:
@@ -521,8 +521,8 @@ class AtlasOracleSimulationService:
                 db_tx = BlockchainTransaction(
                     tx_hash=event_data.blockchain_tx_id,
                     token_uid=self.SIMULATED_TOKENS['CLMT']['uid'],
-                    from_address='0x' + hashlib.md5(b'oracle').hexdigest(),
-                    to_address='0x' + hashlib.md5(event_data.uf.encode()).hexdigest(),
+                    from_address='0x' + hashlib.md5(b'oracle', usedforsecurity=False).hexdigest(),
+                    to_address='0x' + hashlib.md5(event_data.uf.encode(), usedforsecurity=False).hexdigest(),
                     amount=event_data.payout_amount,
                     block_height=random.randint(1000000, 2000000),
                     confirmations=random.randint(6, 100),

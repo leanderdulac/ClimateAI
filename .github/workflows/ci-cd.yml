@@ -10,6 +10,8 @@ on:
 env:
   PYTHON_VERSION: "3.11"
   NODE_VERSION: "20"
+  CI_DB_PASSWORD: ${{ secrets.CI_DB_PASSWORD || 'ci-climateai-db-test-only' }}
+  CI_SECRET_KEY: ${{ secrets.CI_SECRET_KEY || 'ci-climateai-secret-key-test-only-min32ch' }}
 
 jobs:
   # Backend Tests and Build
@@ -21,7 +23,7 @@ jobs:
         image: postgres:13
         env:
           POSTGRES_USER: climateai
-          POSTGRES_PASSWORD: climateai123
+          POSTGRES_PASSWORD: ${{ env.CI_DB_PASSWORD }}
           POSTGRES_DB: climateai
         options: >-
           --health-cmd pg_isready
@@ -86,9 +88,9 @@ jobs:
 
       - name: Run tests
         env:
-          DATABASE_URL: postgresql://climateai:climateai123@localhost:5432/climateai
+          DATABASE_URL: postgresql://climateai:${{ env.CI_DB_PASSWORD }}@localhost:5432/climateai
           REDIS_URL: redis://localhost:6379
-          SECRET_KEY: test-secret-key-for-ci
+          SECRET_KEY: ${{ env.CI_SECRET_KEY }}
           PYTEST_ADDOPTS: -m "not slow and not performance"
         run: |
           cd server
@@ -206,7 +208,7 @@ jobs:
         image: postgres:13
         env:
           POSTGRES_USER: climateai
-          POSTGRES_PASSWORD: climateai123
+          POSTGRES_PASSWORD: ${{ env.CI_DB_PASSWORD }}
           POSTGRES_DB: climateai
         options: >-
           --health-cmd pg_isready
@@ -249,9 +251,9 @@ jobs:
 
       - name: Run integration tests
         env:
-          DATABASE_URL: postgresql://climateai:climateai123@localhost:5432/climateai
+          DATABASE_URL: postgresql://climateai:${{ env.CI_DB_PASSWORD }}@localhost:5432/climateai
           REDIS_URL: redis://localhost:6379
-          SECRET_KEY: test-secret-key-for-ci
+          SECRET_KEY: ${{ env.CI_SECRET_KEY }}
         run: |
           cd server
           pip install pytest pytest-asyncio requests

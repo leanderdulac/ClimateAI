@@ -6,7 +6,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr
 
 
 class UserRole(str, Enum):
@@ -35,6 +35,17 @@ class UserCreate(UserBase):
     """Modelo para criação de usuário"""
 
     password: str
+
+
+class PublicRegisterRequest(BaseModel):
+    """Payload permitido para cadastro público."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    email: EmailStr
+    full_name: str
+    password: str
+    organization: Optional[str] = None
 
 
 class UserUpdate(BaseModel):

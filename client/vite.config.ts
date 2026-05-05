@@ -44,11 +44,26 @@ export default defineConfig({
     },
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          'vendor-ui': ['@radix-ui/react-popover', '@radix-ui/react-select', '@radix-ui/react-slot', '@radix-ui/react-tabs', '@radix-ui/react-progress'],
-          'vendor-charts': ['recharts'],
-          'vendor-utils': ['date-fns', 'clsx'],
+        manualChunks(id) {
+          if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/') || id.includes('node_modules/react-router-dom/')) {
+            return 'vendor-react'
+          }
+
+          if (id.includes('node_modules/@radix-ui/')) {
+            return 'vendor-ui'
+          }
+
+          if (id.includes('node_modules/recharts/')) {
+            return 'vendor-charts'
+          }
+
+          if (id.includes('node_modules/react-leaflet/') || id.includes('node_modules/leaflet/')) {
+            return 'vendor-maps'
+          }
+
+          if (id.includes('node_modules/date-fns/') || id.includes('node_modules/clsx/')) {
+            return 'vendor-utils'
+          }
         }
       }
     },

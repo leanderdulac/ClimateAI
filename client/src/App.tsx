@@ -2,7 +2,7 @@ import { AppRoutes } from './routes';
 import { AuthProvider } from './lib/AuthContext';
 import { LocationProvider } from './lib/LocationContext';
 import { PeriodProvider } from './lib/PeriodContext';
-import { ClimateAssistant } from './components/ClimateAssistant';
+import { ClimateAssistantLauncher } from './components/ClimateAssistantLauncher';
 import { useConsent, ConsentBanner } from './hooks/useConsent';
 
 export default function App() {
@@ -14,7 +14,7 @@ export default function App() {
         <PeriodProvider>
           <div className="app">
             <AppRoutes />
-            <ClimateAssistant />
+            <ClimateAssistantLauncher />
             <ConsentBanner
               show={showBanner}
               onAcceptAll={acceptAll}

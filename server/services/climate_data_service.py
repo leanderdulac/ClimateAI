@@ -337,7 +337,7 @@ class ClimateDataService:
         loc_name = location['name']
         hash_input = f"{loc_name}_{wcode}_{datetime.now().hour}"
         return ClimateAlert(
-            alert_id=f"openmeteo_{hashlib.md5(hash_input.encode()).hexdigest()[:12]}",
+            alert_id=f"openmeteo_{hashlib.md5(hash_input.encode(), usedforsecurity=False).hexdigest()[:12]}",
             alert_type=alert_type,
             severity=severity,
             severity_score=severity_score,
@@ -424,7 +424,7 @@ class ClimateDataService:
                         continue  # below threshold
 
                     alerts.append(ClimateAlert(
-                        alert_id=f"cemaden_{hashlib.md5(f'{municipio}_{valor}'.encode()).hexdigest()[:12]}",
+                        alert_id=f"cemaden_{hashlib.md5(f'{municipio}_{valor}'.encode(), usedforsecurity=False).hexdigest()[:12]}",
                         alert_type=atype,
                         severity=severity,
                         severity_score=score,

@@ -59,7 +59,7 @@ class SimulationRequest(BaseModel):
     longitude: float
     contract: ContractParams
     reinsurance_layers: Optional[List[ReinsuranceLayerModel]] = []
-    years_back: int = 20
+    years_back: int = Field(20, ge=1, le=50)
     actual_losses: Optional[List[LossYear]] = [] # For Basis Risk analysis
     include_ep_curve: bool = False
     

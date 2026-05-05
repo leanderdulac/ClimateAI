@@ -5,7 +5,7 @@ Endpoints para simulação de dados reais do Oracle e Blockchain
 
 import logging
 from typing import Dict, Any, List, Optional
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
 from services.atlas_oracle_simulation_service import atlas_oracle_simulation
@@ -66,10 +66,12 @@ class OracleStatusResponse(BaseModel):
 from config.database import get_db_session
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, Depends
+from middleware.auth_middleware import require_admin
+from models.schemas import User
 
 @router.get("/live-events", response_model=List[OracleEventResponse])
 async def get_live_events(
-    limit: int = 20,
+    limit: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db_session)
 ):
     """
@@ -121,7 +123,10 @@ async def get_oracle_status():
 
 
 @router.post("/trigger-event", response_model=OracleEventResponse)
-async def trigger_new_event(db: AsyncSession = Depends(get_db_session)):
+async def trigger_new_event(
+    current_user: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db_session),
+):
     """
     Triggerar novo evento simulado (para demonstração)
     
@@ -135,7 +140,10 @@ async def trigger_new_event(db: AsyncSession = Depends(get_db_session)):
 
 
 @router.get("/demo")
-async def get_demo_data(db: AsyncSession = Depends(get_db_session)):
+async def get_demo_data(
+    current_user: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db_session),
+):
     """
     Obter dados completos para demonstração
     

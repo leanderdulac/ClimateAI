@@ -48,12 +48,18 @@ export function clearRequestId(): void {
  */
 export function getDefaultHeaders(): HeadersInit {
     const requestId = getOrCreateRequestId();
-    
-    return {
+    const accessToken = localStorage.getItem('access_token');
+    const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         'X-Request-ID': requestId,
-        'X-Correlation-ID': requestId,  // Alias para compatibilidade
+        'X-Correlation-ID': requestId,
     };
+
+    if (accessToken) {
+        headers.Authorization = `Bearer ${accessToken}`;
+    }
+
+    return headers;
 }
 
 /**

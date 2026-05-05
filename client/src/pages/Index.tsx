@@ -1,15 +1,73 @@
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { LocationSelector } from "@/components/LocationSelector";
 import { MapDisplay } from "@/components/MapDisplay";
 import { WeatherWidget } from "@/components/WeatherWidget";
-import { ClimateDataWidget } from "@/components/ClimateDataWidget";
 import { InsuranceRecommendation } from "@/components/InsuranceRecommendation";
-import { PricingSimulator } from "@/components/PricingSimulator";
 import { DashboardLayout } from "@/components/DashboardLayout";
+import { Skeleton } from "@/components/ui/skeleton";
 import { usePeriod } from "@/lib/PeriodContext";
 import { Globe, TrendingUp, DollarSign, Zap, Cloud, Shield, Sparkles, Coins } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
+
+const ClimateDataWidget = lazy(() =>
+  import("@/components/ClimateDataWidget").then((module) => ({ default: module.ClimateDataWidget }))
+);
+const PricingSimulator = lazy(() =>
+  import("@/components/PricingSimulator").then((module) => ({ default: module.PricingSimulator }))
+);
+
+function useDeferredSection() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (!ref.current || visible) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '300px 0px', threshold: 0.1 }
+    );
+
+    observer.observe(ref.current);
+
+    return () => observer.disconnect();
+  }, [visible]);
+
+  return { ref, visible };
+}
+
+function DeferredSection({
+  children,
+  minHeightClassName,
+}: {
+  children: React.ReactNode;
+  minHeightClassName: string;
+}) {
+  const { ref, visible } = useDeferredSection();
+
+  return (
+    <div ref={ref}>
+      {visible ? (
+        children
+      ) : (
+        <div className="space-y-4 rounded-2xl border border-border/60 bg-card/40 p-6">
+          <Skeleton className="h-8 w-56" />
+          <Skeleton className={`w-full rounded-xl ${minHeightClassName}`} />
+        </div>
+      )}
+    </div>
+  );
+}
 
 function PeriodButtons() {
   const { selectedPeriod, setSelectedPeriod } = usePeriod();
@@ -166,13 +224,21 @@ export function IndexPage() {
           </div>
 
           {/* Climate Data Analysis */}
-          <div className="mb-8 hover:-translate-y-1 transition-transform duration-300">
-            <ClimateDataWidget />
+          <div className="mb-8 hover:-translate-y-1 transition-transform duration-300 climate-data-widget">
+            <DeferredSection minHeightClassName="h-[520px]">
+              <Suspense fallback={<Skeleton className="h-[520px] w-full rounded-2xl" />}>
+                <ClimateDataWidget />
+              </Suspense>
+            </DeferredSection>
           </div>
 
           {/* Pricing Simulator */}
           <div className="mb-16 hover:-translate-y-1 transition-transform duration-300">
-            <PricingSimulator />
+            <DeferredSection minHeightClassName="h-[640px]">
+              <Suspense fallback={<Skeleton className="h-[640px] w-full rounded-2xl" />}>
+                <PricingSimulator />
+              </Suspense>
+            </DeferredSection>
           </div>
         </div>
 

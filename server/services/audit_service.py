@@ -643,28 +643,28 @@ class AuditComplianceService:
         with self._get_db_connection() as conn:
             cursor = conn.cursor()
 
-            # Build date filter
-            date_filter = ""
+            conditions = ["1=1"]
             params = []
 
             if start_date:
-                date_filter += " AND v.created_at >= ?"
+                conditions.append("v.created_at >= ?")
                 params.append(start_date.timestamp())
 
             if end_date:
-                date_filter += " AND v.created_at <= ?"
+                conditions.append("v.created_at <= ?")
                 params.append(end_date.timestamp())
 
+            where_clause = " AND ".join(conditions)
+
             # Get violations
-            # NOTE: date_filter is built from hardcoded SQL fragments only (no user input)
-            violations_query = (
-                "SELECT v.*, r.rule_name, r.severity as rule_severity, r.description as rule_description "
-                "FROM compliance_violations v "
-                "LEFT JOIN compliance_rules r ON v.rule_id = r.id "
-                "WHERE 1=1 "
-                + date_filter
-                + " ORDER BY v.created_at DESC"
-            )  # nosec B608
+            violations_query = " ".join([
+                "SELECT",
+                "v.*, r.rule_name, r.severity as rule_severity, r.description as rule_description",
+                "FROM compliance_violations v",
+                "LEFT JOIN compliance_rules r ON v.rule_id = r.id",
+                f"WHERE {where_clause}",
+                "ORDER BY v.created_at DESC",
+            ])
             cursor.execute(violations_query, params)
 
             violations = []
@@ -677,17 +677,15 @@ class AuditComplianceService:
                 violations.append(violation)
 
             # Get summary statistics
-            # NOTE: date_filter is built from hardcoded SQL fragments only (no user input)
-            stats_query = (
-                "SELECT "
-                "COUNT(*) as total_violations, "
-                "COUNT(CASE WHEN status = 'open' THEN 1 END) as open_violations, "
-                "COUNT(CASE WHEN severity = 'critical' THEN 1 END) as critical_violations, "
-                "COUNT(CASE WHEN severity = 'high' THEN 1 END) as high_violations "
-                "FROM compliance_violations v "
-                "WHERE 1=1 "
-                + date_filter
-            )  # nosec B608
+            stats_query = " ".join([
+                "SELECT",
+                "COUNT(*) as total_violations,",
+                "COUNT(CASE WHEN status = 'open' THEN 1 END) as open_violations,",
+                "COUNT(CASE WHEN severity = 'critical' THEN 1 END) as critical_violations,",
+                "COUNT(CASE WHEN severity = 'high' THEN 1 END) as high_violations",
+                "FROM compliance_violations v",
+                f"WHERE {where_clause}",
+            ])
             cursor.execute(stats_query, params)
 
             stats = dict(

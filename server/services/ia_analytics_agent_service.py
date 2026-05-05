@@ -7,7 +7,6 @@ and provides system operation insights.
 
 import json
 import logging
-import pickle
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple

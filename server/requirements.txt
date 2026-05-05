@@ -6,9 +6,9 @@ fastapi==0.128.0
 uvicorn[standard]==0.40.0
 pydantic==2.9.2
 pydantic-settings==2.6.0
-requests==2.32.5
-python-multipart==0.0.22
-python-dotenv==1.0.1
+requests==2.33.0
+python-multipart==0.0.26
+python-dotenv==1.2.2
 redis==7.1.0
 sqlalchemy==2.0.36
 psycopg2-binary==2.9.11
@@ -16,44 +16,44 @@ pandas==2.2.3
 numpy>=1.26.0,<2.0.0
 scipy>=1.11.0,<1.14.0
 scikit-learn==1.5.2
-torch==2.4.1+cpu  # PyTorch for LSTM attention mechanisms (aligned with prod ML) - Updated for security
-nolds>=0.5.2
+torch==2.8.0+cpu  # PyTorch for LSTM attention mechanisms (aligned with prod ML) - Updated for security
+nolds==0.6.3
 python-json-logger==4.0.0  # For structured JSON logging - Updated for security
 # ⚠️ REMOVIDO: tensorflow==2.18.0
 # Usar requirements-ml.txt para desenvolvimento com TensorFlow
-statsmodels>=0.14.0
+statsmodels==0.14.6
 pytz==2025.2
 httpx==0.28.1
-openmeteo-requests
-google-generativeai>=0.4.0
-requests-cache
-retry-requests
+openmeteo-requests==1.7.5
+google-generativeai==0.8.6
+requests-cache==1.3.1
+retry-requests==2.0.0
 geopy==2.4.1
-tenacity>=9.0.0  # Retry library com circuit breaker pattern
+tenacity==9.1.4  # Retry library com circuit breaker pattern
 pycep-correios==5.2.0
 aiosqlite==0.22.1
 # Observabilidade / OpenTelemetry
-opentelemetry-sdk>=1.39.1
-opentelemetry-exporter-otlp>=1.39.1
-opentelemetry-instrumentation-fastapi>=0.48b0
-opentelemetry-instrumentation-logging>=0.48b0
+opentelemetry-sdk==1.41.1
+opentelemetry-exporter-otlp==1.41.1
+opentelemetry-instrumentation-fastapi==0.62b1
+opentelemetry-instrumentation-logging==0.62b1
 # Authentication dependencies
-pyjwt[crypto]>=2.8.0
+pyjwt[crypto]==2.12.1
 bcrypt==3.2.2
 passlib[bcrypt]==1.7.4
 # Database migration
 alembic==1.18.1
-psutil
-boto3>=1.34.0
-pynamicalsys
+psutil==7.2.2
+boto3==1.43.3
+pynamicalsys==1.5.3
 asyncpg==0.29.0
-email-validator>=2.0.0
-beautifulsoup4>=4.12.0
-feedparser>=6.0.0
-aiohttp>=3.9.0
+email-validator==2.3.0
+beautifulsoup4==4.14.3
+feedparser==6.0.12
+aiohttp==3.13.5
 
 # Secrets Manager - HashiCorp Vault
-hvac==2.3.0
+hvac==2.4.0
 
 # NOTA IMPORTANTE:
 # Perfil padrão (produção com ML essencial):
@@ -61,7 +61,7 @@ hvac==2.3.0
 # Para desenvolvimento com TensorFlow:
 #   pip install -r server/requirements-base.txt -r server/requirements-ml.txt
 
-pytest==8.0.0
-pytest-asyncio==0.23.5
+pytest==9.0.3
+pytest-asyncio==1.3.0
 pytest-cov==5.0.0
 pytest-timeout==2.3.1

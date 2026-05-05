@@ -2,6 +2,9 @@
 
 # Script para iniciar toda a plataforma ClimateWise
 
+PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
+BACKEND_PYTHONPATH="$PROJECT_ROOT/server:$PROJECT_ROOT"
+
 echo "🚀 Iniciando Plataforma ClimateWise..."
 
 # Função para verificar se uma porta está livre
@@ -16,6 +19,25 @@ check_port() {
     fi
 }
 
+wait_for_http() {
+    local name=$1
+    local url=$2
+    local max_attempts=${3:-30}
+    local attempt=1
+
+    while [ "$attempt" -le "$max_attempts" ]; do
+        if curl -fsS "$url" >/dev/null 2>&1; then
+            echo "✅ $name pronto"
+            return 0
+        fi
+        sleep 1
+        attempt=$((attempt + 1))
+    done
+
+    echo "❌ $name não respondeu a tempo"
+    return 1
+}
+
 # Verificar portas
 echo "📊 Verificando portas..."
 check_port 8000 && BACKEND_OK=true || BACKEND_OK=false
@@ -26,9 +48,10 @@ check_port 8080 && LANDING_OK=true || LANDING_OK=false
 if [ "$BACKEND_OK" = true ]; then
     echo "🔧 Iniciando Backend (porta 8000)..."
     (
-        cd server
-        source ../.venv/bin/activate
-        PYTHONPATH=. ../.venv/bin/python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+        cd "$PROJECT_ROOT/server"
+        source "$PROJECT_ROOT/.venv/bin/activate"
+        export PYTHONPATH="$BACKEND_PYTHONPATH${PYTHONPATH:+:$PYTHONPATH}"
+        "$PROJECT_ROOT/.venv/bin/python" -m uvicorn main:app --host 0.0.0.0 --port 8000
     ) &
     BACKEND_PID=$!
     echo "✅ Backend iniciado (PID: $BACKEND_PID)"
@@ -36,15 +59,13 @@ else
     echo "⚠️  Backend não iniciado - porta 8000 ocupada"
 fi
 
-# Aguardar backend inicializar
-sleep 3
-
 # Iniciar frontend
 if [ "$FRONTEND_OK" = true ]; then
     echo "🎨 Iniciando Frontend (porta 3000)..."
     (
-        cd client
-        npm run dev -- --host 0.0.0.0 --port 3000
+        cd "$PROJECT_ROOT/client"
+        npm run build
+        npm run preview -- --host 0.0.0.0 --port 3000
     ) &
     FRONTEND_PID=$!
     echo "✅ Frontend iniciado (PID: $FRONTEND_PID)"
@@ -62,14 +83,18 @@ else
     echo "⚠️  Landing Page não iniciada - porta 8080 ocupada"
 fi
 
-# Aguardar inicialização
-sleep 5
+# Aguardar inicialização real
+echo ""
+echo "⏳ Aguardando serviços ficarem prontos..."
+[ "$BACKEND_OK" = true ] && wait_for_http "Backend" "http://localhost:8000/health" 45
+[ "$FRONTEND_OK" = true ] && wait_for_http "Frontend" "http://localhost:3000/" 90
+[ "$LANDING_OK" = true ] && wait_for_http "Landing Page" "http://localhost:8080/landing-page.html" 15
 
 # Verificar status
 echo ""
 echo "=== Status dos Serviços ==="
 echo -n "Backend (porta 8000): "
-if curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/ 2>/dev/null; then
+if curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/health 2>/dev/null; then
     echo "✅ OK"
 else
     echo "❌ Fora do ar"

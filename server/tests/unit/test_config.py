@@ -199,5 +199,19 @@ class TestSecuritySettings(unittest.TestCase):
         self.assertEqual(settings.ALLOWED_FILE_EXTENSIONS, 'csv,json,pdf')
 
 
+class TestSecurityModuleConsistency(unittest.TestCase):
+    """Testes para consistência entre config e módulo de segurança"""
+
+    @patch.dict(os.environ, {}, clear=True)
+    def test_security_module_uses_same_secret_as_settings(self):
+        """Evita divergência de SECRET_KEY entre módulos."""
+        settings = Settings()
+
+        from server.lib import security as security_module
+
+        self.assertEqual(security_module.SECRET_KEY, settings.SECRET_KEY)
+        self.assertEqual(security_module.token_manager.secret_key, settings.SECRET_KEY)
+
+
 if __name__ == '__main__':
     unittest.main()

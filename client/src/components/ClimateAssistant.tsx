@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { geminiApi, embrapaApi } from '../lib/api';
 import { useLocation } from '../lib/LocationContext';
 import { Button } from './ui/button';
@@ -16,19 +16,52 @@ interface Message {
     timestamp: Date;
 }
 
-export function ClimateAssistant() {
+interface AssistantWeatherData {
+    temperatura: number;
+    precipitacao: number;
+    umidade: number;
+    vento_velocidade?: number;
+}
+
+interface MicroclimateData {
+    type: string;
+    totalRainfall: number;
+    heavyRainDays: number;
+    dryDays: number;
+    hotDays: number;
+    windyDays: number;
+    temperatureRange: {
+        min: number;
+        max: number;
+        avg: number;
+    };
+}
+
+interface ClimateAssistantProps {
+    defaultOpen?: boolean;
+}
+
+export function ClimateAssistant({ defaultOpen = false }: ClimateAssistantProps) {
     const { t, language } = useTranslation();
-    const [isOpen, setIsOpen] = useState(false);
+    const [isOpen, setIsOpen] = useState(defaultOpen);
     const [isMinimized, setIsMinimized] = useState(false);
     const { selectedLocation } = useLocation();
-    const [weatherData, setWeatherData] = useState<any>(null);
-    const [microclimateData, setMicroclimateData] = useState<any>(null);
+    const [weatherData, setWeatherData] = useState<AssistantWeatherData | null>(null);
+    const [microclimateData, setMicroclimateData] = useState<MicroclimateData | null>(null);
     // const [policyCost, setPolicyCost] = useState<number | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
     const [inputValue, setInputValue] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const lastAnalyzedLocation = useRef<string | null>(null);
+
+    const getMicroclimateDescription = useCallback((type: string) => {
+        return t(`assistant.microclimate.${type}`);
+    }, [t]);
+
+    const getMicroclimateCharacteristics = useCallback((type: string) => {
+        return t(`assistant.characteristics.${type}`).split(', ');
+    }, [t]);
 
     // Enhanced microclimate analysis and policy cost estimation
     useEffect(() => {
@@ -153,17 +186,7 @@ export function ClimateAssistant() {
             };
             fetchDetailedData();
         }
-    }, [selectedLocation, language]);
-
-    // Helper function to get microclimate descriptions
-    const getMicroclimateDescription = (type: string) => {
-        return t(`assistant.microclimate.${type}`);
-    };
-
-    // Helper function to get microclimate characteristics
-    const getMicroclimateCharacteristics = (type: string) => {
-        return t(`assistant.characteristics.${type}`).split(', ');
-    };
+    }, [getMicroclimateCharacteristics, getMicroclimateDescription, selectedLocation, language]);
 
     // Auto-scroll to bottom
     useEffect(() => {
