@@ -18,7 +18,7 @@ from services.unified_earth_space_platform import (
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/v1/unified-platform", tags=["unified-platform"])
+router = APIRouter(prefix="/unified-platform", tags=["unified-platform"])
 
 
 class RiskAssessmentRequest(BaseModel):

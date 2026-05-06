@@ -15,6 +15,7 @@ os.environ.setdefault("GROK_API_KEY", "test-dummy-grok-key")
 os.environ.setdefault("SECRET_KEY", "test-secret-key-for-pytest-only-not-production")
 os.environ.setdefault("SUPABASE_URL", "https://test.supabase.co")
 os.environ.setdefault("SUPABASE_ANON_KEY", "test-dummy-anon-key")
+os.environ.setdefault("DATABASE_ENABLED", "true")
 # Ensure tests default to async sqlite driver before importing app
 os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///./.test_db.sqlite")
 

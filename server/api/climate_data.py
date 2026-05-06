@@ -9,7 +9,7 @@ from fastapi import APIRouter, Query
 from services.climate_data_service import get_climate_data_service
 
 router = APIRouter(
-    prefix="/v1/climate-data",
+    prefix="/climate-data",
     tags=["Climate Data"],
 )
 

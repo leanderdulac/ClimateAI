@@ -34,6 +34,89 @@ O Framework Integrado de Modelagem Climático-Econômica (FIMCE) disponibiliza o
 - `GET /api/v1/modelagem/impacto-climatico` - Impacto climático sobre preços
   - Parâmetros: simbolo, latitude, longitude, periodo (padrão: 30)
 
+## 🧮 Unified Pricing Orchestrator
+- `POST /api/v1/unified-pricing/calculate` - Cálculo unificado de prêmio com 6 modelos + ajuste meteorológico NOAA
+  - Corpo: coverage_amount, location_latitude, location_longitude, risk_factors, policy_duration_years, confidence_level, custom_model_weights (opcional), models_to_use (opcional)
+  - Saída relevante em `explanation`:
+    - `noaa_weather_adjustment`: risco meteorológico calculado e modificador aplicado
+    - `noaa_blend_parameters`: parâmetros efetivos usados pelo orquestrador
+- `GET /api/v1/unified-pricing/models` - Lista modelos disponíveis e pesos padrão
+- `GET /api/v1/unified-pricing/health` - Status do orquestrador
+
+### Parâmetros Operacionais NOAA (ambiente)
+- `NOAA_RISK_BLEND_WEIGHT` (padrão: `0.15`, faixa: `0.0` a `1.0`)
+  - Define o peso do risco meteorológico NOAA no `combined_risk_score`.
+  - Peso base dos modelos internos = `1 - NOAA_RISK_BLEND_WEIGHT`.
+- `NOAA_PREMIUM_MAX_IMPACT` (padrão: `0.12`, faixa: `0.0` a `0.5`)
+  - Define o teto de aumento no prêmio recomendado vindo do NOAA.
+  - Exemplo: `0.12` permite até `+12%`.
+
+### Comportamento de Fallback NOAA
+- Se NOAA estiver indisponível, o ajuste é neutro:
+  - `combined_risk_score` permanece sem blend NOAA
+  - `premium_modifier = 1.0`
+  - `warnings` inclui aviso operacional
+
+## 🌾 Agricultural Strategy (ENSO Adaptation)
+- `POST /api/v1/agri-strategy/plan` - Plano de estratégia agrícola para risco extremo (El Niño/La Niña)
+  - Corpo: `crop_type`, `phenological_stage`, `latitude`, `longitude`, `planning_horizon_days`, `risk_tolerance`, `farm_profile`
+  - Saída:
+    - `climate_outlook` (regime ENSO + fonte de forecast)
+    - `exposure_scores` (heat, drought, excess_rain, flood, wind, disease)
+    - `operational_actions` (ações por horizonte e prioridade)
+    - `financial_actions` (seguro paramétrico, proteção de caixa/hedge)
+    - `alert_triggers` (gatilhos operacionais)
+- `GET /api/v1/agri-strategy/catalog` - Catálogo de culturas e estágios suportados
+- `GET /api/v1/agri-strategy/health` - Status do módulo
+
+### Exemplo de requisição
+```bash
+curl -X POST http://localhost:8000/api/v1/agri-strategy/plan \
+  -H "Content-Type: application/json" \
+  -d '{
+    "crop_type": "soybean",
+    "phenological_stage": "flowering",
+    "latitude": -23.55,
+    "longitude": -46.63,
+    "planning_horizon_days": 120,
+    "risk_tolerance": "medium",
+    "farm_profile": {
+      "irrigation_available": false,
+      "drainage_level": "medium",
+      "soil_cover_level": "high",
+      "farm_size_hectares": 180
+    }
+  }'
+```
+
+### Exemplo de resposta (resumido)
+```json
+{
+  "crop_type": "soybean",
+  "phenological_stage": "flowering",
+  "planning_horizon_days": 120,
+  "climate_outlook": {
+    "enso": {
+      "regime_label": "la_nina",
+      "regime_confidence": "high",
+      "impact_risk_modifier": 1.08
+    },
+    "forecast_source": "NOAA/NWS"
+  },
+  "exposure_scores": {
+    "heat": 0.42,
+    "drought": 0.38,
+    "excess_rain": 0.74,
+    "flood": 0.69,
+    "wind": 0.41,
+    "disease": 0.63
+  },
+  "operational_actions": [...],
+  "financial_actions": [...],
+  "alert_triggers": [...]
+}
+```
+
 ## 🔔 Sistema de Alertas
 - `GET /api/v1/alertas` - Obter alertas ativos
   - Parâmetros: latitude (opcional), longitude (opcional), nivel_minimo (padrão: 1), ativo (padrão: true), limite (padrão: 50)

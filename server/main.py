@@ -4,6 +4,7 @@ Servidor principal do sistema de previsão climática e modelagem de preços
 """
 
 import hashlib
+import asyncio
 import logging
 import os
 import time
@@ -163,6 +164,7 @@ from fastapi import Query
 from pydantic import BaseModel
 
 from api.alertas import router as alertas_router
+from api.agri_strategy import router as agri_strategy_router
 from api.auth import router as auth_router
 from api.audit import router as audit_router
 from api.backtesting import router as backtesting_router
@@ -253,6 +255,7 @@ from api.tcfd_issb import router as tcfd_issb_router
 from api.tokenizacao import router as tokenizacao_router
 from api.transition_risk import router as transition_risk_router
 from api.unified_pricing import router as unified_pricing_router
+from api.var_backtesting import router as var_backtesting_router
 from api.hathor_blockchain import router as hathor_blockchain_router
 from api.celestrak import router as celestrak_router
 from config.database import close_db, init_db
@@ -688,6 +691,52 @@ async def http_exception_handler(request, exc):
 
 # Variável global para armazenar o health checker
 health_checker: Optional[HealthChecker] = None
+enso_ingestion_task: Optional[asyncio.Task] = None
+
+
+async def _run_enso_ingestion_once() -> None:
+    """Fetch latest ENSO snapshot and persist it to climate_enso_signals."""
+    from config.database import get_db_session
+    from services.enso_service import ENSOService
+
+    service = ENSOService()
+    snapshot = await service.get_latest_snapshot()
+
+    async for db in get_db_session():
+        await service.persist_snapshot(db, snapshot)
+        break
+
+    logger.info(
+        "ENSO ingestion completed: regime=%s ref_date=%s modifier=%.3f",
+        snapshot.get("regime_label"),
+        snapshot.get("reference_date"),
+        float(snapshot.get("impact_risk_modifier") or 1.0),
+    )
+
+
+async def _enso_monthly_ingestion_loop() -> None:
+    """Background monthly ENSO ingestion loop.
+
+    By default, it runs once per month when UTC day >= 5.
+    """
+    run_day = int(os.getenv("ENSO_INGESTION_DAY", "5"))
+    check_interval_seconds = int(
+        os.getenv("ENSO_INGESTION_CHECK_INTERVAL_SECONDS", str(60 * 60 * 24))
+    )
+    last_run_marker: Optional[str] = None
+
+    while True:
+        now = datetime.utcnow()
+        marker = f"{now.year}-{now.month:02d}"
+
+        if now.day >= run_day and marker != last_run_marker:
+            try:
+                await _run_enso_ingestion_once()
+                last_run_marker = marker
+            except Exception as exc:
+                logger.warning("ENSO monthly ingestion failed: %s", exc)
+
+        await asyncio.sleep(check_interval_seconds)
 
 
 # Endpoint de verificação de saúde completa
@@ -955,25 +1004,31 @@ try:
         brazil_disaster_alerts_router, prefix=f"{API_PREFIX}/brazil-alerts", tags=["brazil-alerts"]
     )
     app.include_router(
-        atlas_disasters_router, tags=["atlas-disasters"]
+        atlas_disasters_router, prefix=API_PREFIX, tags=["atlas-disasters"]
     )
     app.include_router(
-        atlas_integration_router, tags=["atlas-integration"]
+        atlas_integration_router, prefix=API_PREFIX, tags=["atlas-integration"]
     )
     app.include_router(
-        atlas_oracle_simulation_router, tags=["atlas-simulation"]
+        atlas_oracle_simulation_router, prefix=API_PREFIX, tags=["atlas-simulation"]
     )
     app.include_router(
-        atlas_realtime_climate_router, tags=["atlas-realtime"]
+        atlas_realtime_climate_router, prefix=API_PREFIX, tags=["atlas-realtime"]
     )
     app.include_router(
-        news_crawler_router, tags=["news-crawler"]
+        news_crawler_router, prefix=API_PREFIX, tags=["news-crawler"]
     )
     app.include_router(
-        climate_data_router, tags=["climate-data"]
+        climate_data_router, prefix=API_PREFIX, tags=["climate-data"]
     )
     app.include_router(
-        unified_platform_router, tags=["unified-platform"]
+        unified_platform_router, prefix=API_PREFIX, tags=["unified-platform"]
+    )
+    app.include_router(
+        agri_strategy_router, prefix=API_PREFIX, tags=["agri-strategy"]
+    )
+    app.include_router(
+        var_backtesting_router, prefix=API_PREFIX, tags=["var-backtesting"]
     )
     app.include_router(
         parametric_trigger_router, prefix=f"{API_PREFIX}/parametric-triggers", tags=["parametric-triggers"]
@@ -1047,7 +1102,7 @@ except Exception as e:
 @app.on_event("startup")
 async def startup_event():
     """Evento executado na inicialização do servidor"""
-    global health_checker
+    global health_checker, enso_ingestion_task
 
     logger.info("Inicializando ClimateWise...")
 
@@ -1120,6 +1175,19 @@ async def startup_event():
     except Exception as e:
         logger.warning(f"⚠ Climate Data Service initialization failed: {e}")
 
+    # ENSO Monthly Ingestion Scheduler
+    enso_auto = os.getenv("ENSO_AUTO_INGESTION_ENABLED", "true").lower() == "true"
+    enso_run_on_startup = os.getenv("ENSO_RUN_ON_STARTUP", "true").lower() == "true"
+    if enso_auto:
+        if enso_run_on_startup:
+            try:
+                await _run_enso_ingestion_once()
+            except Exception as e:
+                logger.warning(f"⚠ ENSO startup ingestion failed: {e}")
+
+        enso_ingestion_task = asyncio.create_task(_enso_monthly_ingestion_loop())
+        logger.info("✓ ENSO monthly ingestion scheduler initialized")
+
     logger.info("=" * 60)
     logger.info("Servidor ClimateWise iniciado com sucesso")
 
@@ -1127,7 +1195,17 @@ async def startup_event():
 @app.on_event("shutdown")
 async def shutdown_event():
     """Evento executado no encerramento do servidor"""
+    global enso_ingestion_task
     logger.info("Encerrando ClimateWise...")
+
+    if enso_ingestion_task:
+        enso_ingestion_task.cancel()
+        try:
+            await enso_ingestion_task
+        except asyncio.CancelledError:
+            pass
+        enso_ingestion_task = None
+
     if settings.DATABASE_ENABLED:
         await close_db()
         logger.info("Conexões de banco de dados fechadas")

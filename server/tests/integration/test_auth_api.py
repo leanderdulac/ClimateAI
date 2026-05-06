@@ -2,32 +2,22 @@
 Testes de integração para a API de autenticação
 """
 
-import asyncio
-
 import pytest
+import pytest_asyncio
 pytestmark = [pytest.mark.integration, pytest.mark.requires_db]
-from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from config.database import get_db_session
-from main import app
+from config.database import close_db, init_db
 
 
-@pytest.fixture
-def client():
-    """Fixture para cliente HTTP síncrono"""
-    client = TestClient(app=app, base_url="http://testserver")
-    yield client
+@pytest_asyncio.fixture(autouse=True)
+async def ensure_test_db_ready():
+    await init_db()
+    yield
+    await close_db()
 
 
-@pytest.fixture
-async def db_session():
-    """Fixture para sessão de banco de dados"""
-    async for session in get_db_session():
-        yield session
-
-
-@pytest.fixture
+@pytest_asyncio.fixture
 async def admin_user(db_session: AsyncSession):
     """Create admin user for testing"""
     from datetime import datetime

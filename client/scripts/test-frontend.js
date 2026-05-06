@@ -1,42 +1,28 @@
 
 /* eslint-env node, es2021 */
-/* global require, document, console, process */
-// eslint-disable-next-line @typescript-eslint/no-require-imports, no-undef
-const puppeteer = require('puppeteer');
+/* global document, console, process */
+import { chromium } from 'playwright';
+
+const BASE_URL = process.env.FRONTEND_URL || 'http://localhost:3000/';
 
 (async () => {
-  const browser = await puppeteer.launch({ args: ['--no-sandbox'], headless: true });
+  const browser = await chromium.launch({ args: ['--no-sandbox'], headless: true });
   const page = await browser.newPage();
   try {
-    await page.goto('http://localhost:5173/', { waitUntil: 'networkidle2', timeout: 15000 });
+    const targetUrl = new URL('/demo', BASE_URL).toString();
+    await page.goto(targetUrl, { waitUntil: 'networkidle', timeout: 20000 });
 
-    // Wait for city input
-    await page.waitForSelector('input[placeholder="Digite o nome da cidade"]', { timeout: 8000 });
-    await page.type('input[placeholder="Digite o nome da cidade"]', 'Salvador', { delay: 100 });
+    // Validate public demo route is rendered with expected showcase content.
+    await page.waitForURL(/\/demo(?:\?.*)?$/, { timeout: 10000 });
+    await page.waitForSelector('img[alt="Climate Dashboard"]', { timeout: 12000 });
+    await page.waitForSelector('img[alt="Digital Atlas 3D Globe"]', { timeout: 12000 });
 
-    // Wait for suggestion item containing 'Salvador'
-    await page.waitForFunction(() => {
-      const nodes = Array.from(document.querySelectorAll('div'));
-      return nodes.some(n => n.textContent && n.textContent.includes('Salvador'));
-    }, { timeout: 8000 });
-
-    // Click the first suggestion that includes 'Salvador'
-    await page.evaluate(() => {
-      const nodes = Array.from(document.querySelectorAll('div'));
-      const target = nodes.find(n => n.textContent && n.textContent.includes('Salvador'));
-      if (target) target.click();
-    });
-
-    // Wait for formatted address to appear in the page text
-    const found = await page.waitForFunction(() => document.body.innerText.includes('Salvador - BA, Brasil'), { timeout: 8000 }).catch(() => null);
-
-    if (found) {
-      console.log('FRONTEND TEST: PASS - selection produced formatted address');
-    } else {
-      console.error('FRONTEND TEST: FAIL - formatted address not found after selection');
-      console.log('BODY SNIPPET:\n', await page.evaluate(() => document.body.innerText.slice(0, 2000)));
-      process.exitCode = 2;
+    const hasHeaderActions = await page.locator('header button').count();
+    if (hasHeaderActions < 2) {
+      throw new Error('Expected demo header action buttons not found');
     }
+
+    console.log('FRONTEND TEST: PASS - /demo rendered expected showcase elements');
   } catch (err) {
     console.error('FRONTEND TEST: ERROR', err);
     process.exitCode = 1;

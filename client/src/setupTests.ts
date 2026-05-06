@@ -4,9 +4,21 @@
 // learn more: https://github.com/testing-library/jest-dom
 import '@testing-library/jest-dom';
 
+// JSDOM does not provide IntersectionObserver by default.
+class MockIntersectionObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
+if (!(globalThis as { IntersectionObserver?: unknown }).IntersectionObserver) {
+  (globalThis as { IntersectionObserver?: typeof MockIntersectionObserver }).IntersectionObserver = MockIntersectionObserver;
+}
+
 // Mock all API calls to prevent tests from making real network requests
 // This is especially important when backend service may not be available during CI/CD
 vi.mock('./lib/api', () => ({
+  buildApiUrl: vi.fn((path: string) => `http://localhost:8000${path.startsWith('/') ? path : `/${path}`}`),
   policyPricingApi: {
     calculate: vi.fn().mockResolvedValue({
       is_approved: true,

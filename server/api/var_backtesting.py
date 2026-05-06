@@ -34,7 +34,7 @@ from services.var_backtesting_service import (
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/v1/var-backtest", tags=["VaR Backtesting"])
+router = APIRouter(prefix="/var-backtest", tags=["VaR Backtesting"])
 
 
 # ============================================================================

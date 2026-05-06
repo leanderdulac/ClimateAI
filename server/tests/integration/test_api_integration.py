@@ -20,7 +20,7 @@ def event_loop():
     loop.close()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="function", autouse=True)
 async def test_db():
     """Configura banco de dados de teste"""
     # Setup: Initialize database
@@ -81,17 +81,28 @@ class TestAuthEndpoints:
     @pytest.mark.asyncio
     async def test_login_success(self, client):
         """Testa login com sucesso"""
-        # Primeiro registra usuário
         email = f"test_{asyncio.get_event_loop().time()}@example.com"
         password = "SecurePassword123!"
-        
-        register_data = {
-            "email": email,
-            "password": password,
-            "full_name": "Test User"
-        }
-        
-        await client.post("/api/v1/auth/register", json=register_data)
+
+        from datetime import datetime
+        from models.sqlalchemy_models import User
+        from services.auth_service import auth_service
+
+        async for session in get_db_session():
+            user = User(
+                id=f"it-{int(asyncio.get_event_loop().time() * 1000)}",
+                email=email,
+                full_name="Test User",
+                hashed_password=auth_service.get_password_hash(password),
+                is_active=True,
+                is_superuser=False,
+                created_at=datetime.utcnow(),
+                updated_at=datetime.utcnow(),
+                role="user",
+            )
+            session.add(user)
+            await session.commit()
+            break
         
         # Tenta login
         login_data = {

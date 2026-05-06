@@ -101,9 +101,20 @@ EMBRAPA_API_KEY=sua_chave
 NOAA_API_KEY=sua_chave
 GEMINI_API_KEY=sua_chave
 
+# Unified Pricing NOAA (ajuste operacional)
+# Peso NOAA no combined_risk_score (0.0 a 1.0)
+NOAA_RISK_BLEND_WEIGHT=0.15
+# Impacto máximo NOAA no prêmio (0.0 a 0.5)
+NOAA_PREMIUM_MAX_IMPACT=0.12
+
 # Domínio
 DOMAIN=climatewise.com
 ```
+
+**Notas operacionais (Unified Pricing + NOAA):**
+- Em operação conservadora inicial, mantenha `NOAA_RISK_BLEND_WEIGHT=0.15` e `NOAA_PREMIUM_MAX_IMPACT=0.12`.
+- Se NOAA estiver indisponível, o orquestrador aplica fallback neutro (sem ajuste de risco e sem aumento de prêmio por NOAA).
+- Para rollout gradual, aumente os valores em passos pequenos (ex.: `0.15 -> 0.20`) e acompanhe métricas de sinistralidade e variação de prêmio.
 
 ### 2.3. Configurar Firewall
 

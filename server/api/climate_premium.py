@@ -8,7 +8,13 @@ from datetime import datetime
 from typing import Any, Callable, Dict, List, Optional
 
 import numpy as np
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from config.database import get_db_session
+from models.sqlalchemy_models import ClimateEnsoSignal
+from services.enso_service import ENSOService
 
 from services.climate_premium_service import (
     calculate_climate_drift_rate,
@@ -20,6 +26,7 @@ from services.climate_premium_service import (
 )
 
 router = APIRouter()
+enso_service = ENSOService()
 
 
 @router.post("/climate-premium/calculate-drift-rate")
@@ -156,6 +163,9 @@ async def calculate_climate_inclusive_premium_endpoint(
     beta_1: float = Query(0.02, description="Temperature sensitivity β₁"),
     beta_2: float = Query(0.001, description="CO₂ sensitivity β₂"),
     beta_3: float = Query(0.005, description="Precipitation sensitivity β₃"),
+    use_latest_enso: bool = Query(True, description="Apply latest ENSO risk modifier to final premium"),
+    fetch_live_enso_if_missing: bool = Query(True, description="Fetch live ENSO snapshot if no persisted signal is found"),
+    db: AsyncSession = Depends(get_db_session),
 ):
     """
     Calculate climate-inclusive premium:
@@ -170,12 +180,47 @@ async def calculate_climate_inclusive_premium_endpoint(
             "beta_3": beta_3,
         }
 
+        enso_modifier = 1.0
+        enso_context: Dict[str, Any] = {
+            "source": "disabled",
+            "regime_label": None,
+            "regime_confidence": None,
+            "reference_date": None,
+        }
+
+        if use_latest_enso:
+            stmt = select(ClimateEnsoSignal).order_by(ClimateEnsoSignal.reference_date.desc()).limit(1)
+            db_result = await db.execute(stmt)
+            latest = db_result.scalar_one_or_none()
+
+            if latest:
+                if latest.impact_risk_modifier:
+                    enso_modifier = float(latest.impact_risk_modifier)
+                enso_context = {
+                    "source": "database",
+                    "regime_label": latest.regime_label,
+                    "regime_confidence": latest.regime_confidence,
+                    "reference_date": latest.reference_date.isoformat() if latest.reference_date else None,
+                }
+            elif fetch_live_enso_if_missing:
+                snapshot = await enso_service.get_latest_snapshot()
+                enso_modifier = float(snapshot.get("impact_risk_modifier") or 1.0)
+                enso_context = {
+                    "source": "live_cpc",
+                    "regime_label": snapshot.get("regime_label"),
+                    "regime_confidence": snapshot.get("regime_confidence"),
+                    "reference_date": snapshot.get("reference_date").isoformat() if snapshot.get("reference_date") else None,
+                }
+            else:
+                enso_context["source"] = "missing"
+
         result = calculate_climate_inclusive_premium(
             expected_loss,
             time_horizon_years,
             loading_factor,
             operational_costs,
             mitigation_discount,
+            enso_modifier,
             initial_delta_temp,
             temperature_trend,
             initial_co2_rate,
@@ -190,8 +235,10 @@ async def calculate_climate_inclusive_premium_endpoint(
                 "operational_costs": result.operational_costs,
                 "mitigation_discount": result.mitigation_discount,
                 "climatic_inflation_factor": result.climatic_inflation_factor,
+                "enso_risk_modifier": result.enso_risk_modifier,
                 "climate_drift_rate": result.climate_drift_rate,
             },
+            "enso_context": enso_context,
             "time_horizon_years": result.time_horizon_years,
             "climate_sensitivity_coefficients": result.climate_sensitivity_coefficients,
             "formula": f"[{result.expected_loss:.2f} * (1 + {result.loading_factor:.2f}) + {result.operational_costs:.2f}] * (1 - {result.mitigation_discount:.2f}) * {result.climatic_inflation_factor:.4f} = {result.premium:.2f}",

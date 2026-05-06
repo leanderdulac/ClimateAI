@@ -107,12 +107,26 @@ export function MapDisplay() {
                 {/* Map container with rounded corners */}
                 <div className="absolute inset-0 rounded-b-2xl overflow-hidden">
                     <MapContainer
-                        key={`${selectedLocation.latitude}-${selectedLocation.longitude}`}
                         center={position}
                         zoom={10}
                         style={{ height: '100%', width: '100%' }}
                         scrollWheelZoom={false}
                         className="z-10"
+                        ref={(map) => {
+                            if (map) {
+                                // Add a cleanup listener for unmount
+                                const originalRemove = map.remove;
+                                map.remove = function() {
+                                    try {
+                                        this.closePopup();
+                                        originalRemove.call(this);
+                                    } catch (e) {
+                                        console.warn("Map cleanup handled safely", e);
+                                    }
+                                    return this;
+                                };
+                            }
+                        }}
                     >
                         {/* Esri World Imagery for Satellite View */}
                         <TileLayer

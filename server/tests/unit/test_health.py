@@ -4,6 +4,8 @@ Tests for server/api/health.py - comprehensive health monitoring system
 """
 
 import asyncio
+import sys
+import types
 from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
@@ -336,13 +338,34 @@ class TestExtendedHealthChecks:
             min_balance_threshold_ether=1.0
         )
         
-        # Mock web3 module
-        with patch("web3.Web3") as mock_web3:
-            mock_w3_instance = mock_web3.return_value
-            mock_w3_instance.is_connected.return_value = True
-            mock_w3_instance.eth.get_balance.return_value = 2000000000000000000  # 2 ETH
-            mock_w3_instance.from_wei.return_value = 2.0
-            
+        # Inject fake web3 module so this test does not require external dependency.
+        fake_web3_module = types.ModuleType("web3")
+
+        class FakeEth:
+            chain_id = 31337
+
+            @staticmethod
+            def get_balance(_address):
+                return 2000000000000000000
+
+        class FakeWeb3:
+            def __init__(self, _provider):
+                self.eth = FakeEth()
+
+            @staticmethod
+            def HTTPProvider(url):
+                return url
+
+            @staticmethod
+            def from_wei(value, _unit):
+                return value / 10**18
+
+            def is_connected(self):
+                return True
+
+        fake_web3_module.Web3 = FakeWeb3
+
+        with patch.dict(sys.modules, {"web3": fake_web3_module}):
             result = await check.check()
             assert result.status == ServiceStatus.HEALTHY
             assert "OK" in result.message

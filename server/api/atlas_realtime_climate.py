@@ -12,7 +12,7 @@ from services.atlas_realtime_climate_service import atlas_realtime_climate
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/v1/atlas-realtime", tags=["atlas-realtime"])
+router = APIRouter(prefix="/atlas-realtime", tags=["atlas-realtime"])
 
 
 @router.get("/weather/{city}")

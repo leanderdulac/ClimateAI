@@ -22,6 +22,8 @@ share/python-wheels/
 MANIFEST
 server/venv/
 venv/
+.venv*/
+venv*/
 
 # Node.js
 node_modules/

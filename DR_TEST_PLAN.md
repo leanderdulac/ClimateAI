@@ -222,6 +222,33 @@ echo "End Time: $(date)"
 ./scripts/dr/send_report.sh
 ```
 
+### 4. NOAA Degradation Test (Mensal)
+**Objetivo**: Validar continuidade do Unified Pricing com NOAA instável/indisponível
+
+```bash
+# Fluxo automatizado (gera relatório + evidências JSON)
+./scripts/dr/test_noaa_degradation.sh
+
+# Opcional: customizar URLs e diretório de relatório
+API_URL=http://localhost:8000/api/v1/unified-pricing/calculate \
+HEALTH_URL=http://localhost:8000/health \
+REPORT_DIR=./reports/dr \
+./scripts/dr/test_noaa_degradation.sh
+```
+
+**Critérios de aceite**:
+- A API `/api/v1/unified-pricing/calculate` permanece disponível (HTTP 200) durante os dois níveis de degradação.
+- A resposta inclui `explanation.noaa_blend_parameters` coerente com as env vars aplicadas.
+- Em cenário NOAA indisponível, há fallback neutro:
+  - sem blend NOAA no `combined_risk_score`
+  - sem uplift NOAA no `recommended_premium`
+  - aviso operacional em `warnings`.
+
+**Evidências obrigatórias**:
+- JSON de resposta dos dois níveis de degradação (leve e forte).
+- Logs do backend mostrando aplicação dos parâmetros NOAA.
+- Registro do horário de início/fim e impacto observado no prêmio.
+
 ## 📊 Métricas de DR
 
 ### RPO (Recovery Point Objective)
@@ -276,6 +303,8 @@ echo "RTO: ${RTO} seconds"
 - [ ] Aplicação escalada
 - [ ] Health checks passing
 - [ ] Dados consistentes
+- [ ] Unified Pricing validado com degradação NOAA (leve e forte)
+- [ ] Evidência de fallback neutro NOAA coletada
 
 ### Pós-Teste
 - [ ] Rollback realizado (se necessário)
@@ -284,6 +313,7 @@ echo "RTO: ${RTO} seconds"
 - [ ] Replicação reiniciada
 - [ ] Report enviado
 - [ ] Lições aprendidas documentadas
+- [ ] Parâmetros NOAA restaurados para baseline operacional
 
 ## 🚨 Procedimentos de Emergência
 

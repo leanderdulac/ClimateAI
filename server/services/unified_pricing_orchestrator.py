@@ -13,6 +13,8 @@ Models integrated:
 
 import asyncio
 import logging
+import os
+import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -111,6 +113,44 @@ class UnifiedPricingOrchestrator:
         self._ensemble_service = None
         self._climate_service = None
         self._bayesian_service = None
+        self._noaa_service = None
+
+        # NOAA integration tunables (env-configurable)
+        # NOAA_RISK_BLEND_WEIGHT: how much NOAA weather risk contributes to combined_risk_score
+        # NOAA_PREMIUM_MAX_IMPACT: maximum premium uplift when NOAA weather risk is severe
+        self.noaa_risk_blend_weight = self._read_float_env(
+            "NOAA_RISK_BLEND_WEIGHT",
+            default=0.15,
+            min_value=0.0,
+            max_value=1.0,
+        )
+        self.noaa_premium_max_impact = self._read_float_env(
+            "NOAA_PREMIUM_MAX_IMPACT",
+            default=0.12,
+            min_value=0.0,
+            max_value=0.5,
+        )
+
+    @staticmethod
+    def _read_float_env(name: str, default: float, min_value: float, max_value: float) -> float:
+        """Read bounded float from environment with fallback to default."""
+        raw = os.getenv(name)
+        if raw is None:
+            return default
+
+        try:
+            value = float(raw)
+        except (TypeError, ValueError):
+            logger.warning(f"Invalid {name} value '{raw}', using default {default}")
+            return default
+
+        if value < min_value or value > max_value:
+            logger.warning(
+                f"Out-of-range {name}={value}; expected [{min_value}, {max_value}], using default {default}"
+            )
+            return default
+
+        return value
     
     def _load_services(self):
         """Lazy load all pricing services"""
@@ -152,6 +192,12 @@ class UnifiedPricingOrchestrator:
             self._bayesian_service = bayesian_bootstrap_service
         except ImportError as e:
             logger.warning(f"Could not load bayesian_bootstrap_service: {e}")
+
+        try:
+            from services.noaa_service import NOAAService
+            self._noaa_service = NOAAService()
+        except ImportError as e:
+            logger.warning(f"Could not load noaa_service: {e}")
         
         self._services_loaded = True
     
@@ -438,6 +484,99 @@ class UnifiedPricingOrchestrator:
             )
         except Exception:
             return 0.5
+
+    @staticmethod
+    def _extract_max_number(text: str) -> float:
+        """Extract maximum numeric value from strings like '5 to 15 mph'."""
+        numbers = re.findall(r"\d+(?:\.\d+)?", text or "")
+        if not numbers:
+            return 0.0
+        return max(float(n) for n in numbers)
+
+    def _compute_noaa_weather_adjustment(self, pricing_input: PricingInput) -> Dict[str, Any]:
+        """Compute NOAA-based weather risk modifier for principal pricing score.
+
+        Returns a dictionary with:
+        - weather_risk_score (0-1)
+        - premium_modifier (>=1)
+        - source and diagnostic details
+        """
+        default_result = {
+            "source": "unavailable",
+            "weather_risk_score": 0.0,
+            "premium_modifier": 1.0,
+            "severe_period_count": 0,
+            "max_temperature": 0.0,
+            "max_wind": 0.0,
+        }
+
+        if self._noaa_service is None:
+            return default_result
+
+        try:
+            forecast_payload = asyncio.run(
+                self._noaa_service.get_weather_forecast(
+                    pricing_input.location_latitude,
+                    pricing_input.location_longitude,
+                )
+            )
+
+            periods = forecast_payload.get("forecast", [])[:10]
+            if not periods:
+                return default_result
+
+            severe_keywords = (
+                "thunderstorm",
+                "heavy rain",
+                "storm",
+                "hail",
+                "flood",
+                "snow",
+                "freezing",
+                "tornado",
+                "hurricane",
+            )
+
+            severe_count = 0
+            max_temp = 0.0
+            max_wind = 0.0
+
+            for period in periods:
+                forecast_text = f"{period.get('shortForecast', '')} {period.get('detailedForecast', '')}".lower()
+                if any(k in forecast_text for k in severe_keywords):
+                    severe_count += 1
+
+                try:
+                    temp_val = float(period.get("temperature") or 0.0)
+                    max_temp = max(max_temp, temp_val)
+                    if temp_val >= 35 or temp_val <= 5:
+                        severe_count += 1
+                except Exception:
+                    pass
+
+                wind_val = self._extract_max_number(str(period.get("windSpeed", "")))
+                max_wind = max(max_wind, wind_val)
+                if wind_val >= 50:
+                    severe_count += 1
+
+            # Normalize by inspected periods and cap at 1.0
+            weather_risk_score = min(1.0, severe_count / max(1, len(periods)))
+            premium_modifier = 1.0 + min(
+                self.noaa_premium_max_impact,
+                self.noaa_premium_max_impact * weather_risk_score,
+            )
+
+            return {
+                "source": forecast_payload.get("source", "NOAA/NWS"),
+                "weather_risk_score": weather_risk_score,
+                "premium_modifier": premium_modifier,
+                "severe_period_count": severe_count,
+                "max_temperature": max_temp,
+                "max_wind": max_wind,
+            }
+        except Exception as exc:
+            logger.warning(f"NOAA weather adjustment unavailable: {exc}")
+            return default_result
     
     def calculate_unified_premium(
         self,
@@ -514,6 +653,20 @@ class UnifiedPricingOrchestrator:
         
         # Calculate combined risk score
         combined_risk = sum(r.risk_score * r.weight for r in successful_results)
+
+        # NOAA weather adjustment injected into principal score and premium recommendation
+        noaa_adjustment = self._compute_noaa_weather_adjustment(pricing_input)
+        if noaa_adjustment["source"] == "unavailable":
+            warnings.append("NOAA weather context unavailable; neutral weather modifier applied")
+        else:
+            weather_risk_score = noaa_adjustment["weather_risk_score"]
+            base_model_risk_weight = 1.0 - self.noaa_risk_blend_weight
+            combined_risk = min(
+                1.0,
+                combined_risk * base_model_risk_weight + weather_risk_score * self.noaa_risk_blend_weight,
+            )
+            if "mock" in str(noaa_adjustment.get("source", "")).lower():
+                warnings.append("NOAA weather context is using fallback/mock data")
         
         # Calculate model agreement (coefficient of variation)
         premiums = [r.premium for r in successful_results]
@@ -532,6 +685,7 @@ class UnifiedPricingOrchestrator:
         # If they disagree, be more conservative (higher premium)
         conservative_adjustment = 1 + (1 - agreement_score) * 0.1
         recommended_premium = weighted_avg * conservative_adjustment
+        recommended_premium *= noaa_adjustment["premium_modifier"]
         
         # Calculate total time
         total_time = (datetime.now() - start_time).total_seconds() * 1000
@@ -544,6 +698,11 @@ class UnifiedPricingOrchestrator:
             "model_premiums": {r.model_name: f"R$ {r.premium:,.2f}" for r in successful_results},
             "agreement_level": "high" if agreement_score > 0.8 else ("medium" if agreement_score > 0.5 else "low"),
             "conservative_adjustment": f"{(conservative_adjustment - 1) * 100:.1f}%",
+            "noaa_weather_adjustment": noaa_adjustment,
+            "noaa_blend_parameters": {
+                "noaa_risk_blend_weight": self.noaa_risk_blend_weight,
+                "noaa_premium_max_impact": self.noaa_premium_max_impact,
+            },
             "calculation_breakdown": {
                 r.model_name: {
                     "premium": r.premium,

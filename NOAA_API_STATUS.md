@@ -1,7 +1,7 @@
 # ✅ Status API NOAA - ClimateWise
 
 **Data**: Fevereiro 2026  
-**Token**: `WDjhFaVSxFFpLelfYoKaQjnaTorOMcfV` ✅ Configurado
+**Token**: `YOUR_NOAA_API_KEY_HERE` ✅ Configurado
 
 ---
 
@@ -22,14 +22,14 @@
 ### Token Configurado
 
 **Arquivos**:
-- `.env`: ✅ `NOAA_API_KEY=WDjhFaVSxFFpLelfYoKaQjnaTorOMcfV`
-- `server/.env`: ✅ `NOAA_API_KEY=WDjhFaVSxFFpLelfYoKaQjnaTorOMcfV`
+- `.env`: ✅ `NOAA_API_KEY=YOUR_NOAA_API_KEY_HERE`
+- `server/.env`: ✅ `NOAA_API_KEY=YOUR_NOAA_API_KEY_HERE`
 
 **Verificação**:
 ```bash
 $ grep NOAA_API_KEY .env server/.env
-.env:NOAA_API_KEY=WDjhFaVSxFFpLelfYoKaQjnaTorOMcfV
-server/.env:NOAA_API_KEY=WDjhFaVSxFFpLelfYoKaQjnaTorOMcfV
+.env:NOAA_API_KEY=YOUR_NOAA_API_KEY_HERE
+server/.env:NOAA_API_KEY=YOUR_NOAA_API_KEY_HERE
 ```
 
 ---
@@ -282,5 +282,5 @@ const historicalData = await embrapaApi.getClimateData(...);
 ---
 
 **Status Geral**: ✅ **NOAA API Configurada e Funcionando**  
-**Token**: `WDjhFaVSxFFpLelfYoKaQjnaTorOMcfV` ✅  
+**Token**: `YOUR_NOAA_API_KEY_HERE` ✅  
 **Próxima Verificação**: Monitorar latência e fallbacks

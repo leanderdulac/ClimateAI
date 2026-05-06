@@ -4,7 +4,7 @@ Testes para o sistema de autenticação
 
 import pytest
 
-from models.schemas import UserRole
+from models.schemas import UserRole, TokenType
 from services.auth_service import auth_service
 
 
@@ -26,7 +26,7 @@ def test_create_access_token():
     assert len(token) > 0
 
     # Verificar se o token pode ser decodificado
-    decoded = auth_service.verify_token(token, auth_service.TokenType.ACCESS)
+    decoded = auth_service.verify_token(token, TokenType.ACCESS)
     assert decoded.user_id == "user123"
     assert decoded.email == "test@example.com"
     assert decoded.role == UserRole.USER
@@ -41,7 +41,7 @@ def test_create_refresh_token():
     assert len(token) > 0
 
     # Verificar se o token pode ser decodificado
-    decoded = auth_service.verify_token(token, auth_service.TokenType.REFRESH)
+    decoded = auth_service.verify_token(token, TokenType.REFRESH)
     assert decoded.user_id == "user123"
     assert decoded.email == "test@example.com"
     assert decoded.role == UserRole.USER

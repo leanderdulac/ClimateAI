@@ -128,6 +128,44 @@ class ClimateData(Base):
 
     # partner = relationship("Partner") # Add relationship later
 
+
+class ClimateEnsoSignal(Base):
+    """Persistent ENSO signal snapshot used by ClimateWise pricing/risk services."""
+
+    __tablename__ = "climate_enso_signals"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    reference_date = Column(Date, nullable=False, index=True)
+
+    roni = Column(Float)
+    oni = Column(Float)
+    soi = Column(Float)
+    olr = Column(Float)
+
+    nino12 = Column(Float)
+    nino3 = Column(Float)
+    nino34 = Column(Float)
+    nino4 = Column(Float)
+
+    regime_label = Column(String(32), index=True)
+    regime_confidence = Column(String(16), index=True)
+    provisional_flag = Column(Boolean, default=False)
+
+    source_url = Column(String)
+    ingestion_timestamp = Column(DateTime, default=datetime.utcnow, index=True)
+
+    enso_score = Column(Float)
+    p_el_nino = Column(Float)
+    p_la_nina = Column(Float)
+    p_neutral = Column(Float)
+    coupling_score = Column(Float)
+    transition_score = Column(Float)
+    impact_risk_modifier = Column(Float)
+
+    metadata_json = Column(JSON, default={})
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
 class Partner(Base):
     __tablename__ = "partners"
     

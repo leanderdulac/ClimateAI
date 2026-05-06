@@ -7,15 +7,21 @@ import os
 from datetime import datetime
 from typing import Any, Dict, Optional
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from config.database import get_db_session
+from models.sqlalchemy_models import ClimateEnsoSignal
+from services.enso_service import ENSOService
 from services.noaa_service import NOAAService
 
 router = APIRouter()
 
 # Instância global do serviço
 noaa_service = NOAAService()
+enso_service = ENSOService()
 
 
 class ClimateDataRequest(BaseModel):
@@ -151,3 +157,109 @@ async def get_available_data_types():
         "source": "NOAA Climate Data Online (GHCND)",
         "dataset": "Global Historical Climatology Network Daily"
     }
+
+
+@router.get("/enso/snapshot")
+async def get_enso_snapshot(
+    persist: bool = Query(False, description="Persist latest ENSO snapshot into climate_enso_signals"),
+    db: AsyncSession = Depends(get_db_session),
+):
+    """Get latest ENSO snapshot built from CPC RONI/ONI sources."""
+    try:
+        snapshot = await enso_service.get_latest_snapshot()
+        persisted_id = None
+        if persist:
+            row = await enso_service.persist_snapshot(db, snapshot)
+            persisted_id = row.id
+
+        return {
+            "snapshot": {
+                **snapshot,
+                "reference_date": snapshot["reference_date"].isoformat(),
+                "ingestion_timestamp": snapshot["ingestion_timestamp"].isoformat(),
+            },
+            "persisted": bool(persist),
+            "persisted_id": persisted_id,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"ENSO snapshot error: {str(e)}")
+
+
+@router.get("/enso/series")
+async def get_enso_series(
+    index_name: str = Query("roni", pattern="^(roni|oni)$"),
+    limit: int = Query(24, ge=1, le=900),
+):
+    """Return latest seasonal RONI/ONI values for model feature pipelines."""
+    try:
+        if index_name == "oni":
+            series = await enso_service.get_oni_series()
+        else:
+            series = await enso_service.get_roni_series()
+
+        sliced = series[-limit:]
+        return {
+            "index": index_name,
+            "count": len(sliced),
+            "series": sliced,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"ENSO series error: {str(e)}")
+
+
+@router.get("/enso/persisted/latest")
+async def get_latest_persisted_enso_signal(db: AsyncSession = Depends(get_db_session)):
+    """Read latest persisted ENSO snapshot from climate_enso_signals table."""
+    try:
+        stmt = select(ClimateEnsoSignal).order_by(ClimateEnsoSignal.reference_date.desc()).limit(1)
+        result = await db.execute(stmt)
+        row = result.scalar_one_or_none()
+        if not row:
+            return {"found": False, "message": "No ENSO signals persisted yet"}
+
+        return {
+            "found": True,
+            "id": row.id,
+            "reference_date": row.reference_date.isoformat() if row.reference_date else None,
+            "roni": row.roni,
+            "oni": row.oni,
+            "soi": row.soi,
+            "olr": row.olr,
+            "regime_label": row.regime_label,
+            "regime_confidence": row.regime_confidence,
+            "provisional_flag": row.provisional_flag,
+            "enso_score": row.enso_score,
+            "p_el_nino": row.p_el_nino,
+            "p_la_nina": row.p_la_nina,
+            "p_neutral": row.p_neutral,
+            "transition_score": row.transition_score,
+            "impact_risk_modifier": row.impact_risk_modifier,
+            "source_url": row.source_url,
+            "ingestion_timestamp": row.ingestion_timestamp.isoformat() if row.ingestion_timestamp else None,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Persisted ENSO read error: {str(e)}")
+
+
+@router.post("/enso/ingest-now")
+async def ingest_enso_now(
+    db: AsyncSession = Depends(get_db_session),
+):
+    """Administrative endpoint to fetch and persist latest ENSO snapshot immediately."""
+    try:
+        snapshot = await enso_service.get_latest_snapshot()
+        row = await enso_service.persist_snapshot(db, snapshot)
+
+        return {
+            "status": "ok",
+            "message": "ENSO ingestion executed successfully",
+            "persisted_id": row.id,
+            "reference_date": row.reference_date.isoformat() if row.reference_date else None,
+            "regime_label": row.regime_label,
+            "regime_confidence": row.regime_confidence,
+            "impact_risk_modifier": row.impact_risk_modifier,
+            "ingestion_timestamp": row.ingestion_timestamp.isoformat() if row.ingestion_timestamp else None,
+            "source_url": row.source_url,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"ENSO ingest-now error: {str(e)}")

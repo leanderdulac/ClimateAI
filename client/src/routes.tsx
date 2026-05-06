@@ -27,6 +27,7 @@ const router = createBrowserRouter([
   },
   {
     path: "/demo",
+    errorElement: <RouteError />,
     element: (
       <Suspense fallback={<PageLoader />}>
         <DemoPage />
@@ -35,6 +36,7 @@ const router = createBrowserRouter([
   },
   {
     path: "/welcome",
+    errorElement: <RouteError />,
     element: (
       <Suspense fallback={<PageLoader />}>
         <WelcomePage />
@@ -43,6 +45,7 @@ const router = createBrowserRouter([
   },
   {
     path: "/auth",
+    errorElement: <RouteError />,
     element: (
       <Suspense fallback={<PageLoader />}>
         <AuthPage />
@@ -51,6 +54,7 @@ const router = createBrowserRouter([
   },
   {
     path: "/dashboard",
+    errorElement: <RouteError />,
     element: (
       <ProtectedRoute>
         <Suspense fallback={<PageLoader />}>
@@ -61,6 +65,7 @@ const router = createBrowserRouter([
   },
   {
     path: "/tokenization",
+    errorElement: <RouteError />,
     element: (
       <ProtectedRoute>
         <Suspense fallback={<PageLoader />}>
@@ -71,6 +76,7 @@ const router = createBrowserRouter([
   },
   {
     path: "/analytics",
+    errorElement: <RouteError />,
     element: (
       <ProtectedRoute>
         <Suspense fallback={<PageLoader />}>
@@ -81,6 +87,7 @@ const router = createBrowserRouter([
   },
   {
     path: "/actuarial-lab",
+    errorElement: <RouteError />,
     element: (
       <ProtectedRoute>
         <Suspense fallback={<PageLoader />}>
@@ -91,6 +98,7 @@ const router = createBrowserRouter([
   },
   {
     path: "/oracle",
+    errorElement: <RouteError />,
     element: (
       <ProtectedRoute>
         <Suspense fallback={<PageLoader />}>

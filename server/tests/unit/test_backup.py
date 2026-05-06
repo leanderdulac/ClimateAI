@@ -430,6 +430,7 @@ class TestBackupExtended:
             tmp.flush()
             
             with patch("subprocess.run") as mock_run, \
+                 patch.object(BackupConfig, "DATABASE_URL", "postgresql://user:pass@localhost:5432/climatewise"), \
                  patch("pathlib.Path.exists", return_value=True):
                 
                 mock_run.return_value.returncode = 0

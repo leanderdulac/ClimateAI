@@ -27,6 +27,7 @@ class ClimatePremiumResult:
     operational_costs: float
     mitigation_discount: float
     climatic_inflation_factor: float
+    enso_risk_modifier: float
     climate_drift_rate: float
     time_horizon_years: float
     climate_sensitivity_coefficients: Dict[str, float]
@@ -176,6 +177,7 @@ class ClimatePremiumService:
         loading_factor: float = 0.20,
         operational_costs: Optional[float] = None,
         mitigation_discount: float = 0.0,
+        enso_risk_modifier: float = 1.0,
         climate_scenario_func: Optional[callable] = None,
         custom_coefficients: Optional[Dict[str, float]] = None,
         initial_delta_temp: float = 1.0,  # Current warming
@@ -232,6 +234,10 @@ class ClimatePremiumService:
         # Apply climatic inflation factor
         final_premium = discounted_premium * climatic_inflation_factor
 
+        # ENSO-adjusted final premium (bounded to keep pricing stable)
+        bounded_enso_modifier = min(1.50, max(0.80, enso_risk_modifier))
+        final_premium *= bounded_enso_modifier
+
         # Calculate current climate drift rate for reporting
         current_climate_vars = climate_scenario_func(0)
         current_drift_rate = self.calculate_climate_drift_rate(
@@ -248,6 +254,7 @@ class ClimatePremiumService:
             operational_costs=operational_costs,
             mitigation_discount=mitigation_discount,
             climatic_inflation_factor=climatic_inflation_factor,
+            enso_risk_modifier=bounded_enso_modifier,
             climate_drift_rate=current_drift_rate,
             time_horizon_years=time_horizon_years,
             climate_sensitivity_coefficients=custom_coefficients
@@ -284,6 +291,7 @@ class ClimatePremiumService:
                 loading_factor=scenario.get("loading_factor", 0.20),
                 operational_costs=scenario.get("operational_costs"),
                 mitigation_discount=scenario.get("mitigation_discount", 0.0),
+                enso_risk_modifier=scenario.get("enso_risk_modifier", 1.0),
                 initial_delta_temp=scenario.get("initial_delta_temp", 1.0),
                 temperature_trend=scenario.get("temperature_trend", 0.2),
                 initial_co2_rate=scenario.get("initial_co2_rate", 2.5),
@@ -299,6 +307,7 @@ class ClimatePremiumService:
                     "operational_costs": result.operational_costs,
                     "mitigation_discount": result.mitigation_discount,
                     "climatic_inflation_factor": result.climatic_inflation_factor,
+                    "enso_risk_modifier": result.enso_risk_modifier,
                     "climate_drift_rate": result.climate_drift_rate,
                     "time_horizon_years": result.time_horizon_years,
                     "premium_breakdown": {
@@ -371,6 +380,7 @@ def calculate_climate_inclusive_premium(
     loading_factor: float = 0.20,
     operational_costs: Optional[float] = None,
     mitigation_discount: float = 0.0,
+    enso_risk_modifier: float = 1.0,
     initial_delta_temp: float = 1.0,
     temperature_trend: float = 0.2,
     initial_co2_rate: float = 2.5,
@@ -383,6 +393,7 @@ def calculate_climate_inclusive_premium(
         loading_factor,
         operational_costs,
         mitigation_discount,
+        enso_risk_modifier,
         None,
         None,
         initial_delta_temp,
