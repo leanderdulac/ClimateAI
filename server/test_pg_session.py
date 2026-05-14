@@ -1,3 +1,4 @@
+import os
 import asyncio, asyncpg
 
 async def main():

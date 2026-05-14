@@ -4,6 +4,7 @@ Implementa funcionalidades críticas de segurança da aplicação
 """
 
 import hashlib
+import secrets
 import os
 from datetime import datetime, timedelta, timezone
 from typing import Dict, Optional

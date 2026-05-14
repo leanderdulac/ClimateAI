@@ -77,43 +77,25 @@ class GeocodingService:
         except HTTPException:
             raise
         except Exception:
-            # Tentar pycep_correios como fallback
+            # Fallback: tentar geocodificar como endereço via Nominatim
             try:
-                address_data = await asyncio.to_thread(
-                    pycep_correios.get_address_from_cep, normalized
-                )
-            except (
-                pycep_correios.exceptions.InvalidCEP,
-                pycep_correios.exceptions.CEPNotFound,
-            ) as exc:
-                if isinstance(exc, pycep_correios.exceptions.InvalidCEP):
-                    raise HTTPException(status_code=400, detail="CEP inválido") from exc
-                else:
-                    raise HTTPException(
-                        status_code=404, detail="CEP não encontrado"
-                    ) from exc
+                geo_result = await self.geocode_address(f"Brasil, CEP {normalized}")
+                if geo_result:
+                    fallback_response = {
+                        "latitude": geo_result.get("latitude"),
+                        "longitude": geo_result.get("longitude"),
+                        "cidade": geo_result.get("cidade"),
+                        "estado": geo_result.get("estado"),
+                        "cep": normalized,
+                        "formatted_address": geo_result.get("formatted_address"),
+                        "fonte": "nominatim_fallback",
+                    }
+                    self.cache[normalized] = fallback_response
+                    return fallback_response
             except Exception:
-                # Último fallback: tentar geocodificar como endereço
-                try:
-                    geo_result = await self.geocode_address(f"Brasil, CEP {normalized}")
-                    if geo_result:
-                        response = {
-                            "latitude": geo_result.get("latitude"),
-                            "longitude": geo_result.get("longitude"),
-                            "cidade": geo_result.get("cidade"),
-                            "estado": geo_result.get("estado"),
-                            "cep": normalized,
-                            "formatted_address": geo_result.get("formatted_address"),
-                            "fonte": "nominatim_fallback",
-                        }
-                        self.cache[normalized] = response
-                        return response
-                except Exception:
-                    pass
+                pass
 
-                raise HTTPException(
-                    status_code=500, detail="Erro ao buscar CEP"
-                )
+            raise HTTPException(status_code=500, detail="Erro ao buscar CEP")
 
         # Se conseguimos address_data, processar
         if address_data:

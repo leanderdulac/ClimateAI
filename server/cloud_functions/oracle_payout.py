@@ -1,7 +1,8 @@
 import functions_framework
 import json
-import os
 import logging
+import os
+from datetime import datetime
 from services.gee_service import GoogleEarthEngineService
 from services.tokenization_service import TokenizationService
 

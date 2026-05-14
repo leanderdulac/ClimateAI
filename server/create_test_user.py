@@ -3,6 +3,7 @@
 Script para criar usuário de teste no Supabase
 """
 
+import os
 import requests
 import json
 import time

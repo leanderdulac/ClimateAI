@@ -4,6 +4,7 @@ Utiliza a API do Grok para tarefas de linguagem natural e análise de texto
 que complementam o sistema especializado de IA climática do ClimateWise
 """
 
+import json
 import logging
 import os
 from dataclasses import dataclass
