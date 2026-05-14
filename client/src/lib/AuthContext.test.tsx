@@ -3,6 +3,13 @@ import { AuthProvider, useAuth } from './AuthContext';
 import React from 'react';
 import { vi } from 'vitest';
 
+// Mock global fetch so login() doesn't make real HTTP calls in CI
+global.fetch = vi.fn().mockResolvedValue({
+  ok: false,
+  status: 503,
+  json: async () => ({ detail: 'Service unavailable' }),
+});
+
 // Mock Supabase client
 const { mockSupabase } = vi.hoisted(() => {
   const mock = {

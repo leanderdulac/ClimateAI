@@ -87,8 +87,8 @@ jobs:
 
       - name: Run Safety check
         run: |
-          safety check --json --output safety-results.json || true
-          safety check
+          safety scan --output text || true
+          safety scan
         continue-on-error: false
 
       - name: Upload artifacts

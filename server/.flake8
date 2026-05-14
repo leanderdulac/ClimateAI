@@ -1,3 +1,16 @@
 [flake8]
 max-line-length = 88
 extend-ignore = E203
+# Exclude virtualenvs, caches and third-party dirs
+exclude =
+    .venv,
+    .venv-uv,
+    venv,
+    venv-hathor,
+    __pycache__,
+    .git,
+    build,
+    dist,
+    *.egg-info,
+    migrations,
+    node_modules

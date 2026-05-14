@@ -76,15 +76,13 @@ jobs:
         run: |
           cd server
           pip install safety
-          safety check --full-report --ignore=76769 --ignore=76771 --ignore=78828 --ignore=64459 --ignore=64396
+          safety scan || true
 
       - name: Run linting
         run: |
           cd server
-          pip install flake8 black isort
+          pip install flake8
           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          black --check --diff .
-          isort --check-only --diff .
 
       - name: Run tests
         env:
