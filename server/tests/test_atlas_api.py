@@ -27,7 +27,7 @@ from api.atlas_disasters import router as atlas_router
 def test_app():
     """Criar aplicação FastAPI de teste"""
     app = FastAPI(title="ClimateWise Test - Atlas")
-    app.include_router(atlas_router)
+    app.include_router(atlas_router, prefix="/api/v1")
     return app
 
 
