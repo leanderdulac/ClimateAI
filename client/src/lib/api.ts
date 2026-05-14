@@ -1,6 +1,27 @@
 import { loadEmbrapaApi } from './loadEmbrapaApi';
 import { getDefaultHeaders } from './requestId';
 
+function deriveApiBaseUrl(): string {
+    const explicitBaseUrl = (import.meta.env.VITE_API_BASE_URL || '').trim();
+    if (explicitBaseUrl) {
+        return explicitBaseUrl;
+    }
+
+    const legacyApiUrl = (import.meta.env.VITE_API_URL || '').trim();
+    if (legacyApiUrl) {
+        return legacyApiUrl.replace(/\/api\/v\d+(?:\/.*)?$/, '');
+    }
+
+    if (typeof window !== 'undefined') {
+        const { hostname, protocol } = window.location;
+        if (hostname === 'localhost' || hostname === '127.0.0.1') {
+            return `${protocol}//${hostname}:8000`;
+        }
+    }
+
+    return '';
+}
+
 // Helper function to build API URLs properly
 export function buildApiUrl(path: string): string {
     // Check if we're using mock data or real API
@@ -14,7 +35,7 @@ export function buildApiUrl(path: string): string {
     // In production (DO), VITE_API_BASE_URL is empty so paths stay relative
     // (e.g. /api/v1/auth/login) and route through the ingress.
     // In dev, it can be set to http://127.0.0.1:8000 for direct backend access.
-    const baseUrl = (import.meta.env.VITE_API_BASE_URL || '').trim();
+    const baseUrl = deriveApiBaseUrl();
 
     if (!baseUrl) {
         // Relative URL: just return the path as-is

@@ -6,6 +6,7 @@ import { LocationSelector } from "@/components/LocationSelector";
 import { MapDisplay } from "@/components/MapDisplay";
 import { WeatherWidget } from "@/components/WeatherWidget";
 import { InsuranceRecommendation } from "@/components/InsuranceRecommendation";
+import { AgriStrategyPanel } from "@/components/AgriStrategyPanel";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePeriod } from "@/lib/PeriodContext";
@@ -239,6 +240,10 @@ export function IndexPage() {
                 <PricingSimulator />
               </Suspense>
             </DeferredSection>
+          </div>
+
+          <div className="mb-16 hover:-translate-y-1 transition-transform duration-300">
+            <AgriStrategyPanel />
           </div>
         </div>
 

@@ -176,7 +176,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
           localStorage.setItem('refresh_token', data.refresh_token);
           return;
         }
+
+        const payload = await response.json().catch(() => null);
+        const backendMessage = payload?.detail || payload?.message || payload?.error;
+
+        if (response.status < 500) {
+          throw new Error(typeof backendMessage === 'string' ? backendMessage : 'Falha no login');
+        }
+
+        console.warn('Backend login retornou erro interno, tentando fallback Supabase:', backendMessage);
       } catch (backendError) {
+        if (backendError instanceof Error && backendError.message !== 'Failed to fetch') {
+          throw backendError;
+        }
         console.warn('Backend login falhou, tentando fallback Supabase:', backendError);
       }
 
