@@ -335,7 +335,7 @@ class AtlasDisasterService:
             logger.error(f"Arquivo vazio: {filepath}")
             raise
         except Exception as e:
-            logger.error(f"Erro ao carregar arquivo: {e}")
+            logger.error(f"Erro ao carregar arquivo {filepath}: {str(e)}", exc_info=True)
             raise
 
     def _normalize_columns(self, df: pd.DataFrame) -> pd.DataFrame:

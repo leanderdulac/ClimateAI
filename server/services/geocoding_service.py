@@ -156,67 +156,6 @@ class GeocodingService:
             self.cache[normalized] = response
             return response
 
-        # Se chegou aqui, nenhum método funcionou
-        raise HTTPException(
-            status_code=500, detail="Erro interno ao processar CEP"
-        )
-
-        city_name = address_data.get("cidade")
-        state_abbr = address_data.get("uf")
-        formatted_address = (
-            ", ".join(
-                filter(
-                    None,
-                    [
-                        address_data.get("logradouro"),
-                        address_data.get("bairro"),
-                        (
-                            f"{city_name} - {state_abbr}"
-                            if city_name and state_abbr
-                            else None
-                        ),
-                        "Brasil",
-                    ],
-                )
-            )
-            or None
-        )
-
-        entry = self._find_city_entry(city_name, state_abbr)
-        if entry:
-            response = self._city_to_response(
-                entry,
-                extra={
-                    "cep": address_data.get("cep") or normalized,
-                    "logradouro": address_data.get("logradouro"),
-                    "bairro": address_data.get("bairro"),
-                    "complemento": address_data.get("complemento"),
-                    "formatted_address": formatted_address,
-                },
-                fallback_city=city_name,
-                fallback_state=state_abbr,
-            )
-        else:
-            geo = await self.geocode_address(
-                formatted_address or f"{city_name}, {state_abbr}, Brasil"
-            )
-            response = self._city_to_response(
-                None,
-                latitude=geo.get("latitude"),
-                longitude=geo.get("longitude"),
-                extra={
-                    "cep": address_data.get("cep") or normalized,
-                    "logradouro": address_data.get("logradouro"),
-                    "bairro": address_data.get("bairro"),
-                    "complemento": address_data.get("complemento"),
-                    "formatted_address": geo.get("formatted_address"),
-                },
-                fallback_city=city_name,
-                fallback_state=state_abbr,
-            )
-
-        self.cache[normalized] = response
-        return response
 
     async def geocode_address(self, address: str) -> Dict:
         """
