@@ -38,13 +38,18 @@ def _create_engine_and_session_maker(database_url: str):
         is_localhost = "localhost" in database_url or "127.0.0.1" in database_url
         use_ssl = not is_localhost
 
+        # asyncpg driver-level cache settings (always safe)
         connect_args = {
             "statement_cache_size": 0,
             "prepared_statement_cache_size": 0,
-            "server_settings": {
+        }
+
+        # server_settings with prepared_statement_cache_size is only valid for
+        # PgBouncer pooler connections (not standard PostgreSQL)
+        if not is_localhost:
+            connect_args["server_settings"] = {
                 "prepared_statement_cache_size": "0"
             }
-        }
 
         if use_ssl:
             import ssl
@@ -54,15 +59,15 @@ def _create_engine_and_session_maker(database_url: str):
             ssl_context.verify_mode = ssl.CERT_NONE
             connect_args["ssl"] = ssl_context
 
-
-        # Adiciona parâmetro para pgbouncer/asyncpg
-        if "asyncpg" in database_url:
+        # Adiciona parâmetro para pgbouncer/asyncpg (only for pooler connections)
+        if "asyncpg" in database_url and not is_localhost:
             separator = "&" if "?" in database_url else "?"
             if "prepared_statement_cache_size" not in database_url:
                 database_url += f"{separator}prepared_statement_cache_size=0"
             separator = "&"
             if "statement_cache_size" not in database_url:
                 database_url += f"{separator}statement_cache_size=0"
+
 
 
         # Use NullPool in production to avoid PgBouncer connection limit issues
