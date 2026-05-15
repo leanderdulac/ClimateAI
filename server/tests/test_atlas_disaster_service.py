@@ -12,6 +12,7 @@ from pathlib import Path
 import pytest
 import pandas as pd
 import numpy as np
+from unittest.mock import patch, MagicMock
 
 # Adicionar server ao path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -69,14 +70,16 @@ class TestDownloadAndLoad:
     """Testes para download e carregamento de dados"""
     
     def test_download_invalid_url(self, atlas_service):
-        """Testar download com URL inválida"""
+        """Testar download com URL padrão (que deve ser tratada como não configurada)"""
         with pytest.raises(ValueError, match="URL de dados não configurada"):
-            atlas_service.download_data("https://SEU_LINK_AQUI/atlas_desastres_1991_2024.csv")
+            atlas_service.download_data(atlas_service.DEFAULT_DATA_URL)
     
     def test_download_nonexistent_url(self, atlas_service):
         """Testar download com URL que não existe"""
-        with pytest.raises(Exception):
-            atlas_service.download_data("https://example.com/nonexistent_file.csv")
+        with patch('services.atlas_disaster_service.requests.get') as mock_get:
+            mock_get.side_effect = Exception("Connection failed")
+            with pytest.raises(Exception):
+                atlas_service.download_data("https://example.com/nonexistent_file.csv")
     
     def test_load_nonexistent_file(self, atlas_service):
         """Testar carregamento de arquivo inexistente"""

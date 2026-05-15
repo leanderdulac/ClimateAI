@@ -86,7 +86,7 @@ jobs:
 
       - name: Run tests
         env:
-          DATABASE_URL: postgresql://climateai:${{ env.CI_DB_PASSWORD }}@localhost:5432/climateai
+          DATABASE_URL: postgresql+asyncpg://climateai:${{ env.CI_DB_PASSWORD }}@localhost:5432/climateai
           REDIS_URL: redis://localhost:6379
           SECRET_KEY: ${{ env.CI_SECRET_KEY }}
           PYTEST_ADDOPTS: -m "not slow and not performance"
@@ -249,7 +249,7 @@ jobs:
 
       - name: Run integration tests
         env:
-          DATABASE_URL: postgresql://climateai:${{ env.CI_DB_PASSWORD }}@localhost:5432/climateai
+          DATABASE_URL: postgresql+asyncpg://climateai:${{ env.CI_DB_PASSWORD }}@localhost:5432/climateai
           REDIS_URL: redis://localhost:6379
           SECRET_KEY: ${{ env.CI_SECRET_KEY }}
         run: |
