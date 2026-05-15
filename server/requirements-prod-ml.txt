@@ -47,6 +47,7 @@ hvac==2.4.0  # HashiCorp Vault secrets manager
 feedparser==6.0.12  # RSS/Atom feed parser for INMET alerts
 beautifulsoup4==4.14.3  # HTML parser for INMET alert descriptions
 aiohttp==3.13.5  # Async HTTP client for health checks
+supabase>=2.3.0  # Supabase client for database integration
 
 # === DADOS E ML ESSENCIAIS (PRODUÇÃO) ===
 pandas==2.2.3
