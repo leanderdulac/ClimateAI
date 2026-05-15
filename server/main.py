@@ -769,7 +769,7 @@ async def health_check_critical() -> Dict[str, Any]:
 
 # Endpoint de verificação de saúde simples (compatibilidade)
 @app.get("/health")
-async def health_check() -> Dict[str, str]:
+async def health_check() -> Dict[str, Any]:
     """
     Verificar o estado de saúde da API (health check simples)
     """
@@ -782,7 +782,7 @@ async def health_check() -> Dict[str, str]:
 
     if missing_vars:
         response["warnings"] = f"Configurações ausentes: {', '.join(missing_vars)}"
-        response["missing_vars"] = missing_vars # Added this line based on the instruction's intent
+        response["missing_vars"] = missing_vars
 
     return response
 
