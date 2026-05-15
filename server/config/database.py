@@ -33,24 +33,27 @@ def _create_engine_and_session_maker(database_url: str):
         # Force IPv4 resolution for Supabase to avoid timeouts
         # Assuming .env provides the correct IPv4 pooler url directly
 
-        import ssl
-        
-        # Create unverified SSL context for pooler to avoid certificate hostname mismatch issues
-        ssl_context = ssl.create_default_context()
-        ssl_context.check_hostname = False
-        ssl_context.verify_mode = ssl.CERT_NONE
+        # Only use SSL for remote PostgreSQL connections (e.g., Supabase pooler).
+        # Local connections (localhost) in CI/test environments don't support SSL.
+        is_localhost = "localhost" in database_url or "127.0.0.1" in database_url
+        use_ssl = not is_localhost
 
-        print(f"CRITICAL: create_async_engine is using URL: {database_url}")
-
-        # Add support for pgbouncer (transaction mode pooler) which conflicts with asyncpg caching
         connect_args = {
-            "ssl": ssl_context,
             "statement_cache_size": 0,
             "prepared_statement_cache_size": 0,
             "server_settings": {
                 "prepared_statement_cache_size": "0"
             }
         }
+
+        if use_ssl:
+            import ssl
+            # Create unverified SSL context for pooler to avoid certificate hostname mismatch issues
+            ssl_context = ssl.create_default_context()
+            ssl_context.check_hostname = False
+            ssl_context.verify_mode = ssl.CERT_NONE
+            connect_args["ssl"] = ssl_context
+
 
         # Adiciona parâmetro para pgbouncer/asyncpg
         if "asyncpg" in database_url:
