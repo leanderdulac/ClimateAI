@@ -37,15 +37,8 @@ jobs:
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:
-          category: "/language:python,javascript"
           output: sarif-results
           upload: true
-
-      - name: Upload SARIF results
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: sarif-results
 
   # ============================================
   # Python Security Audit
@@ -81,8 +74,8 @@ jobs:
 
       - name: Run Bandit SAST
         run: |
-          bandit -r . -f json -o bandit-results.json --severity-level medium --confidence-level medium || true
-          bandit -r . --severity-level medium --confidence-level medium
+          bandit -r . -f json -o bandit-results.json --severity-level medium --confidence-level medium --exclude ./.venv,./.venv-uv,./venv,./venv-hathor,./node_modules || true
+          bandit -r . --severity-level medium --confidence-level medium --exclude ./.venv,./.venv-uv,./venv,./venv-hathor,./node_modules
         continue-on-error: false
 
       - name: Run Safety check
