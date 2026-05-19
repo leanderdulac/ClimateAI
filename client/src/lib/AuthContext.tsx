@@ -308,6 +308,60 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (!userData.name || !userData.email || !userData.password) {
         throw new Error('Todos os campos obrigatórios devem ser preenchidos');
       }
+
+      // Try backend registration first so signup works even when Supabase DNS is unavailable.
+      const registerEndpoint = buildApiUrl('/api/v1/auth/register');
+      try {
+        const registerResponse = await fetch(registerEndpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: userData.email,
+            full_name: userData.name,
+            password: userData.password,
+            organization: userData.company || ''
+          })
+        });
+
+        if (registerResponse.ok) {
+          const loginEndpoint = buildApiUrl('/api/v1/auth/login');
+          const loginResponse = await fetch(loginEndpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: userData.email, password: userData.password })
+          });
+
+          if (loginResponse.ok) {
+            const loginData = await loginResponse.json();
+            setUser(loginData.user);
+            setSession({ access_token: loginData.access_token, refresh_token: loginData.refresh_token } as any);
+            localStorage.setItem('access_token', loginData.access_token);
+            localStorage.setItem('refresh_token', loginData.refresh_token);
+            setSuccess('Cadastro realizado com sucesso!');
+            return;
+          }
+
+          throw new Error('Cadastro realizado. Faca login para continuar.');
+        }
+
+        const payload = await registerResponse.json().catch(() => null);
+        const backendMessage = payload?.detail || payload?.message || payload?.error;
+
+        if (registerResponse.status < 500) {
+          throw new Error(typeof backendMessage === 'string' ? backendMessage : 'Falha no cadastro');
+        }
+
+        throw new Error(
+          typeof backendMessage === 'string' && backendMessage.trim().length > 0
+            ? backendMessage
+            : 'Servico de cadastro indisponivel no momento. Tente novamente em instantes.'
+        );
+      } catch (backendRegisterError) {
+        if (backendRegisterError instanceof Error && !isNetworkErrorMessage(backendRegisterError.message)) {
+          throw backendRegisterError;
+        }
+      }
+
       const client = getSupabaseClient();
       if (!client) throw new Error('Supabase não configurado');
 
@@ -331,7 +385,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
       setSuccess('Cadastro realizado com sucesso! Verifique seu e-mail para ativar a conta.');
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Falha no cadastro';
+      let message = err instanceof Error ? err.message : 'Falha no cadastro';
+      if (isNetworkErrorMessage(message)) {
+        message = 'Falha de conexao com o servico de cadastro. Verifique se a API esta online.';
+      }
       setError(message);
       throw new Error(message);
     } finally {
