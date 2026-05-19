@@ -11,6 +11,7 @@ const WelcomePage = lazy(() => import('@/pages/Welcome').then(m => ({ default: m
 const TokenizationPage = lazy(() => import('@/pages/TokenizationPage').then(m => ({ default: m.TokenizationPage })));
 const AnalyticsPage = lazy(() => import('@/pages/AnalyticsPage').then(m => ({ default: m.AnalyticsPage })));
 const AuthPage = lazy(() => import('@/pages/AuthPage').then(m => ({ default: m.AuthPage })));
+const ForgotPasswordPage = lazy(() => import('@/pages/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage })));
 const ActuarialLabPage = lazy(() => import('@/pages/ActuarialLabPage').then(m => ({ default: m.ActuarialLabPage })));
 const OraclePage = lazy(() => import('@/pages/OraclePage').then(m => ({ default: m.OraclePage })));
 const AtlasPage = lazy(() => import('@/pages/AtlasPage'));
@@ -58,6 +59,15 @@ const router = createBrowserRouter([
     element: (
       <Suspense fallback={<PageLoader />}>
         <AuthPage />
+      </Suspense>
+    ),
+  },
+  {
+    path: "/forgot-password",
+    errorElement: <RouteError />,
+    element: (
+      <Suspense fallback={<PageLoader />}>
+        <ForgotPasswordPage />
       </Suspense>
     ),
   },
