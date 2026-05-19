@@ -370,13 +370,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const client = getSupabaseClient();
       if (!client) throw new Error('Supabase não disponível');
 
-      const { error } = await client.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
-      });
+      const { error } = await withTimeout(
+        client.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/auth/reset-password`,
+        }),
+        10000,
+        'Timeout ao solicitar recuperacao de senha'
+      );
 
       if (error) throw error;
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Falha ao solicitar reset de senha';
+      let message = err instanceof Error ? err.message : 'Falha ao solicitar reset de senha';
+      if (isNetworkErrorMessage(message) || message.includes('Timeout')) {
+        message = 'Nao foi possivel conectar ao servico de recuperacao de senha. Tente novamente em instantes.';
+      }
       setError(message);
       throw new Error(message);
     } finally {
