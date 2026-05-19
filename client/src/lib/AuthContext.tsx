@@ -312,24 +312,32 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Try backend registration first so signup works even when Supabase DNS is unavailable.
       const registerEndpoint = buildApiUrl('/api/v1/auth/register');
       try {
-        const registerResponse = await fetch(registerEndpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: userData.email,
-            full_name: userData.name,
-            password: userData.password,
-            organization: userData.company || ''
-          })
-        });
+        const registerResponse = await withTimeout(
+          fetch(registerEndpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: userData.email,
+              full_name: userData.name,
+              password: userData.password,
+              organization: userData.company || ''
+            })
+          }),
+          10000,
+          'Timeout ao registrar usuario'
+        );
 
         if (registerResponse.ok) {
           const loginEndpoint = buildApiUrl('/api/v1/auth/login');
-          const loginResponse = await fetch(loginEndpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: userData.email, password: userData.password })
-          });
+          const loginResponse = await withTimeout(
+            fetch(loginEndpoint, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: userData.email, password: userData.password })
+            }),
+            10000,
+            'Timeout ao autenticar apos cadastro'
+          );
 
           if (loginResponse.ok) {
             const loginData = await loginResponse.json();
@@ -365,17 +373,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const client = getSupabaseClient();
       if (!client) throw new Error('Supabase não configurado');
 
-      const { data, error } = await client.auth.signUp({
-        email: userData.email,
-        password: userData.password,
-        options: {
-          data: {
-            full_name: userData.name,
-            company_name: userData.company || '',
-            role: 'user',
+      const { data, error } = await withTimeout(
+        client.auth.signUp({
+          email: userData.email,
+          password: userData.password,
+          options: {
+            data: {
+              full_name: userData.name,
+              company_name: userData.company || '',
+              role: 'user',
+            },
           },
-        },
-      });
+        }),
+        10000,
+        'Timeout ao registrar no Supabase'
+      );
       if (error) throw new Error(error.message || 'Falha no cadastro');
       if (data.session) {
         localStorage.setItem('access_token', data.session.access_token);
