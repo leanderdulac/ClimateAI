@@ -14,6 +14,13 @@ BLUE='\033[0;34m'
 RED='\033[0;31m'
 NC='\033[0m'
 
+generate_secret() {
+    python3 - <<'PY'
+import secrets
+print(secrets.token_urlsafe(24))
+PY
+}
+
 echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}ClimateWise - Startup com Podman${NC}"
 echo -e "${BLUE}========================================${NC}"
@@ -26,11 +33,12 @@ if [ -f ".env" ]; then
     source .env
     set +a
 else
-    echo -e "${YELLOW}⚠ .env não encontrado, usando padrões${NC}"
+    echo -e "${YELLOW}⚠ .env não encontrado, gerando credenciais efêmeras${NC}"
     export DB_USER=postgres
-    export DB_PASSWORD=climatewise123
+    export DB_PASSWORD="$(generate_secret)"
     export DB_NAME=climatewise
-    export SECRET_KEY=$(python3 -c "import secrets; print(secrets.token_urlsafe(32))")
+    export SECRET_KEY="$(generate_secret)"
+    export GRAFANA_ADMIN_PASSWORD="$(generate_secret)"
     export OTEL_ENABLED=true
 fi
 
@@ -55,7 +63,7 @@ podman run -d \
     --name climatewise-db \
     --network climatewise \
     -e POSTGRES_USER=${DB_USER:-postgres} \
-    -e POSTGRES_PASSWORD=${DB_PASSWORD:-climatewise123} \
+    -e POSTGRES_PASSWORD=${DB_PASSWORD} \
     -e POSTGRES_DB=${DB_NAME:-climatewise} \
     -p 5432:5432 \
     -v postgres_data:/var/lib/postgresql/data \
@@ -118,7 +126,7 @@ podman run -d \
     --network monitoring \
     -p 3000:3000 \
     -e GF_SECURITY_ADMIN_USER=admin \
-    -e GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin} \
+    -e GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD} \
     -v grafana_data:/var/lib/grafana \
     -v ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro \
     --restart unless-stopped \
@@ -147,6 +155,11 @@ echo ""
 echo -e "${GREEN}========================================${NC}"
 echo -e "${GREEN}Serviços iniciados com sucesso!${NC}"
 echo -e "${GREEN}========================================${NC}"
+echo ""
+echo -e "${BLUE}Credenciais geradas:${NC}"
+echo -e "  ${GREEN}✓${NC} DB_PASSWORD=${DB_PASSWORD}"
+echo -e "  ${GREEN}✓${NC} GRAFANA_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}"
+echo -e "  ${GREEN}✓${NC} SECRET_KEY=${SECRET_KEY}"
 echo ""
 echo -e "${BLUE}📊 URLs dos Serviços:${NC}"
 echo ""

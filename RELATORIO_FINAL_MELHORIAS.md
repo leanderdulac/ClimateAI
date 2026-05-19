@@ -221,12 +221,12 @@ Verificação completa da plataforma:
 
 #### Deploy com Docker
 ```bash
-docker-compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml up -d
 ```
 
 #### Monitoramento
 ```bash
-docker-compose -f docker-compose.monitoring.yml up -d
+docker compose -f docker-compose.monitoring.yml up -d
 ```
 
 ### CI/CD

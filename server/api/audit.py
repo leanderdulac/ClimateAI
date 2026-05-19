@@ -10,6 +10,8 @@ from fastapi import APIRouter, HTTPException, Query, Body, Depends
 from pydantic import BaseModel, Field, ConfigDict
 import json
 
+from middleware.auth_middleware import require_admin, require_auditor
+from models.schemas import User
 from services.audit_trail_service import AuditTrailService, AuditEntry, AuditChainIntegrity
 
 logger = logging.getLogger(__name__)
@@ -107,7 +109,10 @@ class AddAuditEntryResponse(BaseModel):
 # ============================================================================
 
 @router.post("/entry", response_model=AddAuditEntryResponse)
-async def add_audit_entry(request: AuditEntryRequest):
+async def add_audit_entry(
+    request: AuditEntryRequest,
+    current_user: User = Depends(require_admin),
+):
     """
     Adicionar entrada imutável ao audit trail
     
@@ -126,7 +131,7 @@ async def add_audit_entry(request: AuditEntryRequest):
     try:
         entry = audit_service.add_entry(
             operation=request.operation,
-            user_id=request.user_id,
+            user_id=current_user.id,
             policy_id=request.policy_id,
             input_data=request.input_data,
             output_data=request.output_data,
@@ -149,6 +154,7 @@ async def add_audit_entry(request: AuditEntryRequest):
 @router.get("/policy/{policy_id}", response_model=AuditTrailResponse)
 async def get_policy_audit_trail(
     policy_id: str,
+    current_user: User = Depends(require_auditor),
     limit: int = Query(default=100, ge=1, le=1000, description="Max entries to return")
 ):
     """
@@ -200,6 +206,7 @@ async def get_policy_audit_trail(
 @router.get("/user/{user_id}", response_model=List[AuditEntryResponse])
 async def get_user_activity(
     user_id: str,
+    current_user: User = Depends(require_auditor),
     limit: int = Query(default=100, ge=1, le=500, description="Max entries"),
     hours: int = Query(default=24, ge=1, le=720, description="Last N hours")
 ):
@@ -244,7 +251,7 @@ async def get_user_activity(
 
 
 @router.get("/verify-chain", response_model=ChainIntegrityResponse)
-async def verify_chain_integrity():
+async def verify_chain_integrity(current_user: User = Depends(require_auditor)):
     """
     Verificar integridade da cadeia de hashes
     
@@ -273,6 +280,7 @@ async def verify_chain_integrity():
 @router.get("/export/{policy_id}", response_model=RegulatoryExportResponse)
 async def export_for_regulator(
     policy_id: str,
+    current_user: User = Depends(require_auditor),
     format: str = Query(default="json", description="Export format (json, csv)")
 ):
     """
@@ -307,7 +315,7 @@ async def export_for_regulator(
 
 
 @router.get("/stats", response_model=AuditStatsResponse)
-async def get_audit_stats():
+async def get_audit_stats(current_user: User = Depends(require_auditor)):
     """
     Obter estatísticas do audit trail
     
@@ -335,6 +343,7 @@ async def get_audit_stats():
 
 @router.post("/clear")
 async def clear_audit_trail(
+    current_user: User = Depends(require_admin),
     retention_days: int = Query(default=365, ge=30, le=2555, description="Days to retain")
 ):
     """
@@ -346,8 +355,6 @@ async def clear_audit_trail(
     - Não remove entradas sob investigação
     """
     try:
-        # Em produção, verificar permissões de admin aqui
-        
         audit_service.clear_audit_trail(retention_days)
         
         return {

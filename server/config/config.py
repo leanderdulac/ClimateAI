@@ -26,6 +26,9 @@ def generate_secret_key() -> str:
     return secrets.token_urlsafe(32)
 
 
+LOCAL_DEV_DATABASE_URL = "sqlite+aiosqlite:///./climatewise-dev.db"
+
+
 class Settings(BaseSettings):
     # Configurações do servidor
     # Default to loopback; set HOST=0.0.0.0 explicitly in production/Docker for external access
@@ -35,8 +38,8 @@ class Settings(BaseSettings):
     API_HOST: str = os.getenv("API_HOST", "127.0.0.1")  # nosec B104
     API_PORT: int = int(os.getenv("API_PORT", "8000"))
     
-    # SECRET_KEY: Usar do .env ou gerar automaticamente
-    SECRET_KEY: str = os.getenv("SECRET_KEY") or generate_secret_key()
+    # SECRET_KEY é resolvida em tempo de instanciação para respeitar o ambiente atual
+    SECRET_KEY: Optional[str] = None
     
     ALLOW_ORIGINS_INPUT: str = os.getenv(
         "ALLOW_ORIGINS", 
@@ -104,12 +107,12 @@ class Settings(BaseSettings):
     # Se SUPABASE_DB_URL estiver definido, priorizamos ele como DATABASE_URL.
     # Caso contrário, tentamos construir a URL a partir dos componentes padrão
     # do Supabase (host db.<project>.supabase.co e usuário postgres).
-    SUPABASE_DB_URL: str = os.getenv("SUPABASE_DB_URL", "")
-    SUPABASE_DB_HOST: str = os.getenv("SUPABASE_DB_HOST", "")
-    SUPABASE_DB_PORT: str = os.getenv("SUPABASE_DB_PORT", "5432")
-    SUPABASE_DB_NAME: str = os.getenv("SUPABASE_DB_NAME", "postgres")
-    SUPABASE_DB_USER: str = os.getenv("SUPABASE_DB_USER", "postgres")
-    SUPABASE_DB_PASSWORD: str = os.getenv("SUPABASE_DB_PASSWORD", "")
+    SUPABASE_DB_URL: str = ""
+    SUPABASE_DB_HOST: str = ""
+    SUPABASE_DB_PORT: str = "5432"
+    SUPABASE_DB_NAME: str = "postgres"
+    SUPABASE_DB_USER: str = "postgres"
+    SUPABASE_DB_PASSWORD: str = ""
 
     def _build_supabase_database_url(self) -> Optional[str]:
         """Gera a DATABASE_URL para Supabase se as variáveis existirem."""
@@ -131,6 +134,10 @@ class Settings(BaseSettings):
 
     def __init__(self, **values):
         super().__init__(**values)
+        if not self.SECRET_KEY:
+            self.SECRET_KEY = os.getenv("SECRET_KEY") or generate_secret_key()
+            os.environ.setdefault("SECRET_KEY", self.SECRET_KEY)
+
         # Calcula DATABASE_URL em tempo de inicialização
         # Se DATABASE_URL estiver explicitamente no .env, use-o (para preservar ?sslmode=require)
         if not self.DATABASE_URL:
@@ -141,7 +148,7 @@ class Settings(BaseSettings):
             if supabase_url:
                 self.DATABASE_URL = supabase_url
             else:
-                self.DATABASE_URL = "postgresql+asyncpg://climatewise:climatewise123@localhost:5432/climatewise"
+                self.DATABASE_URL = LOCAL_DEV_DATABASE_URL
                 
         # Fix for asyncpg: remove ?sslmode=require which is not supported natively in the connection string
         if self.DATABASE_URL and "?sslmode=require" in self.DATABASE_URL:
@@ -174,7 +181,6 @@ class Settings(BaseSettings):
     MIN_BALANCE_THRESHOLD_ETHER: float = float(os.getenv("MIN_BALANCE_THRESHOLD_ETHER", "0.05"))
 
     class Config:
-        env_file = ".env"
         extra = "ignore"
         case_sensitive = True
 
@@ -196,7 +202,12 @@ if not settings.DEBUG:
         print("⚠️  AVISO: CORS está aberto (*) em produção. Isso é um risco de segurança!", file=sys.stderr)
     
     # Validar DATABASE_URL em produção
-    if "localhost" in settings.DATABASE_URL:
+    if settings.DATABASE_ENABLED and settings.DATABASE_URL == LOCAL_DEV_DATABASE_URL:
+        print("❌ ERRO CRÍTICO: DATABASE_URL de desenvolvimento não pode ser usado em produção!", file=sys.stderr)
+        print("Defina DATABASE_URL ou as variáveis SUPABASE_DB_* antes do deploy.", file=sys.stderr)
+        sys.exit(1)
+
+    if settings.DATABASE_URL and "localhost" in settings.DATABASE_URL:
         print("⚠️  AVISO: DATABASE_URL aponta para localhost em produção!", file=sys.stderr)
 else:
     # Em desenvolvimento, apenas avisar

@@ -155,8 +155,8 @@ export DB_PASSWORD="sua_senha_forte"
 ./test_deploy.sh
 
 # Verificar serviços
-docker-compose -f docker-compose.prod.yml ps
-docker-compose -f docker-compose.prod.yml logs -f
+docker compose -f docker-compose.prod.yml ps
+docker compose -f docker-compose.prod.yml logs -f
 ```
 
 ### **Opção 3: Vercel (Frontend)**

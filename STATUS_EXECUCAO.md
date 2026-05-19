@@ -145,7 +145,7 @@
 ### ✅ 10. Configuração de Ambiente
 ```
 ✓ Variáveis OTel no .env.example
-✓ Redes de monitoramento no docker-compose
+✓ Redes de monitoramento no docker compose
 ✓ Health checks configurados
 ```
 
@@ -197,12 +197,12 @@ nano .env  # Editar credenciais
 ./scripts/start-monitoring.sh
 
 # Opção B: Manual
-docker-compose -f docker-compose.yml -f docker-compose.otel.yml up -d
+docker compose -f docker-compose.yml -f docker-compose.otel.yml up -d
 ```
 
 ### 4. Verificar Serviços
 ```bash
-docker-compose -f docker-compose.yml -f docker-compose.otel.yml ps
+docker compose -f docker-compose.yml -f docker-compose.otel.yml ps
 ```
 
 ### 5. Acessar Dashboards

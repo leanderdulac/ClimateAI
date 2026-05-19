@@ -33,11 +33,6 @@ curl -fsSL https://get.docker.com -o get-docker.sh
 sudo sh get-docker.sh
 sudo usermod -aG docker $USER
 
-# Instalar Docker Compose
-sudo curl -L "https://github.com/docker/compose/releases/download/v2.20.0/docker-compose-$(uname -s)-$(uname -m)" \
-  -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose
-
 # Instalar Git
 sudo apt install -y git
 
@@ -146,7 +141,7 @@ sudo ufw status
 
 ```bash
 # Build para produção
-docker-compose -f docker-compose.prod.yml build
+docker compose -f docker-compose.prod.yml build
 
 # Verificar imagens
 docker images
@@ -156,13 +151,13 @@ docker images
 
 ```bash
 # Iniciar todos os serviços
-docker-compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml up -d
 
 # Verificar status
-docker-compose ps
+docker compose ps
 
 # Verificar logs
-docker-compose logs -f
+docker compose logs -f
 ```
 
 ### 3.3. Configurar Database
@@ -172,10 +167,10 @@ docker-compose logs -f
 sleep 10
 
 # Rodar migrações
-docker-compose exec backend alembic upgrade head
+docker compose exec backend alembic upgrade head
 
 # Criar dados iniciais (seed)
-docker-compose exec backend python seed_db.py
+docker compose exec backend python seed_db.py
 ```
 
 ---
@@ -290,7 +285,7 @@ sudo certbot renew --dry-run
 
 ```bash
 # Iniciar Prometheus, Grafana, etc.
-docker-compose -f docker-compose.monitoring.yml up -d
+docker compose -f docker-compose.monitoring.yml up -d
 ```
 
 ### 6.2. Acessar Dashboards
@@ -376,13 +371,13 @@ curl -X POST https://climatewise.com/api/v1/auth/login \
 
 ```bash
 # Backend
-docker-compose logs -f backend
+docker compose logs -f backend
 
 # Frontend
-docker-compose logs -f frontend
+docker compose logs -f frontend
 
 # Database
-docker-compose logs -f db
+docker compose logs -f db
 ```
 
 ---
@@ -415,13 +410,13 @@ O projeto já inclui workflows em `.github/workflows/`:
 
 ```bash
 # Parar serviços
-docker-compose down
+docker compose down
 
 # Reverter para versão anterior
 git checkout <tag-anterior>
 
 # Rebuild e restart
-docker-compose -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.prod.yml up -d --build
 ```
 
 ### 10.2. Restore de Database
@@ -461,8 +456,8 @@ ANALYZE;
 
 ```bash
 # Configurar maxmemory
-docker-compose exec redis redis-cli CONFIG SET maxmemory 512mb
-docker-compose exec redis redis-cli CONFIG SET maxmemory-policy allkeys-lru
+docker compose exec redis redis-cli CONFIG SET maxmemory 512mb
+docker compose exec redis redis-cli CONFIG SET maxmemory-policy allkeys-lru
 ```
 
 ### 11.3. Connection Pooling

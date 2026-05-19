@@ -401,7 +401,7 @@ pip install -r server/requirements-test.txt
 python server/main.py
 
 # Production (with Docker)
-docker-compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml up -d
 ```
 
 ### 4. **Monitor Health**

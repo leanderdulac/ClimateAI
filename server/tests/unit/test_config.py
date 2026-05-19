@@ -6,7 +6,7 @@ import os
 import sys
 import unittest
 from unittest.mock import patch
-from server.config.config import Settings, generate_secret_key
+from server.config.config import LOCAL_DEV_DATABASE_URL, Settings, generate_secret_key
 
 
 class TestSecretKeyGeneration(unittest.TestCase):
@@ -113,6 +113,15 @@ class TestDatabaseConfiguration(unittest.TestCase):
         """Testa se banco de dados está desabilitado"""
         settings = Settings()
         self.assertFalse(settings.DATABASE_ENABLED)
+
+    @patch.dict(os.environ, {
+        'DEBUG': 'true',
+        'SECRET_KEY': 'test_key_123456789012345678901234567890'
+    }, clear=True)
+    def test_database_url_defaults_to_local_sqlite_in_development(self):
+        """Evita credenciais hardcoded quando DATABASE_URL não está definido."""
+        settings = Settings()
+        self.assertEqual(settings.DATABASE_URL, LOCAL_DEV_DATABASE_URL)
 
 
 class TestRedisConfiguration(unittest.TestCase):

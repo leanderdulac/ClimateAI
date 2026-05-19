@@ -233,7 +233,7 @@ nano .env  # Edite variáveis
 ./scripts/generate_secret_key.sh
 
 # 3. Deploy
-docker-compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml up -d
 
 # 4. Verifique
 ./scripts/verify_platform.sh

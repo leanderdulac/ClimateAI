@@ -4,7 +4,10 @@ Cache Router - Endpoints para gerenciamento de cache
 
 from typing import Any, Dict
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+
+from middleware.auth_middleware import require_admin
+from models.schemas import User
 
 router = APIRouter()
 
@@ -38,7 +41,7 @@ async def get_cache_stats() -> Dict[str, Any]:
 
 
 @router.post("/clear")
-async def clear_cache() -> Dict[str, str]:
+async def clear_cache(current_user: User = Depends(require_admin)) -> Dict[str, str]:
     """
     Limpa todo o cache
 
@@ -54,7 +57,9 @@ async def clear_cache() -> Dict[str, str]:
 
 
 @router.post("/clear-expired")
-async def clear_expired_cache() -> Dict[str, str]:
+async def clear_expired_cache(
+    current_user: User = Depends(require_admin),
+) -> Dict[str, str]:
     """
     Remove apenas entradas expiradas do cache
 

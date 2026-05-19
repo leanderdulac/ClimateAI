@@ -6,9 +6,11 @@ Regulatory compliance endpoints for model governance
 import logging
 from datetime import datetime
 from typing import List, Optional, Dict
-from fastapi import APIRouter, HTTPException, Query, Body
+from fastapi import APIRouter, Depends, HTTPException, Query, Body
 from pydantic import BaseModel, Field, ConfigDict
 
+from middleware.auth_middleware import require_admin, require_analyst
+from models.schemas import User
 from services.model_governance_service import (
     ModelGovernanceService,
     ChangeType,
@@ -129,7 +131,10 @@ class GovernanceReportResponse(BaseModel):
 # ============================================================================
 
 @router.post("/register-model", response_model=ModelInfoResponse)
-async def register_model(request: RegisterModelRequest):
+async def register_model(
+    request: RegisterModelRequest,
+    current_user: User = Depends(require_admin),
+):
     """
     Registrar novo modelo com validação
     
@@ -142,7 +147,7 @@ async def register_model(request: RegisterModelRequest):
         model = governance_service.register_model(
             model_id=request.model_id,
             version=request.version,
-            created_by=request.created_by,
+            created_by=current_user.email,
             validation_report=request.validation_report,
             performance_metrics=request.performance_metrics
         )
@@ -166,7 +171,10 @@ async def register_model(request: RegisterModelRequest):
 
 
 @router.post("/request-change", response_model=ChangeRequestResponse)
-async def request_change(request: ChangeRequestRequest):
+async def request_change(
+    request: ChangeRequestRequest,
+    current_user: User = Depends(require_analyst),
+):
     """
     Solicitar mudança em modelo
     
@@ -188,7 +196,7 @@ async def request_change(request: ChangeRequestRequest):
             description=request.description,
             justification=request.justification,
             impact_analysis=request.impact_analysis,
-            requested_by=request.requested_by,
+            requested_by=current_user.email,
             rollback_plan=request.rollback_plan
         )
         
@@ -214,7 +222,11 @@ async def request_change(request: ChangeRequestRequest):
 
 
 @router.post("/approve-change/{request_id}")
-async def approve_change(request_id: str, request: ApproveChangeRequest):
+async def approve_change(
+    request_id: str,
+    request: ApproveChangeRequest,
+    current_user: User = Depends(require_admin),
+):
     """
     Aprovar mudança
     
@@ -225,7 +237,7 @@ async def approve_change(request_id: str, request: ApproveChangeRequest):
     try:
         success, message = governance_service.approve_change(
             request_id=request_id,
-            approved_by=request.approved_by,
+            approved_by=current_user.email,
             implementation_notes=request.implementation_notes
         )
         
@@ -246,7 +258,11 @@ async def approve_change(request_id: str, request: ApproveChangeRequest):
 
 
 @router.post("/reject-change/{request_id}")
-async def reject_change(request_id: str, request: RejectChangeRequest):
+async def reject_change(
+    request_id: str,
+    request: RejectChangeRequest,
+    current_user: User = Depends(require_admin),
+):
     """
     Rejeitar mudança
     
@@ -257,7 +273,7 @@ async def reject_change(request_id: str, request: RejectChangeRequest):
     try:
         success, message = governance_service.reject_change(
             request_id=request_id,
-            rejected_by=request.rejected_by,
+            rejected_by=current_user.email,
             rejection_reason=request.rejection_reason
         )
         
@@ -278,7 +294,10 @@ async def reject_change(request_id: str, request: RejectChangeRequest):
 
 
 @router.get("/model/{model_id}", response_model=ModelInfoResponse)
-async def get_model_info(model_id: str):
+async def get_model_info(
+    model_id: str,
+    current_user: User = Depends(require_analyst),
+):
     """
     Obter informações do modelo
     """
@@ -298,7 +317,10 @@ async def get_model_info(model_id: str):
 
 
 @router.get("/change-request/{request_id}", response_model=ChangeRequestResponse)
-async def get_change_request(request_id: str):
+async def get_change_request(
+    request_id: str,
+    current_user: User = Depends(require_analyst),
+):
     """
     Obter informações de change request
     """
@@ -318,7 +340,10 @@ async def get_change_request(request_id: str):
 
 
 @router.get("/model/{model_id}/change-history", response_model=List[ChangeRequestResponse])
-async def get_model_change_history(model_id: str):
+async def get_model_change_history(
+    model_id: str,
+    current_user: User = Depends(require_analyst),
+):
     """
     Obter histórico de mudanças do modelo
     """
@@ -333,7 +358,10 @@ async def get_model_change_history(model_id: str):
 
 
 @router.get("/model/{model_id}/governance-score", response_model=GovernanceScoreResponse)
-async def get_governance_score(model_id: str):
+async def get_governance_score(
+    model_id: str,
+    current_user: User = Depends(require_analyst),
+):
     """
     Calcular score de governança do modelo
     
@@ -373,7 +401,10 @@ async def get_governance_score(model_id: str):
 
 
 @router.get("/model/{model_id}/governance-report", response_model=GovernanceReportResponse)
-async def get_governance_report(model_id: str):
+async def get_governance_report(
+    model_id: str,
+    current_user: User = Depends(require_analyst),
+):
     """
     Gerar relatório de governança para reguladores
     
@@ -400,7 +431,7 @@ async def get_governance_report(model_id: str):
 
 
 @router.get("/committee-members")
-async def get_committee_members():
+async def get_committee_members(current_user: User = Depends(require_admin)):
     """
     Obter membros do comitê de governança
     """

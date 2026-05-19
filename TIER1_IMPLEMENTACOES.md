@@ -223,7 +223,7 @@ status = noaa_client.get_health_status()
 ### Stack Completo (Backend + Monitoring)
 ```bash
 # Iniciar backend + monitoring
-docker-compose -f docker-compose.yml -f docker-compose.otel.yml up -d
+docker compose -f docker-compose.yml -f docker-compose.otel.yml up -d
 
 # Ou usar o script
 ./scripts/start-monitoring.sh
@@ -231,21 +231,21 @@ docker-compose -f docker-compose.yml -f docker-compose.otel.yml up -d
 
 ### Apenas Backend
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 ### Apenas Monitoring
 ```bash
-docker-compose -f docker-compose.otel.yml up -d
+docker compose -f docker-compose.otel.yml up -d
 ```
 
 ### Ver Logs
 ```bash
 # OTel Collector
-docker-compose -f docker-compose.yml -f docker-compose.otel.yml logs -f otel-collector
+docker compose -f docker-compose.yml -f docker-compose.otel.yml logs -f otel-collector
 
 # Todos os serviços
-docker-compose -f docker-compose.yml -f docker-compose.otel.yml logs -f
+docker compose -f docker-compose.yml -f docker-compose.otel.yml logs -f
 ```
 
 ---

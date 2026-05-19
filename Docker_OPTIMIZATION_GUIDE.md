@@ -61,7 +61,7 @@ docker build -f Dockerfile.optimized --target production -t climatewise/backend:
 docker build -f Dockerfile.client.optimized -t climatewise/frontend:prod .
 
 # Compose
-docker-compose -f docker-compose.optimized.yml up -d
+docker compose -f docker-compose.optimized.yml up -d
 ```
 
 ### Para Desenvolvimento
@@ -70,7 +70,7 @@ docker-compose -f docker-compose.optimized.yml up -d
 docker build -f Dockerfile.optimized --target development -t climatewise/backend:dev .
 
 # Compose com modo dev
-docker-compose -f docker-compose.optimized.yml --profile dev up
+docker compose -f docker-compose.optimized.yml --profile dev up
 ```
 
 ## Melhorias de Segurança

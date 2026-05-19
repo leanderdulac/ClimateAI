@@ -14,8 +14,10 @@ Plus governance recommendations:
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
+from middleware.auth_middleware import require_admin
+from models.schemas import User
 from services.smart_climate_exclusions_service import (
     ClimateExclusionType,
     GovernanceRecommendation,
@@ -238,6 +240,7 @@ async def update_governance_rule_endpoint(
     new_status: str = Query(
         ..., description="New status for the rule (active, inactive, pending)"
     ),
+    current_user: User = Depends(require_admin),
 ):
     """
     Update the status of a governance rule

@@ -6,9 +6,11 @@ Endpoints para geração e submissão de relatórios regulatórios
 import logging
 from datetime import datetime
 from typing import List, Optional, Dict
-from fastapi import APIRouter, HTTPException, Query, Body
+from fastapi import APIRouter, Depends, HTTPException, Query, Body
 from pydantic import BaseModel, Field
 
+from middleware.auth_middleware import require_admin, require_auditor
+from models.schemas import User
 from services.regulatory_reporting_service import (
     RegulatoryReportingService,
     RegulatoryFramework,
@@ -98,7 +100,10 @@ class ComplianceSummaryResponse(BaseModel):
 # ============================================================================
 
 @router.post("/susep/create", response_model=ReportResponse)
-async def create_susep_report(request: SUSEPReportRequest):
+async def create_susep_report(
+    request: SUSEPReportRequest,
+    current_user: User = Depends(require_admin),
+):
     """
     Criar relatório para SUSEP (Circular 562/2015)
     
@@ -138,7 +143,10 @@ async def create_susep_report(request: SUSEPReportRequest):
 
 
 @router.post("/solvency-ii/create", response_model=ReportResponse)
-async def create_solvency_ii_report(request: SolvencyIIReportRequest):
+async def create_solvency_ii_report(
+    request: SolvencyIIReportRequest,
+    current_user: User = Depends(require_admin),
+):
     """
     Criar relatório para Solvency II (QRTs)
     
@@ -179,7 +187,10 @@ async def create_solvency_ii_report(request: SolvencyIIReportRequest):
 
 
 @router.post("/ifrs-17/create", response_model=ReportResponse)
-async def create_ifrs_17_report(request: IFRS17ReportRequest):
+async def create_ifrs_17_report(
+    request: IFRS17ReportRequest,
+    current_user: User = Depends(require_admin),
+):
     """
     Criar relatório para IFRS 17
     
@@ -220,7 +231,11 @@ async def create_ifrs_17_report(request: IFRS17ReportRequest):
 
 
 @router.post("/{report_id}/submit")
-async def submit_report(report_id: str, request: SubmitReportRequest):
+async def submit_report(
+    report_id: str,
+    request: SubmitReportRequest,
+    current_user: User = Depends(require_admin),
+):
     """
     Submeter relatório para regulador
     
@@ -231,7 +246,7 @@ async def submit_report(report_id: str, request: SubmitReportRequest):
     try:
         success, message = reporting_service.submit_report(
             report_id=report_id,
-            submitted_by=request.submitted_by
+            submitted_by=current_user.email
         )
         
         if not success:
@@ -251,7 +266,11 @@ async def submit_report(report_id: str, request: SubmitReportRequest):
 
 
 @router.post("/{report_id}/approve")
-async def approve_report(report_id: str, request: ApproveReportRequest):
+async def approve_report(
+    report_id: str,
+    request: ApproveReportRequest,
+    current_user: User = Depends(require_admin),
+):
     """
     Aprovar relatório internamente
     
@@ -261,7 +280,7 @@ async def approve_report(report_id: str, request: ApproveReportRequest):
     try:
         success, message = reporting_service.approve_report(
             report_id=report_id,
-            approved_by=request.approved_by
+            approved_by=current_user.email
         )
         
         if not success:
@@ -281,7 +300,10 @@ async def approve_report(report_id: str, request: ApproveReportRequest):
 
 
 @router.get("/{report_id}", response_model=ReportResponse)
-async def get_report(report_id: str):
+async def get_report(
+    report_id: str,
+    current_user: User = Depends(require_auditor),
+):
     """
     Obter relatório por ID
     """
@@ -303,6 +325,7 @@ async def get_report(report_id: str):
 @router.get("/entity/{entity_id}/reports", response_model=List[ReportResponse])
 async def get_reports_by_entity(
     entity_id: str,
+    current_user: User = Depends(require_auditor),
     framework: Optional[str] = Query(default=None, description="Framework regulatório")
 ):
     """
@@ -319,7 +342,10 @@ async def get_reports_by_entity(
 
 
 @router.get("/{report_id}/submission-history", response_model=List[Dict])
-async def get_submission_history(report_id: str):
+async def get_submission_history(
+    report_id: str,
+    current_user: User = Depends(require_auditor),
+):
     """
     Obter histórico de submissões do relatório
     """
@@ -334,7 +360,10 @@ async def get_submission_history(report_id: str):
 
 
 @router.get("/{report_id}/export-json")
-async def export_report_to_json(report_id: str):
+async def export_report_to_json(
+    report_id: str,
+    current_user: User = Depends(require_auditor),
+):
     """
     Exportar relatório para JSON
     """
@@ -353,7 +382,10 @@ async def export_report_to_json(report_id: str):
 
 
 @router.get("/entity/{entity_id}/compliance-summary", response_model=ComplianceSummaryResponse)
-async def get_regulatory_compliance_summary(entity_id: str):
+async def get_regulatory_compliance_summary(
+    entity_id: str,
+    current_user: User = Depends(require_auditor),
+):
     """
     Obter resumo de conformidade regulatória da entidade
     

@@ -21,25 +21,31 @@ sleep 2
 # Iniciar Backend
 echo ""
 echo "🚀 Iniciando Backend (Porta 8000)..."
-cd /home/exp/Downloads/ClimateAI/server
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR/server"
 
-if [ ! -d "venv-hathor" ]; then
-  echo "❌ Virtual environment não encontrado!"
-  echo "Execute: cd server && python3 -m venv venv-hathor && source venv-hathor/bin/activate && pip install -r requirements.txt"
+if [ -x "$SCRIPT_DIR/.venv/bin/python" ]; then
+  VENV_PYTHON="$SCRIPT_DIR/.venv/bin/python"
+elif [ -x "$SCRIPT_DIR/server/venv-hathor/bin/python3" ]; then
+  VENV_PYTHON="$SCRIPT_DIR/server/venv-hathor/bin/python3"
+else
+  echo "❌ Nenhum ambiente Python utilizável encontrado (.venv ou server/venv-hathor)"
   exit 1
 fi
-
-source venv-hathor/bin/activate
 
 # Set environment variables for development
 export DATABASE_URL="sqlite+aiosqlite:///:memory:"
 export DATABASE_ENABLED=false
-export SECRET_KEY="dev-secret-key-not-for-production-use-only"
+export SECRET_KEY="${SECRET_KEY:-$(python3 - <<'PY'
+import secrets
+print(secrets.token_urlsafe(32))
+PY
+)}"
 export DEBUG=true
 export ALLOW_ORIGINS="http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173"
 
 # Start backend in background
-nohup python3 -m uvicorn main:app \
+nohup "$VENV_PYTHON" -m uvicorn main:app \
   --host 0.0.0.0 \
   --port 8000 \
   --reload \
@@ -68,7 +74,7 @@ done
 # Iniciar Frontend
 echo ""
 echo "🎨 Iniciando Frontend (Porta 5173)..."
-cd /home/exp/Downloads/ClimateAI/client
+cd "$SCRIPT_DIR/client"
 
 if [ ! -d "node_modules" ]; then
   echo "❌ node_modules não encontrado!"

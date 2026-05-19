@@ -158,7 +158,7 @@ test-backup
 ### 5. Deploy com Docker
 ```bash
 # Arquivo de produção
-docker-compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml up -d
 
 # Verificar saúde
 curl http://localhost:8000/health

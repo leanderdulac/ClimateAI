@@ -145,11 +145,11 @@ Script automatizado para build com stats:
 # Build imagem otimizada
 ./build.sh production
 
-# Ou com docker-compose
-docker-compose build --target production
+# Ou com docker compose
+docker compose build --target production
 
 # Rodar
-docker-compose up -d
+docker compose up -d
 
 # Tamanho resultante
 docker images | grep climatewise
@@ -162,11 +162,11 @@ docker images | grep climatewise
 # Build com TensorFlow
 ./build.sh development
 
-# Ou com docker-compose dev
-docker-compose -f docker-compose.dev.yml build
+# Ou com docker compose dev
+docker compose -f docker-compose.dev.yml build
 
 # Rodar com hot reload
-docker-compose -f docker-compose.dev.yml up -d
+docker compose -f docker-compose.dev.yml up -d
 
 # Jupyter disponível em http://localhost:8888
 ```
@@ -253,8 +253,8 @@ docker build --target development -t test:dev ./server
 
 ### Health Check
 ```bash
-docker-compose up -d
-docker-compose ps
+docker compose up -d
+docker compose ps
 
 # Todos os services devem estar 'healthy'
 # backend: health_status=healthy

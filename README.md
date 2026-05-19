@@ -468,7 +468,7 @@ npm run dev
 
 1. Execute todos os serviços:
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 
 ## 🔌 APIs Disponíveis

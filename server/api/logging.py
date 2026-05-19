@@ -13,6 +13,7 @@ import uuid
 import warnings
 from contextvars import ContextVar
 from datetime import datetime
+from enum import Enum
 from typing import Any, Dict, Optional
 
 from fastapi import Request, Response
@@ -24,21 +25,8 @@ try:
 
     HAS_JSON_LOGGER = True
 except ImportError:
+    jsonlogger = None
     HAS_JSON_LOGGER = False
-
-import json
-import logging
-import time
-import traceback
-import uuid
-from contextvars import ContextVar
-from datetime import datetime
-from enum import Enum
-from typing import Any, Dict, Optional
-
-from fastapi import Request, Response
-from pythonjsonlogger import jsonlogger
-from starlette.middleware.base import BaseHTTPMiddleware
 
 # ============================================================================
 # Context Variables para Rastreamento Distribuído

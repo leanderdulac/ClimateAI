@@ -405,10 +405,10 @@ services:
 ./scripts/start-monitoring.sh
 
 # Apenas monitoring
-docker-compose -f docker-compose.otel.yml up -d
+docker compose -f docker-compose.otel.yml up -d
 
 # Ver logs
-docker-compose -f docker-compose.yml -f docker-compose.otel.yml logs -f
+docker compose -f docker-compose.yml -f docker-compose.otel.yml logs -f
 ```
 
 ### Testar Localmente

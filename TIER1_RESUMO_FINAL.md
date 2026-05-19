@@ -256,7 +256,7 @@ Legenda: ✅ Implementado | 🟡 Em monitoramento | ⚪ Pendente
 ./scripts/start-monitoring.sh
 
 # Ou manualmente
-docker-compose -f docker-compose.yml -f docker-compose.otel.yml up -d
+docker compose -f docker-compose.yml -f docker-compose.otel.yml up -d
 ```
 
 ### URLs dos Serviços

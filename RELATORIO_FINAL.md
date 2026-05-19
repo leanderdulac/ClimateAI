@@ -176,7 +176,7 @@ sudo bash server/setup_backups.sh
 
 ### 6. Deploy com Docker
 ```bash
-docker-compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml up -d
 ```
 
 ---

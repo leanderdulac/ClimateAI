@@ -4,19 +4,30 @@
 echo "=== ClimateWise Backend Setup ==="
 echo ""
 
-cd /home/exp/Downloads/ClimateAI/server
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR"
 
-# Criar venv se não existir
-if [ ! -d "venv-hathor" ]; then
-  echo "Criando virtual environment..."
-  python3 -m venv venv-hathor
+if [ -x "$SCRIPT_DIR/../.venv/bin/python" ]; then
+  VENV_PYTHON="$SCRIPT_DIR/../.venv/bin/python"
+else
+  VENV_DIR="$SCRIPT_DIR/venv-hathor"
+  VENV_PYTHON="$VENV_DIR/bin/python3"
+
+  # Criar venv se não existir
+  if [ ! -d "$VENV_DIR" ]; then
+    echo "Criando virtual environment..."
+    python3 -m venv "$VENV_DIR"
+  fi
 fi
 
-source venv-hathor/bin/activate
+if [ ! -x "$VENV_PYTHON" ]; then
+  echo "❌ Python do virtual environment não encontrado em $VENV_PYTHON"
+  exit 1
+fi
 
 # Instalar dependências essenciais
 echo "Instalando dependências..."
-pip install -q \
+"$VENV_PYTHON" -m pip install -q \
   fastapi uvicorn pydantic pydantic-settings \
   python-json-logger PyJWT python-jose \
   requests httpx aiohttp \
@@ -29,7 +40,11 @@ pip install -q \
 # Configurar ambiente
 export DATABASE_URL="sqlite+aiosqlite:///:memory:"
 export DATABASE_ENABLED=false
-export SECRET_KEY="dev-secret-key-for-testing"
+export SECRET_KEY="${SECRET_KEY:-$(python3 - <<'PY'
+import secrets
+print(secrets.token_urlsafe(32))
+PY
+)}"
 export DEBUG=true
 
 # Matar processos antigos
@@ -38,7 +53,7 @@ sleep 2
 
 # Iniciar servidor
 echo "Iniciando backend na porta 8000..."
-python3 -m uvicorn main:app --host 0.0.0.0 --port 8000 &
+"$VENV_PYTHON" -m uvicorn main:app --host 0.0.0.0 --port 8000 &
 SERVER_PID=$!
 
 # Aguardar inicialização

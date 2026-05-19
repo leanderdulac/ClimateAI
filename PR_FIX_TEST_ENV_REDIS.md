@@ -51,9 +51,9 @@ A brief deploy checklist is attached below (next section).
    ```bash
    # on droplet
    cd /opt/climatewise
-   docker-compose -f docker-compose.prod.yml pull
-   docker-compose -f docker-compose.prod.yml up -d --build
-   docker-compose -f docker-compose.prod.yml logs -f backend
+   docker compose -f docker-compose.prod.yml pull
+   docker compose -f docker-compose.prod.yml up -d --build
+   docker compose -f docker-compose.prod.yml logs -f backend
    ```
    or use `doctl apps update --spec` for App Platform.
 3. **Monitor logs** for any errors similar to those earlier (Redis, Vault,

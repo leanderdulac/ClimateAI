@@ -11,10 +11,10 @@ services:
     container_name: climatewise-backend
     restart: unless-stopped
     environment:
-      - DATABASE_URL=${DATABASE_URL:-postgresql://climatewise:climatewise123@db:5432/climatewise}
+      - DATABASE_URL=${DATABASE_URL:?DATABASE_URL must be set}
       - REDIS_URL=${REDIS_URL:-redis://redis:6379}
-      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
-      - ALLOW_ORIGINS=${ALLOW_ORIGINS:-*}
+      - SECRET_KEY=${SECRET_KEY:?SECRET_KEY must be set}
+      - ALLOW_ORIGINS=${ALLOW_ORIGINS:?ALLOW_ORIGINS must be set}
       - ENVIRONMENT=production
     ports:
       - "${BACKEND_PORT:-8000}:8000"
@@ -61,7 +61,7 @@ services:
     environment:
       - POSTGRES_DB=${POSTGRES_DB:-climatewise}
       - POSTGRES_USER=${POSTGRES_USER:-climatewise}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-climatewise123}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
     ports:
       - "${DB_PORT:-5432}:5432"
     volumes:

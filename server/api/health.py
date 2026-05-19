@@ -224,6 +224,8 @@ class APIHealthCheck:
 
     def __init__(self):
         self.name = "external_apis"
+        # Keep external probe bounded so full health checks stay responsive in test/dev.
+        self.request_timeout_seconds = 2
 
     async def check(self) -> HealthCheckResult:
         """Verifica saúde de APIs externas críticas"""
@@ -243,7 +245,7 @@ class APIHealthCheck:
                             "longitude": 0,
                             "current": "temperature_2m",
                         },
-                        timeout=aiohttp.ClientTimeout(total=5),
+                        timeout=aiohttp.ClientTimeout(total=self.request_timeout_seconds),
                     ) as resp:
                         api_results["open_meteo"] = (
                             "healthy" if resp.status == 200 else "unhealthy"

@@ -1,5 +1,60 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const appUrl = process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:5173';
+const useSystemChrome = process.env.PLAYWRIGHT_USE_SYSTEM_CHROME === '1';
+const localChromeOnly = process.env.PLAYWRIGHT_LOCAL_CHROME_ONLY === '1';
+
+const desktopChromeUse = {
+  ...devices['Desktop Chrome'],
+  ...(useSystemChrome
+    ? {
+        channel: 'chrome',
+        launchOptions: {
+          args: ['--no-sandbox'],
+        },
+      }
+    : {}),
+};
+
+const accessibilityProject = {
+  name: 'accessibility',
+  testMatch: '**/a11y/**/*.test.ts',
+  use: desktopChromeUse,
+};
+
+const chromiumProject = {
+  name: 'chromium',
+  use: desktopChromeUse,
+  testMatch: '**/e2e/**/*.spec.ts',
+};
+
+const projects = localChromeOnly
+  ? [accessibilityProject, chromiumProject]
+  : [
+      accessibilityProject,
+      chromiumProject,
+      {
+        name: 'firefox',
+        use: { ...devices['Desktop Firefox'] },
+        testMatch: '**/e2e/**/*.spec.ts',
+      },
+      {
+        name: 'webkit',
+        use: { ...devices['Desktop Safari'] },
+        testMatch: '**/e2e/**/*.spec.ts',
+      },
+      {
+        name: 'Mobile Chrome',
+        use: { ...devices['Pixel 5'] },
+        testMatch: '**/e2e/**/*.spec.ts',
+      },
+      {
+        name: 'Mobile Safari',
+        use: { ...devices['iPhone 12'] },
+        testMatch: '**/e2e/**/*.spec.ts',
+      },
+    ];
+
 /**
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv
@@ -24,57 +79,19 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: 'http://localhost:3000',
+    baseURL: appUrl,
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
 
   /* Configure projects for major browsers */
-  projects: [
-    // Accessibility tests
-    {
-      name: 'accessibility',
-      testMatch: '**/a11y/**/*.test.ts',
-      use: { ...devices['Desktop Chrome'] },
-    },
-    
-    // E2E tests
-    {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
-      testMatch: '**/e2e/**/*.spec.ts',
-    },
-
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-      testMatch: '**/e2e/**/*.spec.ts',
-    },
-
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-      testMatch: '**/e2e/**/*.spec.ts',
-    },
-
-    /* Test against mobile viewports. */
-    {
-      name: 'Mobile Chrome',
-      use: { ...devices['Pixel 5'] },
-      testMatch: '**/e2e/**/*.spec.ts',
-    },
-    {
-      name: 'Mobile Safari',
-      use: { ...devices['iPhone 12'] },
-      testMatch: '**/e2e/**/*.spec.ts',
-    },
-  ],
+  projects,
 
   /* Run your local dev server before starting the tests */
   webServer: {
     command: 'npm run dev -- --host 0.0.0.0 --port 5173',
-    url: 'http://localhost:5173',
+    url: appUrl,
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
   },

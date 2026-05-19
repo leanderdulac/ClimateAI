@@ -13,10 +13,12 @@ from fastapi import HTTPException, status
 import jwt
 from jwt.exceptions import InvalidTokenError as JWTError
 from passlib.context import CryptContext
-from config.config import settings
+from config.config import Settings
 
-# Configurações de segurança — usar a mesma chave já validada em config.settings
-SECRET_KEY = settings.SECRET_KEY
+_runtime_settings = Settings()
+
+# Configurações de segurança — usar a mesma chave resolvida pelo Settings atual
+SECRET_KEY = _runtime_settings.SECRET_KEY
 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30

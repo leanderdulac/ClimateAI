@@ -5,8 +5,10 @@ Router para endpoints de tokens blockchain de eventos climáticos
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Body, HTTPException, Query
+from fastapi import APIRouter, Body, Depends, HTTPException, Query
 
+from middleware.auth_middleware import get_current_active_user, require_admin
+from models.schemas import User
 from models.schemas import EventoClimatico, EventoClimaticoTipo
 from models.token_schemas import (
     BlockchainToken,
@@ -21,7 +23,10 @@ blockchain_service = BlockchainTokenService()
 
 
 @router.post("/mint", response_model=Dict[str, Any])
-async def mint_climate_token(request: TokenMintRequest = Body(...)):
+async def mint_climate_token(
+    request: TokenMintRequest = Body(...),
+    current_user: User = Depends(require_admin),
+):
     """
     Cria um token blockchain para um evento climático
 
@@ -113,7 +118,10 @@ async def get_wallet_tokens(wallet_address: str):
 
 
 @router.post("/transfer", response_model=Dict[str, Any])
-async def transfer_token(request: TokenTransferRequest = Body(...)):
+async def transfer_token(
+    request: TokenTransferRequest = Body(...),
+    current_user: User = Depends(require_admin),
+):
     """
     Transfere tokens entre carteiras
 
@@ -220,7 +228,10 @@ async def get_blockchain_stats():
 
 
 @router.get("/wallet/{wallet_address}/balance")
-async def get_wallet_balance(wallet_address: str):
+async def get_wallet_balance(
+    wallet_address: str,
+    current_user: User = Depends(get_current_active_user),
+):
     """
     Obter saldo completo da carteira incluindo todos os tokens
     """
@@ -275,7 +286,9 @@ async def get_wallet_balance(wallet_address: str):
 
 @router.get("/wallet/{wallet_address}/transactions")
 async def get_wallet_transactions(
-    wallet_address: str, limit: int = Query(50, ge=1, le=100)
+    wallet_address: str,
+    limit: int = Query(50, ge=1, le=100),
+    current_user: User = Depends(get_current_active_user),
 ):
     """
     Obter histórico de transações da carteira

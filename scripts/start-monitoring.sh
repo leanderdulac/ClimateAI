@@ -14,6 +14,13 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+generate_secret() {
+    python3 - <<'PY'
+import secrets
+print(secrets.token_urlsafe(24))
+PY
+}
+
 echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}ClimateWise - Monitoring Stack Startup${NC}"
 echo -e "${BLUE}========================================${NC}"
@@ -60,9 +67,9 @@ if [ -f ".env" ]; then
     echo -e "${GREEN}✓ Carregando variáveis de ambiente do .env${NC}"
     export $(cat .env | grep -v '^#' | xargs)
 else
-    echo -e "${YELLOW}⚠ Aviso: Arquivo .env não encontrado. Usando valores padrão.${NC}"
+    echo -e "${YELLOW}⚠ Aviso: Arquivo .env não encontrado. Gerando credenciais efêmeras.${NC}"
     export OTEL_ENABLED=true
-    export GRAFANA_ADMIN_PASSWORD=admin
+    export GRAFANA_ADMIN_PASSWORD="$(generate_secret)"
 fi
 
 # Criar diretórios necessários
@@ -106,7 +113,7 @@ echo -e "${GREEN}========================================${NC}"
 echo ""
 echo -e "${BLUE}📊 Dashboards e Serviços:${NC}"
 echo ""
-echo -e "  ${GREEN}✓${NC} Grafana:      ${BLUE}http://localhost:3000${NC} (admin/admin)"
+echo -e "  ${GREEN}✓${NC} Grafana:      ${BLUE}http://localhost:3000${NC} (admin/${GRAFANA_ADMIN_PASSWORD})"
 echo -e "  ${GREEN}✓${NC} Prometheus:   ${BLUE}http://localhost:9090${NC}"
 echo -e "  ${GREEN}✓${NC} Jaeger:       ${BLUE}http://localhost:16686${NC}"
 echo -e "  ${GREEN}✓${NC} Zipkin:       ${BLUE}http://localhost:9411${NC}"

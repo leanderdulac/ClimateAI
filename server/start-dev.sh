@@ -1,15 +1,26 @@
 #!/bin/bash
 # Start ClimateWise Backend - Development Mode (without database)
 
-cd /home/exp/Downloads/ClimateAI/server
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR"
 
-# Activate virtual environment
-source venv-hathor/bin/activate
+if [ -x "$SCRIPT_DIR/../.venv/bin/python" ]; then
+  VENV_PYTHON="$SCRIPT_DIR/../.venv/bin/python"
+elif [ -x "$SCRIPT_DIR/venv-hathor/bin/python3" ]; then
+  VENV_PYTHON="$SCRIPT_DIR/venv-hathor/bin/python3"
+else
+  echo "❌ Nenhum ambiente Python utilizável encontrado (.venv ou venv-hathor)"
+  exit 1
+fi
 
 # Set environment variables for development (no database)
 export DATABASE_URL="sqlite+aiosqlite:///:memory:"
 export DATABASE_ENABLED=false
-export SECRET_KEY="dev-secret-key-for-testing-only-not-for-production"
+export SECRET_KEY="${SECRET_KEY:-$(python3 - <<'PY'
+import secrets
+print(secrets.token_urlsafe(32))
+PY
+)}"
 export DEBUG=true
 export ALLOW_ORIGINS="http://localhost:5173,http://localhost:3000"
 
@@ -23,7 +34,7 @@ echo "Database: DISABLED (using in-memory SQLite)"
 echo "API Docs: http://localhost:8000/docs"
 echo ""
 
-nohup python3 -m uvicorn main:app \
+nohup "$VENV_PYTHON" -m uvicorn main:app \
   --host 0.0.0.0 \
   --port 8000 \
   --reload \

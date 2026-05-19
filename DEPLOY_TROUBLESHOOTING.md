@@ -112,7 +112,7 @@ No painel do Netlify:
 ./test_deploy.sh
 
 # 2. Validar Docker compose
-docker-compose -f docker-compose.prod.yml config --quiet
+docker compose -f docker-compose.prod.yml config --quiet
 
 # 3. Testar build
 cd client && npm run build
@@ -220,8 +220,8 @@ sudo killall uvicorn
 docker system prune -a -f
 
 # Rebuild
-docker-compose -f docker-compose.prod.yml build --no-cache
-docker-compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml build --no-cache
+docker compose -f docker-compose.prod.yml up -d
 ```
 
 ---
@@ -242,10 +242,10 @@ curl https://your-app.netlify.app/welcome
 ### **DigitalOcean**
 ```bash
 # Verificar serviços
-docker-compose -f docker-compose.prod.yml ps
+docker compose -f docker-compose.prod.yml ps
 
 # Verificar logs
-docker-compose -f docker-compose.prod.yml logs -f
+docker compose -f docker-compose.prod.yml logs -f
 
 # Testar API
 curl http://localhost:8000/api/v1/health
@@ -308,7 +308,7 @@ sudo systemctl enable docker
 ### **DigitalOcean: "Port already in use"**
 ```bash
 # Solução: Parar containers conflitantes
-docker-compose down
+docker compose down
 docker ps -a
 docker rm -f $(docker ps -aq)
 ```

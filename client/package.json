@@ -15,8 +15,10 @@
     "test:run": "vitest run",
     "test:ui": "vitest --ui",
     "test:a11y": "playwright test --project=accessibility",
+    "test:a11y:local": "PLAYWRIGHT_USE_SYSTEM_CHROME=1 playwright test --project=accessibility",
     "test:a11y:ui": "playwright test --project=accessibility --ui",
     "test:e2e": "playwright test",
+    "test:e2e:local": "PLAYWRIGHT_USE_SYSTEM_CHROME=1 PLAYWRIGHT_LOCAL_CHROME_ONLY=1 playwright test --project=chromium --project=accessibility",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:headed": "playwright test --headed"
