@@ -15,8 +15,6 @@ import {
   AlertTriangle,
   ShieldAlert,
   TrendingUp,
-  MapPin,
-  DollarSign,
   Activity,
   CloudRain,
   Thermometer,
@@ -25,7 +23,6 @@ import {
   RefreshCw,
   CheckCircle,
   XCircle,
-  Clock,
   Database,
   Server,
   Wifi,
@@ -53,13 +50,92 @@ interface GlobeEvent {
 }
 
 interface AtlasData {
-  oracleStatus: any;
-  portfolioRisk: any;
-  liveEvents: any[];
-  realtimeWeather: any[];
-  riskSummary: any;
-  spaceWeather: any;
-  conjunctions: any;
+  oracleStatus: OracleStatus;
+  portfolioRisk: PortfolioRisk;
+  liveEvents: LiveEvent[];
+  realtimeWeather: WeatherCityData[];
+  riskSummary: Record<string, unknown> | null;
+  spaceWeather: SpaceWeather | null;
+  conjunctions: ConjunctionsData | null;
+}
+
+interface OracleStatus {
+  total_events_processed?: number;
+  total_payouts_triggered?: number;
+  total_blockchain_transactions?: number;
+}
+
+interface PortfolioRiskSummary {
+  total_exposure?: number;
+  potential_payout?: number;
+  total_alerts?: number;
+  high_severity_count?: number;
+  impacted_policies_count?: number;
+}
+
+interface BlockchainTransaction {
+  tx_id?: string;
+  confirmations?: number;
+  amount?: number;
+}
+
+interface PortfolioRisk {
+  summary?: PortfolioRiskSummary;
+  blockchain_transactions?: BlockchainTransaction[];
+}
+
+interface LiveEvent {
+  event_id?: string;
+  disaster_type: string;
+  severity_score: number;
+  payout_triggered?: boolean;
+  payout_amount?: number;
+  description?: string;
+  timestamp?: string;
+  municipio?: string;
+  uf?: string;
+  latitude?: number;
+  longitude?: number;
+  source?: string;
+}
+
+interface WeatherCurrent {
+  temperature?: number;
+  humidity?: number;
+  wind_speed?: number;
+  precipitation?: number;
+  weather_description?: string;
+}
+
+interface WeatherRiskIndicators {
+  risk_level?: string;
+}
+
+interface WeatherCityData {
+  city: string;
+  source?: string;
+  current?: WeatherCurrent;
+  risk_indicators?: WeatherRiskIndicators;
+}
+
+interface SpaceWeather {
+  geomagnetic_storm_active?: boolean;
+  kp_index?: number;
+  solar_flux?: number;
+  status?: string;
+  timestamp?: string;
+}
+
+interface ConjunctionAlert {
+  satellite_1: string;
+  satellite_2: string;
+  miss_distance_km: number;
+  probability: string;
+  tca_time: string;
+}
+
+interface ConjunctionsData {
+  alerts?: ConjunctionAlert[];
 }
 
 interface NewsAlert {
@@ -99,7 +175,7 @@ export function AtlasDashboardPanel() {
     celestrak: false,
   });
 
-  const fetchData = async () => {
+  const fetchData = React.useCallback(async () => {
     try {
       setLoading(true);
 
@@ -190,13 +266,13 @@ export function AtlasDashboardPanel() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
   useEffect(() => {
     fetchData();
     const interval = setInterval(fetchData, 60000); // Refresh a cada minuto
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchData]);
 
   const formatCurrency = (val: number) => {
     return `${t('common.currency')} ${val.toLocaleString(language, {
@@ -208,15 +284,6 @@ export function AtlasDashboardPanel() {
   const getStatusColor = (status: boolean) => status ? 'text-green-600' : 'text-red-600';
   const getStatusIcon = (status: boolean) => status ? <CheckCircle className="h-4 w-4" /> : <XCircle className="h-4 w-4" />;
 
-  const getRiskColor = (level: string) => {
-    switch (level?.toLowerCase()) {
-      case 'high': return 'bg-red-100 text-red-800 border-red-300';
-      case 'medium': return 'bg-amber-100 text-amber-800 border-amber-300';
-      case 'low': return 'bg-emerald-100 text-emerald-800 border-emerald-300';
-      default: return 'bg-slate-100 text-slate-800 border-slate-300';
-    }
-  };
-
   const getSeverityColor = (score: number) => {
     if (score >= 4.0) return 'text-red-600 font-bold';
     if (score >= 3.0) return 'text-amber-600 font-semibold';
@@ -224,7 +291,7 @@ export function AtlasDashboardPanel() {
   };
 
   // Dados para gráficos
-  const eventTypeData = data?.liveEvents?.reduce((acc: any, event: any) => {
+  const eventTypeData = data?.liveEvents?.reduce((acc: Record<string, number>, event: LiveEvent) => {
     const type = event.disaster_type;
     acc[type] = (acc[type] || 0) + 1;
     return acc;
@@ -235,7 +302,7 @@ export function AtlasDashboardPanel() {
     value,
   }));
 
-  const severityData = data?.liveEvents?.map((event: any, idx: number) => ({
+  const severityData = data?.liveEvents?.map((event: LiveEvent, idx: number) => ({
     name: `${idx + 1}`,
     severity: event.severity_score,
     payout: event.payout_triggered ? event.payout_amount : 0,
@@ -245,7 +312,7 @@ export function AtlasDashboardPanel() {
 
   // Map live events to Globe objects
   const globeEvents: GlobeEvent[] = React.useMemo(() => {
-    return data?.liveEvents?.filter(e => e.latitude && e.longitude).map((event: any) => ({
+    return data?.liveEvents?.filter((e) => e.latitude && e.longitude).map((event: LiveEvent) => ({
       lat: event.latitude,
       lng: event.longitude,
       weight: event.severity_score / 10,
@@ -629,7 +696,7 @@ export function AtlasDashboardPanel() {
                       </Card>
                     ));
                   }
-                  return weatherList.map((w: any) => {
+                  return weatherList.map((w: WeatherCityData) => {
                     const displayName = cityDisplayNames[w.city] || w.city;
                     const current = w.current || {};
                     const risk = w.risk_indicators || {};
@@ -753,7 +820,7 @@ export function AtlasDashboardPanel() {
               <CardContent>
                 {data?.conjunctions && data.conjunctions.alerts?.length > 0 ? (
                   <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
-                    {data.conjunctions.alerts.slice(0, 5).map((alert: any, idx: number) => (
+                    {data.conjunctions.alerts.slice(0, 5).map((alert: ConjunctionAlert, idx: number) => (
                       <div key={idx} className="p-3 border rounded-lg bg-slate-50 relative overflow-hidden">
                         <div className={`absolute left-0 top-0 bottom-0 w-1 ${alert.miss_distance_km < 1.0 ? 'bg-red-500' : 'bg-amber-500'
                           }`} />
@@ -800,7 +867,7 @@ export function AtlasDashboardPanel() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {data?.portfolioRisk?.blockchain_transactions?.slice(0, 5).map((tx: any, idx: number) => (
+                {data?.portfolioRisk?.blockchain_transactions?.slice(0, 5).map((tx: BlockchainTransaction, idx: number) => (
                   <div
                     key={tx.tx_id || idx}
                     className="flex items-center justify-between p-3 border rounded-lg"
