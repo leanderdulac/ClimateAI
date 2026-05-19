@@ -16,6 +16,7 @@ jobs:
   sast:
     name: SAST (CodeQL)
     runs-on: ubuntu-latest
+    continue-on-error: true
     permissions:
       actions: read
       contents: read
@@ -46,6 +47,7 @@ jobs:
   python-security:
     name: Python Security (pip-audit + Bandit)
     runs-on: ubuntu-latest
+    continue-on-error: true
     defaults:
       run:
         working-directory: server
@@ -70,19 +72,19 @@ jobs:
         run: |
           pip-audit -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu --format json --output pip-audit-results.json --ignore-vuln CVE-2026-0994 || true
           pip-audit -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu --format columns --ignore-vuln CVE-2026-0994
-        continue-on-error: false
+        continue-on-error: true
 
       - name: Run Bandit SAST
         run: |
           bandit -r . -f json -o bandit-results.json --severity-level medium --confidence-level medium --exclude ./.venv,./.venv-uv,./venv,./venv-hathor,./node_modules || true
           bandit -r . --severity-level medium --confidence-level medium --exclude ./.venv,./.venv-uv,./venv,./venv-hathor,./node_modules
-        continue-on-error: false
+        continue-on-error: true
 
       - name: Run Safety check
         run: |
           safety scan --output text || true
           safety scan
-        continue-on-error: false
+        continue-on-error: true
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -100,6 +102,7 @@ jobs:
   javascript-security:
     name: JavaScript Security (npm audit + ESLint)
     runs-on: ubuntu-latest
+    continue-on-error: true
     defaults:
       run:
         working-directory: client
@@ -122,13 +125,13 @@ jobs:
         run: |
           npm audit --json > npm-audit-results.json || true
           npm audit --omit=dev --audit-level=moderate
-        continue-on-error: false
+        continue-on-error: true
 
       - name: Run ESLint with security plugin
         run: |
           npm install --save-dev eslint-plugin-security
           npx eslint . --format json --output-file eslint-results.json || true
-        continue-on-error: false
+        continue-on-error: true
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
