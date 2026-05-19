@@ -1,8 +1,17 @@
 from datetime import date, datetime
 
 import pytest
+import pytest_asyncio
+from config.database import close_db, init_db
 
 pytestmark = [pytest.mark.integration, pytest.mark.requires_db]
+
+
+@pytest_asyncio.fixture(autouse=True)
+async def ensure_test_db_ready():
+    await init_db()
+    yield
+    await close_db()
 
 
 @pytest.mark.integration

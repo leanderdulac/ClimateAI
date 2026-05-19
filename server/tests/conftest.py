@@ -18,6 +18,9 @@ os.environ.setdefault("SUPABASE_ANON_KEY", "test-dummy-anon-key")
 os.environ.setdefault("DATABASE_ENABLED", "true")
 # Ensure tests default to async sqlite driver before importing app
 os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///./.test_db.sqlite")
+# Force-disable tracing/export in tests to avoid background OTLP retries/noise.
+os.environ["OTEL_ENABLED"] = "false"
+os.environ["OTEL_SDK_DISABLED"] = "true"
 
 # Mock heavy ML libraries to avoid installation in test environment
 sys.modules["torch"] = MagicMock()
@@ -166,7 +169,7 @@ async def sample_climate_data(
 @pytest.fixture
 def client(db_session: AsyncSession) -> TestClient:
     """FastAPI test client"""
-    return TestClient(app)
+    return TestClient(app, base_url="http://localhost")
 
 
 @pytest.fixture
@@ -312,6 +315,8 @@ async def setup_test_environment():
     # Set test environment variables
     os.environ["ENVIRONMENT"] = "test"
     os.environ["DEBUG"] = "True"
+    os.environ["OTEL_ENABLED"] = "false"
+    os.environ["OTEL_SDK_DISABLED"] = "true"
     # Ensure tests use the async sqlite driver so SQLAlchemy asyncio loads correctly
     os.environ["DATABASE_URL"] = os.environ.get(
         "DATABASE_URL", "sqlite+aiosqlite:///./.test_db.sqlite"

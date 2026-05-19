@@ -27,6 +27,14 @@ async def admin_user(db_session: AsyncSession):
     # Check if admin user exists
     existing_user = await auth_service.get_user_by_email(db_session, "admin@climatewise.com")
     if existing_user:
+        # Keep credentials deterministic across tests/runs.
+        existing_user.hashed_password = auth_service.get_password_hash("admin123")
+        existing_user.is_active = True
+        existing_user.is_superuser = True
+        existing_user.role = "admin"
+        existing_user.updated_at = datetime.utcnow()
+        await db_session.commit()
+        await db_session.refresh(existing_user)
         return existing_user
 
     # Create admin user

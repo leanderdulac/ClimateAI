@@ -7,9 +7,9 @@ import pytest
 pytestmark = [pytest.mark.integration, pytest.mark.requires_db]
 import asyncio
 from httpx import AsyncClient, ASGITransport
-from server.main import app
-from server.config.database import get_db_session, init_db, close_db
-from server.config.config import settings
+from main import app
+from config.database import get_db_session, init_db, close_db
+from config.config import settings
 
 
 @pytest.fixture(scope="session")
