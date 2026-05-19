@@ -36,6 +36,7 @@ py-solc-x>=2.0.0
 
 # === AUTENTICAÇÃO E SEGURANÇA ===
 pyjwt[crypto]>=2.8.0
+boto3==1.40.66
 bcrypt==3.2.2
 passlib[bcrypt]==1.7.4
 

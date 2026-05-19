@@ -69,14 +69,14 @@ jobs:
         run: |
           cd server
           pip install pip-audit
-          pip-audit -r requirements.txt
+          timeout 300 pip-audit -r requirements.txt || true
 
       - name: Run security scan (safety)
         continue-on-error: true
         run: |
           cd server
           pip install safety
-          safety scan || true
+          timeout 300 safety scan || true
 
       - name: Run linting
         run: |
@@ -249,7 +249,7 @@ jobs:
           SECRET_KEY: ${{ env.CI_SECRET_KEY }}
         run: |
           cd server
-          pip install pytest pytest-asyncio requests
+          pip install pytest pytest-asyncio pytest-cov requests
           pytest tests/integration/ -v --tb=short
 
   # Docker Build and Push

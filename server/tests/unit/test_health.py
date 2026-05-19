@@ -172,24 +172,26 @@ class TestRedisHealthCheck:
     """Tests for RedisHealthCheck class"""
 
     async def test_redis_check_disabled(self):
-        """Test redis check with no URL (defaults to localhost and fails in test env)"""
+        """Test redis check with no URL (may be healthy if Redis is available)."""
         check = RedisHealthCheck(redis_url=None)
         
-        # Without a mock, this tries to connect to localhost:6379 and fails
         result = await check.check()
 
-        # Should be degraded/unhealthy if connection fails
-        assert result.status in [ServiceStatus.DEGRADED, ServiceStatus.UNHEALTHY]
-        assert "not available" in result.message.lower()
+        # In CI there may be a Redis service, otherwise it should degrade gracefully.
+        assert result.status in [
+            ServiceStatus.HEALTHY,
+            ServiceStatus.DEGRADED,
+            ServiceStatus.UNHEALTHY,
+        ]
 
     async def test_redis_check_connection_failed(self):
-        """Test Redis check with connection failure"""
-        check = RedisHealthCheck(redis_url="redis://localhost:6379")
+        """Test Redis check with forced connection failure."""
+        check = RedisHealthCheck(redis_url="redis://localhost:6399")
 
         result = await check.check()
 
-        # Will likely fail since Redis might not be running
         assert result.status in [ServiceStatus.UNHEALTHY, ServiceStatus.DEGRADED]
+        assert "not available" in result.message.lower()
 
     async def test_redis_check_with_mock(self, mock_redis):
         """Test Redis check with mocked client"""
