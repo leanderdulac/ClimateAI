@@ -60,6 +60,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  const withTimeout = async <T,>(promise: Promise<T>, timeoutMs: number, timeoutMessage: string): Promise<T> => {
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs);
+    });
+
+    try {
+      return await Promise.race([promise, timeoutPromise]);
+    } finally {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    }
+  };
+
   // Convert Supabase user to app user
   const mapSupabaseUser = async (supabaseUser: SupabaseUser): Promise<User> => {
     // Get profile from profiles table
@@ -118,12 +133,37 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const client = getSupabaseClient();
       const restoreSession = async () => {
         if (client) {
-          const { data } = await client.auth.getSession();
-          const currentSession = data?.session;
-          if (currentSession?.user) {
-            setSession(currentSession);
-            setUser(await mapSupabaseUser(currentSession.user));
-            return;
+          try {
+            const { data } = await withTimeout(
+              client.auth.getSession(),
+              5000,
+              'Timeout ao restaurar sessão Supabase'
+            );
+            const currentSession = data?.session;
+            if (currentSession?.user) {
+              setSession(currentSession);
+
+              try {
+                const mappedUser = await withTimeout(
+                  mapSupabaseUser(currentSession.user),
+                  5000,
+                  'Timeout ao carregar perfil do usuário'
+                );
+                setUser(mappedUser);
+              } catch (profileError) {
+                console.warn('Falha ao carregar perfil via Supabase, usando fallback local:', profileError);
+                setUser({
+                  id: currentSession.user.id,
+                  email: currentSession.user.email || '',
+                  name: currentSession.user.user_metadata?.full_name || '',
+                  role: 'user'
+                });
+              }
+
+              return;
+            }
+          } catch (sessionError) {
+            console.warn('Falha ao restaurar sessão Supabase, seguindo com fallback local:', sessionError);
           }
         }
 
@@ -196,8 +236,37 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const client = getSupabaseClient();
       if (!client) throw new Error('Supabase não configurado');
 
-      const { data, error } = await client.auth.signInWithPassword({ email, password });
-      if (error) throw new Error(error.message || 'Falha no login');
+      let data: { session: Session | null; user: SupabaseUser | null } | null = null;
+      let signInError: Error | null = null;
+      try {
+        const result = await client.auth.signInWithPassword({ email, password });
+        data = result.data;
+        if (result.error) {
+          throw new Error(result.error.message || 'Falha no login');
+        }
+      } catch (supabaseNetworkError) {
+        const msg =
+          supabaseNetworkError instanceof Error
+            ? supabaseNetworkError.message
+            : String(supabaseNetworkError || '');
+
+        if (
+          msg.includes('Failed to fetch') ||
+          msg.includes('NetworkError') ||
+          msg.includes('ERR_NAME_NOT_RESOLVED')
+        ) {
+          signInError = new Error(
+            'Nao foi possivel conectar ao Supabase. Verifique VITE_SUPABASE_URL, DNS e conectividade de rede.'
+          );
+        } else {
+          signInError =
+            supabaseNetworkError instanceof Error
+              ? supabaseNetworkError
+              : new Error('Falha no login');
+        }
+      }
+
+      if (signInError) throw signInError;
       if (!data.session || !data.user) throw new Error('Sessão inválida');
       setUser(await mapSupabaseUser(data.user));
       setSession(data.session);

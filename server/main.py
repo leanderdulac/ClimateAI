@@ -359,8 +359,19 @@ if "*" in allow_origins and not settings.DEBUG:
 app.add_middleware(SecurityHeadersMiddleware)
 
 if settings.DOMAIN and not settings.DEBUG:
-    trusted_hosts = [settings.DOMAIN, f"*.{settings.DOMAIN}"]
-    app.add_middleware(TrustedHostMiddleware, allowed_hosts=trusted_hosts)
+    normalized_domain = settings.DOMAIN.strip().lower()
+    placeholder_domains = {"yourdomain.com", "example.com", "localhost"}
+
+    if normalized_domain and normalized_domain not in placeholder_domains:
+        trusted_hosts = [
+            settings.DOMAIN,
+            f"*.{settings.DOMAIN}",
+            # Keep localhost access for local CLI/browser tooling even in prod-like env files.
+            "localhost",
+            "127.0.0.1",
+            "[::1]",
+        ]
+        app.add_middleware(TrustedHostMiddleware, allowed_hosts=trusted_hosts)
 
 app.add_middleware(
     CORSMiddleware,
