@@ -224,7 +224,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
           throw new Error(typeof backendMessage === 'string' ? backendMessage : 'Falha no login');
         }
 
-        console.warn('Backend login retornou erro interno, tentando fallback Supabase:', backendMessage);
+        // When backend is reachable but returning 5xx, prefer a clear API error.
+        throw new Error(
+          typeof backendMessage === 'string' && backendMessage.trim().length > 0
+            ? backendMessage
+            : 'Servico de autenticacao indisponivel no momento. Tente novamente em instantes.'
+        );
       } catch (backendError) {
         if (backendError instanceof Error && backendError.message !== 'Failed to fetch') {
           throw backendError;
@@ -273,7 +278,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       localStorage.setItem('access_token', data.session.access_token);
       localStorage.setItem('refresh_token', data.session.refresh_token ?? '');
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Falha no login';
+      let message = err instanceof Error ? err.message : 'Falha no login';
+      if (message.includes('Failed to fetch')) {
+        message = 'Falha de conexao com o servico de autenticacao. Verifique se a API esta online.';
+      }
       setError(message);
       throw new Error(message);
     } finally {
