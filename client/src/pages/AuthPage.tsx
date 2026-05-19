@@ -44,7 +44,17 @@ export function AuthPage() {
       await login(loginData.email, loginData.password);
       navigate("/dashboard");
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : t('auth.errors.loginFailed'));
+      const rawMessage = error instanceof Error ? error.message : t('auth.errors.loginFailed');
+      if (
+        rawMessage.includes('Failed to fetch') ||
+        rawMessage.includes('NetworkError') ||
+        rawMessage.includes('ERR_NAME_NOT_RESOLVED') ||
+        rawMessage.includes('ERR_CONNECTION')
+      ) {
+        setErrorMessage('Falha de conexao com o servico de autenticacao. Verifique se a API esta online.');
+      } else {
+        setErrorMessage(rawMessage);
+      }
     }
   };
 

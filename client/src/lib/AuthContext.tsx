@@ -75,6 +75,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
+  const isNetworkErrorMessage = (message: string): boolean => {
+    return (
+      message.includes('Failed to fetch') ||
+      message.includes('NetworkError') ||
+      message.includes('ERR_NAME_NOT_RESOLVED') ||
+      message.includes('ERR_CONNECTION') ||
+      message.includes('TypeError: Failed to fetch')
+    );
+  };
+
   // Convert Supabase user to app user
   const mapSupabaseUser = async (supabaseUser: SupabaseUser): Promise<User> => {
     // Get profile from profiles table
@@ -231,9 +241,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
             : 'Servico de autenticacao indisponivel no momento. Tente novamente em instantes.'
         );
       } catch (backendError) {
-        if (backendError instanceof Error && backendError.message !== 'Failed to fetch') {
-          throw backendError;
+        if (backendError instanceof Error) {
+          if (!isNetworkErrorMessage(backendError.message)) {
+            throw backendError;
+          }
+
+          throw new Error('Falha de conexao com o servico de autenticacao. Verifique se a API esta online.');
         }
+
         console.warn('Backend login falhou, tentando fallback Supabase:', backendError);
       }
 
@@ -255,11 +270,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             ? supabaseNetworkError.message
             : String(supabaseNetworkError || '');
 
-        if (
-          msg.includes('Failed to fetch') ||
-          msg.includes('NetworkError') ||
-          msg.includes('ERR_NAME_NOT_RESOLVED')
-        ) {
+        if (isNetworkErrorMessage(msg)) {
           signInError = new Error(
             'Nao foi possivel conectar ao Supabase. Verifique VITE_SUPABASE_URL, DNS e conectividade de rede.'
           );
@@ -279,7 +290,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       localStorage.setItem('refresh_token', data.session.refresh_token ?? '');
     } catch (err) {
       let message = err instanceof Error ? err.message : 'Falha no login';
-      if (message.includes('Failed to fetch')) {
+      if (isNetworkErrorMessage(message)) {
         message = 'Falha de conexao com o servico de autenticacao. Verifique se a API esta online.';
       }
       setError(message);
