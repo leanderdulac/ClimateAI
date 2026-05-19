@@ -33,6 +33,7 @@ retry-requests==2.0.0
 
 # === AUTENTICAÇÃO E SEGURANÇA ===
 pyjwt[crypto]==2.12.1
+bcrypt==3.2.2
 passlib[bcrypt]==1.7.4
 
 # === UTILITÁRIOS ===
