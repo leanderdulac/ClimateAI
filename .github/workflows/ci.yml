@@ -55,6 +55,9 @@ jobs:
           PYTEST_ADDOPTS: -m "not integration and not slow and not requires_db and not requires_redis and not performance" --disable-warnings --maxfail=1
         run: pytest
 
+      - name: Run blockchain endpoint regression tests
+        run: pytest tests/unit/test_hathor_blockchain_endpoints.py -q
+
   frontend:
     runs-on: ubuntu-latest
     defaults:

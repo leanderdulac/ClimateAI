@@ -96,6 +96,18 @@ jobs:
           pip install pytest pytest-asyncio pytest-cov
           pytest tests/unit -q --cov=. --cov-report=xml --cov-report=term-missing --cov-fail-under=0
 
+      - name: Run blockchain endpoint regression tests
+        env:
+          DATABASE_URL: postgresql+asyncpg://climateai:${{ env.CI_DB_PASSWORD }}@localhost:5432/climateai
+          REDIS_URL: redis://localhost:6379
+          SECRET_KEY: ${{ env.CI_SECRET_KEY }}
+          OTEL_ENABLED: "false"
+          OTEL_SDK_DISABLED: "true"
+        run: |
+          cd server
+          pip install pytest pytest-asyncio
+          pytest tests/unit/test_hathor_blockchain_endpoints.py -q
+
       - name: Upload coverage reports
         uses: codecov/codecov-action@v4
         with:

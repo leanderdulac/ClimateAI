@@ -464,9 +464,11 @@ class LossReservingService:
         confidence_level: float = 0.95,
     ) -> BootstrapReserveResult:
         """
-        Calculate reserves using bootstrap method
+        Calculate reserves using bootstrap method (England & Verrall / ODP method)
         
-        This provides a full distribution of reserves, not just point estimate.
+        This provides a full distribution of reserves by calculating adjusted Pearson residuals,
+        resampling them with replacement to create pseudo-triangles, projecting future losses,
+        and incorporating Over-dispersed Poisson process variance via a Gamma distribution.
         
         Args:
             triangle: Cumulative loss development triangle
@@ -476,53 +478,177 @@ class LossReservingService:
         Returns:
             BootstrapReserveResult with full distribution
         """
-        logger.info(f"Calculating Bootstrap reserves with {n_simulations} simulations")
+        logger.info(f"Calculating Bootstrap reserves with {n_simulations} simulations using ODP Pearson residuals")
         
+        if not triangle.cumulative:
+            raise ValueError("Bootstrap reserving requires cumulative triangle")
+            
         # Get point estimate using Mack
         mack_result = self.calculate_mack_reserve(triangle)
         point_estimate = mack_result.reserves
         
-        # Bootstrap simulation
+        # 1. Extract incremental losses from cumulative triangle
+        cum_data = triangle.data.copy()
+        n_accidents, n_periods = cum_data.shape
+        
+        inc_data = np.zeros_like(cum_data)
+        inc_data[:, 0] = cum_data[:, 0]
+        inc_data[:, 1:] = cum_data[:, 1:] - cum_data[:, :-1]
+        
+        # 2. Get development factors (f_k) from Mack/Chain Ladder
+        development_factors = mack_result.development_factors
+        
+        # 3. Calculate cumulative fitted values backwards from diagonal
+        cum_fitted = np.zeros_like(cum_data)
+        for i in range(n_accidents):
+            last_idx = n_periods - 1 - i
+            if last_idx < 0:
+                continue
+            
+            # Set diagonal value
+            cum_fitted[i, last_idx] = cum_data[i, last_idx]
+            
+            # Project backwards
+            for k in range(last_idx - 1, -1, -1):
+                if k < len(development_factors) and development_factors[k] > 0:
+                    cum_fitted[i, k] = cum_fitted[i, k + 1] / development_factors[k]
+                else:
+                    cum_fitted[i, k] = cum_fitted[i, k + 1]
+        
+        # 4. Calculate fitted incremental values
+        inc_fitted = np.zeros_like(cum_fitted)
+        inc_fitted[:, 0] = cum_fitted[:, 0]
+        inc_fitted[:, 1:] = cum_fitted[:, 1:] - cum_fitted[:, :-1]
+        
+        # 5. Calculate Pearson residuals on the upper triangle
+        residuals = []
+        residual_indices = []
+        
+        for i in range(n_accidents):
+            for j in range(n_periods - i):
+                actual = inc_data[i, j]
+                fitted = inc_fitted[i, j]
+                
+                # Only compute residual if fitted is positive and valid
+                if not np.isnan(actual) and not np.isnan(fitted) and fitted > 0:
+                    r = (actual - fitted) / np.sqrt(fitted)
+                    residuals.append(r)
+                    residual_indices.append((i, j))
+        
+        residuals = np.array(residuals)
+        N = len(residuals)
+        
+        # Calculate degrees of freedom: N - p
+        p = n_accidents + n_periods - 1
+        df = N - p
+        if df <= 0:
+            df = 1  # Avoid division by zero
+            
+        # Calculate dispersion parameter phi
+        phi = np.sum(residuals ** 2) / df
+        if phi <= 0:
+            phi = 1.0
+            
+        # Calculate adjusted Pearson residuals
+        adj_factor = np.sqrt(N / df)
+        adj_residuals = residuals * adj_factor
+        
+        # Bootstrap simulation loop
         bootstrap_reserves = []
         
         for sim in range(n_simulations):
-            # Resample triangle with replacement (row-wise)
-            data = triangle.data.copy()
-            n_accidents = data.shape[0]
+            # Resample adjusted residuals with replacement
+            resampled_residuals = np.random.choice(adj_residuals, size=N, replace=True)
             
-            # Add process noise
+            # Construct pseudo-incremental triangle for the upper part
+            pseudo_inc = np.full_like(inc_data, np.nan)
+            
+            res_idx = 0
+            for i, j in residual_indices:
+                fitted = inc_fitted[i, j]
+                r_star = resampled_residuals[res_idx]
+                res_idx += 1
+                
+                # Reconstruct cell: fitted + r* * sqrt(fitted)
+                val = fitted + r_star * np.sqrt(fitted)
+                pseudo_inc[i, j] = max(0.0, val)  # Floor at 0 to avoid negative claims
+                
+            # Reconstruct cumulative pseudo-triangle
+            pseudo_cum = np.full_like(cum_data, np.nan)
             for i in range(n_accidents):
-                for j in range(len(triangle.development_periods)):
-                    if not np.isnan(data[i, j]) and data[i, j] > 0:
-                        # Gamma noise for positive values
-                        noise = np.random.gamma(1.0, 0.1)
-                        data[i, j] *= (1 + noise)
+                acc_row = pseudo_inc[i, :n_periods - i]
+                if len(acc_row) > 0 and not np.isnan(acc_row[0]):
+                    pseudo_cum[i, 0] = acc_row[0]
+                    for j in range(1, len(acc_row)):
+                        pseudo_cum[i, j] = pseudo_cum[i, j - 1] + acc_row[j]
+                        
+            # Fit new Chain Ladder on pseudo cumulative triangle to get f_k^*
+            pseudo_factors = []
+            for k in range(n_periods - 1):
+                numerator = 0.0
+                denominator = 0.0
+                for i in range(n_accidents - k - 1):
+                    if not np.isnan(pseudo_cum[i, k]) and not np.isnan(pseudo_cum[i, k + 1]):
+                        numerator += pseudo_cum[i, k + 1]
+                        denominator += pseudo_cum[i, k]
+                if denominator > 0:
+                    pseudo_factors.append(numerator / denominator)
+                else:
+                    if k < len(development_factors):
+                        pseudo_factors.append(development_factors[k])
+                    else:
+                        pseudo_factors.append(1.0)
+                        
+            # Project future cumulative losses in the lower triangle
+            sim_cum = pseudo_cum.copy()
             
-            # Recalculate reserves with perturbed triangle
-            perturbed_triangle = TriangleData(
-                data=data,
-                accident_years=triangle.accident_years,
-                development_periods=triangle.development_periods,
-                cumulative=True,
-            )
+            for i in range(n_accidents):
+                start_j = n_periods - i
+                if start_j >= n_periods:
+                    continue
+                    
+                latest_val = cum_data[i, start_j - 1]
+                if np.isnan(latest_val) or latest_val <= 0:
+                    latest_val = pseudo_cum[i, start_j - 1] if not np.isnan(pseudo_cum[i, start_j - 1]) else 0.0
+                    
+                sim_cum[i, start_j - 1] = latest_val
+                
+                for j in range(start_j, n_periods):
+                    f_idx = j - 1
+                    if f_idx < len(pseudo_factors):
+                        sim_cum[i, j] = sim_cum[i, j - 1] * pseudo_factors[f_idx]
+                    else:
+                        sim_cum[i, j] = sim_cum[i, j - 1]
+                        
+            # Extract incremental projected values for the lower triangle
+            sim_inc = np.zeros_like(sim_cum)
+            sim_inc[:, 0] = sim_cum[:, 0]
+            sim_inc[:, 1:] = sim_cum[:, 1:] - sim_cum[:, :-1]
             
-            try:
-                boot_result = self.calculate_mack_reserve(perturbed_triangle)
-                bootstrap_reserves.append(boot_result.reserves)
-            except Exception:
-                continue
-        
+            # Incorporate process variance via ODP Gamma simulation
+            sim_reserve = 0.0
+            for i in range(n_accidents):
+                start_j = n_periods - i
+                for j in range(start_j, n_periods):
+                    mean_val = sim_inc[i, j]
+                    if mean_val > 0 and phi > 0:
+                        sim_val = np.random.gamma(shape=(mean_val / phi), scale=phi)
+                    else:
+                        sim_val = max(0.0, mean_val)
+                    sim_reserve += sim_val
+                    
+            bootstrap_reserves.append(sim_reserve)
+            
         bootstrap_reserves = np.array(bootstrap_reserves)
         
         if len(bootstrap_reserves) == 0:
-            # Fallback if bootstrap fails
             bootstrap_reserves = np.array([point_estimate])
-        
+            
         # Calculate statistics
         mean_bootstrap = np.mean(bootstrap_reserves)
         std_bootstrap = np.std(bootstrap_reserves)
         
-        # Percentiles
+        # Calculate percentiles
         percentiles = {
             "P10": float(np.percentile(bootstrap_reserves, 10)),
             "P25": float(np.percentile(bootstrap_reserves, 25)),

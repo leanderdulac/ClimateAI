@@ -5,8 +5,12 @@ Router para endpoints de tokenização de eventos climáticos
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Body, HTTPException, Query
+from fastapi import APIRouter, Body, Depends, HTTPException, Query
+from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from config.database import get_db_session
+from models.sqlalchemy_models import BlockchainTransaction
 from models.schemas import EventoClimatico, EventoClimaticoTipo
 from models.token_schemas import EventoToken, TokenAnalysis, TokenGroup
 from services.eventos_service import EventosService
@@ -15,6 +19,12 @@ from services.tokenizacao_eventos_service import TokenizacaoEventosService
 router = APIRouter()
 token_service = TokenizacaoEventosService()
 eventos_service = EventosService()
+
+
+class TokenizarComMintRequest(BaseModel):
+    evento: EventoClimatico
+    destination_address: Optional[str] = None
+    mint_on_chain: bool = False
 
 
 @router.post("/tokenizar", response_model=EventoToken)
@@ -37,6 +47,66 @@ async def tokenizar_evento(evento: EventoClimatico = Body(...)):
     except Exception as e:
         raise HTTPException(
             status_code=400, detail=f"Erro ao tokenizar evento: {str(e)}"
+        )
+
+
+@router.post("/tokenizar-com-mint")
+async def tokenizar_evento_com_mint(
+    request: TokenizarComMintRequest = Body(...),
+    db: AsyncSession = Depends(get_db_session),
+):
+    """
+    Tokeniza um evento climático e, opcionalmente, executa mint on-chain.
+
+    Quando `mint_on_chain=true`, é necessário informar `destination_address`.
+    """
+    try:
+        token = await token_service.gerar_token_evento(request.evento)
+        response: Dict[str, Any] = {"token": token}
+
+        if request.mint_on_chain:
+            if not request.destination_address:
+                raise HTTPException(
+                    status_code=400,
+                    detail="destination_address é obrigatório quando mint_on_chain=true",
+                )
+
+            on_chain = await token_service.mint_token_on_chain(
+                token,
+                request.destination_address,
+            )
+
+            tx_hash = on_chain.get("tx_hash") if isinstance(on_chain, dict) else None
+            tx_hash = tx_hash or f"mint-{token.token_id}-{int(datetime.now().timestamp())}"
+            status = "CONFIRMED" if on_chain.get("status") == "success" else "FAILED"
+            amount = float(on_chain.get("value", 0))
+
+            db_tx = BlockchainTransaction(
+                tx_hash=tx_hash,
+                token_uid=token.token_id,
+                from_address="platform_mint_service",
+                to_address=request.destination_address,
+                amount=amount,
+                status=status,
+                message=f"Tokenização com mint: {on_chain.get('status', 'unknown')}",
+                explorer_url="",
+            )
+
+            try:
+                db.add(db_tx)
+                await db.commit()
+            except Exception:
+                await db.rollback()
+
+            response["on_chain"] = on_chain
+
+        return response
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Erro ao tokenizar evento com mint: {str(e)}",
         )
 
 

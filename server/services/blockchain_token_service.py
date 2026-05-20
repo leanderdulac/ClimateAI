@@ -63,6 +63,15 @@ class BlockchainTokenService:
             # Registrar na blockchain simulada
             transaction = self._register_token_transaction(blockchain_token)
 
+            # Aciona mint on-chain (real ou mock, conforme TokenizationService)
+            on_chain_result = await self.token_service.mint_token_on_chain(
+                climate_token,
+                wallet_address,
+            )
+
+            if isinstance(on_chain_result, dict):
+                blockchain_token["token_data"]["metadata"]["on_chain_result"] = on_chain_result
+
             return {
                 "success": True,
                 "transaction_id": transaction["tx_id"],
@@ -70,6 +79,7 @@ class BlockchainTokenService:
                 "climate_token_id": climate_token.token_id,
                 "blockchain_token": blockchain_token,
                 "transaction": transaction,
+                "on_chain": on_chain_result,
             }
 
         except Exception as e:

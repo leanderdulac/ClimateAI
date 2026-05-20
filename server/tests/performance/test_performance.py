@@ -421,9 +421,16 @@ class TestScalability:
 # ============================================================================
 
 
+try:
+    import pytest_benchmark
+    HAS_BENCHMARK = True
+except ImportError:
+    HAS_BENCHMARK = False
+
+
 @pytest.mark.performance
 @pytest.mark.integration
-@pytest.mark.performance
+@pytest.mark.skipif(not HAS_BENCHMARK, reason="pytest-benchmark is not installed")
 class TestHealthCheckBenchmark:
     """Benchmark tests for health checks"""
 

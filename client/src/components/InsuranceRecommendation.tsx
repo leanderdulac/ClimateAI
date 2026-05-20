@@ -65,6 +65,17 @@ export function InsuranceRecommendation() {
                 const hotDays = data.filter(d => (d.maxTemp || d.avgTemp) > 30).length;
                 const windyDays = data.filter(d => (d.windSpeed || 0) > 20).length;
 
+                window.dispatchEvent(new CustomEvent('climateai:historical-context', {
+                    detail: {
+                        days: data.length,
+                        totalRainfall,
+                        heavyRainDays,
+                        dryDays,
+                        hotDays,
+                        windyDays,
+                    },
+                }));
+
                 let rec: Recommendation;
 
                 // Decision Tree
@@ -194,6 +205,15 @@ export function InsuranceRecommendation() {
                 <Button
                     className="w-full btn-premium group"
                     onClick={() => {
+                        window.dispatchEvent(new CustomEvent('climateai:insurance-intent', {
+                            detail: {
+                                active: true,
+                                source: 'insurance-recommendation',
+                                recommendationType: recommendation.type,
+                                confidence: recommendation.confidence,
+                            },
+                        }));
+
                         const element = document.querySelector('.pricing-simulator');
                         if (element) {
                             element.scrollIntoView({ behavior: 'smooth' });

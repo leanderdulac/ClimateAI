@@ -165,6 +165,21 @@ class WalletBalanceResponse(BaseModel):
     total: int
 
 
+class HathorIntegrationStatusResponse(BaseModel):
+    mode: str
+    network: str
+    initialized: bool
+    wallet_address: Optional[str]
+    rpc_url: str
+    full_node_reachable: bool
+    full_node_error: Optional[str] = None
+    headless_wallet_configured: bool = False
+    headless_wallet_reachable: bool = False
+    headless_wallet_error: Optional[str] = None
+    production_strict: bool = False
+    known_tokens: int
+
+
 # ============================================================================
 # API Endpoints
 # ============================================================================
@@ -512,6 +527,24 @@ async def get_wallet_balance(
         
     except Exception as e:
         logger.error(f"Failed to get balance: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/status", response_model=HathorIntegrationStatusResponse)
+async def get_hathor_integration_status(
+    hathor_service: HathorService = Depends(lambda: get_hathor_service()),
+):
+    """
+    Get integration status for Hathor service.
+
+    This endpoint makes sandbox/production behavior explicit and surfaces
+    basic connectivity health for external observability.
+    """
+    try:
+        status = hathor_service.get_integration_status()
+        return HathorIntegrationStatusResponse(**status)
+    except Exception as e:
+        logger.error(f"Failed to get Hathor integration status: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

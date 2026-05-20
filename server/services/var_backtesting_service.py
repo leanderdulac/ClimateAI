@@ -351,10 +351,10 @@ class VaRBacktestingService:
             p_hat = x / n  # Observed exception rate
             
             # Likelihood ratio
-            lr_stat = -2 * np.log(
-                ((1 - p) ** (n - x)) * (p ** x) /
-                ((1 - p_hat) ** (n - x)) * (p_hat ** x)
-            )
+            num = ((1 - p) ** (n - x)) * (p ** x)
+            den = ((1 - p_hat) ** (n - x)) * (p_hat ** x)
+            lr_stat = -2 * np.log(num / den)
+            lr_stat = max(0.0, lr_stat)
         
         # Calculate p-value from Chi-squared(1) distribution
         p_value = 1 - stats.chi2.cdf(lr_stat, 1)
@@ -451,15 +451,14 @@ class VaRBacktestingService:
         # Calculate transition probabilities
         pi0 = n01 / n0  # Prob of exception after non-exception
         pi1 = n11 / n1  # Prob of exception after exception
-        pi = (n01 + n11) / n  # Unconditional probability
+        pi = (n01 + n11) / (n0 + n1)  # Unconditional probability in transition space
         
         # Calculate likelihood ratio test statistic
         if pi0 > 0 and pi0 < 1 and pi1 > 0 and pi1 < 1 and pi > 0 and pi < 1:
-            lr_ind = -2 * np.log(
-                ((1 - pi0) ** n00) * (pi0 ** n01) *
-                ((1 - pi1) ** n10) * (pi1 ** n11) /
-                ((1 - pi) ** (n00 + n01)) * (pi ** (n01 + n11))
-            )
+            num = ((1 - pi) ** (n00 + n10)) * (pi ** (n01 + n11))
+            den = ((1 - pi0) ** n00) * (pi0 ** n01) * ((1 - pi1) ** n10) * (pi1 ** n11)
+            lr_ind = -2 * np.log(num / den)
+            lr_ind = max(0.0, lr_ind)
         else:
             lr_ind = 0.0
         

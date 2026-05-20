@@ -33,9 +33,12 @@ def oracle_payout_trigger(request):
         # Cloud Functions are usually synchronous, we run the async loop
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        satellite_data = loop.run_until_complete(
-            gee.get_satellite_metrics(lat, lon, datetime.now(), datetime.now())
-        )
+        try:
+            satellite_data = loop.run_until_complete(
+                gee.get_satellite_metrics(lat, lon, datetime.now(), datetime.now())
+            )
+        finally:
+            loop.close()
         
         # 2. Heuristic Scoring (Oracle Logic)
         ndvi = satellite_data.get('ndvi', 0.5)

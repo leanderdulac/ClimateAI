@@ -2,6 +2,7 @@ from enum import Enum
 from typing import Optional
 import asyncio
 from datetime import datetime, timedelta
+import unicodedata
 from fastapi import APIRouter
 from pydantic import BaseModel
 import pandas as pd
@@ -12,8 +13,8 @@ from services.openmeteo_service import OpenMeteoService
 from services.noaa_service import NOAAService
 from services.sgb_service import GeologicalRiskAdjuster
 from services.celestrak_service import CelesTrakService
-from services.news_crawler_service import NewsCrawlerService
-from services.sgb_service import GeologicalRiskAdjuster
+from services.news_crawler_service import get_news_crawler_service
+from services.geocoding_service import GeocodingService
 
 logger = logging.getLogger(__name__)
 
@@ -31,10 +32,16 @@ except Exception as e:
     celestrak_service = None
 
 try:
-    news_crawler = NewsCrawlerService()
+    news_crawler = get_news_crawler_service()
 except Exception as e:
     logger.warning(f"Failed to initialize NewsCrawlerService: {e}")
     news_crawler = None
+
+try:
+    geocoding_service = GeocodingService()
+except Exception as e:
+    logger.warning(f"Failed to initialize GeocodingService: {e}")
+    geocoding_service = None
 
 # This entire file is created based on the user-provided Python script,
 # adapted for a FastAPI router.
@@ -106,12 +113,89 @@ class PricingResult(BaseModel):
     risk_factors: Optional[dict] = None
     decision_flow: str
 
+
+def _normalize_text(value: Optional[str]) -> str:
+    if not value:
+        return ""
+    normalized = unicodedata.normalize("NFKD", value)
+    ascii_only = normalized.encode("ascii", "ignore").decode("ascii")
+    return ascii_only.strip().lower()
+
+
+async def _resolve_quote_region(latitude: Optional[float], longitude: Optional[float]) -> Optional[dict]:
+    if geocoding_service is None or latitude is None or longitude is None:
+        return None
+    try:
+        location = await geocoding_service.reverse_geocode(latitude, longitude)
+        city = location.get("cidade") or location.get("city")
+        uf = location.get("estado") or location.get("state")
+        if uf and len(str(uf)) == 2:
+            uf = str(uf).upper()
+        return {
+            "city": city,
+            "uf": uf,
+        }
+    except Exception as exc:
+        logger.warning("Unable to resolve quote region for news matching: %s", exc)
+        return None
+
+
+def _filter_alerts_by_region(alerts: list, quote_region: Optional[dict]) -> list:
+    if not quote_region:
+        return []
+
+    quote_uf = str(quote_region.get("uf") or "").upper().strip()
+    quote_city = _normalize_text(quote_region.get("city"))
+    if not quote_uf and not quote_city:
+        return []
+
+    regional_alerts = []
+    for alert in alerts:
+        alert_uf = str(alert.get("uf") or "").upper().strip()
+        if quote_uf and alert_uf and alert_uf == quote_uf:
+            regional_alerts.append(alert)
+            continue
+
+        if quote_city:
+            locations = alert.get("locations") or []
+            normalized_locations = [_normalize_text(loc) for loc in locations]
+            if any(quote_city in loc or loc in quote_city for loc in normalized_locations if loc):
+                regional_alerts.append(alert)
+
+    return regional_alerts
+
+
+def _apply_news_adjustment(base_price: float, quote_region: Optional[dict]) -> tuple[float, float, str]:
+    if not news_crawler:
+        return base_price, 1.0, ""
+
+    try:
+        alerts = news_crawler.get_recent_alerts(limit=50)
+        regional_alerts = _filter_alerts_by_region(alerts, quote_region)
+
+        critical_count = sum(1 for a in regional_alerts if a.get("severity") == "critica")
+        high_count = sum(1 for a in regional_alerts if a.get("severity") == "alta")
+
+        multiplier_increase = min(0.25, (critical_count * 0.05) + (high_count * 0.02))
+        if multiplier_increase <= 0:
+            return base_price, 1.0, ""
+
+        adjusted_price = base_price * (1.0 + multiplier_increase)
+        status = (
+            f" (News Regional: +{multiplier_increase*100:.0f}% risk, "
+            f"{critical_count}C {high_count}H)"
+        )
+        return adjusted_price, 1.0 + multiplier_increase, status
+    except Exception as e:
+        logger.warning(f"Error applying news crawler risk: {e}")
+        return base_price, 1.0, ""
+
 # --- MOTOR DE PRECIFICAÇÃO (SERVICE) ---
 
 
 class ClimatePricingService:
 
-    def calculate_policy(self, request: PolicyRequest) -> PricingResult:
+    def calculate_policy(self, request: PolicyRequest, quote_region: Optional[dict] = None) -> PricingResult:
         rejection = self._check_hard_stops(request)
         if rejection:
             # This is a simplified rejection response builder for clarity
@@ -202,20 +286,8 @@ class ClimatePricingService:
                 logger.warning(f"Error applying space weather risk: {e}")
 
         # News Crawler Sentiment / Event Match Adjustment
-        if news_crawler:
-            try:
-                alerts = news_crawler.get_recent_alerts(limit=10)
-                critical_count = sum(1 for a in alerts if a.get('severity') == 'critica')
-                high_count = sum(1 for a in alerts if a.get('severity') == 'alta')
-                
-                # Apply 5% for critical and 2% for high, cap at 25% max multiplier increase
-                multiplier_increase = min(0.25, (critical_count * 0.05) + (high_count * 0.02))
-                if multiplier_increase > 0:
-                    total_premium *= (1.0 + multiplier_increase)
-                    risk_factors["news_alerts"] = 1.0 + multiplier_increase
-                    news_status = f" (News Alert: +{multiplier_increase*100:.0f}% risk, {critical_count}C {high_count}H)"
-            except Exception as e:
-                logger.warning(f"Error applying news crawler risk: {e}")
+        total_premium, news_multiplier, news_status = _apply_news_adjustment(total_premium, quote_region)
+        risk_factors["news_alerts"] = news_multiplier
 
         cost_sub = (
             PricingConstants.COST_SUBSCRIPTION_MANUAL
@@ -300,7 +372,10 @@ class ClimatePricingService:
 # --- API ENDPOINT ---
 
 
-async def _calculate_evt_pricing(request: PolicyRequest) -> Optional[PricingResult]:
+async def _calculate_evt_pricing(
+    request: PolicyRequest,
+    quote_region: Optional[dict] = None,
+) -> Optional[PricingResult]:
     """
     Asynchronous EVT/fractal calculation using real climate data.
     Returns None on failure so caller can fallback to heuristic.
@@ -314,13 +389,20 @@ async def _calculate_evt_pricing(request: PolicyRequest) -> Optional[PricingResu
             f"Fetching climate data for pricing: {request.latitude}, {request.longitude}"
         )
         # Note: OpenMeteoService.obter_historico is async
-        clima_data = await om_service.obter_historico(
-            request.latitude,
-            request.longitude,
-            start_date,
-            end_date,
-            variavel="temperature_2m_max",
-        )
+        try:
+            clima_data = await asyncio.wait_for(
+                om_service.obter_historico(
+                    request.latitude,
+                    request.longitude,
+                    start_date,
+                    end_date,
+                    variavel="temperature_2m_max",
+                ),
+                timeout=18,
+            )
+        except asyncio.TimeoutError:
+            logger.warning("OpenMeteo historical fetch timed out in EVT pricing; falling back")
+            return None
 
         if not clima_data:
             return None
@@ -386,20 +468,8 @@ async def _calculate_evt_pricing(request: PolicyRequest) -> Optional[PricingResu
             except Exception as e:
                 logger.warning(f"Error applying space weather risk: {e}")
 
-        if news_crawler:
-            try:
-                alerts = news_crawler.get_recent_alerts(limit=10)
-                critical_count = sum(1 for a in alerts if a.get('severity') == 'critica')
-                high_count = sum(1 for a in alerts if a.get('severity') == 'alta')
-                
-                # Apply 5% for critical and 2% for high, cap at +25% max multiplier
-                multiplier_increase = min(0.25, (critical_count * 0.05) + (high_count * 0.02))
-                if multiplier_increase > 0:
-                    final_price *= (1.0 + multiplier_increase)
-                    risk_factors["news_alerts"] = 1.0 + multiplier_increase
-                    news_status = f" (News Alert: +{multiplier_increase*100:.0f}% risk, {critical_count}C {high_count}H)"
-            except Exception as e:
-                logger.warning(f"Error applying news crawler risk: {e}")
+        final_price, news_multiplier, news_status = _apply_news_adjustment(final_price, quote_region)
+        risk_factors["news_alerts"] = news_multiplier
 
         total_loading = max(0, final_price - pure_premium_base)
         risk_padding = total_loading * 0.4
@@ -468,11 +538,17 @@ async def calculate_policy_endpoint(request: PolicyRequest) -> PricingResult:
     2. Extreme Value Theory (EVT) for tail risk
     3. Fractal Analysis for market regime
     """
-    # Directly await the async EVT calculation
-    evt_result = await _calculate_evt_pricing(request)
+    quote_region = await _resolve_quote_region(request.latitude, request.longitude)
+
+    # Guard EVT path so external-data latency does not stall the API.
+    try:
+        evt_result = await asyncio.wait_for(_calculate_evt_pricing(request, quote_region=quote_region), timeout=25)
+    except asyncio.TimeoutError:
+        logger.warning("EVT pricing timed out; using heuristic fallback")
+        evt_result = None
 
     if evt_result:
         return evt_result
 
     pricer = ClimatePricingService()
-    return pricer.calculate_policy(request)
+    return pricer.calculate_policy(request, quote_region=quote_region)

@@ -3,13 +3,17 @@ import pytest
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock, patch
 
-# Global disable for tests to avoid SQLAlchemy initialization issues
-os.environ["DATABASE_ENABLED"] = "false"
+# DATABASE_ENABLED will be disabled per-test using a fixture to avoid side effects
 
 from models.schemas import EventoClimatico, EventoClimaticoTipo
 from models.token_schemas import EventoToken
 from services.tokenizacao_eventos_service import TokenizacaoEventosService
 from services.tokenization_service import TokenizationService
+
+@pytest.fixture(autouse=True)
+def mock_db_disabled(monkeypatch):
+    """Fixture that disables the database for these tests to avoid SQLAlchemy initialization issues"""
+    monkeypatch.setenv("DATABASE_ENABLED", "false")
 
 @pytest.fixture
 def token_service():

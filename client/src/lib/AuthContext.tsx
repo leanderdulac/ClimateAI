@@ -54,6 +54,9 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
+  const BACKEND_AUTH_TIMEOUT_MS = 30000;
+  const BACKEND_REGISTER_MAX_ATTEMPTS = 2;
+
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -73,6 +76,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
         clearTimeout(timeoutId);
       }
     }
+  };
+
+  const isTimeoutMessage = (message: string): boolean => {
+    return message.toLowerCase().includes('timeout');
   };
 
   const isNetworkErrorMessage = (message: string): boolean => {
@@ -312,20 +319,38 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Try backend registration first so signup works even when Supabase DNS is unavailable.
       const registerEndpoint = buildApiUrl('/api/v1/auth/register');
       try {
-        const registerResponse = await withTimeout(
-          fetch(registerEndpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              email: userData.email,
-              full_name: userData.name,
-              password: userData.password,
-              organization: userData.company || ''
-            })
-          }),
-          10000,
-          'Timeout ao registrar usuario'
-        );
+        let registerResponse: Response | null = null;
+
+        for (let attempt = 1; attempt <= BACKEND_REGISTER_MAX_ATTEMPTS; attempt += 1) {
+          try {
+            registerResponse = await withTimeout(
+              fetch(registerEndpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  email: userData.email,
+                  full_name: userData.name,
+                  password: userData.password,
+                  organization: userData.company || ''
+                })
+              }),
+              BACKEND_AUTH_TIMEOUT_MS,
+              'Timeout ao registrar usuario'
+            );
+            break;
+          } catch (registerAttemptError) {
+            const isLastAttempt = attempt === BACKEND_REGISTER_MAX_ATTEMPTS;
+            const message = registerAttemptError instanceof Error ? registerAttemptError.message : '';
+
+            if (!isTimeoutMessage(message) || isLastAttempt) {
+              throw registerAttemptError;
+            }
+          }
+        }
+
+        if (!registerResponse) {
+          throw new Error('Falha no cadastro');
+        }
 
         if (registerResponse.ok) {
           const loginEndpoint = buildApiUrl('/api/v1/auth/login');
@@ -335,7 +360,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ email: userData.email, password: userData.password })
             }),
-            10000,
+            BACKEND_AUTH_TIMEOUT_MS,
             'Timeout ao autenticar apos cadastro'
           );
 

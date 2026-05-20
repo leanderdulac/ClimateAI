@@ -526,6 +526,17 @@ export function PricingSimulator() {
       console.log('[PricingSimulator] Net Profit:', result.financials.net_profit);
       console.log('[PricingSimulator] Status:', result.status);
 
+      window.dispatchEvent(new CustomEvent('climateai:quote-calculated', {
+        detail: {
+          premium: result.financials.total_premium,
+          coveragePeriod,
+          frequency: simFrequency,
+          severity: simSeverity,
+          eventId: selectedEvent?.id || null,
+          status: result.status || null,
+        },
+      }));
+
       // Get ML predictions for sinistrality (can remain as is)
       try {
         let realTimeData = null;

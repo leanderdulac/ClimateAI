@@ -199,6 +199,36 @@ class APIKey(Base):
     # partner = relationship("Partner", back_populates="api_keys")
 
 
+class QuoteJourneyEvent(Base):
+    """Persistent quote journey events for audit and analytics."""
+
+    __tablename__ = "quote_journey_events"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    session_id = Column(String, nullable=False, index=True)
+    event_type = Column(String, nullable=False, index=True)
+
+    user_id = Column(String, ForeignKey("users.id"), nullable=True)
+    location_id = Column(String, ForeignKey("locations.id"), nullable=True)
+
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
+    city = Column(String, nullable=True)
+    state = Column(String, nullable=True)
+
+    quote_premium = Column(Float, nullable=True)
+    quote_coverage_period = Column(Integer, nullable=True)
+    quote_frequency = Column(Float, nullable=True)
+    quote_severity = Column(Float, nullable=True)
+    quote_event_id = Column(String, nullable=True)
+    quote_status = Column(String, nullable=True)
+
+    payload = Column(JSON, default={})
+
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
 # ============================================================
 # ATLAS DIGITAL DE DESASTRES - Modelos
 # ============================================================

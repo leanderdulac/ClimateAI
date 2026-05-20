@@ -719,11 +719,16 @@ def _generate_var_backtest_report(
     def kupiec_pof(n, N, p):
         """Kupiec Proportion of Failures test"""
         if n == 0:
-            return 1.0, True
-        p_hat = n / N
-        if p_hat == 0 or p_hat == 1:
-            return 0.0, False
-        lr = -2 * np.log(((1-p)**(N-n) * p**n) / ((1-p_hat)**(N-n) * p_hat**n))
+            lr = -2 * N * np.log(1 - p)
+        elif n == N:
+            lr = -2 * N * np.log(p)
+        else:
+            p_hat = n / N
+            num = ((1 - p) ** (N - n)) * (p ** n)
+            den = ((1 - p_hat) ** (N - n)) * (p_hat ** n)
+            lr = -2 * np.log(num / den)
+            
+        lr = max(0.0, lr)
         p_value = 1 - stats.chi2.cdf(lr, 1)
         return p_value, p_value > 0.05
     
@@ -752,17 +757,17 @@ def _generate_var_backtest_report(
         if n0 == 0 or n1 == 0:
             return 1.0, True
         
-        p0 = n01 / (n00 + n01) if (n00 + n01) > 0 else 0
-        p1 = n11 / (n10 + n11) if (n10 + n11) > 0 else 0
-        p = (n01 + n11) / n
+        p0 = n01 / n0
+        p1 = n11 / n1
+        p = (n01 + n11) / (n0 + n1)
         
-        if p0 == 0 or p1 == 0 or p == 0:
+        if p0 == 0 or p1 == 0 or p == 0 or p0 == 1 or p1 == 1 or p == 1:
             return 1.0, True
         
-        lr = -2 * np.log(
-            ((1-p0)**n00 * p0**n01 * (1-p1)**n10 * p1**n11) /
-            ((1-p)**(n00+n01) * p**(n01) * (1-p)**(n10+n11) * p**(n11))
-        )
+        num = ((1 - p) ** (n00 + n10)) * (p ** (n01 + n11))
+        den = ((1 - p0) ** n00) * (p0 ** n01) * ((1 - p1) ** n10) * (p1 ** n11)
+        lr = -2 * np.log(num / den)
+        lr = max(0.0, lr)
         p_value = 1 - stats.chi2.cdf(lr, 1)
         return p_value, p_value > 0.05
     

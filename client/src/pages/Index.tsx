@@ -106,6 +106,24 @@ function PeriodButtons() {
 export function IndexPage() {
   const { t } = useTranslation();
 
+  const startInsuranceJourney = () => {
+    window.dispatchEvent(new CustomEvent('climateai:insurance-intent', {
+      detail: {
+        active: true,
+        source: 'dashboard-hero-cta',
+      },
+    }));
+
+    const pricing = document.querySelector('.pricing-simulator');
+    if (pricing) {
+      pricing.scrollIntoView({ behavior: 'smooth' });
+      return;
+    }
+
+    const dashboard = document.querySelector('#dashboard');
+    dashboard?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
     <DashboardLayout>
       {/* Hero Section with Professional Mesh Gradient */}
@@ -164,6 +182,15 @@ export function IndexPage() {
             >
               <Globe className="mr-2 h-5 w-5" />
               {t('dashboard.explore')}
+            </Button>
+            <Button
+              size="lg"
+              variant="secondary"
+              className="rounded-full text-lg px-8 h-14 transition-all hover:scale-105"
+              onClick={startInsuranceJourney}
+            >
+              <Shield className="mr-2 h-5 w-5" />
+              Quero cotar seguro climático
             </Button>
           </div>
         </div>

@@ -16,14 +16,7 @@ else
 fi
 
 echo -n "Frontend (vite): "
-if pgrep -f "vite\|npm.*dev" > /dev/null; then
-    echo "✅ Rodando"
-else
-    echo "❌ Parado"
-fi
-
-echo -n "Landing Page (http.server): "
-if pgrep -f "python3 -m http.server" > /dev/null; then
+if pgrep -f "vite preview" > /dev/null || pgrep -f "npm run preview" > /dev/null || pgrep -f "npm.*dev" > /dev/null || pgrep -f "node .*node_modules/.bin/vite preview" > /dev/null; then
     echo "✅ Rodando"
 else
     echo "❌ Parado"
@@ -41,13 +34,6 @@ fi
 
 echo -n "Frontend (porta 3000): "
 if curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/ 2>/dev/null; then
-    echo "✅ OK"
-else
-    echo "❌ Fora do ar"
-fi
-
-echo -n "Landing Page (porta 8080): "
-if curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/landing-page.html 2>/dev/null; then
     echo "✅ OK"
 else
     echo "❌ Fora do ar"

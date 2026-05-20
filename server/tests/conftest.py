@@ -79,7 +79,8 @@ from services.scr_module_service import ClimateData
 @pytest.fixture(scope="session")
 async def test_engine():
     """Create test database engine and tables"""
-    os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
+    # Use a file-based SQLite database for integration test sharing
+    os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///./.test_db.sqlite"
 
     _create_engine_and_session_maker(os.environ["DATABASE_URL"])
     db_engine = db_config.engine
@@ -92,6 +93,11 @@ async def test_engine():
     async with db_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
     await db_engine.dispose()
+
+    # Clean up the file-based SQLite test database after all tests are done
+    import contextlib
+    with contextlib.suppress(FileNotFoundError):
+        os.remove("./.test_db.sqlite")
 
 
 @pytest.fixture(scope="session")

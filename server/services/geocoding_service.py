@@ -50,11 +50,10 @@ class GeocodingService:
 
         # Tentar ViaCEP primeiro (mais confiável)
         try:
-            import requests
-
-            response = requests.get(
-                f"https://viacep.com.br/ws/{normalized}/json/", timeout=10
-            )
+            async with httpx.AsyncClient() as client:
+                response = await client.get(
+                    f"https://viacep.com.br/ws/{normalized}/json/", timeout=10.0
+                )
             if response.status_code == 200:
                 via_cep_data = response.json()
                 if "erro" not in via_cep_data:

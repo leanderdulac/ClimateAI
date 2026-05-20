@@ -1,5 +1,5 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import { lazy, Suspense, useEffect } from 'react';
+import { lazy, Suspense } from 'react';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { PageLoader } from '@/components/PageLoader';
 import { RouteError } from '@/components/RouteError';
@@ -17,21 +17,13 @@ const OraclePage = lazy(() => import('@/pages/OraclePage').then(m => ({ default:
 const AtlasPage = lazy(() => import('@/pages/AtlasPage'));
 const DemoPage = lazy(() => import('@/pages/DemoPage').then(m => ({ default: m.DemoPage })));
 
-function LandingPageRedirect() {
-  useEffect(() => {
-    window.location.replace('/landing.html');
-  }, []);
-
-  return <PageLoader />;
-}
-
 const router = createBrowserRouter([
   {
     path: "/",
     errorElement: <RouteError />,
     element: (
       <Suspense fallback={<PageLoader />}>
-        <LandingPageRedirect />
+        <WelcomePage />
       </Suspense>
     ),
   },

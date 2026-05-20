@@ -10,15 +10,42 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from config.database import get_db_session
 from services.agri_strategy_service import agri_strategy_service
+from services.quote_journey_service import quote_journey_service
 
 router = APIRouter(prefix="/agri-strategy", tags=["agri-strategy"])
 
 
 class FarmProfile(BaseModel):
+    productive_farm: bool = True
     irrigation_available: bool = False
     drainage_level: Literal["low", "medium", "high"] = "medium"
     soil_cover_level: Literal["low", "medium", "high"] = "medium"
     farm_size_hectares: Optional[float] = Field(default=None, ge=0)
+
+
+class QuoteContext(BaseModel):
+    premium: Optional[float] = None
+    coverage_period: Optional[int] = Field(default=None, ge=1, le=20)
+    frequency: Optional[float] = Field(default=None, ge=0, le=100)
+    severity: Optional[float] = Field(default=None, ge=0)
+    event_id: Optional[str] = None
+    status: Optional[str] = None
+
+
+class HistoricalContext(BaseModel):
+    days: Optional[int] = Field(default=None, ge=1, le=3650)
+    total_rainfall: Optional[float] = None
+    heavy_rain_days: Optional[int] = None
+    dry_days: Optional[int] = None
+    hot_days: Optional[int] = None
+    windy_days: Optional[int] = None
+
+
+class JourneyLocation(BaseModel):
+    latitude: Optional[float] = Field(default=None, ge=-90, le=90)
+    longitude: Optional[float] = Field(default=None, ge=-180, le=180)
+    city: Optional[str] = None
+    state: Optional[str] = None
 
 
 class AgriStrategyRequest(BaseModel):
@@ -31,6 +58,9 @@ class AgriStrategyRequest(BaseModel):
     planning_horizon_days: int = Field(default=120, ge=7, le=365)
     risk_tolerance: Literal["low", "medium", "high"] = "medium"
     farm_profile: Optional[FarmProfile] = None
+    session_id: Optional[str] = None
+    quote_context: Optional[QuoteContext] = None
+    historical_context: Optional[HistoricalContext] = None
 
 
 class AgriStrategyResponse(BaseModel):
@@ -43,8 +73,26 @@ class AgriStrategyResponse(BaseModel):
     operational_actions: List[Dict[str, Any]]
     financial_actions: List[Dict[str, Any]]
     alert_triggers: List[Dict[str, Any]]
+    quote_context: Optional[Dict[str, Any]] = None
+    historical_context: Optional[Dict[str, Any]] = None
     supported_crops: List[str]
     supported_stages: List[str]
+
+
+class JourneyEventRequest(BaseModel):
+    session_id: str = Field(..., min_length=8, max_length=100)
+    event_type: str = Field(..., min_length=3, max_length=64)
+    location: Optional[JourneyLocation] = None
+    quote_context: Optional[QuoteContext] = None
+    historical_context: Optional[HistoricalContext] = None
+    metadata: Optional[Dict[str, Any]] = None
+
+
+class JourneyEventResponse(BaseModel):
+    id: str
+    session_id: str
+    event_type: str
+    created_at: str
 
 
 PLAN_REQUEST_EXAMPLE = {
@@ -153,8 +201,30 @@ async def generate_agri_strategy_plan(
             planning_horizon_days=payload.planning_horizon_days,
             risk_tolerance=payload.risk_tolerance,
             farm_profile=payload.farm_profile.model_dump() if payload.farm_profile else None,
+            quote_context=payload.quote_context.model_dump(exclude_none=True) if payload.quote_context else None,
+            historical_context=payload.historical_context.model_dump(exclude_none=True) if payload.historical_context else None,
             db=db,
         )
+
+        if payload.session_id:
+            await quote_journey_service.log_event(
+                db=db,
+                session_id=payload.session_id,
+                event_type="strategy_generated",
+                payload={
+                    "location": {
+                        "latitude": payload.latitude,
+                        "longitude": payload.longitude,
+                    },
+                    "quote_context": payload.quote_context.model_dump(exclude_none=True) if payload.quote_context else None,
+                    "historical_context": payload.historical_context.model_dump(exclude_none=True) if payload.historical_context else None,
+                    "strategy": {
+                        "crop_type": payload.crop_type,
+                        "phenological_stage": payload.phenological_stage,
+                    },
+                },
+            )
+
         return response
     except HTTPException:
         raise
@@ -171,6 +241,31 @@ async def get_strategy_catalog():
         "supported_stages": agri_strategy_service.supported_stages,
         "risk_dimensions": ["heat", "drought", "excess_rain", "flood", "wind", "disease"],
     }
+
+
+@router.post("/journey/event", response_model=JourneyEventResponse)
+async def register_journey_event(
+    payload: JourneyEventRequest,
+    db: AsyncSession = Depends(get_db_session),
+):
+    event = await quote_journey_service.log_event(
+        db=db,
+        session_id=payload.session_id,
+        event_type=payload.event_type,
+        payload={
+            "location": payload.location.model_dump(exclude_none=True) if payload.location else None,
+            "quote_context": payload.quote_context.model_dump(exclude_none=True) if payload.quote_context else None,
+            "historical_context": payload.historical_context.model_dump(exclude_none=True) if payload.historical_context else None,
+            "metadata": payload.metadata or {},
+        },
+    )
+
+    return JourneyEventResponse(
+        id=event.id,
+        session_id=event.session_id,
+        event_type=event.event_type,
+        created_at=event.created_at.isoformat() if event.created_at else "",
+    )
 
 
 @router.get("/health")

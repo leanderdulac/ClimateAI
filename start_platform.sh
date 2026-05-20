@@ -42,7 +42,6 @@ wait_for_http() {
 echo "📊 Verificando portas..."
 check_port 8000 && BACKEND_OK=true || BACKEND_OK=false
 check_port 3000 && FRONTEND_OK=true || FRONTEND_OK=false
-check_port 8080 && LANDING_OK=true || LANDING_OK=false
 
 # Iniciar backend
 if [ "$BACKEND_OK" = true ]; then
@@ -73,22 +72,11 @@ else
     echo "⚠️  Frontend não iniciado - porta 3000 ocupada"
 fi
 
-# Iniciar landing page
-if [ "$LANDING_OK" = true ]; then
-    echo "📄 Iniciando Landing Page (porta 8080)..."
-    python3 -m http.server 8080 --bind 0.0.0.0 &
-    LANDING_PID=$!
-    echo "✅ Landing Page iniciada (PID: $LANDING_PID)"
-else
-    echo "⚠️  Landing Page não iniciada - porta 8080 ocupada"
-fi
-
 # Aguardar inicialização real
 echo ""
 echo "⏳ Aguardando serviços ficarem prontos..."
 [ "$BACKEND_OK" = true ] && wait_for_http "Backend" "http://localhost:8000/health" 45
 [ "$FRONTEND_OK" = true ] && wait_for_http "Frontend" "http://localhost:3000/" 90
-[ "$LANDING_OK" = true ] && wait_for_http "Landing Page" "http://localhost:8080/landing-page.html" 15
 
 # Verificar status
 echo ""
@@ -107,18 +95,12 @@ else
     echo "❌ Fora do ar"
 fi
 
-echo -n "Landing Page (porta 8080): "
-if curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/landing-page.html 2>/dev/null; then
-    echo "✅ OK"
-else
-    echo "❌ Fora do ar"
-fi
-
 echo ""
 echo "🌐 URLs de acesso:"
 echo "  • Backend API: http://localhost:8000"
-echo "  • Frontend: http://localhost:3000"
-echo "  • Landing Page: http://localhost:8080/landing-page.html"
+echo "  • Frontend (landing oficial): http://localhost:3000/welcome"
+echo "  • Frontend (alias): http://localhost:3000"
+echo "  • Frontend (compat legado): http://localhost:3000/landing-page.html"
 echo ""
 echo "Para parar todos os serviços: ./stop_platform.sh"
 echo "Para verificar status: ./status_platform.sh"

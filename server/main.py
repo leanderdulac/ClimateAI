@@ -1163,10 +1163,26 @@ async def startup_event():
 
     from blockchain.hathor.hathor_service import get_hathor_service
     try:
-        get_hathor_service().initialize(address="0xClimateWiseHathorOracleMock")
-        logger.info("✓ Hathor Blockchain Service initialized (Development Mode)")
+        hathor_service = get_hathor_service()
+        hathor_mode = os.getenv("HATHOR_INTEGRATION_MODE", "sandbox").lower()
+        headless_wallet_url = os.getenv("HATHOR_HEADLESS_WALLET_URL", "").strip()
+
+        # Fail-fast to avoid a false-production startup without wallet connectivity target.
+        if hathor_mode == "production" and not headless_wallet_url:
+            raise RuntimeError(
+                "HATHOR_INTEGRATION_MODE=production requires HATHOR_HEADLESS_WALLET_URL"
+            )
+
+        wallet_address = os.getenv("HATHOR_WALLET_ADDRESS", "").strip() or None
+        if hathor_mode == "production":
+            hathor_service.initialize(address=wallet_address)
+            logger.info("✓ Hathor Blockchain Service initialized (Production Mode)")
+        else:
+            hathor_service.initialize(address=wallet_address or "0xClimateWiseHathorOracleMock")
+            logger.info("✓ Hathor Blockchain Service initialized (Sandbox Mode)")
     except Exception as e:
         logger.warning(f"⚠ Hathor Service initialization failed: {e}")
+        raise
 
     # News Crawler - Background RSS Scraping
     try:
