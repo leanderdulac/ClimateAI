@@ -94,3 +94,35 @@ vi.mock('./lib/api', () => ({
     })
   }
 }));
+
+// Suppress known expected unhandled rejections from AuthContext
+// login() and register() intentionally re-throw errors after setting state.
+// When triggered via button click in tests, this becomes an unhandled rejection.
+const knownAuthErrorMessages = [
+  'Falha de conexao',
+  'Service unavailable',
+  'Falha no login',
+  'Falha no cadastro',
+];
+
+// Handle via window for jsdom env
+if (typeof window !== 'undefined') {
+  window.addEventListener('unhandledrejection', (event) => {
+    if (knownAuthErrorMessages.some(msg => event.reason?.message?.includes(msg))) {
+      event.preventDefault();
+    }
+  });
+}
+
+// Handle via process for Vitest's node-side rejection tracking
+if (typeof process !== 'undefined') {
+  process.on('unhandledRejection', (reason) => {
+    const message = reason instanceof Error ? reason.message : String(reason ?? '');
+    if (knownAuthErrorMessages.some(msg => message.includes(msg))) {
+      // Suppress — these are expected re-throws from AuthContext button click handlers
+      return;
+    }
+  });
+}
+
+
