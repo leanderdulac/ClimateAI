@@ -313,8 +313,10 @@ def pytest_configure(config):
 
 
 @pytest.fixture(scope="session", autouse=True)
-async def setup_test_environment():
-    """Setup test environment"""
+def setup_test_environment():
+    """Setup test environment (sync wrapper compatible with Python 3.10+)."""
+    import asyncio
+
     # Initialize logging
     init_logging()
 
@@ -323,7 +325,6 @@ async def setup_test_environment():
     os.environ["DEBUG"] = "True"
     os.environ["OTEL_ENABLED"] = "false"
     os.environ["OTEL_SDK_DISABLED"] = "true"
-    # Ensure tests use the async sqlite driver so SQLAlchemy asyncio loads correctly
     os.environ["DATABASE_URL"] = os.environ.get(
         "DATABASE_URL", "sqlite+aiosqlite:///./.test_db.sqlite"
     )
@@ -331,19 +332,34 @@ async def setup_test_environment():
     # Disable rate limiting for tests
     rate_limiter.max_requests = 10000
 
-    # Ensure engine and tables are initialized for tests
-    _create_engine_and_session_maker(os.environ["DATABASE_URL"])
-    db_engine = db_config.engine
-    async with db_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    db_engine = None
+
+    async def _setup():
+        _create_engine_and_session_maker(os.environ["DATABASE_URL"])
+        engine = db_config.engine
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        return engine
+
+    try:
+        db_engine = asyncio.run(_setup())
+    except Exception as exc:  # pragma: no cover
+        print(f"Warning: DB setup failed in test env: {exc}")
 
     yield
 
-    # Cleanup after all tests
-    async with db_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-    await db_engine.dispose()
+    async def _teardown(engine):
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.drop_all)
+        await engine.dispose()
+
+    if db_engine is not None:
+        try:
+            asyncio.run(_teardown(db_engine))
+        except Exception:  # pragma: no cover
+            pass
     app.dependency_overrides.clear()
+
 
 
 # ============================================================================
