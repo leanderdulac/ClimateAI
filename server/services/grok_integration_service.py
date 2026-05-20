@@ -41,14 +41,13 @@ class GrokIntegrationService:
             os.getenv("GROK_API_KEY") or ""
         )
 
-        self.use_mock = True  # Forçado para mock até API estar disponível
+        self.use_mock = not bool(self.api_key) or self.api_key == "test-dummy-grok-key"
 
-        if not self.use_mock:
-            self.base_url = "https://api.x.ai/v1"
-            self.headers = {
-                "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json"
-            }
+        self.base_url = "https://api.x.ai/v1"
+        self.headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
+        }
 
         # Contexto especializado do Grok
         self.specialist_context = self._build_specialist_context()
