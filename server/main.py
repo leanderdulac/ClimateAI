@@ -166,6 +166,7 @@ from pydantic import BaseModel
 from api.alertas import router as alertas_router
 from api.agri_strategy import router as agri_strategy_router
 from api.auth import router as auth_router
+from api.auth_forgot_password import router as forgot_password_router
 from api.audit import router as audit_router
 from api.backtesting import router as backtesting_router
 from api.bayesian_bootstrap import router as bayesian_bootstrap_router
@@ -828,6 +829,7 @@ try:
         localizacao_router, prefix=f"{API_PREFIX}/localizacao", tags=["localizacao"]
     )
     app.include_router(auth_router, prefix=f"{API_PREFIX}/auth", tags=["auth"])
+    app.include_router(forgot_password_router, prefix=f"{API_PREFIX}/auth", tags=["auth"])
     app.include_router(
         mathematical_engines_router,
         prefix=f"{API_PREFIX}/math-engines",

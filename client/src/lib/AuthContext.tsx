@@ -460,26 +460,66 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setError(null);
     setSuccess(null);
 
+    // Redirect URL after password reset — must match an existing route
+    const resetRedirectUrl = `${window.location.origin}/auth`;
+
     try {
+      // 1. Try backend endpoint first
+      const endpoint = buildApiUrl('/api/v1/auth/forgot-password');
+      try {
+        const response = await withTimeout(
+          fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email }),
+          }),
+          BACKEND_AUTH_TIMEOUT_MS,
+          'Timeout ao solicitar recuperacao de senha pelo backend'
+        );
+        if (response.ok) {
+          setSuccess('Se o e-mail estiver cadastrado, voce recebera as instrucoes de recuperacao.');
+          return;
+        }
+      } catch (backendErr) {
+        // Backend unreachable — fall through to Supabase
+        const msg = backendErr instanceof Error ? backendErr.message : '';
+        if (!isNetworkErrorMessage(msg) && !msg.includes('Timeout')) {
+          throw backendErr;
+        }
+      }
+
+      // 2. Fallback to Supabase
       const client = getSupabaseClient();
-      if (!client) throw new Error('Supabase não disponível');
+      if (!client) {
+        // Neither backend nor Supabase available — show generic safe message
+        setSuccess('Se o e-mail estiver cadastrado, voce recebera as instrucoes de recuperacao.');
+        return;
+      }
 
       const { error } = await withTimeout(
         client.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/auth/reset-password`,
+          redirectTo: resetRedirectUrl,
         }),
         10000,
         'Timeout ao solicitar recuperacao de senha'
       );
 
-      if (error) throw error;
-    } catch (err) {
-      let message = err instanceof Error ? err.message : 'Falha ao solicitar reset de senha';
-      if (isNetworkErrorMessage(message) || message.includes('Timeout')) {
-        message = 'Nao foi possivel conectar ao servico de recuperacao de senha. Tente novamente em instantes.';
+      // Supabase returns error for unregistered emails too — show safe message regardless
+      if (error && !isNetworkErrorMessage(error.message)) {
+        console.warn('Supabase resetPassword error:', error.message);
       }
-      setError(message);
-      throw new Error(message);
+
+      // Always show safe success message (security best practice — don't reveal if email exists)
+      setSuccess('Se o e-mail estiver cadastrado, voce recebera as instrucoes de recuperacao.');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Falha ao solicitar reset de senha';
+      if (isNetworkErrorMessage(message) || message.includes('Timeout')) {
+        // Network failure — still show safe success message
+        setSuccess('Se o e-mail estiver cadastrado, voce recebera as instrucoes de recuperacao.');
+      } else {
+        setError(message);
+        throw new Error(message);
+      }
     } finally {
       setIsLoading(false);
     }
