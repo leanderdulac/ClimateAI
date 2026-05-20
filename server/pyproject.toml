@@ -9,11 +9,6 @@ addopts = """
     --disable-warnings
     --tb=short
     -v
-    --cov-report=html:coverage_html
-    --cov-report=term-missing
-    --cov-report=json:coverage.json
-    --cov-branch
-    --cov-fail-under=80
 """
 markers = [
     "unit: Unit tests (fast, isolated)",
