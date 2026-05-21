@@ -64,7 +64,8 @@ hvac==2.4.0
 # Para desenvolvimento com TensorFlow:
 #   pip install -r server/requirements-base.txt -r server/requirements-ml.txt
 
-pytest==9.0.3
+pytest==8.3.4
 pytest-asyncio==0.23.8
 pytest-cov==5.0.0
 pytest-timeout==2.3.1
+
