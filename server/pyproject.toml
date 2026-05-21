@@ -19,6 +19,7 @@ markers = [
     "requires_db: Tests that require database",
     "requires_redis: Tests that require Redis",
     "async_context: Tests that require async context",
+    "requires_server: Tests that require a running server",
 ]
 asyncio_mode = "auto"
 log_cli = false
