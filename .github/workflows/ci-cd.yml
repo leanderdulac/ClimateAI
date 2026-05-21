@@ -62,7 +62,8 @@ jobs:
           pip install --timeout 1800 --retries 5 --prefer-binary --index-url https://download.pytorch.org/whl/cpu 'torch==2.1.1+cpu' --find-links https://download.pytorch.org/whl/torch_stable.html --no-build-isolation --force-reinstall
           # Install all project requirements including test dependencies
           pip install --timeout 1800 --retries 5 --no-cache-dir -r requirements.txt
-          pip install pytest pytest-asyncio pytest-cov pytest-timeout aiosqlite
+          # Pin test tooling to known-good versions
+          pip install "pytest==9.0.3" "pytest-asyncio==0.23.8" "pytest-cov==5.0.0" "pytest-timeout==2.3.1" aiosqlite
 
       - name: Run pip-audit security scan
         continue-on-error: true
@@ -93,7 +94,7 @@ jobs:
           OTEL_SDK_DISABLED: "true"
         run: |
           cd server
-          pytest tests/unit -q --cov=. --cov-report=xml --cov-report=term-missing -p no:warnings
+          pytest tests/unit -q --cov=. --cov-report=xml --cov-report=term-missing -p no:warnings --asyncio-mode=auto
 
       - name: Run blockchain endpoint regression tests
         continue-on-error: true

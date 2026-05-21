@@ -20,7 +20,7 @@ markers = [
     "requires_redis: Tests that require Redis",
     "async_context: Tests that require async context",
 ]
-asyncio_mode = "strict"
+asyncio_mode = "auto"
 log_cli = false
 log_file = "tests.log"
 timeout = 300
