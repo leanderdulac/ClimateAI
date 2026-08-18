@@ -35,18 +35,33 @@ def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
 
+import bcrypt
+
 class PasswordManager:
     """Gerenciador de senhas com hashing seguro"""
 
     @staticmethod
     def hash_password(password: str) -> str:
         """Gera hash da senha usando bcrypt"""
-        return pwd_context.hash(password)
+        try:
+            pwd_bytes = password.encode('utf-8')[:72]
+            return bcrypt.hashpw(pwd_bytes, bcrypt.gensalt()).decode('utf-8')
+        except Exception:
+            return pwd_context.hash(password[:72])
 
     @staticmethod
     def verify_password(plain_password: str, hashed_password: str) -> bool:
         """Verifica se senha plain corresponde ao hash"""
-        return pwd_context.verify(plain_password, hashed_password)
+        try:
+            pwd_bytes = plain_password.encode('utf-8')[:72]
+            if hashed_password and hashed_password.startswith("$2"):
+                return bcrypt.checkpw(pwd_bytes, hashed_password.encode('utf-8'))
+        except Exception:
+            pass
+        try:
+            return pwd_context.verify(plain_password[:72], hashed_password)
+        except Exception:
+            return False
 
 
 class TokenManager:

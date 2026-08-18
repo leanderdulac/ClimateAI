@@ -14,6 +14,10 @@ async def force_seed():
     engine = create_async_engine("sqlite+aiosqlite:///local_dev.db")
     async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
     
+    async with engine.begin() as conn:
+        from models.sqlalchemy_models import Base
+        await conn.run_sync(Base.metadata.create_all)
+        
     async with async_session() as session:
         # Check if user exists
         from sqlalchemy import select

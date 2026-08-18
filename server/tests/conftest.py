@@ -34,6 +34,7 @@ sys.modules["statsmodels.tsa.stattools"] = MagicMock()
 sys.modules["xgboost"] = MagicMock()
 sys.modules["lightgbm"] = MagicMock()
 sys.modules["pycep_correios"] = MagicMock()
+sys.modules["boto3"] = MagicMock()
 
 # Fix for scipy's is_torch_array check
 class MockTensor:

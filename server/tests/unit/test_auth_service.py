@@ -47,36 +47,34 @@ class TestAuthService(unittest.TestCase):
 
     def test_password_hashing(self):
         """Testa hashing de senha"""
-        from passlib.context import CryptContext
+        from lib.security import PasswordManager
         
         # Arrange
-        pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
         password = "SecurePassword123!"
         
         # Act
-        hashed = pwd_context.hash(password)
+        hashed = PasswordManager.hash_password(password)
         
         # Assert
         self.assertTrue(hashed.startswith('$2'))  # bcrypt hash starts with $2
-        self.assertTrue(pwd_context.verify(password, hashed))
-        self.assertFalse(pwd_context.verify("WrongPassword", hashed))
+        self.assertTrue(PasswordManager.verify_password(password, hashed))
+        self.assertFalse(PasswordManager.verify_password("WrongPassword", hashed))
 
     def test_password_hashing_different_hashes(self):
         """Testa que senhas iguais geram hashes diferentes"""
-        from passlib.context import CryptContext
+        from lib.security import PasswordManager
         
-        pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
         password = "SamePassword123!"
         
-        hash1 = pwd_context.hash(password)
-        hash2 = pwd_context.hash(password)
+        hash1 = PasswordManager.hash_password(password)
+        hash2 = PasswordManager.hash_password(password)
         
         # Hashes devem ser diferentes (devido ao salt)
         self.assertNotEqual(hash1, hash2)
         
         # Mas ambos devem verificar corretamente
-        self.assertTrue(pwd_context.verify(password, hash1))
-        self.assertTrue(pwd_context.verify(password, hash2))
+        self.assertTrue(PasswordManager.verify_password(password, hash1))
+        self.assertTrue(PasswordManager.verify_password(password, hash2))
 
 
 class TestJWTToken(unittest.TestCase):

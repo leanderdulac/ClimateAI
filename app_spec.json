@@ -33,7 +33,7 @@
         },
         {
           "key": "ALLOW_ORIGINS",
-          "value": "http://localhost:3000,http://localhost:5173,https://hammerhead-app-3payj.ondigitalocean.app",
+          "value": "http://localhost:3000,http://localhost:5173,https://climate-ai-rho.vercel.app",
           "scope": "RUN_TIME"
         },
         {

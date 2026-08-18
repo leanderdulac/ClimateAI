@@ -1131,6 +1131,27 @@ async def startup_event():
         try:
             await init_db()
             logger.info("Banco de dados inicializado")
+            # Auto-seed default admin user if database is empty
+            try:
+                from config.database import async_session_maker
+                from services.auth_service import auth_service
+                from models.schemas import UserCreate, UserRole
+                async with async_session_maker() as session:
+                    admin_email = "leanderdulac@gmail.com"
+                    existing_user = await auth_service.get_user_by_email(session, admin_email)
+                    if not existing_user:
+                        logger.info(f"Criando usuário admin inicial: {admin_email}")
+                        user_data = UserCreate(
+                            email=admin_email,
+                            full_name="Leander Dulac",
+                            password="password123",
+                            role=UserRole.ADMIN,
+                            is_active=True
+                        )
+                        await auth_service.create_user(session, user_data)
+                        logger.info("✓ Usuário admin inicial criado com sucesso")
+            except Exception as seed_err:
+                logger.warning(f"⚠ Falha ao criar usuário inicial: {seed_err}")
         except Exception as e:
             logger.warning(f"⚠ Falha ao inicializar banco de dados (modo degradado): {e}")
             logger.warning("O servidor continuará sem conexão ao banco de dados externo.")
