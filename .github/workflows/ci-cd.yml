@@ -266,7 +266,7 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     needs: [backend, frontend, integration]
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && secrets.DOCKER_USERNAME != '' && secrets.DOCKER_PASSWORD != ''
 
     steps:
       - name: Checkout code
