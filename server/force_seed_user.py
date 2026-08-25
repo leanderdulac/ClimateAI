@@ -4,6 +4,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.asyncio import AsyncSession
 from passlib.context import CryptContext
 from models.sqlalchemy_models import User
+import os
 import uuid
 from datetime import datetime
 
@@ -21,15 +22,20 @@ async def force_seed():
     async with async_session() as session:
         # Check if user exists
         from sqlalchemy import select
-        result = await session.execute(select(User).where(User.email == "leanderdulac@gmail.com"))
+        email = os.getenv("BOOTSTRAP_ADMIN_EMAIL")
+        password = os.getenv("BOOTSTRAP_ADMIN_PASSWORD")
+        if not email or not password:
+            print("Skipping seed: BOOTSTRAP_ADMIN_EMAIL / BOOTSTRAP_ADMIN_PASSWORD not set")
+            return
+        result = await session.execute(select(User).where(User.email == email))
         user = result.scalars().first()
         
         if not user:
-            print("Creating test user leanderdulac@gmail.com")
-            hashed_password = pwd_context.hash("password123")
+            print(f"Creating test user {email}")
+            hashed_password = pwd_context.hash(password)
             new_user = User(
                 id=str(uuid.uuid4()),
-                email="leanderdulac@gmail.com",
+                email=email,
                 full_name="User Test Local",
                 hashed_password=hashed_password,
                 is_active=True,
@@ -41,8 +47,8 @@ async def force_seed():
             await session.commit()
             print("User created successfully!")
         else:
-            print("User already exists. Updating password to password123.")
-            user.hashed_password = pwd_context.hash("password123")
+            print("User already exists. Updating password from env.")
+            user.hashed_password = pwd_context.hash(password)
             await session.commit()
             print("Password updated!")
             

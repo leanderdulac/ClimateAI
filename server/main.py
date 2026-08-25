@@ -338,9 +338,9 @@ app = FastAPI(
     description="API do Framework Integrado de Modelagem Climático-Econômica",
     version="1.0.0",
     validate_responses=True,
-    docs_url="/docs" if settings.DEBUG else None,
-    redoc_url="/redoc" if settings.DEBUG else None,
-    openapi_url="/openapi.json" if settings.DEBUG else None,
+    docs_url="/docs" if settings.ENVIRONMENT.lower() != "production" else None,
+    redoc_url="/redoc" if settings.ENVIRONMENT.lower() != "production" else None,
+    openapi_url="/openapi.json" if settings.ENVIRONMENT.lower() != "production" else None,
 )
 
 # Setup advanced error handling middleware
@@ -1137,19 +1137,23 @@ async def startup_event():
                 from services.auth_service import auth_service
                 from models.schemas import UserCreate, UserRole
                 async with async_session_maker() as session:
-                    admin_email = "leanderdulac@gmail.com"
-                    existing_user = await auth_service.get_user_by_email(session, admin_email)
-                    if not existing_user:
-                        logger.info(f"Criando usuário admin inicial: {admin_email}")
-                        user_data = UserCreate(
-                            email=admin_email,
-                            full_name="Leander Dulac",
-                            password="password123",
-                            role=UserRole.ADMIN,
-                            is_active=True
-                        )
-                        await auth_service.create_user(session, user_data)
-                        logger.info("✓ Usuário admin inicial criado com sucesso")
+                    admin_email = os.getenv("BOOTSTRAP_ADMIN_EMAIL")
+                    admin_password = os.getenv("BOOTSTRAP_ADMIN_PASSWORD")
+                    if not admin_email or not admin_password:
+                        logger.info("Skipping admin seed: BOOTSTRAP_ADMIN_EMAIL / BOOTSTRAP_ADMIN_PASSWORD not set")
+                    else:
+                        existing_user = await auth_service.get_user_by_email(session, admin_email)
+                        if not existing_user:
+                            logger.info("Creating bootstrap admin user from env")
+                            user_data = UserCreate(
+                                email=admin_email,
+                                full_name=os.getenv("BOOTSTRAP_ADMIN_NAME", "Admin"),
+                                password=admin_password,
+                                role=UserRole.ADMIN,
+                                is_active=True
+                            )
+                            await auth_service.create_user(session, user_data)
+                            logger.info("Bootstrap admin user created")
             except Exception as seed_err:
                 logger.warning(f"⚠ Falha ao criar usuário inicial: {seed_err}")
         except Exception as e:

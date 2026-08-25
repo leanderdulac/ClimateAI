@@ -3,8 +3,8 @@ version: '3.8'
 services:
   backend:
     build:
-      context: ./server
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: server/Dockerfile
       # Usar 'production' para tamanho mínimo (~500MB)
       # Usar 'development' para desenvolvimento com TensorFlow (~2GB)
       target: production
@@ -36,13 +36,14 @@ services:
       - monitoring
 
   frontend:
+    # nginx EXPOSE 80 in Dockerfile.client; host 80 -> container 80.
+    # VITE_* is build-time; do not pass VITE_API_BASE_URL=http://backend:8000 (browser cannot resolve Docker DNS).
     build:
       context: .
       dockerfile: Dockerfile.client
     ports:
-      - "5173:5173"
+      - "80:80"
     environment:
-      - VITE_API_BASE_URL=http://backend:8000
       - VITE_USE_MOCK_DATA=false
     depends_on:
       - backend

@@ -96,7 +96,7 @@ sudo chown -R $USER:$USER /opt/$APP_NAME
 print_step "6. Cloning ClimateWise repository..."
 cd /opt/$APP_NAME
 if [ ! -d ".git" ]; then
-    git clone https://github.com/leanderdulac/ClimateWise.git .
+    git clone https://github.com/leanderdulac/ClimateAI.git .
 else
     print_warning "Repository already exists, pulling latest changes..."
     git pull origin main

@@ -2,9 +2,9 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
   pull_request:
-    branches: [main, develop]
+    branches: [main]
   workflow_dispatch:
 
 env:
@@ -17,7 +17,7 @@ jobs:
   # Backend Tests and Build
   backend:
     runs-on: ubuntu-latest
-    continue-on-error: true # Temporarily non-blocking while debugging
+    continue-on-error: false
     services:
       postgres:
         image: postgres:13

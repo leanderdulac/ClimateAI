@@ -196,8 +196,8 @@ GROK_API_KEY=sua_chave
 ## 📞 SUPORTE
 
 ### Links Úteis
-- **GitHub**: https://github.com/leanderdulac/ClimateWise
-- **Issues**: https://github.com/leanderdulac/ClimateWise/issues
+- **GitHub**: https://github.com/leanderdulac/ClimateAI
+- **Issues**: https://github.com/leanderdulac/ClimateAI/issues
 - **API Docs**: http://localhost:8000/docs
 
 ### Contatos
@@ -210,7 +210,7 @@ GROK_API_KEY=sua_chave
 ### Primeira Instalação
 ```bash
 # 1. Clone
-git clone https://github.com/leanderdulac/ClimateWise.git
+git clone https://github.com/leanderdulac/ClimateAI.git
 cd ClimateWise
 
 # 2. Setup

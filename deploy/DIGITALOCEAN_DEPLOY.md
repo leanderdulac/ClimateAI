@@ -39,7 +39,7 @@ ssh -i ~/.ssh/your_key root@YOUR_DROPLET_IP
 
 ```bash
 # Baixe o script de deploy
-wget https://raw.githubusercontent.com/leanderdulac/ClimateWise/main/deploy/deploy_digitalocean.sh
+wget https://raw.githubusercontent.com/leanderdulac/ClimateAI/main/deploy/deploy_digitalocean.sh
 chmod +x deploy_digitalocean.sh
 
 # Configure variáveis de ambiente
@@ -66,7 +66,7 @@ sudo usermod -aG docker $USER
 # exit e reconnect
 
 # Clone o repositório
-git clone https://github.com/leanderdulac/ClimateWise.git
+git clone https://github.com/leanderdulac/ClimateAI.git
 cd ClimateWise
 
 # Configure ambiente

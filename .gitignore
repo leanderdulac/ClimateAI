@@ -77,3 +77,16 @@ client/dist/
 kimi-cli/
 venv_playwright/
 venv_playwright/
+
+# Explicit junk / committed-by-mistake paths (do not re-add)
+server/venv-hathor/
+get-pip.py
+server/server.pid
+client/lint_output.txt
+client/test_output.txt
+client/tsconfig.app.tsbuildinfo
+
+# Keep tracked env templates despite .env.* ignore
+!.env.example
+!client/.env.example
+!server/.env.template

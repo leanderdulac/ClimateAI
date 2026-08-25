@@ -4,12 +4,13 @@ Script para criar usuário de teste no Supabase
 """
 
 import os
+import sys
 import requests
 import json
 import time
 
 SUPABASE_URL = os.getenv("SUPABASE_URL", "")
-SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR5em15d2h2cG1kZmVweGR0eWVzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4NzAzNjcsImV4cCI6MjA4NDQ0NjM2N30.14R4jz5hzgx6u3pPnMDrnBEUmgorb0Iqlb8spQRgzaI"
+SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "")
 
 def create_test_user():
     """Cria usuário de teste via Supabase Auth API"""
@@ -69,4 +70,10 @@ curl -X POST "{SUPABASE_URL}/auth/v1/admin/users" \\
         print(f"Response: {result}")
 
 if __name__ == "__main__":
+    if not SUPABASE_ANON_KEY:
+        print("ERROR: SUPABASE_ANON_KEY is empty; set it in the environment")
+        sys.exit(1)
+    if not SUPABASE_URL:
+        print("ERROR: SUPABASE_URL is empty; set it in the environment")
+        sys.exit(1)
     create_test_user()

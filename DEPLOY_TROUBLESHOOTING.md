@@ -150,7 +150,7 @@ ssh root@YOUR_DROPLET_IP
 
 #### **4. Clonar Repositório**
 ```bash
-git clone https://github.com/leanderdulac/ClimateWise.git
+git clone https://github.com/leanderdulac/ClimateAI.git
 cd ClimateWise
 ```
 

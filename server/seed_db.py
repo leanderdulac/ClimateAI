@@ -19,7 +19,11 @@ async def seed_data():
     
     async with db_config.async_session_maker() as session:
         # Check if user already exists
-        email = "leanderdulac@gmail.com"
+        email = os.getenv("BOOTSTRAP_ADMIN_EMAIL")
+        password = os.getenv("BOOTSTRAP_ADMIN_PASSWORD")
+        if not email or not password:
+            print("Skipping seed: BOOTSTRAP_ADMIN_EMAIL / BOOTSTRAP_ADMIN_PASSWORD not set")
+            return
         print(f"Checking for user: {email}")
         user = await auth_service.get_user_by_email(session, email)
         
@@ -32,7 +36,7 @@ async def seed_data():
             user_data = UserCreate(
                 email=email,
                 full_name="User Test Unique",
-                password="password123", # I'll use a simple password for testing
+                password=password,
                 role=UserRole.ADMIN,
                 is_active=True
             )

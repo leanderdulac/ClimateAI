@@ -1,3 +1,5 @@
+# Currently unusable until client/Dockerfile exists (and server/Dockerfile has no development target).
+# Do not invent a frontend Docker stack here; use docker-compose.yml or local Vite on 5173.
 version: '3.8'
 
 # Docker Compose para DESENVOLVIMENTO com suporte a ML/TensorFlow

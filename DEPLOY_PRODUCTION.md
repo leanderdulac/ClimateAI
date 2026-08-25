@@ -47,7 +47,7 @@ newgrp docker
 
 ```bash
 cd /var/www
-sudo git clone https://github.com/leanderdulac/ClimateWise.git
+sudo git clone https://github.com/leanderdulac/ClimateAI.git
 sudo chown -R $USER:$USER ClimateWise
 cd ClimateWise
 ```

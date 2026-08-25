@@ -33,7 +33,7 @@ else
 fi
 
 # Check Grafana
-if curl -f http://localhost:3000/api/health > /dev/null 2>&1; then
+if curl -f http://localhost:3001/api/health > /dev/null 2>&1; then
     echo "✅ Grafana is healthy"
 else
     echo "❌ Grafana is not healthy"
@@ -50,7 +50,7 @@ echo ""
 echo "🎉 Monitoring stack started successfully!"
 echo ""
 echo "Access URLs:"
-echo "📊 Grafana: http://localhost:3000 (admin/admin)"
+echo "📊 Grafana: http://localhost:3001 (admin/admin)"
 echo "🔥 Prometheus: http://localhost:9090"
 echo "📈 Kibana: http://localhost:5601"
 echo "🗄️  Elasticsearch: http://localhost:9200"

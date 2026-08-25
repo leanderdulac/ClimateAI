@@ -201,19 +201,22 @@ if not settings.DEBUG:
     if "*" in settings.ALLOW_ORIGINS:
         print("⚠️  AVISO: CORS está aberto (*) em produção. Isso é um risco de segurança!", file=sys.stderr)
     
-    # Validar DATABASE_URL em produção
-    if settings.DATABASE_ENABLED and settings.DATABASE_URL == LOCAL_DEV_DATABASE_URL:
-        print("❌ ERRO CRÍTICO: DATABASE_URL de desenvolvimento não pode ser usado em produção!", file=sys.stderr)
-        print("Defina DATABASE_URL ou as variáveis SUPABASE_DB_* antes do deploy.", file=sys.stderr)
-        sys.exit(1)
-
-    if settings.DATABASE_URL and "localhost" in settings.DATABASE_URL:
-        print("⚠️  AVISO: DATABASE_URL aponta para localhost em produção!", file=sys.stderr)
 else:
     # Em desenvolvimento, apenas avisar
     if not settings.SECRET_KEY or len(settings.SECRET_KEY) < 32:
         print("⚠️  AVISO: SECRET_KEY gerada automaticamente. Em produção, defina explicitamente.", file=sys.stderr)
         print(f"   SECRET_KEY atual: {settings.SECRET_KEY[:10]}...", file=sys.stderr)
+
+# sqlite-ban is gated on ENVIRONMENT==production, not DEBUG=false
+if settings.ENVIRONMENT.lower() == "production":
+    if settings.DATABASE_ENABLED and settings.DATABASE_URL == LOCAL_DEV_DATABASE_URL:
+        print("ERROR: development DATABASE_URL cannot be used in production!", file=sys.stderr)
+        print("Set DATABASE_URL or SUPABASE_DB_* before deploy.", file=sys.stderr)
+        sys.exit(1)
+    if settings.DATABASE_URL and "localhost" in settings.DATABASE_URL:
+        print("WARNING: DATABASE_URL points to localhost in production!", file=sys.stderr)
+
+
 
 # Validar CORS
 if not settings.ALLOW_ORIGINS:

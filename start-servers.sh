@@ -26,10 +26,8 @@ cd "$SCRIPT_DIR/server"
 
 if [ -x "$SCRIPT_DIR/.venv/bin/python" ]; then
   VENV_PYTHON="$SCRIPT_DIR/.venv/bin/python"
-elif [ -x "$SCRIPT_DIR/server/venv-hathor/bin/python3" ]; then
-  VENV_PYTHON="$SCRIPT_DIR/server/venv-hathor/bin/python3"
 else
-  echo "❌ Nenhum ambiente Python utilizável encontrado (.venv ou server/venv-hathor)"
+  echo "ERROR: .venv not found. Create it with python3 -m venv .venv"
   exit 1
 fi
 
