@@ -9,7 +9,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql+asyncpg://climatewise:climatewise123@db:5432/climatewise
+      - DATABASE_URL=postgresql+asyncpg://climatewise:${POSTGRES_PASSWORD}@db:5432/climatewise
       - REDIS_URL=redis://redis:6379
     depends_on:
       - db
@@ -19,6 +19,7 @@ services:
       - monitoring
 
   frontend:
+    # Unusable until client/Dockerfile exists (same as docker-compose.dev.yml).
     build:
       context: ./client
       dockerfile: Dockerfile
@@ -34,13 +35,13 @@ services:
     image: postgres:13
     environment:
       POSTGRES_USER: climatewise
-      POSTGRES_PASSWORD: climatewise123
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: climatewise
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./server/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./server/init-db.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - climatewise
       - monitoring

@@ -51,6 +51,16 @@ variable "vpc_cidr" {
   default = "10.0.0.0/16"
 }
 
+variable "postgres_password" {
+  type      = string
+  sensitive = true
+}
+
+variable "vault_dev_root_token" {
+  type      = string
+  sensitive = true
+}
+
 # ============================================
 # LOCALS
 # ============================================
@@ -107,7 +117,7 @@ resource "docker_container" "postgres" {
   env = [
     "POSTGRES_DB=climatewise",
     "POSTGRES_USER=climatewise_admin",
-    "POSTGRES_PASSWORD=climatewise_dev_123",
+    "POSTGRES_PASSWORD=${var.postgres_password}",
     "PGDATA=/var/lib/postgresql/data/pgdata"
   ]
 
@@ -222,7 +232,7 @@ resource "docker_container" "vault" {
   }
 
   env = [
-    "VAULT_DEV_ROOT_TOKEN_ID=my-secret-token",
+    "VAULT_DEV_ROOT_TOKEN_ID=${var.vault_dev_root_token}",
     "VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200"
   ]
 
@@ -236,7 +246,8 @@ resource "docker_container" "vault" {
 # ============================================
 
 output "postgres_connection" {
-  value = "postgresql://climatewise_admin:climatewise_dev_123@localhost:5432/climatewise"
+  value     = "postgresql://climatewise_admin:${var.postgres_password}@localhost:5432/climatewise"
+  sensitive = true
 }
 
 output "redis_connection" {
@@ -252,6 +263,6 @@ output "vault_url" {
 }
 
 output "vault_token" {
-  value     = "my-secret-token"
+  value     = var.vault_dev_root_token
   sensitive = true
 }
