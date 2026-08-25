@@ -103,6 +103,7 @@ from api.var_backtesting import router as var_backtesting_router
 from api.hathor_blockchain import router as hathor_blockchain_router
 from api.celestrak import router as celestrak_router
 from api.partner import router as partner_router
+from api.partners import router as partners_admin_router
 from api.logging import get_logger
 
 logger = get_logger()
@@ -414,6 +415,7 @@ def register_routers(app: FastAPI, api_prefix: str) -> None:
         )
         app.include_router(audit_router, prefix=f"{api_prefix}/audit", tags=["audit"])
         app.include_router(partner_router, prefix=api_prefix, tags=["Partner API"])
+        app.include_router(partners_admin_router, prefix=api_prefix, tags=["Partners"])
     except Exception as exc:
         logger.error(f"Erro ao incluir routers: {exc}")
         raise

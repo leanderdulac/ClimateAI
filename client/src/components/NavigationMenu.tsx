@@ -15,7 +15,8 @@ import {
   FlaskConical as Lab,
   LogOut,
   User,
-  Settings
+  Settings,
+  KeyRound
 } from "lucide-react";
 
 export function NavigationMenu() {
@@ -59,6 +60,13 @@ export function NavigationMenu() {
       href: "/atlas",
       icon: Globe,
       enabled: features.atlas,
+    },
+    {
+      labelKey: 'nav.partners',
+      descKey: 'nav.partners.desc',
+      href: "/partners",
+      icon: KeyRound,
+      enabled: true,
     },
   ].filter((item) => item.enabled);
 
