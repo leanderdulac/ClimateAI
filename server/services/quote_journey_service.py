@@ -2,14 +2,33 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any, Dict, Optional
 
+from sqlalchemy.exc import DBAPIError, OperationalError, ProgrammingError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.sqlalchemy_models import QuoteJourneyEvent
 
+logger = logging.getLogger("fimce")
+
+
+def _is_missing_journey_table(exc: BaseException) -> bool:
+    message = str(exc).lower()
+    return "quote_journey_events" in message and (
+        "no such table" in message
+        or "does not exist" in message
+        or "undefinedtable" in message
+    )
+
 
 class QuoteJourneyService:
+    async def ensure_table(self, db: AsyncSession) -> None:
+        def _create(sync_session) -> None:
+            QuoteJourneyEvent.__table__.create(sync_session.get_bind(), checkfirst=True)
+
+        await db.run_sync(_create)
+
     async def log_event(
         self,
         *,
@@ -41,10 +60,27 @@ class QuoteJourneyService:
             payload=event_payload,
         )
 
-        db.add(event)
-        await db.commit()
-        await db.refresh(event)
-        return event
+        try:
+            db.add(event)
+            await db.commit()
+            await db.refresh(event)
+            return event
+        except (OperationalError, ProgrammingError, DBAPIError) as exc:
+            await db.rollback()
+            if _is_missing_journey_table(exc):
+                logger.warning("quote_journey_events missing; creating table and retrying")
+                try:
+                    await self.ensure_table(db)
+                    db.add(event)
+                    await db.commit()
+                    await db.refresh(event)
+                    return event
+                except Exception:
+                    await db.rollback()
+                    logger.exception("Could not auto-create quote_journey_events")
+                    return event
+            logger.exception("Failed to persist quote journey event")
+            return event
 
 
 quote_journey_service = QuoteJourneyService()
