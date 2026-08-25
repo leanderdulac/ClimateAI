@@ -19,17 +19,17 @@ jobs:
           cache-dependency-path: server/requirements.txt
 
       - name: Backend dependency audit (pip-audit)
+        continue-on-error: ${{ github.ref != 'refs/heads/main' }}
         run: |
           pip install pip-audit
           pip-audit --extra-index-url https://download.pytorch.org/whl/cpu -r server/requirements.txt
-        continue-on-error: true
 
       - name: Frontend audit (npm audit high)
+        continue-on-error: ${{ github.ref != 'refs/heads/main' }}
         run: |
           cd client
           npm ci
           npm audit --omit=dev --audit-level=high
-        continue-on-error: true
 
 
   backend:
@@ -80,6 +80,9 @@ jobs:
 
       - name: Lint
         run: npm run lint
+
+      - name: Type check
+        run: npm run type-check
 
       - name: Unit tests
         env:

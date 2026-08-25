@@ -538,17 +538,31 @@ async def calculate_policy_endpoint(request: PolicyRequest) -> PricingResult:
     2. Extreme Value Theory (EVT) for tail risk
     3. Fractal Analysis for market regime
     """
-    quote_region = await _resolve_quote_region(request.latitude, request.longitude)
+    from lib.tracing import set_span_attributes, start_span
 
-    # Guard EVT path so external-data latency does not stall the API.
-    try:
-        evt_result = await asyncio.wait_for(_calculate_evt_pricing(request, quote_region=quote_region), timeout=25)
-    except asyncio.TimeoutError:
-        logger.warning("EVT pricing timed out; using heuristic fallback")
-        evt_result = None
+    with start_span(
+        "pricing.policy_calculate",
+        **{
+            "pricing.kind": "policy",
+            "pricing.asset_value": request.asset_value,
+            "pricing.frequency_pct": request.frequency_pct,
+        },
+    ) as span:
+        quote_region = await _resolve_quote_region(request.latitude, request.longitude)
 
-    if evt_result:
-        return evt_result
+        try:
+            evt_result = await asyncio.wait_for(
+                _calculate_evt_pricing(request, quote_region=quote_region), timeout=25
+            )
+        except asyncio.TimeoutError:
+            logger.warning("EVT pricing timed out; using heuristic fallback")
+            evt_result = None
 
-    pricer = ClimatePricingService()
-    return pricer.calculate_policy(request, quote_region=quote_region)
+        if evt_result:
+            set_span_attributes(span, **{"pricing.engine": "evt", "pricing.status": evt_result.status})
+            return evt_result
+
+        pricer = ClimatePricingService()
+        result = pricer.calculate_policy(request, quote_region=quote_region)
+        set_span_attributes(span, **{"pricing.engine": "heuristic", "pricing.status": result.status})
+        return result

@@ -12,7 +12,8 @@
  */
 
 import axios from 'axios';
-import { buildApiUrl } from './api';
+import { buildApiUrl } from './api/client';
+import { getDefaultHeaders } from './requestId';
 
 // API base URL (ajustar para produção)
 const HATHOR_API_BASE = import.meta.env.VITE_HATHOR_API_URL || buildApiUrl('/api/v1/blockchain/hathor');
@@ -24,6 +25,14 @@ export const hathorApi = axios.create({
     'Content-Type': 'application/json',
   },
   timeout: 30000, // 30 seconds
+});
+
+hathorApi.interceptors.request.use((config) => {
+  const headers = getDefaultHeaders() as Record<string, string>;
+  Object.entries(headers).forEach(([key, value]) => {
+    config.headers[key] = value;
+  });
+  return config;
 });
 
 // ============================================================================

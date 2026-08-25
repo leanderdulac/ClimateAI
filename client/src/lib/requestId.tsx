@@ -3,7 +3,7 @@
  * Garante correlação de requisições entre Frontend → Backend → APIs Externas
  */
 
-import { buildApiUrl } from './api';
+import { buildApiUrl } from './api/client';
 
 /**
  * Gera um UUID v4 para X-Request-ID
@@ -88,7 +88,7 @@ export async function fetchWithTracking(
     const requestId = (defaultHeaders as Record<string, string>)['X-Request-ID'];
     
     // Merge headers
-    const mergedHeaders: Record<string, string> = { ...defaultHeaders };
+    const mergedHeaders: Record<string, string> = { ...(defaultHeaders as Record<string, string>) };
     
     if (init?.headers) {
         if (init.headers instanceof Headers) {
@@ -152,6 +152,10 @@ export function setupAxiosInterceptor(axiosInstance: any): void {
             const requestId = getOrCreateRequestId();
             config.headers['X-Request-ID'] = requestId;
             config.headers['X-Correlation-ID'] = requestId;
+            const accessToken = localStorage.getItem('access_token');
+            if (accessToken && !config.headers.Authorization) {
+                config.headers.Authorization = `Bearer ${accessToken}`;
+            }
             
             if (import.meta.env.DEV) {
                 console.debug(`[Axios] ${requestId} → ${config.method?.toUpperCase()} ${config.url}`);

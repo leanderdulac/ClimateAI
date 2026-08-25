@@ -3,14 +3,41 @@ Configuração de Banco de Dados para ClimateWise
 """
 
 import os
+import ssl
 import asyncio
-from typing import AsyncGenerator
+from pathlib import Path
+from typing import AsyncGenerator, Optional
 
 from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool, NullPool
 from models.sqlalchemy_models import Base
+
+
+def build_postgres_ssl_context(
+    *,
+    is_localhost: bool,
+    environment: Optional[str] = None,
+    insecure_override: Optional[bool] = None,
+) -> Optional[ssl.SSLContext]:
+    """Build an SSL context for remote Postgres. Localhost stays unencrypted."""
+    if is_localhost:
+        return None
+
+    env_name = (environment or os.getenv("ENVIRONMENT", "development")).lower()
+    if insecure_override is None:
+        insecure_override = os.getenv("DB_SSL_INSECURE", "false").lower() == "true"
+
+    if insecure_override:
+        if env_name == "production":
+            raise ValueError("DB_SSL_INSECURE is not allowed when ENVIRONMENT=production")
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+        return ssl_context
+
+    return ssl.create_default_context()
 
 # Configurações centralizadas
 from config.config import settings
@@ -52,12 +79,9 @@ def _create_engine_and_session_maker(database_url: str):
             }
 
         if use_ssl:
-            import ssl
-            # Create unverified SSL context for pooler to avoid certificate hostname mismatch issues
-            ssl_context = ssl.create_default_context()
-            ssl_context.check_hostname = False
-            ssl_context.verify_mode = ssl.CERT_NONE
-            connect_args["ssl"] = ssl_context
+            ssl_context = build_postgres_ssl_context(is_localhost=is_localhost)
+            if ssl_context is not None:
+                connect_args["ssl"] = ssl_context
 
         # Adiciona parâmetro para pgbouncer/asyncpg (only for pooler connections)
         if "asyncpg" in database_url and not is_localhost:
@@ -137,22 +161,43 @@ async def init_db():
     """
     Inicializa o banco de dados e cria tabelas
     """
-    # Garante que o engine e o session_maker foram inicializados
+    database_enabled = os.getenv("DATABASE_ENABLED", "true").lower() == "true"
+    current_db_url = os.getenv("DATABASE_URL", settings.DATABASE_URL)
+    if not database_enabled:
+        current_db_url = "sqlite+aiosqlite:///local_dev.db"
+    if current_db_url and "?sslmode=require" in current_db_url:
+        current_db_url = current_db_url.replace("?sslmode=require", "")
+
     if engine is None or async_session_maker is None:
-        # Se DATABASE_ENABLED for false, usamos sempre o sqlite local
-        database_enabled = os.getenv("DATABASE_ENABLED", "true").lower() == "true"
-        current_db_url = os.getenv("DATABASE_URL", settings.DATABASE_URL)
-        if not database_enabled:
-            current_db_url = "sqlite+aiosqlite:///local_dev.db"
-            
-        if current_db_url and "?sslmode=require" in current_db_url:
-            current_db_url = current_db_url.replace("?sslmode=require", "")
         _create_engine_and_session_maker(current_db_url)
 
-    # Criar tabelas
+    environment = (settings.ENVIRONMENT or os.getenv("ENVIRONMENT", "development")).lower()
+    if environment == "production":
+        await asyncio.to_thread(run_alembic_upgrade, current_db_url)
+        print("Database migrations applied successfully")
+        return
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     print("Database tables created successfully")
+
+
+def _sync_database_url(database_url: str) -> str:
+    url = database_url.replace("postgresql+asyncpg://", "postgresql://")
+    url = url.replace("sqlite+aiosqlite://", "sqlite://")
+    return url
+
+
+def run_alembic_upgrade(database_url: str) -> None:
+    """Apply Alembic migrations using a sync driver URL."""
+    from alembic import command
+    from alembic.config import Config
+
+    server_dir = Path(__file__).resolve().parent.parent
+    cfg = Config(str(server_dir / "alembic.ini"))
+    cfg.set_main_option("script_location", str(server_dir / "alembic"))
+    cfg.set_main_option("sqlalchemy.url", _sync_database_url(database_url))
+    command.upgrade(cfg, "head")
 
 
 # Função para fechar conexões

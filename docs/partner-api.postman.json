@@ -1,0 +1,99 @@
+{
+  "info": {
+    "name": "ClimateWise Partner API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Integração B2B ClimateWise: clima, atlas, geo, pricing e agro."
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:8000/api/v1/partner" },
+    { "key": "apiKey", "value": "cw_dev_partner_key" }
+  ],
+  "item": [
+    {
+      "name": "Catalog (public)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/catalog"
+      }
+    },
+    {
+      "name": "Climate current",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "X-API-Key", "value": "{{apiKey}}" }],
+        "url": "{{baseUrl}}/climate/current?lat=-23.55&lon=-46.63"
+      }
+    },
+    {
+      "name": "Climate forecast",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "X-API-Key", "value": "{{apiKey}}" }],
+        "url": "{{baseUrl}}/climate/forecast?lat=-23.55&lon=-46.63&days=7"
+      }
+    },
+    {
+      "name": "Analytics indicators",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "X-API-Key", "value": "{{apiKey}}" }],
+        "url": "{{baseUrl}}/analytics/indicators?lat=-23.55&lon=-46.63"
+      }
+    },
+    {
+      "name": "Atlas events GeoJSON",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "X-API-Key", "value": "{{apiKey}}" }],
+        "url": "{{baseUrl}}/atlas/events?limit=20"
+      }
+    },
+    {
+      "name": "Geo layers",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "X-API-Key", "value": "{{apiKey}}" }],
+        "url": "{{baseUrl}}/geo/layers"
+      }
+    },
+    {
+      "name": "Satellite preview",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "X-API-Key", "value": "{{apiKey}}" }],
+        "url": "{{baseUrl}}/geo/satellite?lat=-15.78&lon=-47.93&zoom=10"
+      }
+    },
+    {
+      "name": "Pricing quote",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "X-API-Key", "value": "{{apiKey}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": "{{baseUrl}}/pricing/quote",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"asset_value\": 250000,\n  \"severity_amount\": 40000,\n  \"frequency_pct\": 12,\n  \"coverage_period_years\": 1,\n  \"latitude\": -23.55,\n  \"longitude\": -46.63\n}"
+        }
+      }
+    },
+    {
+      "name": "Agri plan",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "X-API-Key", "value": "{{apiKey}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": "{{baseUrl}}/agri/plan",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"crop_type\": \"soybean\",\n  \"phenological_stage\": \"flowering\",\n  \"latitude\": -15.78,\n  \"longitude\": -47.93,\n  \"planning_horizon_days\": 120,\n  \"risk_tolerance\": \"medium\"\n}"
+        }
+      }
+    }
+  ]
+}

@@ -47,7 +47,7 @@ jobs:
   python-security:
     name: Python Security (pip-audit + Bandit)
     runs-on: ubuntu-latest
-    continue-on-error: true
+    continue-on-error: ${{ github.ref != 'refs/heads/main' }}
     defaults:
       run:
         working-directory: server

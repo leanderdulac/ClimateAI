@@ -1,53 +1,45 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  * @title ClimatePolicy
- * @dev Simplified ERC-3525 (Semi-Fungible Token) implementation for Climate Policies.
- * Each token represents a policy instance. 
- * Tokens in the same "Slot" represent the same risk type/region.
- * "Value" represents the coverage amount (Sum Insured) in Stablecoin.
+ * @dev Simplified ERC-3525-like policy token. Coverage amount is stored as `value`.
+ * Payouts can only be triggered by the designated oracle.
  */
 contract ClimatePolicy is ERC721, Ownable {
-    using Counters for Counters.Counter;
-    Counters.Counter private _tokenIds;
+    uint256 private _nextTokenId;
 
-    // Mapping from token ID to its Slot
     mapping(uint256 => uint256) private _slots;
-    // Mapping from token ID to its Value (Coverage Amount)
     mapping(uint256 => uint256) private _values;
-    
-    // Address of the Oracle allowed to trigger payouts
+
     address public oracle;
-    
-    // Counter for colateral (simulated Escrow)
     uint256 public totalCollateral;
 
     event PolicyMinted(address indexed to, uint256 indexed tokenId, uint256 slot, uint256 value);
     event PayoutTriggered(uint256 indexed tokenId, address indexed beneficiary, uint256 amount);
+    event OracleUpdated(address indexed previousOracle, address indexed newOracle);
     event CollateralDeposited(uint256 amount);
 
     constructor(string memory name_, string memory symbol_) ERC721(name_, symbol_) {
         oracle = msg.sender;
     }
 
-    function setOracle(address _oracle) external onlyOwner {
-        oracle = _oracle;
+    function setOracle(address newOracle) external onlyOwner {
+        require(newOracle != address(0), "Oracle cannot be zero");
+        address previous = oracle;
+        oracle = newOracle;
+        emit OracleUpdated(previous, newOracle);
     }
 
-    /**
-     * @dev Mint a new policy token. 
-     * @param to Recipient address.
-     * @param slot Categorization of the policy (e.g., Drought-Region-Hash).
-     * @param value The coverage amount assigned to this policy.
-     */
     function mintPolicy(address to, uint256 slot, uint256 value) external onlyOwner returns (uint256) {
-        _tokenIds.increment();
-        uint256 newTokenId = _tokenIds.current();
+        require(to != address(0), "Recipient cannot be zero");
+        require(value > 0, "Coverage must be positive");
+
+        _nextTokenId += 1;
+        uint256 newTokenId = _nextTokenId;
 
         _safeMint(to, newTokenId);
         _slots[newTokenId] = slot;
@@ -58,33 +50,30 @@ contract ClimatePolicy is ERC721, Ownable {
         return newTokenId;
     }
 
-    /**
-     * @dev Trigger payout for a specific policy. 
-     * Only the designated Oracle can call this.
-     */
     function triggerPayout(uint256 tokenId, uint256 payoutAmount) external {
-        require(msg.sender == oracle || msg.sender == owner(), "Only Oracle or Owner can trigger payout");
-        require(_exists(tokenId), "Policy does not exist");
+        require(msg.sender == oracle, "Only oracle can trigger payout");
+        require(_policyExists(tokenId), "Policy does not exist");
+        require(payoutAmount > 0, "Payout must be positive");
         require(payoutAmount <= _values[tokenId], "Payout exceeds coverage value");
 
         address beneficiary = ownerOf(tokenId);
-        
-        // In a real implementation, we would transfer USDC/Stablecoin here
-        // For Phase 3, we simulate the reduction of value and collateral
         _values[tokenId] -= payoutAmount;
         totalCollateral -= payoutAmount;
 
         emit PayoutTriggered(tokenId, beneficiary, payoutAmount);
     }
 
-    // ERC-3525 like getters
     function slotOf(uint256 tokenId) external view returns (uint256) {
-        require(_exists(tokenId), "Token does not exist");
+        require(_policyExists(tokenId), "Token does not exist");
         return _slots[tokenId];
     }
 
     function valueOf(uint256 tokenId) external view returns (uint256) {
-        require(_exists(tokenId), "Token does not exist");
+        require(_policyExists(tokenId), "Token does not exist");
         return _values[tokenId];
+    }
+
+    function _policyExists(uint256 tokenId) internal view returns (bool) {
+        return _ownerOf(tokenId) != address(0);
     }
 }

@@ -573,7 +573,7 @@ export function OraclePage() {
                       <CloudRain className="h-5 w-5" />
                       NOAA API
                     </h3>
-                    <Badge variant={rateLimitStatus.noaa.remaining > 1000 ? 'default' : 'destructive'}>
+                    <Badge variant={rateLimitStatus.noaa.remaining > 1000 ? 'default' : 'danger'}>
                       {rateLimitStatus.noaa.remaining > 1000 ? 'Normal' : 'Crítico'}
                     </Badge>
                   </div>

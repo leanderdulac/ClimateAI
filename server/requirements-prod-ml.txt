@@ -15,6 +15,7 @@ python-dotenv==1.2.2
 
 # === BANCO DE DADOS ===
 sqlalchemy==2.0.36
+greenlet>=3.0.0,<4
 psycopg2-binary==2.9.11
 asyncpg==0.29.0
 aiosqlite==0.22.1

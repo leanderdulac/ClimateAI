@@ -1,5 +1,15 @@
 import React, { useMemo, useState } from 'react';
-import { policyPricingApi, type PolicyPricingRequest, type PolicyPricingResult } from '@/lib/api';
+import { useNavigate } from 'react-router-dom';
+import {
+  policyPricingApi,
+  mlApi,
+  externalApi,
+  type PolicyPricingRequest,
+  type PolicyPricingResult,
+  type MLPredictionFeatures,
+  type MLPredictionResult,
+} from '@/lib/api';
+import { useTokenizationStore } from '@/store/useTokenizationStore';
 
 // Tipos para análise financeira
 type FinancialAnalysis = ReturnType<typeof analyzeFinancialViability> & {
@@ -64,8 +74,6 @@ import {
 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, ScatterChart, Scatter, ReferenceLine } from 'recharts';
 import { BatchResult, computeBatchStats } from '@/hooks/useBatchStats';
-import { useTokenizationStore } from '@/store/useTokenizationStore';
-import { useNavigate } from 'react-router-dom';
 
 
 // Financial analysis function to properly calculate viability
@@ -228,6 +236,8 @@ function ErrorAlert({ message, onClose }: { message: string, onClose: () => void
 export function PricingSimulator() {
   const { t, language } = useTranslation();
   const { selectedPeriod } = usePeriod();
+  const navigate = useNavigate();
+  const setPendingTokenizationData = useTokenizationStore((state) => state.setPendingTokenizationData);
   const [assetValue, setAssetValue] = useState<number>(100000); // Valor do bem/serviço
   const [selectedEvent, setSelectedEvent] = useState<ClimateEvent | null>(null);
   const [frequency, setFrequency] = useState<number>(10); // %
@@ -240,6 +250,7 @@ export function PricingSimulator() {
   const [calculating, setCalculating] = useState<boolean>(false);
   const [policySimulations, setPolicySimulations] = useState<any[]>([]);
   const [calcError, setCalcError] = useState<string | null>(null);
+  const [demoQuote, setDemoQuote] = useState<boolean>(false);
   const [coveragePeriod, setCoveragePeriod] = useState<number>(1); // Período de cobertura em anos
   const [activeTab, setActiveTab] = useState<'simulator' | 'tokenization'>('simulator');
   const [mlPredictions, setMlPredictions] = useState<MLPredictionResult | null>(null);
@@ -391,6 +402,7 @@ export function PricingSimulator() {
       console.log('[PricingSimulator] Request:', request);
       const result: PolicyPricingResult = await policyPricingApi.calculate(request);
       console.log('[PricingSimulator] Resultado da API:', result);
+      setDemoQuote(Boolean(result.is_demo) || result.status === 'DEMO_ONLY');
 
       // --- Map new result to old state structure ---
 
@@ -632,6 +644,11 @@ export function PricingSimulator() {
     <Card className="pricing-simulator overflow-hidden animate-fade-in" variant="default">
       {calcError && (
         <ErrorAlert message={calcError} onClose={() => setCalcError(null)} />
+      )}
+      {demoQuote && (
+        <div className="mb-4 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          Cotacao demonstrativa. Estes numeros nao devem ser usados como premio real.
+        </div>
       )}
       <div className="flex items-center gap-3 mb-4">
         <input type="checkbox" id="variableSim" checked={variableSim} onChange={e => setVariableSim(e.target.checked)} />
@@ -1402,7 +1419,7 @@ export function PricingSimulator() {
                       <div className="text-center">
                         <div className="text-neutral-600">(-) Perda Esperada</div>
                         <div className="font-medium text-red-600">
-                          R$ {financialAnalysis.totalExpectedLoss.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                          R$ {(financialAnalysis.totalExpectedLoss ?? 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                         </div>
                       </div>
                       <div className="text-center">
@@ -1440,13 +1457,13 @@ export function PricingSimulator() {
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-neutral-600">Perda Esperada Anual:</span>
                         <span className="font-medium text-red-600">
-                          R$ {financialAnalysis.annualExpectedLoss.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                          R$ {(financialAnalysis.annualExpectedLoss ?? 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-neutral-600">Perda Esperada Total ({coveragePeriod} {coveragePeriod === 1 ? 'ano' : 'anos'}):</span>
                         <span className="font-medium text-red-600">
-                          R$ {financialAnalysis.totalExpectedLoss.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                          R$ {(financialAnalysis.totalExpectedLoss ?? 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                         </span>
                       </div>
                       <div className="flex justify-between items-center">

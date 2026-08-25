@@ -1,3 +1,23 @@
+[project]
+name = "climatewise-server"
+version = "1.0.0"
+description = "ClimateWise FastAPI backend"
+requires-python = ">=3.10"
+
+[project.optional-dependencies]
+dev = [
+    "pytest==8.3.4",
+    "pytest-asyncio==0.23.8",
+    "pytest-cov==5.0.0",
+    "pytest-timeout==2.3.1",
+    "pytest-mock>=3.11.1",
+    "faker>=19.0.0",
+    "greenlet>=3.0.0,<4",
+]
+ml = [
+    "tensorflow==2.18.0",
+]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = "test_*.py *_test.py"

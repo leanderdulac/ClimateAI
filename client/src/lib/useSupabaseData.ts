@@ -384,14 +384,16 @@ export function useDashboardStats() {
 
         const fetchStats = async () => {
             try {
+                const client = supabase;
+                if (!client) return;
                 // Get policies stats
-                const { data: policies } = await supabase
+                const { data: policies } = await client
                     .from('policies')
                     .select('status, coverage_amount, premium')
                     .eq('user_id', user.id);
 
                 // Get claims stats
-                const { data: claims } = await supabase
+                const { data: claims } = await client
                     .from('claims')
                     .select('status')
                     .eq('user_id', user.id);
@@ -434,7 +436,9 @@ export function useLocationClimateData(locationId: string | null) {
         const fetchData = async () => {
             setLoading(true);
             try {
-                const { data: result, error: queryError } = await supabase
+                const client = supabase;
+                if (!client) return;
+                const { data: result, error: queryError } = await client
                     .from('climate_data')
                     .select('*')
                     .eq('location_id', locationId)

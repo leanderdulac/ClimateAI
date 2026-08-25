@@ -134,9 +134,30 @@ class Settings(BaseSettings):
 
     def __init__(self, **values):
         super().__init__(**values)
+        env_name = (self.ENVIRONMENT or "development").lower()
         if not self.SECRET_KEY:
-            self.SECRET_KEY = os.getenv("SECRET_KEY") or generate_secret_key()
+            self.SECRET_KEY = os.getenv("SECRET_KEY") or None
+
+        insecure_keys = {"", "changeme123", "secret", "password"}
+        if not self.SECRET_KEY or self.SECRET_KEY in insecure_keys:
+            if env_name == "production":
+                print(
+                    "ERROR: SECRET_KEY must be set in the environment for production.",
+                    file=sys.stderr,
+                )
+                print(
+                    "  SECRET_KEY=$(python -c 'import secrets; print(secrets.token_urlsafe(32))')",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
+            self.SECRET_KEY = generate_secret_key()
             os.environ.setdefault("SECRET_KEY", self.SECRET_KEY)
+        elif env_name == "production" and len(self.SECRET_KEY) < 32:
+            print(
+                "ERROR: SECRET_KEY must be at least 32 characters in production.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
 
         # Calcula DATABASE_URL em tempo de inicialização
         # Se DATABASE_URL estiver explicitamente no .env, use-o (para preservar ?sslmode=require)
@@ -174,6 +195,10 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
     SENTRY_DSN: Optional[str] = os.getenv("SENTRY_DSN")
 
+    FEATURE_ATLAS: bool = os.getenv("FEATURE_ATLAS", "true").lower() == "true"
+    FEATURE_BLOCKCHAIN: bool = os.getenv("FEATURE_BLOCKCHAIN", "true").lower() == "true"
+    FEATURE_ASSISTANT: bool = os.getenv("FEATURE_ASSISTANT", "true").lower() == "true"
+
     # Configurações Blockchain
     BLOCKCHAIN_ENABLED: bool = os.getenv("BLOCKCHAIN_ENABLED", "false").lower() == "true"
     BC_NODE_URL: Optional[str] = os.getenv("BC_NODE_URL")
@@ -188,24 +213,15 @@ class Settings(BaseSettings):
 # Criar instância das configurações
 settings = Settings()
 
-# Validação CRÍTICA de segurança em produção
-if not settings.DEBUG:
-    # Em produção, SECRET_KEY deve estar configurada
-    if not settings.SECRET_KEY or len(settings.SECRET_KEY) < 32:
-        print("❌ ERRO CRÍTICO: SECRET_KEY não está definida ou é muito curta!", file=sys.stderr)
-        print("Em produção, defina no .env:", file=sys.stderr)
-        print("  SECRET_KEY=$(python -c 'import secrets; print(secrets.token_urlsafe(32))')", file=sys.stderr)
+# Validação CRÍTICA de segurança em produção (ENVIRONMENT, não DEBUG)
+if settings.ENVIRONMENT.lower() == "production":
+    if not os.getenv("SECRET_KEY") or not settings.SECRET_KEY or len(settings.SECRET_KEY) < 32:
+        print("ERROR: SECRET_KEY must be set in the environment for production.", file=sys.stderr)
         sys.exit(1)
-    
-    # Em produção, validar CORS
     if "*" in settings.ALLOW_ORIGINS:
-        print("⚠️  AVISO: CORS está aberto (*) em produção. Isso é um risco de segurança!", file=sys.stderr)
-    
-else:
-    # Em desenvolvimento, apenas avisar
-    if not settings.SECRET_KEY or len(settings.SECRET_KEY) < 32:
-        print("⚠️  AVISO: SECRET_KEY gerada automaticamente. Em produção, defina explicitamente.", file=sys.stderr)
-        print(f"   SECRET_KEY atual: {settings.SECRET_KEY[:10]}...", file=sys.stderr)
+        print("WARNING: CORS is open (*) in production.", file=sys.stderr)
+elif not settings.SECRET_KEY or len(settings.SECRET_KEY) < 32:
+    print("WARNING: SECRET_KEY was generated automatically. Set it explicitly in production.", file=sys.stderr)
 
 # sqlite-ban is gated on ENVIRONMENT==production, not DEBUG=false
 if settings.ENVIRONMENT.lower() == "production":

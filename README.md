@@ -86,6 +86,16 @@ O sistema é composto por três partes principais:
 ```bash
 ./stop_platform.sh
 ```
+## Partner API (integração com outras plataformas)
+
+Documentação, OpenAPI e coleção Postman:
+
+- `docs/partner-api.md`
+- `docs/partner-api.postman.json`
+- Catálogo ao vivo: `GET http://127.0.0.1:8000/api/v1/partner/catalog`
+
+Autenticação: header `X-API-Key` (em desenvolvimento: `cw_dev_partner_key`).
+
 ## Dependências e Ambiente
 
 1. Instale as dependências:
