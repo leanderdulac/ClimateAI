@@ -312,14 +312,14 @@ export function AtlasDashboardPanel() {
 
   // Map live events to Globe objects
   const globeEvents: GlobeEvent[] = React.useMemo(() => {
-    return data?.liveEvents?.filter((e) => e.latitude && e.longitude).map((event: LiveEvent) => ({
-      lat: event.latitude,
-      lng: event.longitude,
+    return data?.liveEvents?.filter((e) => typeof e.latitude === 'number' && typeof e.longitude === 'number').map((event: LiveEvent) => ({
+      lat: event.latitude as number,
+      lng: event.longitude as number,
       weight: event.severity_score / 10,
       type: event.disaster_type,
       title: `${event.disaster_type.toUpperCase()} - Severity ${event.severity_score.toFixed(1)}`,
-      description: event.description,
-      date: event.timestamp,
+      description: event.description ?? '',
+      date: event.timestamp ?? '',
       location: event.municipio ? `${event.municipio}/${event.uf || 'BR'}` : 'Brasil',
       source: event.source || (event.payout_triggered ? 'Oracle / Blockchain' : 'Atlas Simulation')
     })) || [];
@@ -554,7 +554,7 @@ export function AtlasDashboardPanel() {
                       </div>
                       {event.payout_triggered ? (
                         <div className="text-sm text-red-600 font-semibold">
-                          {t('atlas.events.payout', { amount: formatCurrency(event.payout_amount) })}
+                          {t('atlas.events.payout', { amount: formatCurrency(event.payout_amount ?? 0) })}
                         </div>
                       ) : (
                         <div className="text-sm text-emerald-600">
@@ -779,7 +779,7 @@ export function AtlasDashboardPanel() {
                         <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
                           <div
                             className={`h-full ${data.spaceWeather.geomagnetic_storm_active ? "bg-red-500" : "bg-emerald-500"}`}
-                            style={{ width: `${Math.min((data.spaceWeather.kp_index / 9) * 100, 100)}%` }}
+                            style={{ width: `${Math.min(((data.spaceWeather.kp_index ?? 0) / 9) * 100, 100)}%` }}
                           />
                         </div>
                       </div>
@@ -794,7 +794,7 @@ export function AtlasDashboardPanel() {
                         </div>
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {t('atlas.space.lastReading', { time: new Date(data.spaceWeather.timestamp).toLocaleString(language) })}
+                        {t('atlas.space.lastReading', { time: data.spaceWeather.timestamp ? new Date(data.spaceWeather.timestamp).toLocaleString(language) : '--' })}
                       </div>
                     </>
                   ) : (
@@ -818,9 +818,9 @@ export function AtlasDashboardPanel() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {data?.conjunctions && data.conjunctions.alerts?.length > 0 ? (
+                {data?.conjunctions && (data.conjunctions.alerts?.length ?? 0) > 0 ? (
                   <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
-                    {data.conjunctions.alerts.slice(0, 5).map((alert: ConjunctionAlert, idx: number) => (
+                    {(data.conjunctions.alerts ?? []).slice(0, 5).map((alert: ConjunctionAlert, idx: number) => (
                       <div key={idx} className="p-3 border rounded-lg bg-slate-50 relative overflow-hidden">
                         <div className={`absolute left-0 top-0 bottom-0 w-1 ${alert.miss_distance_km < 1.0 ? 'bg-red-500' : 'bg-amber-500'
                           }`} />
@@ -885,7 +885,7 @@ export function AtlasDashboardPanel() {
                     </div>
                     <div className="text-right">
                       <div className="font-bold text-green-600">
-                        {formatCurrency(tx.amount)}
+                        {formatCurrency(tx.amount ?? 0)}
                       </div>
                       <Badge variant="outline" className="mt-1">
                         {t('atlas.blockchain.confirmed')}

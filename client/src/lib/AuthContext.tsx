@@ -5,7 +5,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase, isSupabaseConfigured, getSupabaseClient } from './supabase';
-import { buildApiUrl } from './api';
+import { buildApiUrl } from './api/client';
 import type { User as SupabaseUser, Session } from '@supabase/supabase-js';
 
 // User type for the app
@@ -37,6 +37,39 @@ interface RegisterData {
   email: string;
   password: string;
   company?: string;
+}
+
+interface BackendUserPayload {
+  id: string;
+  email: string;
+  full_name?: string;
+  name?: string;
+  organization?: string;
+  company?: string;
+  role?: string;
+  avatar?: string;
+}
+
+const MIN_PASSWORD_LENGTH = 8;
+
+function mapBackendUser(data: BackendUserPayload): User {
+  return {
+    id: data.id,
+    email: data.email,
+    name: data.full_name || data.name,
+    company: data.organization || data.company,
+    role: data.role,
+    avatar: data.avatar,
+  };
+}
+
+function assertPasswordPolicy(password: string): void {
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    throw new Error(`A senha deve ter no mínimo ${MIN_PASSWORD_LENGTH} caracteres`);
+  }
+  if (!/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+    throw new Error('A senha deve conter ao menos uma letra e um número');
+  }
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -126,87 +159,94 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Initialize auth state
   useEffect(() => {
-    // Check if using mock data
-    const useMockData = import.meta.env.VITE_USE_MOCK_DATA === 'true';
+    const useMockData = !import.meta.env.PROD && import.meta.env.VITE_USE_MOCK_DATA === 'true';
 
-    if (useMockData) {
-      // Check for stored mock tokens
+    const restoreFromBackendToken = async (): Promise<boolean> => {
       const accessToken = localStorage.getItem('access_token');
       const refreshToken = localStorage.getItem('refresh_token');
-
-      if (accessToken === 'mock-access-token' && refreshToken === 'mock-refresh-token') {
-        // Set mock user
-        setUser({
-          id: 'mock-user-1',
-          email: 'user@example.com',
-          name: 'Mock User',
-          company: 'Mock Company',
-          role: 'user'
-        });
-        setSession({ access_token: accessToken, refresh_token: refreshToken } as any);
+      if (!accessToken) {
+        return false;
       }
-    } else {
-      // Try to restore Supabase session first
-      const client = getSupabaseClient();
-      const restoreSession = async () => {
-        if (client) {
-          try {
-            const { data } = await withTimeout(
-              client.auth.getSession(),
-              5000,
-              'Timeout ao restaurar sessão Supabase'
-            );
-            const currentSession = data?.session;
-            if (currentSession?.user) {
-              setSession(currentSession);
 
-              try {
-                const mappedUser = await withTimeout(
-                  mapSupabaseUser(currentSession.user),
-                  5000,
-                  'Timeout ao carregar perfil do usuário'
-                );
-                setUser(mappedUser);
-              } catch (profileError) {
-                console.warn('Falha ao carregar perfil via Supabase, usando fallback local:', profileError);
-                setUser({
-                  id: currentSession.user.id,
-                  email: currentSession.user.email || '',
-                  name: currentSession.user.user_metadata?.full_name || '',
-                  role: 'user'
-                });
-              }
+      const fetchMe = async (token: string) =>
+        withTimeout(
+          fetch(buildApiUrl('/api/v1/auth/me'), {
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          }),
+          8000,
+          'Timeout ao validar sessão'
+        );
 
-              return;
+      try {
+        let token = accessToken;
+        let response = await fetchMe(token);
+
+        if (response.status === 401 && refreshToken) {
+          const refreshResponse = await withTimeout(
+            fetch(buildApiUrl('/api/v1/auth/refresh'), {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ refresh_token: refreshToken }),
+            }),
+            8000,
+            'Timeout ao renovar sessão'
+          );
+          if (refreshResponse.ok) {
+            const refreshed = await refreshResponse.json();
+            token = refreshed.access_token;
+            localStorage.setItem('access_token', refreshed.access_token);
+            if (refreshed.refresh_token) {
+              localStorage.setItem('refresh_token', refreshed.refresh_token);
             }
-          } catch (sessionError) {
-            console.warn('Falha ao restaurar sessão Supabase, seguindo com fallback local:', sessionError);
+            response = await fetchMe(token);
           }
         }
 
-        // Fallback to legacy localStorage tokens (non-Supabase)
+        if (!response.ok) {
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('refresh_token');
+          return false;
+        }
+
+        const me = (await response.json()) as BackendUserPayload;
+        setUser(mapBackendUser(me));
+        setSession({
+          access_token: token,
+          refresh_token: localStorage.getItem('refresh_token') || '',
+        } as any);
+        return true;
+      } catch (restoreError) {
+        console.warn('Falha ao validar sessão no backend:', restoreError);
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        return false;
+      }
+    };
+
+    const restoreSession = async () => {
+      if (useMockData) {
         const accessToken = localStorage.getItem('access_token');
         const refreshToken = localStorage.getItem('refresh_token');
-        if (accessToken && refreshToken) {
-          setSession({ access_token: accessToken, refresh_token: refreshToken } as any);
+        if (accessToken === 'mock-access-token' && refreshToken === 'mock-refresh-token') {
           setUser({
-            id: 'temp',
+            id: 'mock-user-1',
             email: 'user@example.com',
-            name: 'User',
+            name: 'Mock User',
+            company: 'Mock Company',
             role: 'user'
           });
+          setSession({ access_token: accessToken, refresh_token: refreshToken } as any);
         }
-      };
+        return;
+      }
 
-      restoreSession().finally(() => setIsLoading(false));
-      return;
-    }
-
-    setIsLoading(false);
-
-    return () => {
-      // Cleanup if needed
+      await restoreFromBackendToken();
     };
+
+    restoreSession().finally(() => setIsLoading(false));
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -226,8 +266,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         if (response.ok) {
           const data = await response.json();
-          // Backend retornou o token com sucesso
-          setUser(data.user);
+          if (!data.user || !data.access_token) {
+            throw new Error('Sessão inválida');
+          }
+          setUser(mapBackendUser(data.user));
           setSession({ access_token: data.access_token, refresh_token: data.refresh_token } as any);
           localStorage.setItem('access_token', data.access_token);
           localStorage.setItem('refresh_token', data.refresh_token);
@@ -256,45 +298,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
           throw new Error('Falha de conexao com o servico de autenticacao. Verifique se a API esta online.');
         }
 
-        console.warn('Backend login falhou, tentando fallback Supabase:', backendError);
+        throw new Error('Falha de conexao com o servico de autenticacao. Verifique se a API esta online.');
       }
-
-      // Fallback para Supabase se o backend falhar
-      const client = getSupabaseClient();
-      if (!client) throw new Error('Supabase não configurado');
-
-      let data: { session: Session | null; user: SupabaseUser | null } | null = null;
-      let signInError: Error | null = null;
-      try {
-        const result = await client.auth.signInWithPassword({ email, password });
-        data = result.data;
-        if (result.error) {
-          throw new Error(result.error.message || 'Falha no login');
-        }
-      } catch (supabaseNetworkError) {
-        const msg =
-          supabaseNetworkError instanceof Error
-            ? supabaseNetworkError.message
-            : String(supabaseNetworkError || '');
-
-        if (isNetworkErrorMessage(msg)) {
-          signInError = new Error(
-            'Nao foi possivel conectar ao Supabase. Verifique VITE_SUPABASE_URL, DNS e conectividade de rede.'
-          );
-        } else {
-          signInError =
-            supabaseNetworkError instanceof Error
-              ? supabaseNetworkError
-              : new Error('Falha no login');
-        }
-      }
-
-      if (signInError) throw signInError;
-      if (!data.session || !data.user) throw new Error('Sessão inválida');
-      setUser(await mapSupabaseUser(data.user));
-      setSession(data.session);
-      localStorage.setItem('access_token', data.session.access_token);
-      localStorage.setItem('refresh_token', data.session.refresh_token ?? '');
     } catch (err) {
       let message = err instanceof Error ? err.message : 'Falha no login';
       if (isNetworkErrorMessage(message)) {
@@ -315,6 +320,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (!userData.name || !userData.email || !userData.password) {
         throw new Error('Todos os campos obrigatórios devem ser preenchidos');
       }
+      assertPasswordPolicy(userData.password);
 
       // Try backend registration first so signup works even when Supabase DNS is unavailable.
       const registerEndpoint = buildApiUrl('/api/v1/auth/register');
@@ -366,7 +372,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
           if (loginResponse.ok) {
             const loginData = await loginResponse.json();
-            setUser(loginData.user);
+            if (!loginData.user || !loginData.access_token) {
+              throw new Error('Cadastro realizado. Faca login para continuar.');
+            }
+            setUser(mapBackendUser(loginData.user));
             setSession({ access_token: loginData.access_token, refresh_token: loginData.refresh_token } as any);
             localStorage.setItem('access_token', loginData.access_token);
             localStorage.setItem('refresh_token', loginData.refresh_token);
@@ -393,34 +402,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (backendRegisterError instanceof Error && !isNetworkErrorMessage(backendRegisterError.message)) {
           throw backendRegisterError;
         }
+        throw new Error('Falha de conexao com o servico de cadastro. Verifique se a API esta online.');
       }
-
-      const client = getSupabaseClient();
-      if (!client) throw new Error('Supabase não configurado');
-
-      const { data, error } = await withTimeout(
-        client.auth.signUp({
-          email: userData.email,
-          password: userData.password,
-          options: {
-            data: {
-              full_name: userData.name,
-              company_name: userData.company || '',
-              role: 'user',
-            },
-          },
-        }),
-        10000,
-        'Timeout ao registrar no Supabase'
-      );
-      if (error) throw new Error(error.message || 'Falha no cadastro');
-      if (data.session) {
-        localStorage.setItem('access_token', data.session.access_token);
-        localStorage.setItem('refresh_token', data.session.refresh_token ?? '');
-        setSession(data.session);
-        if (data.user) setUser(await mapSupabaseUser(data.user));
-      }
-      setSuccess('Cadastro realizado com sucesso! Verifique seu e-mail para ativar a conta.');
     } catch (err) {
       let message = err instanceof Error ? err.message : 'Falha no cadastro';
       if (isNetworkErrorMessage(message)) {

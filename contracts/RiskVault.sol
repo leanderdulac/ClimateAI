@@ -23,11 +23,13 @@ contract RiskVault is ERC4626, Ownable {
     event PremiumReceived(uint256 amount);
 
     constructor(
-        IERC20 asset_, 
-        string memory name_, 
-        string memory symbol_, 
+        IERC20 asset_,
+        string memory name_,
+        string memory symbol_,
         address climatePolicy_
     ) ERC4626(asset_) ERC20(name_, symbol_) {
+        require(address(asset_) != address(0), "Asset cannot be zero");
+        require(climatePolicy_ != address(0), "Policy contract cannot be zero");
         climatePolicy = ClimatePolicy(climatePolicy_);
     }
 

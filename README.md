@@ -16,8 +16,8 @@ O sistema combina:
 
 ### ✅ **Plataforma Completa**
 - **Backend API** (FastAPI) - Port 8000
-- **Frontend React** (Vite) - Port 3000
-- **Landing Page** (HTML/CSS/JS) - Port 8080
+- **Frontend React** (Vite) - Port 5173
+- **Landing** - React route `/welcome` at http://localhost:5173/welcome
 
 ### ✅ **Scripts de Gerenciamento**
 - `start_platform.sh` - Inicia todos os serviços
@@ -86,6 +86,16 @@ O sistema é composto por três partes principais:
 ```bash
 ./stop_platform.sh
 ```
+## Partner API (integração com outras plataformas)
+
+Documentação, OpenAPI e coleção Postman:
+
+- `docs/partner-api.md`
+- `docs/partner-api.postman.json`
+- Catálogo ao vivo: `GET http://127.0.0.1:8000/api/v1/partner/catalog`
+
+Autenticação: header `X-API-Key` (em desenvolvimento: `cw_dev_partner_key`).
+
 ## Dependências e Ambiente
 
 1. Instale as dependências:
@@ -115,7 +125,7 @@ O sistema é composto por três partes principais:
 A landing page está totalmente integrada ao dashboard para maximizar conversões:
 
 #### **Botões de CTA Conectados**
-- **"Acessar Dashboard"**: Redireciona diretamente para `http://localhost:3000/welcome`
+- **"Acessar Dashboard"**: Redireciona diretamente para `http://localhost:5173/welcome`
 - **Verificação Automática**: JavaScript verifica se o dashboard está rodando
 - **Fallback Inteligente**: Se dashboard offline, mostra alerta para iniciar plataforma
 
@@ -331,7 +341,7 @@ ClimateWise/
 ### Instalação
 ```bash
 # Clonar repositório
-git clone https://github.com/leanderdulac/ClimateWise.git
+git clone https://github.com/leanderdulac/ClimateAI.git
 cd ClimateWise
 
 # Instalar dependências do backend (perfil padrão: produção com PyTorch, sem TensorFlow)
@@ -384,7 +394,7 @@ pytest --cov=.
 ./start_monitoring.sh
 
 # Acessar dashboards
-# Grafana: http://localhost:3000 (admin/admin)
+# Grafana: http://localhost:3001 (set GRAFANA_ADMIN_PASSWORD; do not use port 3000)
 # Prometheus: http://localhost:9090
 # Kibana: http://localhost:5601
 ```
@@ -397,7 +407,7 @@ Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalh
 
 **ClimateWise Team**
 - GitHub: [@leanderdulac](https://github.com/leanderdulac)
-- Projeto: [ClimateWise](https://github.com/leanderdulac/ClimateWise)
+- Projeto: [ClimateWise](https://github.com/leanderdulac/ClimateAI)
 
 ---
 

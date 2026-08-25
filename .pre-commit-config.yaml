@@ -22,7 +22,7 @@ repos:
     hooks:
       - id: black
         files: ^server/
-        exclude: ^server/(venv|\.venv|__pycache__|\.pytest_cache)/
+        exclude: ^server/(venv|\.venv|venv-hathor|__pycache__|\.pytest_cache)/
 
   # Python import sorting
   - repo: https://github.com/pycqa/isort
@@ -31,7 +31,7 @@ repos:
       - id: isort
         name: isort (python)
         files: ^server/
-        exclude: ^server/(venv|\.venv|__pycache__)/
+        exclude: ^server/(venv|\.venv|venv-hathor|__pycache__)/
 
   # Python linting - with recursion limit and exclusions
   - repo: https://github.com/pycqa/flake8
@@ -39,7 +39,7 @@ repos:
     hooks:
       - id: flake8
         files: ^server/
-        exclude: ^server/(venv|\.venv|__pycache__|\.pytest_cache|coverage_html)/
+        exclude: ^server/(venv|\.venv|venv-hathor|__pycache__|\.pytest_cache|coverage_html)/
         args: ["--max-line-length=88", "--extend-ignore=E203,W503"]
         additional_dependencies: [flake8-bugbear]
 
@@ -49,7 +49,7 @@ repos:
     hooks:
       - id: mypy
         files: ^server/
-        exclude: ^server/(venv|\.venv|tests|__pycache__)/
+        exclude: ^server/(venv|\.venv|venv-hathor|tests|__pycache__)/
         args: ["--ignore-missing-imports", "--no-error-summary"]
         additional_dependencies: [types-requests, types-redis]
         pass_filenames: true
@@ -60,7 +60,7 @@ repos:
     hooks:
       - id: bandit
         files: ^server/
-        exclude: ^server/(tests|venv|\.venv)/
+        exclude: ^server/(tests|venv|\.venv|venv-hathor)/
         args: ["-r", "--skip=B101,B311", "-ll"]
 
   # Frontend - ESLint (only when client files change)

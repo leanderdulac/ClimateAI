@@ -22,11 +22,10 @@ test.describe('UI Components and Interactions', () => {
 
     if (isVisible) {
       await button.click();
-      // Wait for any navigation or state change
       await page.waitForTimeout(500);
     }
 
-    expect(true).toBeTruthy(); // Test passed if click didn't error
+    await expect(page.locator('body')).toBeVisible();
   });
 
   test('should have accessible headings', async ({ page }) => {
@@ -96,15 +95,13 @@ test.describe('UI Components and Interactions', () => {
     const isFormVisible = await form.isVisible({ timeout: 5000 });
 
     if (isFormVisible) {
-      // Try to submit empty form to check validation
       const submitButton = form.locator('button[type="submit"]').first();
       await submitButton.click();
-
-      // Wait for response or validation error
       await page.waitForTimeout(1000);
+      await expect(form).toBeVisible();
+    } else {
+      await expect(page.locator('body')).toBeVisible();
     }
-
-    expect(true).toBeTruthy();
   });
 
   test('should have proper semantic HTML', async ({ page }) => {

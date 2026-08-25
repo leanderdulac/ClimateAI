@@ -168,6 +168,40 @@ async def get_risk_analysis(
         )
 
 
+
+@router.get("/zarc", tags=["Agricultural Analysis"])
+async def get_zarc_alias(
+    latitude: float = Query(..., ge=-90, le=90),
+    longitude: float = Query(..., ge=-180, le=180),
+    cultura: Optional[str] = Query(None),
+    crop: Optional[str] = Query(None),
+):
+    """Alias of /agricultural-zoning. Accepts cultura or crop."""
+    crop_name = cultura or crop
+    if not crop_name:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Query parameter cultura or crop is required.",
+        )
+    return await get_agricultural_zoning(latitude=latitude, longitude=longitude, crop=crop_name)
+
+
+@router.get("/risco", tags=["Agricultural Analysis"])
+async def get_risco_alias(
+    latitude: float = Query(..., ge=-90, le=90),
+    longitude: float = Query(..., ge=-180, le=180),
+    start_date: Optional[datetime] = Query(None),
+    end_date: Optional[datetime] = Query(None),
+):
+    """Alias of /risk-analysis."""
+    return await get_risk_analysis(
+        latitude=latitude,
+        longitude=longitude,
+        start_date=start_date,
+        end_date=end_date,
+    )
+
+
 @router.get("/insights", tags=["Climate Data"])
 async def get_climate_insights(
     latitude: float = Query(..., ge=-90, le=90),

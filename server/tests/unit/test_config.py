@@ -47,11 +47,25 @@ class TestSettingsValidation(unittest.TestCase):
         self.assertGreaterEqual(len(settings.SECRET_KEY), 32)
 
     def test_settings_generates_secret_key_if_empty(self):
-        """Testa se SECRET_KEY é gerada quando vazia"""
-        # Remover explicitamente SECRET_KEY do ambiente
-        with patch.dict(os.environ, {}, clear=True):
+        """Testa se SECRET_KEY é gerada quando vazia em desenvolvimento"""
+        with patch.dict(os.environ, {"ENVIRONMENT": "development"}, clear=True):
             settings = Settings()
             self.assertGreaterEqual(len(settings.SECRET_KEY), 32)
+
+    def test_production_exits_without_secret_key(self):
+        """Produção não pode gerar SECRET_KEY automaticamente."""
+        with patch.dict(os.environ, {"ENVIRONMENT": "production"}, clear=True):
+            with self.assertRaises(SystemExit):
+                Settings()
+
+    def test_production_exits_when_secret_key_too_short(self):
+        with patch.dict(
+            os.environ,
+            {"ENVIRONMENT": "production", "SECRET_KEY": "short"},
+            clear=True,
+        ):
+            with self.assertRaises(SystemExit):
+                Settings()
 
     @patch.dict(os.environ, {
         'ALLOW_ORIGINS': 'http://localhost:3000,http://localhost:5173'
@@ -122,6 +136,34 @@ class TestDatabaseConfiguration(unittest.TestCase):
         """Evita credenciais hardcoded quando DATABASE_URL não está definido."""
         settings = Settings()
         self.assertEqual(settings.DATABASE_URL, LOCAL_DEV_DATABASE_URL)
+
+
+class TestPostgresSslContext(unittest.TestCase):
+    def test_localhost_disables_ssl(self):
+        from config.database import build_postgres_ssl_context
+
+        self.assertIsNone(
+            build_postgres_ssl_context(is_localhost=True, environment="production")
+        )
+
+    def test_production_uses_verified_ssl(self):
+        import ssl
+        from config.database import build_postgres_ssl_context
+
+        ctx = build_postgres_ssl_context(
+            is_localhost=False, environment="production", insecure_override=False
+        )
+        self.assertIsNotNone(ctx)
+        self.assertEqual(ctx.verify_mode, ssl.CERT_REQUIRED)
+        self.assertTrue(ctx.check_hostname)
+
+    def test_production_rejects_insecure_override(self):
+        from config.database import build_postgres_ssl_context
+
+        with self.assertRaises(ValueError):
+            build_postgres_ssl_context(
+                is_localhost=False, environment="production", insecure_override=True
+            )
 
 
 class TestRedisConfiguration(unittest.TestCase):

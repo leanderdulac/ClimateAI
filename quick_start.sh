@@ -106,8 +106,8 @@ if [[ $REPLY =~ ^[SsYy]$ ]]; then
     echo ""
     echo "   Backend API:  http://localhost:8000"
     echo "   API Docs:     http://localhost:8000/docs"
-    echo "   Frontend:     http://localhost:3000"
-    echo "   Landing Page: http://localhost:8080/landing-page.html"
+    echo "   Frontend:     http://localhost:5173"
+    echo "   Landing Page: http://localhost:5173/welcome"
     echo ""
     
     # Start backend
@@ -127,16 +127,11 @@ if [[ $REPLY =~ ^[SsYy]$ ]]; then
     echo "Iniciando frontend..."
     (
         cd client
-        npm run dev -- --host 0.0.0.0 --port 3000
+        npm run dev -- --host 0.0.0.0 --port 5173
     ) &
     FRONTEND_PID=$!
     echo -e "${GREEN}✓ Frontend iniciado (PID: $FRONTEND_PID)${NC}"
     
-    # Start landing page
-    echo "Iniciando landing page..."
-    python3 -m http.server 8080 --bind 0.0.0.0 &
-    LANDING_PID=$!
-    echo -e "${GREEN}✓ Landing Page iniciada (PID: $LANDING_PID)${NC}"
     
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

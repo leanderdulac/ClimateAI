@@ -1,4 +1,4 @@
-import { buildApiUrl } from "./api";
+import { buildApiUrl } from "./api/client";
 import { getDefaultHeaders } from "./requestId";
 
 export interface PayoutTierReport {
@@ -105,26 +105,17 @@ export const parametricApi = {
         dataFim: string,
         insuredCapital: number = 100000.0
     ): Promise<HybridSimulationResponse> {
-        const useMock = import.meta.env.VITE_USE_MOCK_DATA === 'true';
-        try {
-            const queryParams = new URLSearchParams({
-                municipio,
-                uf,
-                data_inicio: dataInicio,
-                data_fim: dataFim,
-                insured_capital: insuredCapital.toString()
-            });
+        const useMock = !import.meta.env.PROD && import.meta.env.VITE_USE_MOCK_DATA === 'true';
+        const queryParams = new URLSearchParams({
+            municipio,
+            uf,
+            data_inicio: dataInicio,
+            data_fim: dataFim,
+            insured_capital: insuredCapital.toString()
+        });
 
-            const url = buildApiUrl(`/api/v1/parametric-triggers/simulate-hybrid?${queryParams.toString()}`);
-            if (!useMock) {
-                const res = await fetch(url, { headers: getDefaultHeaders() });
-                if (!res.ok) {
-                    const err = await res.json().catch(() => ({}));
-                    throw new Error(err.detail || `Error simulating parametric payout: ${res.status}`);
-                }
-                return await res.json();
-            }
-            console.warn('[parametricApi] Usando simulação híbrida mock (mock mode ou falha)');
+        if (useMock) {
+            console.warn('[parametricApi] Simulação híbrida demo (VITE_USE_MOCK_DATA=true)');
             return {
                 region: { name: municipio, state: uf },
                 total_exposed_value: insuredCapital,
@@ -135,18 +126,16 @@ export const parametricApi = {
                 ],
                 current_metrics: { severity: 'moderate', risk_score: 42 },
                 forecast: { next_days: [], confidence: 0.8 },
-            } as HybridSimulationResponse;
-        } catch (error) {
-            console.warn("Failed to simulate parametric payout, retornando mock:", error);
-            return {
-                region: { name: municipio, state: uf },
-                total_exposed_value: insuredCapital,
-                total_payout: insuredCapital * 0.1,
-                payouts: [],
-                current_metrics: { severity: 'low', risk_score: 30 },
-                forecast: { next_days: [], confidence: 0.6 },
-            } as HybridSimulationResponse;
+            } as unknown as HybridSimulationResponse;
         }
+
+        const url = buildApiUrl(`/api/v1/parametric-triggers/simulate-hybrid?${queryParams.toString()}`);
+        const res = await fetch(url, { headers: getDefaultHeaders() });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.detail || `Error simulating parametric payout: ${res.status}`);
+        }
+        return await res.json();
     },
 
     /**
@@ -155,9 +144,8 @@ export const parametricApi = {
     async getPerformanceSummary(): Promise<SIPSPerformanceSummary> {
         try {
             const url = buildApiUrl(`/api/v1/sips-analytics/dashboard-summary`);
-            const res = await fetch(url, { headers: getDefaultHeaders() });
-            if (!res.ok || import.meta.env.VITE_USE_MOCK_DATA === 'true') {
-                console.warn('[parametricApi] Usando resumo de performance mock (status:', res.status, ')');
+            if (import.meta.env.VITE_USE_MOCK_DATA === 'true' && !import.meta.env.PROD) {
+                console.warn('[parametricApi] Resumo de performance demo (VITE_USE_MOCK_DATA=true)');
                 return {
                     total_policies: 0,
                     active_policies: 0,
@@ -172,26 +160,16 @@ export const parametricApi = {
                         sips_impact_score: 0,
                     },
                     key_findings: [],
-                } as SIPSPerformanceSummary;
+                } as unknown as SIPSPerformanceSummary;
+            }
+            const res = await fetch(url, { headers: getDefaultHeaders() });
+            if (!res.ok) {
+                throw new Error(`Failed to fetch performance summary: ${res.status}`);
             }
             return await res.json();
         } catch (error) {
             console.error("Failed to fetch performance summary:", error);
-            return {
-                total_policies: 0,
-                active_policies: 0,
-                claims: 0,
-                total_premium: 0,
-                total_losses: 0,
-                regions: [],
-                trends: [],
-                dashboard_summary: {
-                    current_metrics: { margem_liquida: 0, taxa_sinistralidade: 0 },
-                    improvements: { margin_improvement: '0pp', claim_rate_improvement: '0pp' },
-                    sips_impact_score: 0,
-                },
-                key_findings: [],
-            } as SIPSPerformanceSummary;
+            throw error;
         }
     },
 
@@ -201,9 +179,8 @@ export const parametricApi = {
     async getPortfolioRisk(): Promise<RealTimeRiskAnalysis> {
         try {
             const url = buildApiUrl(`/api/v1/risk-monitor/portfolio-risk`);
-            const res = await fetch(url, { headers: getDefaultHeaders() });
-            if (!res.ok || import.meta.env.VITE_USE_MOCK_DATA === 'true') {
-                console.warn('[parametricApi] Usando risco de portfólio mock (status:', res.status, ')');
+            if (import.meta.env.VITE_USE_MOCK_DATA === 'true' && !import.meta.env.PROD) {
+                console.warn('[parametricApi] Risco de portfólio demo (VITE_USE_MOCK_DATA=true)');
                 return {
                     portfolio_value: 0,
                     risk_score: 0,
@@ -211,19 +188,16 @@ export const parametricApi = {
                     exposures: [],
                     hotspots: [],
                     recommendations: [],
-                } as RealTimeRiskAnalysis;
+                } as unknown as RealTimeRiskAnalysis;
+            }
+            const res = await fetch(url, { headers: getDefaultHeaders() });
+            if (!res.ok) {
+                throw new Error(`Failed to fetch portfolio risk: ${res.status}`);
             }
             return await res.json();
         } catch (error) {
             console.error("Failed to fetch portfolio risk:", error);
-            return {
-                portfolio_value: 0,
-                risk_score: 0,
-                diversification_index: 0,
-                exposures: [],
-                hotspots: [],
-                recommendations: [],
-            } as RealTimeRiskAnalysis;
+            throw error;
         }
     }
 };

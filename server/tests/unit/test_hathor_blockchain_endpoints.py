@@ -5,7 +5,7 @@ import pytest
 
 
 @pytest.mark.unit
-def test_hathor_status_endpoint_returns_integration_details(client, monkeypatch):
+def test_hathor_status_endpoint_returns_integration_details(authenticated_client, monkeypatch):
     from api import hathor_blockchain
 
     class FakeHathorService:
@@ -27,7 +27,7 @@ def test_hathor_status_endpoint_returns_integration_details(client, monkeypatch)
 
     monkeypatch.setattr(hathor_blockchain, "get_hathor_service", lambda: FakeHathorService())
 
-    response = client.get("/api/v1/blockchain/hathor/status")
+    response = authenticated_client.get("/api/v1/blockchain/hathor/status")
     assert response.status_code == 200
     payload = response.json()
     assert payload["mode"] == "production"
@@ -36,7 +36,7 @@ def test_hathor_status_endpoint_returns_integration_details(client, monkeypatch)
 
 
 @pytest.mark.unit
-def test_hathor_wallet_balance_endpoint_returns_values(client, monkeypatch):
+def test_hathor_wallet_balance_endpoint_returns_values(authenticated_client, monkeypatch):
     from api import hathor_blockchain
 
     class FakeHathorService:
@@ -50,7 +50,7 @@ def test_hathor_wallet_balance_endpoint_returns_values(client, monkeypatch):
 
     monkeypatch.setattr(hathor_blockchain, "get_hathor_service", lambda: FakeHathorService())
 
-    response = client.get("/api/v1/blockchain/hathor/wallet/balance/00")
+    response = authenticated_client.get("/api/v1/blockchain/hathor/wallet/balance/00")
     assert response.status_code == 200
     payload = response.json()
     assert payload["token_uid"] == "00"
@@ -58,7 +58,7 @@ def test_hathor_wallet_balance_endpoint_returns_values(client, monkeypatch):
 
 
 @pytest.mark.unit
-def test_tokenizar_com_mint_returns_on_chain_and_persists_transaction(client, monkeypatch):
+def test_tokenizar_com_mint_returns_on_chain_and_persists_transaction(authenticated_client, monkeypatch):
     from api import tokenizacao
 
     class FakeTokenizacaoService:
@@ -108,7 +108,7 @@ def test_tokenizar_com_mint_returns_on_chain_and_persists_transaction(client, mo
         "mint_on_chain": True,
     }
 
-    response = client.post("/api/v1/tokenizacao/tokenizar-com-mint", json=payload)
+    response = authenticated_client.post("/api/v1/tokenizacao/tokenizar-com-mint", json=payload)
     assert response.status_code == 200
     body = response.json()
     assert body["on_chain"]["status"] == "success"
@@ -116,7 +116,7 @@ def test_tokenizar_com_mint_returns_on_chain_and_persists_transaction(client, mo
 
 
 @pytest.mark.unit
-def test_tokenizar_com_mint_requires_destination_address(client):
+def test_tokenizar_com_mint_requires_destination_address(authenticated_client):
     payload = {
         "evento": {
             "tipo": "seca",
@@ -132,6 +132,6 @@ def test_tokenizar_com_mint_requires_destination_address(client):
         "mint_on_chain": True,
     }
 
-    response = client.post("/api/v1/tokenizacao/tokenizar-com-mint", json=payload)
+    response = authenticated_client.post("/api/v1/tokenizacao/tokenizar-com-mint", json=payload)
     assert response.status_code == 400
     assert "destination_address" in response.json()["detail"]

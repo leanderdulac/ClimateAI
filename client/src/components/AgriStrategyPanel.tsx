@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertCircle, Leaf, Loader2, MapPin, Sprout, TrendingUp } from "lucide-react";
 
 import { buildApiUrl } from "@/lib/api";
+import { getDefaultHeaders } from "@/lib/requestId";
 import { useLocation } from "@/lib/LocationContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -122,7 +123,9 @@ export function AgriStrategyPanel() {
     void (async () => {
       setLoadingCatalog(true);
       try {
-        const response = await fetch(buildApiUrl('/api/v1/agri-strategy/catalog'));
+        const response = await fetch(buildApiUrl('/api/v1/agri-strategy/catalog'), {
+          headers: getDefaultHeaders(),
+        });
         if (!response.ok) {
           throw new Error('Não foi possível carregar o catálogo agroclimático.');
         }
@@ -165,9 +168,7 @@ export function AgriStrategyPanel() {
       try {
         await fetch(buildApiUrl('/api/v1/agri-strategy/journey/event'), {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: getDefaultHeaders(),
           body: JSON.stringify({
             session_id: sessionId,
             event_type: eventType,
@@ -275,9 +276,7 @@ export function AgriStrategyPanel() {
 
       const response = await fetch(buildApiUrl('/api/v1/agri-strategy/plan'), {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getDefaultHeaders(),
         signal: controller.signal,
         body: JSON.stringify({
           crop_type: form.crop_type,

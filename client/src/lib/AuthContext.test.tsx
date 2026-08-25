@@ -57,8 +57,8 @@ const TestConsumer = () => {
   return (
     <div>
       {user && <div data-testid="user-name">{user.name}</div>}
-      <button onClick={() => register({ name: 'Test User', email: 'test@test.com', password: 'password' })}>Register</button>
-      <button onClick={() => login('test@test.com', 'password')}>Login</button>
+      <button onClick={() => register({ name: 'Test User', email: 'test@test.com', password: 'password123' })}>Register</button>
+      <button onClick={() => login('test@test.com', 'password123')}>Login</button>
       <button onClick={() => logout()}>Logout</button>
     </div>
   );
@@ -68,6 +68,7 @@ describe('AuthContext', () => {
   beforeEach(() => {
     window.localStorage.clear();
     vi.clearAllMocks();
+    vi.mocked(global.fetch).mockRejectedValue(new TypeError('Failed to fetch'));
     // Re-apply default mocks after clearAllMocks
     mockSupabase.auth.getSession.mockResolvedValue({ data: { session: null }, error: null });
     mockSupabase.auth.onAuthStateChange.mockReturnValue({ data: { subscription: { unsubscribe: vi.fn() } } });
@@ -76,25 +77,15 @@ describe('AuthContext', () => {
     mockSupabase.auth.signOut.mockResolvedValue({ error: null });
   });
 
-  it('should allow a user to register and login via Supabase fallback', async () => {
-    const mockUser = { id: '123', email: 'test@test.com', user_metadata: { full_name: 'Test User' } };
-    const mockSession = {
-      user: mockUser,
-      access_token: 'token-1',
-      refresh_token: 'refresh-1'
-    };
-
-    // Supabase signUp succeeds
-    mockSupabase.auth.signUp.mockResolvedValueOnce({
-      data: { user: mockUser, session: mockSession },
-      error: null
-    });
-
-    // Supabase signInWithPassword succeeds
-    mockSupabase.auth.signInWithPassword.mockResolvedValueOnce({
-      data: { user: mockUser, session: mockSession },
-      error: null
-    });
+  it('logs in via backend JWT and does not use Supabase session', async () => {
+    vi.mocked(global.fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        user: { id: '123', email: 'test@test.com', full_name: 'Test User', role: 'user' },
+        access_token: 'jwt-access',
+        refresh_token: 'jwt-refresh',
+      }),
+    } as Response);
 
     render(
       <AuthProvider>
@@ -102,18 +93,30 @@ describe('AuthContext', () => {
       </AuthProvider>
     );
 
-    // Register — fetch throws network error → falls back to Supabase signUp → sets user via session
     await act(async () => {
-      try { screen.getByText('Register').click(); } catch { /* expected: register re-throws */ }
-    });
-
-    // Login — fetch throws network error → falls back to Supabase signInWithPassword → sets user
-    await act(async () => {
-      try { screen.getByText('Login').click(); } catch { /* expected: login re-throws */ }
+      screen.getByText('Login').click();
     });
 
     await waitFor(() => {
       expect(screen.getByTestId('user-name')).toHaveTextContent('Test User');
-    }, { timeout: 3000 });
+    });
+    expect(mockSupabase.auth.signInWithPassword).not.toHaveBeenCalled();
+    expect(window.localStorage.getItem('access_token')).toBe('jwt-access');
+  });
+
+  it('does not treat arbitrary localStorage tokens as a logged-in user', async () => {
+    window.localStorage.setItem('access_token', 'forged-token');
+    window.localStorage.setItem('refresh_token', 'forged-refresh');
+
+    render(
+      <AuthProvider>
+        <TestConsumer />
+      </AuthProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('user-name')).not.toBeInTheDocument();
+    });
+    expect(window.localStorage.getItem('access_token')).toBeNull();
   });
 });

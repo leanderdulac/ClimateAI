@@ -22,7 +22,7 @@ def set_cache_instance(cache):
 
 
 @router.get("/stats")
-async def get_cache_stats() -> Dict[str, Any]:
+async def get_cache_stats(current_user: User = Depends(require_admin)) -> Dict[str, Any]:
     """
     Retorna estatísticas do sistema de cache
 
@@ -32,12 +32,23 @@ async def get_cache_stats() -> Dict[str, Any]:
     if _smart_cache is None:
         return {"error": "Cache não inicializado"}
 
-    return {
+    payload: Dict[str, Any] = {
+        "backend": "memory",
         "total_entries": len(_smart_cache.cache),
         "cache_size_mb": len(str(_smart_cache.cache)) / (1024 * 1024),
-        "max_age_seconds": _smart_cache.max_age,
+        "max_age_seconds": getattr(_smart_cache, "default_max_age", getattr(_smart_cache, "max_age", 3600)),
         "uptime": "Sistema ativo",
     }
+    try:
+        from lib.redis_cache import get_cache
+
+        redis_cache = get_cache()
+        if redis_cache and redis_cache.enabled:
+            payload["backend"] = "redis"
+            payload["redis"] = redis_cache.stats.to_dict()
+    except Exception:
+        pass
+    return payload
 
 
 @router.post("/clear")

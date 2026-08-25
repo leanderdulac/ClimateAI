@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
 
 import numpy as np
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Body
 from pydantic import BaseModel
 
 from services.audit_service import log_operation
@@ -172,6 +172,23 @@ async def calculate_pricing(request: PricingRequest) -> Dict[str, Any]:
         }
 
 
+@router.post("/quote")
+async def quote_policy(request: Dict[str, Any] = Body(...)):
+    """Canonical actuarial quote. Delegates to the policy pricing engine."""
+    from api.policy_pricing import PolicyRequest, calculate_policy_endpoint
+    from lib.tracing import set_span_attributes, start_span
+
+    with start_span(
+        "pricing.quote",
+        **{"pricing.kind": "policy_quote", "pricing.asset_value": request.get("asset_value")},
+    ) as span:
+        result = await calculate_policy_endpoint(PolicyRequest.model_validate(request))
+        status = getattr(result, "status", None)
+        approved = getattr(result, "is_approved", None)
+        set_span_attributes(span, **{"pricing.status": status, "pricing.approved": approved})
+        return result
+
+
 @router.post("/calculate")
 async def calculate_pricing_endpoint(request: PricingRequest) -> Dict[str, Any]:
     """
@@ -183,42 +200,58 @@ async def calculate_pricing_endpoint(request: PricingRequest) -> Dict[str, Any]:
     Returns:
         Pricing calculation result with recommendations
     """
-    try:
-        result = await calculate_pricing(request)
+    from lib.tracing import set_span_attributes, start_span
 
-        # Registrar operação de auditoria
-        audit_id = log_operation(
-            operation="pricing_calculation",
-            resource_type="insurance_policy",
-            action="calculate",
-            status="success",
-            user_id=request.user_id,
-            session_id=request.session_id,
-            resource_id=f"location_{request.location_id}",
-            details={
-                "location_id": request.location_id,
-                "coverage_period": request.coverage_period,
-                "coverage_amount": request.coverage_amount,
-                "risk_factors": result.get("risk_factors", {}),
-                "final_price": result.get("final_price", 0),
-            },
-            risk_score=result.get("risk_score", 0),
-            compliance_flags=result.get("compliance_flags", []),
-        )
+    with start_span(
+        "pricing.calculate",
+        **{
+            "pricing.kind": "location_premium",
+            "pricing.location_id": request.location_id,
+            "pricing.coverage_amount": request.coverage_amount,
+            "pricing.coverage_period": request.coverage_period,
+        },
+    ) as span:
+        try:
+            result = await calculate_pricing(request)
 
-        result["audit_id"] = audit_id
-        return result
-    except Exception as e:
-        # Registrar erro de auditoria
-        log_operation(
-            operation="pricing_calculation",
-            resource_type="insurance_policy",
-            action="calculate",
-            status="error",
-            user_id=getattr(request, "user_id", None),
-            session_id=getattr(request, "session_id", None),
-            details={"error": str(e)},
-            compliance_flags=["calculation_error"],
-        )
-        logger.error(f"Erro no cálculo de pricing: {e}")
-        raise HTTPException(status_code=500, detail=f"Erro cálculo: {str(e)}")
+            audit_id = log_operation(
+                operation="pricing_calculation",
+                resource_type="insurance_policy",
+                action="calculate",
+                status="success",
+                user_id=request.user_id,
+                session_id=request.session_id,
+                resource_id=f"location_{request.location_id}",
+                details={
+                    "location_id": request.location_id,
+                    "coverage_period": request.coverage_period,
+                    "coverage_amount": request.coverage_amount,
+                    "risk_factors": result.get("risk_factors", {}),
+                    "final_price": result.get("final_price", 0),
+                },
+                risk_score=result.get("risk_score", 0),
+                compliance_flags=result.get("compliance_flags", []),
+            )
+
+            result["audit_id"] = audit_id
+            set_span_attributes(
+                span,
+                **{
+                    "pricing.final_price": result.get("final_price"),
+                    "pricing.audit_id": audit_id,
+                },
+            )
+            return result
+        except Exception as e:
+            log_operation(
+                operation="pricing_calculation",
+                resource_type="insurance_policy",
+                action="calculate",
+                status="error",
+                user_id=getattr(request, "user_id", None),
+                session_id=getattr(request, "session_id", None),
+                details={"error": str(e)},
+                compliance_flags=["calculation_error"],
+            )
+            logger.error(f"Erro no cálculo de pricing: {e}")
+            raise HTTPException(status_code=500, detail=f"Erro cálculo: {str(e)}")

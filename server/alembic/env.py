@@ -42,7 +42,11 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = config.get_main_option("sqlalchemy.url")
+    url = os.getenv("DATABASE_URL") or config.get_main_option("sqlalchemy.url")
+    if url:
+        url = url.replace("postgresql+asyncpg://", "postgresql://").replace(
+            "sqlite+aiosqlite://", "sqlite://"
+        )
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -61,8 +65,15 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
+    section = config.get_section(config.config_ini_section, {}) or {}
+    database_url = os.getenv("DATABASE_URL") or section.get("sqlalchemy.url")
+    if database_url:
+        database_url = database_url.replace("postgresql+asyncpg://", "postgresql://").replace(
+            "sqlite+aiosqlite://", "sqlite://"
+        )
+        section["sqlalchemy.url"] = database_url
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        section,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )

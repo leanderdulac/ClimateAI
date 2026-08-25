@@ -1,5 +1,10 @@
 # ClimateWise Infrastructure as Code (IaC) - Terraform
 
+> **Status: incompleto.** Só existe `modules/database/` de verdade. `modules/main.tf` aponta para `./networking`, `./compute`, `./monitoring`, `./security`, `./backup` e `./database/redis`, que não estão no repositorio. `scripts/` também não existe. Não rode `terraform apply` esperando esse layout.
+>
+> Senhas de dev: `TF_VAR_postgres_password` e `TF_VAR_vault_dev_root_token` (sem default).
+
+
 ## 📊 Visão Geral
 
 Este diretório contém a configuração Terraform para deploy da plataforma ClimateWise em múltiplos ambientes.

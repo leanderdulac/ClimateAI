@@ -1,10 +1,9 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { FeatureGate } from '@/components/FeatureGate';
 import { PageLoader } from '@/components/PageLoader';
 import { RouteError } from '@/components/RouteError';
-import { AgriStrategyPanel } from '@/components/AgriStrategyPanel';
-
 // Lazy load all pages
 const IndexPage = lazy(() => import('@/pages/Index').then(m => ({ default: m.IndexPage })));
 const WelcomePage = lazy(() => import('@/pages/Welcome').then(m => ({ default: m.WelcomePage })));
@@ -16,6 +15,9 @@ const ActuarialLabPage = lazy(() => import('@/pages/ActuarialLabPage').then(m =>
 const OraclePage = lazy(() => import('@/pages/OraclePage').then(m => ({ default: m.OraclePage })));
 const AtlasPage = lazy(() => import('@/pages/AtlasPage'));
 const DemoPage = lazy(() => import('@/pages/DemoPage').then(m => ({ default: m.DemoPage })));
+const AgriStrategyPanel = lazy(() =>
+  import('@/components/AgriStrategyPanel').then(m => ({ default: m.AgriStrategyPanel }))
+);
 
 const router = createBrowserRouter([
   {
@@ -67,9 +69,11 @@ const router = createBrowserRouter([
     path: "/agro",
     errorElement: <RouteError />,
     element: (
-      <Suspense fallback={<PageLoader />}>
-        <AgriStrategyPanel />
-      </Suspense>
+      <ProtectedRoute>
+        <Suspense fallback={<PageLoader />}>
+          <AgriStrategyPanel />
+        </Suspense>
+      </ProtectedRoute>
     ),
   },
   {
@@ -88,9 +92,11 @@ const router = createBrowserRouter([
     errorElement: <RouteError />,
     element: (
       <ProtectedRoute>
-        <Suspense fallback={<PageLoader />}>
-          <TokenizationPage />
-        </Suspense>
+        <FeatureGate feature="tokenization">
+          <Suspense fallback={<PageLoader />}>
+            <TokenizationPage />
+          </Suspense>
+        </FeatureGate>
       </ProtectedRoute>
     ),
   },
@@ -99,9 +105,11 @@ const router = createBrowserRouter([
     errorElement: <RouteError />,
     element: (
       <ProtectedRoute>
-        <Suspense fallback={<PageLoader />}>
-          <AnalyticsPage />
-        </Suspense>
+        <FeatureGate feature="analytics">
+          <Suspense fallback={<PageLoader />}>
+            <AnalyticsPage />
+          </Suspense>
+        </FeatureGate>
       </ProtectedRoute>
     ),
   },
@@ -121,9 +129,11 @@ const router = createBrowserRouter([
     errorElement: <RouteError />,
     element: (
       <ProtectedRoute>
-        <Suspense fallback={<PageLoader />}>
-          <OraclePage />
-        </Suspense>
+        <FeatureGate feature="tokenization">
+          <Suspense fallback={<PageLoader />}>
+            <OraclePage />
+          </Suspense>
+        </FeatureGate>
       </ProtectedRoute>
     ),
   },
@@ -132,9 +142,11 @@ const router = createBrowserRouter([
     errorElement: <RouteError />,
     element: (
       <ProtectedRoute>
-        <Suspense fallback={<PageLoader />}>
-          <AtlasPage />
-        </Suspense>
+        <FeatureGate feature="atlas">
+          <Suspense fallback={<PageLoader />}>
+            <AtlasPage />
+          </Suspense>
+        </FeatureGate>
       </ProtectedRoute>
     ),
   },

@@ -3,6 +3,7 @@ API Router for NOAA (National Oceanic and Atmospheric Administration) Integratio
 Provides access to climate data and weather forecasts
 """
 
+import logging
 import os
 from datetime import datetime
 from typing import Any, Dict, Optional
@@ -18,6 +19,7 @@ from services.enso_service import ENSOService
 from services.noaa_service import NOAAService
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 # Instância global do serviço
 noaa_service = NOAAService()
@@ -56,9 +58,8 @@ async def get_climate_data_endpoint(request: ClimateDataRequest):
         )
         return result
     except Exception as e:
-        import traceback
-        tb = traceback.format_exc()
-        raise HTTPException(status_code=500, detail=f"NOAA climate data error: {str(e)}\nTraceback: {tb}")
+        logger.exception("NOAA climate data request failed")
+        raise HTTPException(status_code=500, detail="NOAA climate data request failed")
 
 
 @router.post("/weather-forecast")
@@ -73,9 +74,8 @@ async def get_weather_forecast_endpoint(request: WeatherForecastRequest):
         )
         return result
     except Exception as e:
-        import traceback
-        tb = traceback.format_exc()
-        raise HTTPException(status_code=500, detail=f"NOAA weather forecast error: {str(e)}\nTraceback: {tb}")
+        logger.exception("NOAA weather forecast request failed")
+        raise HTTPException(status_code=500, detail="NOAA weather forecast request failed")
 
 
 @router.get("/status")
@@ -87,12 +87,11 @@ async def get_noaa_status():
         status = noaa_service.get_service_status()
         return status
     except Exception as e:
-        import traceback
-        tb = traceback.format_exc()
+        logger.exception("NOAA status check failed")
         return {
             "service": "NOAA Integration",
             "status": "error",
-            "error": f"{str(e)}\nTraceback: {tb}",
+            "error": "Internal server error",
             "api_key_configured": bool(os.getenv("NOAA_API_KEY")),
             "timestamp": datetime.now().isoformat()
         }

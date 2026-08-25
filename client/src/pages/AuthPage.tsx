@@ -68,6 +68,16 @@ export function AuthPage() {
         return;
       }
 
+      if (registerData.password.length < 8) {
+        setErrorMessage(t('auth.errors.passwordMinLength'));
+        return;
+      }
+
+      if (!/[A-Za-z]/.test(registerData.password) || !/\d/.test(registerData.password)) {
+        setErrorMessage(t('auth.errors.passwordStrength'));
+        return;
+      }
+
       if (registerData.password !== registerData.confirmPassword) {
         setErrorMessage(t('auth.errors.passwordMatch'));
         return;
@@ -279,6 +289,7 @@ export function AuthPage() {
                       className="pl-10 pr-10 h-11"
                       value={registerData.password}
                       onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
+                      minLength={8}
                       required
                     />
                     <button

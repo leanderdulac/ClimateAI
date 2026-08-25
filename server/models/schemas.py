@@ -4,9 +4,28 @@ Modelos de dados para o Framework Integrado de Modelagem Climático-Econômica (
 
 from datetime import datetime
 from enum import Enum
+import re
 from typing import Any, Dict, List, Optional, Tuple
 
-from pydantic import BaseModel, ConfigDict, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+
+PASSWORD_MIN_LENGTH = 8
+PASSWORD_MAX_LENGTH = 128
+_PASSWORD_LETTER = re.compile(r"[A-Za-z]")
+_PASSWORD_DIGIT = re.compile(r"\d")
+
+
+def validate_password_strength(password: str) -> str:
+    """Require 8–128 chars with at least one letter and one digit."""
+    if len(password) < PASSWORD_MIN_LENGTH:
+        raise ValueError(f"Senha deve ter no mínimo {PASSWORD_MIN_LENGTH} caracteres")
+    if len(password) > PASSWORD_MAX_LENGTH:
+        raise ValueError(f"Senha deve ter no máximo {PASSWORD_MAX_LENGTH} caracteres")
+    if not _PASSWORD_LETTER.search(password):
+        raise ValueError("Senha deve conter ao menos uma letra")
+    if not _PASSWORD_DIGIT.search(password):
+        raise ValueError("Senha deve conter ao menos um número")
+    return password
 
 
 class UserRole(str, Enum):
@@ -34,7 +53,12 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     """Modelo para criação de usuário"""
 
-    password: str
+    password: str = Field(..., min_length=PASSWORD_MIN_LENGTH, max_length=PASSWORD_MAX_LENGTH)
+
+    @field_validator("password")
+    @classmethod
+    def password_strength(cls, value: str) -> str:
+        return validate_password_strength(value)
 
 
 class PublicRegisterRequest(BaseModel):
@@ -44,8 +68,13 @@ class PublicRegisterRequest(BaseModel):
 
     email: EmailStr
     full_name: str
-    password: str
+    password: str = Field(..., min_length=PASSWORD_MIN_LENGTH, max_length=PASSWORD_MAX_LENGTH)
     organization: Optional[str] = None
+
+    @field_validator("password")
+    @classmethod
+    def password_strength(cls, value: str) -> str:
+        return validate_password_strength(value)
 
 
 class UserUpdate(BaseModel):
@@ -56,7 +85,14 @@ class UserUpdate(BaseModel):
     role: Optional[UserRole] = None
     is_active: Optional[bool] = None
     organization: Optional[str] = None
-    password: Optional[str] = None
+    password: Optional[str] = Field(default=None, min_length=PASSWORD_MIN_LENGTH, max_length=PASSWORD_MAX_LENGTH)
+
+    @field_validator("password")
+    @classmethod
+    def password_strength(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return value
+        return validate_password_strength(value)
 
 
 class User(UserBase):
@@ -113,7 +149,12 @@ class PasswordResetConfirm(BaseModel):
     """Modelo para confirmação de reset de senha"""
 
     token: str
-    new_password: str
+    new_password: str = Field(..., min_length=PASSWORD_MIN_LENGTH, max_length=PASSWORD_MAX_LENGTH)
+
+    @field_validator("new_password")
+    @classmethod
+    def password_strength(cls, value: str) -> str:
+        return validate_password_strength(value)
 
 
 class UserPermissions(BaseModel):

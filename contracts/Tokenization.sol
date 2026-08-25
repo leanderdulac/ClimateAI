@@ -10,6 +10,8 @@ contract ClimateToken is ERC20 {
     }
     function mint(address to, uint256 amount) external {
         require(msg.sender == admin, "only admin can mint");
+        require(to != address(0), "recipient cannot be zero");
+        require(amount > 0, "amount must be positive");
         _mint(to, amount);
     }
 }

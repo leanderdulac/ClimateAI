@@ -4,6 +4,7 @@ Provides natural language processing and analysis capabilities to complement
 the specialized climate risk AI system already implemented
 """
 
+import logging
 import os
 from datetime import datetime
 from typing import Any, Dict, List, Optional
@@ -17,6 +18,7 @@ from services.grok_integration_service import (
 )
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 # Instância global do serviço
 grok_service = GrokIntegrationService()
@@ -75,7 +77,8 @@ async def analyze_parametric_insurance_endpoint(request: ParametricInsuranceRequ
             "regulatory_compliance": "SUSEP Circular 562/2015"
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.exception("Grok endpoint failed")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/actuarial-calculation")
@@ -119,7 +122,8 @@ async def calculate_actuarial_risk_endpoint(request: ParametricInsuranceRequest)
             "methodology": "Brazilian actuarial standards with SUSEP compliance"
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.exception("Grok endpoint failed")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/analyze")
@@ -146,9 +150,8 @@ async def analyze_climate_data_endpoint(request: ClimateAnalysisRequest):
             "complementary_to": result.complementary_to,
         }
     except Exception as e:
-        import traceback
-        tb = traceback.format_exc()
-        raise HTTPException(status_code=500, detail=f"Grok climate analysis error: {str(e)}\nTraceback: {tb}")
+        logger.exception("Grok climate analysis failed")
+        raise HTTPException(status_code=500, detail="Grok climate analysis failed")
 
 
 @router.post("/insights")
@@ -175,92 +178,8 @@ async def generate_location_insights_endpoint(request: LocationInsightsRequest):
             "complementary_to": result.complementary_to,
         }
     except Exception as e:
-        import traceback
-        tb = traceback.format_exc()
-        raise HTTPException(status_code=500, detail=f"Grok insights error: {str(e)}\nTraceback: {tb}")
-
-
-@router.post("/parametric-insurance")
-async def analyze_parametric_insurance_endpoint(request: ParametricInsuranceRequest):
-    """
-    Analyze parametric insurance viability for specific location and risk type
-    """
-    if not os.getenv("GROK_API_KEY"):
-        raise HTTPException(
-            status_code=503,
-            detail="GROK_API_KEY not configured in environment variables",
-        )
-
-    try:
-        # Cria dados climáticos mock para análise paramétrica
-        mock_climate_data = {
-            "location": request.location,
-            "risk_type": request.risk_type,
-            "coverage_value": request.coverage_value,
-            "time_period": request.time_period,
-            "analysis_focus": "parametric_insurance"
-        }
-
-        result = grok_service.analyze_climate_data(
-            mock_climate_data, "parametric_insurance"
-        )
-
-        return {
-            "parametric_analysis": result.analysis_text,
-            "confidence": result.confidence_level,
-            "analysis_type": result.analysis_type,
-            "location": request.location,
-            "risk_type": request.risk_type,
-            "timestamp": result.processing_timestamp.isoformat(),
-            "sources": result.sources_considered,
-            "regulatory_compliance": "SUSEP Circular 562/2015"
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.post("/actuarial-calculation")
-async def calculate_actuarial_risk_endpoint(request: ParametricInsuranceRequest):
-    """
-    Perform actuarial calculations for parametric insurance products
-    """
-    if not os.getenv("GROK_API_KEY"):
-        raise HTTPException(
-            status_code=503,
-            detail="GROK_API_KEY not configured in environment variables",
-        )
-
-    try:
-        # Dados para cálculo atuarial
-        actuarial_data = {
-            "location": request.location,
-            "risk_type": request.risk_type,
-            "coverage_value": request.coverage_value or 1000000,  # Valor padrão
-            "calculation_type": "parametric_premium",
-            "time_period": request.time_period,
-            "technical_rate": 0.055,  # Taxa técnica de 5.5% a.a.
-            "discount_rate": 0.045   # Taxa de desconto atuarial
-        }
-
-        result = grok_service.analyze_climate_data(
-            actuarial_data, "parametric_insurance"
-        )
-
-        return {
-            "actuarial_calculation": result.analysis_text,
-            "confidence": result.confidence_level,
-            "location": request.location,
-            "risk_type": request.risk_type,
-            "coverage_value": actuarial_data["coverage_value"],
-            "technical_parameters": {
-                "technical_rate": actuarial_data["technical_rate"],
-                "discount_rate": actuarial_data["discount_rate"]
-            },
-            "timestamp": result.processing_timestamp.isoformat(),
-            "methodology": "Brazilian actuarial standards with SUSEP compliance"
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.exception("Grok insights failed")
+        raise HTTPException(status_code=500, detail="Grok insights failed")
 
 
 @router.get("/status")
@@ -276,11 +195,10 @@ async def get_grok_status():
             "api_configured": bool(os.getenv("GROK_API_KEY")),
         }
     except Exception as e:
-        import traceback
-        tb = traceback.format_exc()
+        logger.exception("Grok status check failed")
         return {
             "status": "error",
-            "error": f"{str(e)}\nTraceback: {tb}",
+            "error": "Internal server error",
             "api_configured": bool(os.getenv("GROK_API_KEY")),
         }
 

@@ -29,9 +29,9 @@ class TestHealthEndpoints:
             data = response.json()
             assert "status" in data
 
-    def test_full_health_endpoint(self, client: TestClient):
+    def test_full_health_endpoint(self, authenticated_client: TestClient):
         """Test GET /api/v1/health/full endpoint"""
-        response = client.get("/api/v1/health/full")
+        response = authenticated_client.get("/api/v1/health/full")
 
         assert response.status_code in [200, 404, 500]
         if response.status_code == 200:
@@ -39,9 +39,9 @@ class TestHealthEndpoints:
             assert "status" in data
             assert "checks" in data or "timestamp" in data
 
-    def test_critical_health_endpoint(self, client: TestClient):
+    def test_critical_health_endpoint(self, authenticated_client: TestClient):
         """Test GET /api/v1/health/critical endpoint"""
-        response = client.get("/api/v1/health/critical")
+        response = authenticated_client.get("/api/v1/health/critical")
 
         assert response.status_code in [200, 404, 500]
         if response.status_code == 200:
@@ -221,9 +221,9 @@ class TestUserProfileEndpoints:
 class TestErrorHandling:
     """Integration tests for error handling"""
 
-    def test_404_not_found(self, client: TestClient):
+    def test_404_not_found(self, authenticated_client: TestClient):
         """Test 404 response for non-existent endpoint"""
-        response = client.get("/api/v1/nonexistent")
+        response = authenticated_client.get("/api/v1/nonexistent")
 
         assert response.status_code == 404
 

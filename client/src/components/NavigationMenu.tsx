@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { useTranslation } from "@/hooks/useTranslation";
+import { features } from "@/lib/features";
 import {
   Globe,
   Home,
@@ -29,32 +30,37 @@ export function NavigationMenu() {
       descKey: 'nav.dashboard.desc',
       href: "/dashboard",
       icon: Home,
+      enabled: true,
     },
     {
       labelKey: 'nav.tokenization',
       descKey: 'nav.tokenization.desc',
       href: "/tokenization",
       icon: Coins,
+      enabled: features.tokenization,
     },
     {
       labelKey: 'nav.analytics',
       descKey: 'nav.analytics.desc',
       href: "/analytics",
       icon: BarChart3,
+      enabled: features.analytics,
     },
     {
       labelKey: 'nav.actuarialLab',
       descKey: 'nav.actuarialLab.desc',
       href: "/actuarial-lab",
       icon: Lab,
+      enabled: true,
     },
     {
       labelKey: 'nav.atlas',
       descKey: 'nav.atlas.desc',
       href: "/atlas",
       icon: Globe,
+      enabled: features.atlas,
     },
-  ];
+  ].filter((item) => item.enabled);
 
   const isActive = (href: string) => {
     if (href === "/dashboard" && location.pathname === "/") return true;

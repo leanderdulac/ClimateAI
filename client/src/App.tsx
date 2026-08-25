@@ -4,6 +4,7 @@ import { LocationProvider } from './lib/LocationContext';
 import { PeriodProvider } from './lib/PeriodContext';
 import { ClimateAssistantLauncher } from './components/ClimateAssistantLauncher';
 import { useConsent, ConsentBanner } from './hooks/useConsent';
+import { features } from './lib/features';
 
 export default function App() {
   const { showBanner, acceptAll, acceptNecessary, customizeConsent } = useConsent();
@@ -14,7 +15,7 @@ export default function App() {
         <PeriodProvider>
           <div className="app">
             <AppRoutes />
-            <ClimateAssistantLauncher />
+            {features.assistant ? <ClimateAssistantLauncher /> : null}
             <ConsentBanner
               show={showBanner}
               onAcceptAll={acceptAll}

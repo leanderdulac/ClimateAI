@@ -2,7 +2,14 @@ import react from "@vitejs/plugin-react"
 import { defineConfig } from "vite"
 import { resolve } from 'path'
 
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  if (mode === 'production' && process.env.VITE_USE_MOCK_DATA === 'true') {
+    throw new Error(
+      'VITE_USE_MOCK_DATA=true is forbidden in production builds. Unset the flag before building.'
+    )
+  }
+
+  return {
   plugins: [react()],
   resolve: {
     alias: {
@@ -68,5 +75,6 @@ export default defineConfig({
       }
     },
     chunkSizeWarningLimit: 600
+  }
   }
 })

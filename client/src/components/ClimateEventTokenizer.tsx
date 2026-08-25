@@ -11,6 +11,7 @@ import { Zap, Package, TrendingUp, AlertTriangle, Thermometer, MapPin, Calendar,
 import { useLocation } from '@/lib/LocationContext';
 import { useTokenizationStore } from '@/store/useTokenizationStore';
 import { embrapaApi, buildApiUrl } from '@/lib/api';
+import { getDefaultHeaders } from '@/lib/requestId';
 import type { LocalizacaoData } from '@/lib/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import {
@@ -41,7 +42,7 @@ export function ClimateEventTokenizer() {
     probabilidade: '',
     descricao: '',
     nivel_alerta: '',
-    wallet_address: 'climatewise_wallet_test',
+    wallet_address: '',
     token_supply: 10000,
     decimals: 0,
     risk_factors: undefined as Record<string, number> | undefined
@@ -229,7 +230,8 @@ export function ClimateEventTokenizer() {
 
     try {
       if (!formData.tipo || !formData.latitude || !formData.longitude || !formData.data_inicio ||
-        !formData.intensidade || !formData.probabilidade || !formData.descricao || !formData.nivel_alerta) {
+        !formData.intensidade || !formData.probabilidade || !formData.descricao || !formData.nivel_alerta ||
+        !formData.wallet_address) {
         throw new Error(t('auth.errors.fillAll'));
       }
 
@@ -257,14 +259,14 @@ export function ClimateEventTokenizer() {
       };
 
       const response = await axios.post(`${API_BASE_URL}/mint`, tokenData, {
-        headers: { 'Content-Type': 'application/json' }
+        headers: getDefaultHeaders() as Record<string, string>
       });
 
       if (response.data.success) {
         setSuccess(true);
         setFormData({
           tipo: '', latitude: '', longitude: '', data_inicio: getCurrentDateTimeLocal(), intensidade: '',
-          probabilidade: '', descricao: '', nivel_alerta: '', wallet_address: 'climatewise_wallet_test',
+          probabilidade: '', descricao: '', nivel_alerta: '', wallet_address: '',
           token_supply: 10000, decimals: 0, risk_factors: undefined
         });
         setLocationName('');

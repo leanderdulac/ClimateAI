@@ -32,8 +32,8 @@ else
     echo "❌ Fora do ar"
 fi
 
-echo -n "Frontend (porta 3000): "
-if curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/ 2>/dev/null; then
+echo -n "Frontend (porta 5173): "
+if curl -s -o /dev/null -w "%{http_code}" http://localhost:5173/ 2>/dev/null; then
     echo "✅ OK"
 else
     echo "❌ Fora do ar"

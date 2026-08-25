@@ -3,47 +3,11 @@ Testes Unitários para Serviços de Autenticação
 """
 
 import unittest
-from unittest.mock import AsyncMock, MagicMock, patch
-import pytest
-from datetime import datetime, timedelta
 from pydantic import ValidationError
 
 
 class TestAuthService(unittest.TestCase):
     """Testes para o serviço de autenticação"""
-
-    def setUp(self):
-        """Configura testes"""
-        # Mock do database session
-        self.mock_db = AsyncMock()
-        
-    @patch('services.auth_service.auth_service')
-    def test_create_user_success(self, mock_auth_service):
-        """Testa criação de usuário com sucesso"""
-        # Arrange
-        mock_user = MagicMock()
-        mock_user.email = 'test@example.com'
-        mock_user.full_name = 'Test User'
-        mock_auth_service.create_user = AsyncMock(return_value=mock_user)
-        
-        # Act
-        # result = await auth_service.create_user(self.mock_db, user_data)
-        # Assert
-        # Este teste seria implementado com dados reais
-        pass
-
-    @patch('services.auth_service.auth_service')
-    def test_login_success(self, mock_auth_service):
-        """Testa login com sucesso"""
-        # Arrange
-        mock_token = MagicMock()
-        mock_token.access_token = 'access_token_123'
-        mock_token.refresh_token = 'refresh_token_456'
-        mock_auth_service.login = AsyncMock(return_value=mock_token)
-        
-        # Act & Assert
-        # Este teste seria implementado com dados reais
-        pass
 
     def test_password_hashing(self):
         """Testa hashing de senha"""
@@ -75,6 +39,30 @@ class TestAuthService(unittest.TestCase):
         # Mas ambos devem verificar corretamente
         self.assertTrue(PasswordManager.verify_password(password, hash1))
         self.assertTrue(PasswordManager.verify_password(password, hash2))
+
+    def test_public_register_password_policy(self):
+        """Cadastro público rejeita senhas fracas."""
+        from models.schemas import PublicRegisterRequest
+
+        PublicRegisterRequest(
+            email="ok@example.com",
+            full_name="Ok User",
+            password="admin123",
+        )
+
+        with self.assertRaises(ValidationError):
+            PublicRegisterRequest(
+                email="weak@example.com",
+                full_name="Weak User",
+                password="short",
+            )
+
+        with self.assertRaises(ValidationError):
+            PublicRegisterRequest(
+                email="letters@example.com",
+                full_name="Letters Only",
+                password="password",
+            )
 
 
 class TestJWTToken(unittest.TestCase):
