@@ -24,7 +24,7 @@ OpenAPI (não produção): `GET /openapi.json` — tag **Partner API**.
 | Tipo | API Key |
 | Header | `X-API-Key` |
 | Desenvolvimento | `cw_dev_partner_key` (ou `PARTNER_API_KEY`) |
-| Produção | chave `sk_live_*` emitida por um admin ClimateWise |
+| Produção | chave `sk_live_*` emitida em **API Parceiros** (`/partners`) |
 
 ```http
 GET /api/v1/partner/climate/current?lat=-23.55&lon=-46.63
@@ -32,6 +32,8 @@ X-API-Key: cw_dev_partner_key
 ```
 
 JWT Bearer **não** é o método desta superfície. A API interna (`/api/v1/auth`) continua para o produto web.
+
+Chaves de produção: no app, menu **API Parceiros** (`/partners`) — crie o parceiro e clique em **Gerar chave**. A `sk_live_*` aparece uma vez.
 
 ## Envelope JSON
 

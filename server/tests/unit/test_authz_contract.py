@@ -17,6 +17,7 @@ PROTECTED_GETS = (
     "/api/v1/blockchain/hathor/status",
     "/api/v1/gemini/capabilities",
     "/api/v1/grok/status",
+    "/api/v1/partners",
 )
 
 

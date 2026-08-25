@@ -18,6 +18,9 @@ const DemoPage = lazy(() => import('@/pages/DemoPage').then(m => ({ default: m.D
 const AgriStrategyPanel = lazy(() =>
   import('@/components/AgriStrategyPanel').then(m => ({ default: m.AgriStrategyPanel }))
 );
+const PartnersPage = lazy(() =>
+  import('@/pages/PartnersPage').then(m => ({ default: m.PartnersPage }))
+);
 
 const router = createBrowserRouter([
   {
@@ -147,6 +150,17 @@ const router = createBrowserRouter([
             <AtlasPage />
           </Suspense>
         </FeatureGate>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/partners",
+    errorElement: <RouteError />,
+    element: (
+      <ProtectedRoute>
+        <Suspense fallback={<PageLoader />}>
+          <PartnersPage />
+        </Suspense>
       </ProtectedRoute>
     ),
   },
