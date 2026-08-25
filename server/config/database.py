@@ -175,8 +175,9 @@ async def init_db():
     if environment == "production":
         await asyncio.to_thread(run_alembic_upgrade, current_db_url)
         print("Database migrations applied successfully")
-        return
 
+    # create_all is additive (checkfirst). It covers models added before the
+    # matching Alembic revision is applied — e.g. local sqlite files.
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     print("Database tables created successfully")

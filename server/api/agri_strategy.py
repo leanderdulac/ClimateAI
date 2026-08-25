@@ -2,6 +2,7 @@
 Agricultural climate adaptation strategy API.
 """
 
+import logging
 from typing import Any, Dict, List, Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -11,6 +12,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from config.database import get_db_session
 from services.agri_strategy_service import agri_strategy_service
 from services.quote_journey_service import quote_journey_service
+
+logger = logging.getLogger("fimce")
 
 router = APIRouter(prefix="/agri-strategy", tags=["agri-strategy"])
 
@@ -207,23 +210,27 @@ async def generate_agri_strategy_plan(
         )
 
         if payload.session_id:
-            await quote_journey_service.log_event(
-                db=db,
-                session_id=payload.session_id,
-                event_type="strategy_generated",
-                payload={
-                    "location": {
-                        "latitude": payload.latitude,
-                        "longitude": payload.longitude,
+            try:
+                await quote_journey_service.log_event(
+                    db=db,
+                    session_id=payload.session_id,
+                    event_type="strategy_generated",
+                    payload={
+                        "location": {
+                            "latitude": payload.latitude,
+                            "longitude": payload.longitude,
+                        },
+                        "quote_context": payload.quote_context.model_dump(exclude_none=True) if payload.quote_context else None,
+                        "historical_context": payload.historical_context.model_dump(exclude_none=True) if payload.historical_context else None,
+                        "strategy": {
+                            "crop_type": payload.crop_type,
+                            "phenological_stage": payload.phenological_stage,
+                        },
                     },
-                    "quote_context": payload.quote_context.model_dump(exclude_none=True) if payload.quote_context else None,
-                    "historical_context": payload.historical_context.model_dump(exclude_none=True) if payload.historical_context else None,
-                    "strategy": {
-                        "crop_type": payload.crop_type,
-                        "phenological_stage": payload.phenological_stage,
-                    },
-                },
-            )
+                )
+            except Exception as exc:
+                await db.rollback()
+                logger.warning("Strategy plan generated but journey log failed: %s", exc)
 
         return response
     except HTTPException:
