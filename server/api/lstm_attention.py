@@ -161,9 +161,22 @@ async def lstm_attention_status():
     """
     Get the status of the LSTM attention model
     """
+    if climate_attention_service is None:
+        return {
+            "model_exists": False,
+            "is_trained": False,
+            "torch_available": False,
+            "device": None,
+            "timestamp": datetime.now().isoformat(),
+        }
+    from services.lstm_attention_service import HAS_TORCH, select_torch_device
+
+    device = select_torch_device()
     return {
         "model_exists": climate_attention_service.model is not None,
         "is_trained": climate_attention_service.is_trained,
         "model_trained": climate_attention_service.is_trained,
+        "torch_available": HAS_TORCH,
+        "device": str(device) if device is not None else None,
         "timestamp": datetime.now().isoformat(),
     }

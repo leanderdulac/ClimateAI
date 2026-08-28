@@ -530,6 +530,42 @@ async def _calculate_evt_pricing(
         return None
 
 
+async def _apply_pytorch_climate_overlay(request: PolicyRequest, result: PricingResult) -> None:
+    """Scale premium with LSTM attention trained on real Open-Meteo archive (MPS/CPU)."""
+    try:
+        from services.lstm_attention_service import HAS_TORCH
+        from services.pytorch_climate_pricing_service import pytorch_climate_pricing_service
+
+        if not HAS_TORCH or result.financials is None:
+            return
+        sim = await asyncio.wait_for(
+            pytorch_climate_pricing_service.simulate(
+                request.latitude or -23.55,
+                request.longitude or -46.63,
+                asset_value=request.asset_value,
+                severity_amount=request.severity_amount,
+                frequency_pct=request.frequency_pct,
+                coverage_period_years=request.coverage_period_years,
+                days=365,
+                epochs=8,
+                n_sims=128,
+            ),
+            timeout=20,
+        )
+        freq_m = float(sim["simulation"]["frequency_multiplier"])
+        sev_m = float(sim["simulation"]["severity_multiplier"])
+        combined = (freq_m + sev_m) / 2.0
+        result.financials.total_premium *= combined
+        if result.risk_factors is None:
+            result.risk_factors = {}
+        result.risk_factors["pytorch_lstm"] = combined
+        result.risk_factors["pytorch_device"] = sim.get("device")
+        result.risk_factors["pytorch_n_obs"] = sim["observations"]["n"]
+        result.risk_factors["pytorch_next_day_precip_mm"] = sim["lstm"]["next_day_precip_mm"]
+    except Exception as exc:
+        logger.warning("PyTorch climate overlay skipped: %s", exc)
+
+
 @router.post("/calculate", response_model=PricingResult)
 async def calculate_policy_endpoint(request: PolicyRequest) -> PricingResult:
     """
@@ -560,9 +596,11 @@ async def calculate_policy_endpoint(request: PolicyRequest) -> PricingResult:
 
         if evt_result:
             set_span_attributes(span, **{"pricing.engine": "evt", "pricing.status": evt_result.status})
-            return evt_result
+            result = evt_result
+        else:
+            pricer = ClimatePricingService()
+            result = pricer.calculate_policy(request, quote_region=quote_region)
+            set_span_attributes(span, **{"pricing.engine": "heuristic", "pricing.status": result.status})
 
-        pricer = ClimatePricingService()
-        result = pricer.calculate_policy(request, quote_region=quote_region)
-        set_span_attributes(span, **{"pricing.engine": "heuristic", "pricing.status": result.status})
+        await _apply_pytorch_climate_overlay(request, result)
         return result

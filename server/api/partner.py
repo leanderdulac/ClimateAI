@@ -7,6 +7,7 @@ Every payload uses the `{data, meta}` envelope (source, timestamps, stale/unavai
 from __future__ import annotations
 
 import hashlib
+import logging
 import os
 from dataclasses import asdict
 from datetime import datetime, timedelta, timezone
@@ -20,6 +21,8 @@ from config.config import settings
 from config.database import get_db_session
 from lib.partner_contract import LICENSES, RATE_LIMIT, REFRESH, envelope, utc_now
 from lib.security import RateLimiter
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/partner", tags=["Partner API"])
 
@@ -49,6 +52,18 @@ class PartnerAgriRequest(BaseModel):
     longitude: float = Field(..., ge=-180, le=180)
     planning_horizon_days: int = Field(default=120, ge=7, le=365)
     risk_tolerance: str = Field(default="medium")
+
+
+class PartnerSimulateRequest(BaseModel):
+    asset_value: float = Field(..., gt=0, examples=[250000])
+    severity_amount: float = Field(..., gt=0, examples=[40000])
+    frequency_pct: float = Field(..., ge=0, le=100, examples=[12])
+    coverage_period_years: int = Field(default=1, ge=1, le=20)
+    latitude: float = Field(default=-23.55, ge=-90, le=90)
+    longitude: float = Field(default=-46.63, ge=-180, le=180)
+    days: int = Field(default=365, ge=90, le=730)
+    epochs: int = Field(default=12, ge=4, le=40)
+    n_sims: int = Field(default=256, ge=32, le=2048)
 
 
 async def require_partner(
@@ -188,6 +203,7 @@ async def partner_catalog(request: Request) -> Dict[str, Any]:
             {"method": "GET", "path": "/geo/feature", "auth": True, "desc": "GeoJSON point for a coordinate"},
             {"method": "GET", "path": "/geo/satellite", "auth": True, "desc": "Satellite preview URL"},
             {"method": "POST", "path": "/pricing/quote", "auth": True, "desc": "Actuarial quote from live indicators"},
+            {"method": "POST", "path": "/pricing/simulate", "auth": True, "desc": "PyTorch LSTM attention on Open-Meteo archive"},
             {"method": "GET", "path": "/agri/catalog", "auth": True, "desc": "Supported crops and stages"},
             {"method": "POST", "path": "/agri/plan", "auth": True, "desc": "Agroclimatic strategy plan"},
         ],
@@ -258,30 +274,38 @@ async def climate_history(
     _partner: PartnerContext = Depends(require_partner),
 ) -> Dict[str, Any]:
     try:
-        from services.openmeteo_service import OpenMeteoService
+        from services.pytorch_climate_pricing_service import fetch_openmeteo_daily_archive
+        import asyncio
 
-        end = datetime.now(timezone.utc)
-        start = end - timedelta(days=days)
-        service = OpenMeteoService()
-        rows = await service.obter_historico(lat, lon, start, end)
-        series = []
-        for row in rows or []:
-            if hasattr(row, "model_dump"):
-                series.append(row.model_dump())
-            elif hasattr(row, "dict"):
-                series.append(row.dict())
-            else:
-                series.append(row)
+        archive = await asyncio.to_thread(fetch_openmeteo_daily_archive, lat, lon, days)
+        n = archive["n_obs"]
+        observations = [
+            {
+                "date": archive["dates"][i],
+                "temperature": archive["temperature"][i],
+                "precipitation": archive["precipitation"][i],
+                "pressure": archive["pressure"][i],
+                "wind_speed": archive["wind"][i],
+            }
+            for i in range(n)
+        ]
         return envelope(
-            {"latitude": lat, "longitude": lon, "days": days, "observations": series},
+            {
+                "latitude": lat,
+                "longitude": lon,
+                "days": days,
+                "start": archive["start"],
+                "end": archive["end"],
+                "observations": observations,
+            },
             source="Open-Meteo archive",
             license_key="open-meteo",
-            status="fresh" if series else "stale",
-            stale=not bool(series),
+            status="fresh",
             cache_ttl_seconds=86400,
             refresh_frequency=REFRESH["history"],
         )
-    except Exception:
+    except Exception as exc:
+        logger.warning("Partner climate history failed: %s", exc)
         return _unavailable("Historical weather upstream is unavailable", "open-meteo")
 
 
@@ -558,6 +582,39 @@ async def partner_quote(
         raise
     except Exception as exc:
         return _unavailable(f"Quote engine unavailable: {exc}")
+
+
+@router.post("/pricing/simulate")
+async def partner_pricing_simulate(
+    payload: PartnerSimulateRequest,
+    _partner: PartnerContext = Depends(require_partner),
+) -> Dict[str, Any]:
+    try:
+        from services.pytorch_climate_pricing_service import pytorch_climate_pricing_service
+
+        result = await pytorch_climate_pricing_service.simulate(
+            payload.latitude,
+            payload.longitude,
+            asset_value=payload.asset_value,
+            severity_amount=payload.severity_amount,
+            frequency_pct=payload.frequency_pct,
+            coverage_period_years=payload.coverage_period_years,
+            days=payload.days,
+            epochs=payload.epochs,
+            n_sims=payload.n_sims,
+        )
+        return envelope(
+            result,
+            source="Open-Meteo archive + NOAA ENSO + PyTorch LSTM attention",
+            license_key="open-meteo",
+            status="fresh",
+            cache_ttl_seconds=0,
+            refresh_frequency=REFRESH["pricing"],
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        return _unavailable(f"PyTorch climate simulation unavailable: {exc}")
 
 
 @router.get("/agri/catalog")
