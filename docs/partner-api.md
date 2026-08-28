@@ -80,6 +80,7 @@ Quando o upstream falha, HTTP continua 200 com `status=unavailable` e `stale=tru
 | GET | `/geo/feature` | Ponto GeoJSON |
 | GET | `/geo/satellite` | URL estática + tiles de satélite |
 | POST | `/pricing/quote` | Prêmio a partir dos indicadores |
+| POST | `/pricing/simulate` | LSTM attention (PyTorch) sobre arquivo real Open-Meteo |
 | GET | `/agri/catalog` | Culturas e estágios |
 | POST | `/agri/plan` | Estratégia agroclimática |
 

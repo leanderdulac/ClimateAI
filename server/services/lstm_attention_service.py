@@ -32,6 +32,24 @@ logger = logging.getLogger(__name__)
 _BaseModule = nn.Module if HAS_TORCH else object
 
 
+def select_torch_device(prefer_mps: bool = False):
+    """Select a torch device.
+
+    LSTM kernels on Apple MPS abort on small batches (MPSNDArray buffer).
+    Keep recurrence on CPU (this machine has 18 cores) and use MPS for
+    dense Monte Carlo draws when prefer_mps=True.
+    """
+    if not HAS_TORCH:
+        return None
+    if prefer_mps:
+        try:
+            if torch.backends.mps.is_available() and torch.backends.mps.is_built():
+                return torch.device("mps")
+        except Exception:
+            pass
+    return torch.device("cpu")
+
+
 class ClimateAttentionLSTM(_BaseModule):
     """
     LSTM with Attention mechanism for climate time series prediction
@@ -156,7 +174,12 @@ class LSTMAttentionService:
     Where x_t = [temp_t, precip_t, pressão_t, índice_NAO, fase_ENSO]
     """
 
-    def __init__(self):
+    def __init__(self, device=None):
+        self.device = device or select_torch_device(prefer_mps=False)
+        if HAS_TORCH and self.device is not None and self.device.type == "cpu":
+            import os
+
+            torch.set_num_threads(max(8, min(16, os.cpu_count() or 8)))
         self.model = None
         self.optimizer = None
         self.criterion = nn.MSELoss() if HAS_TORCH else None
@@ -231,7 +254,10 @@ class LSTMAttentionService:
             X.append(features[i : (i + sequence_length)])
             y.append(targets[i + sequence_length])
 
-        return torch.FloatTensor(X), torch.FloatTensor(y)
+        device = self.device or torch.device("cpu")
+        x_tensor = torch.tensor(np.asarray(X), dtype=torch.float32, device=device)
+        y_tensor = torch.tensor(np.asarray(y), dtype=torch.float32, device=device)
+        return x_tensor, y_tensor
 
     def build_model(
         self,
@@ -255,6 +281,8 @@ class LSTMAttentionService:
             num_layers=num_layers,
             dropout=dropout,
         )
+        if self.device is not None:
+            self.model = self.model.to(self.device)
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.001)
         self.is_trained = False
 
@@ -350,10 +378,14 @@ class LSTMAttentionService:
 
             # Validation
             self.model.eval()
-            with torch.no_grad():
-                val_predictions, _ = self.model(X_val)
-                val_predictions = val_predictions.squeeze()
-                val_loss = self.criterion(val_predictions, y_val).item()
+            val_loss = float("nan")
+            if len(X_val) > 0:
+                with torch.no_grad():
+                    val_predictions, _ = self.model(X_val)
+                    val_predictions = val_predictions.squeeze()
+                    if val_predictions.ndim == 0:
+                        val_predictions = val_predictions.unsqueeze(0)
+                    val_loss = self.criterion(val_predictions, y_val).item()
 
             avg_train_loss = epoch_loss / max(1, len(X_train_shuffled) // batch_size)
             train_losses.append(avg_train_loss)
@@ -373,6 +405,7 @@ class LSTMAttentionService:
             "final_val_loss": val_loss,
             "epochs": epochs,
             "sequence_length": sequence_length,
+            "device": str(self.device) if self.device is not None else None,
             "model_params": {
                 "input_size": self.model.input_size,
                 "hidden_size": self.model.hidden_size,
@@ -422,20 +455,21 @@ class LSTMAttentionService:
 
         # Use the last available sequence
         last_sequence = normalized_features[-sequence_length:]
-        input_tensor = torch.FloatTensor(last_sequence).unsqueeze(
-            0
-        )  # Add batch dimension
+        device = self.device or torch.device("cpu")
+        input_tensor = torch.tensor(
+            last_sequence, dtype=torch.float32, device=device
+        ).unsqueeze(0)
 
         self.model.eval()
         with torch.no_grad():
             predictions = []
             attention_weights_history = []
 
-            # For multi-step prediction, we'd need to implement a feedback mechanism
-            # For now, predict one step and optionally repeat with updated context
             pred, attention_weights = self.model(input_tensor)
-            predictions.append(pred.item())
-            attention_weights_history.append(attention_weights[0].numpy())
+            predictions.append(float(pred.detach().cpu().item()))
+            attention_weights_history.append(
+                attention_weights[0].detach().cpu().numpy()
+            )
 
         return {
             "predictions": predictions,
@@ -486,14 +520,16 @@ class LSTMAttentionService:
                 pred, attention_weights = self.model(
                     X[i : i + 1]
                 )  # Add batch dimension
-                predictions.append(pred.item())
-                attention_weights_list.append(attention_weights[0].numpy())
+                predictions.append(float(pred.detach().cpu().item()))
+                attention_weights_list.append(
+                    attention_weights[0].detach().cpu().numpy()
+                )
 
         return {
             "predictions": predictions,
-            "actual_values": y_actual.numpy().tolist(),
+            "actual_values": y_actual.detach().cpu().numpy().tolist(),
             "attention_weights": attention_weights_list,
-            "input_sequences": X.numpy().tolist(),
+            "input_sequences": X.detach().cpu().numpy().tolist(),
             "sequence_length": sequence_length,
             "total_predictions": len(predictions),
         }

@@ -24,6 +24,7 @@ def test_partner_catalog_is_public(client: TestClient):
     paths = {item["path"] for item in body["endpoints"]}
     assert "/climate/current" in paths
     assert "/pricing/quote" in paths
+    assert "/pricing/simulate" in paths
     assert "/agri/plan" in paths
     assert "/geo/layers" in paths
 
