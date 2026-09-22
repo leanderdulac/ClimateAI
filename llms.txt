@@ -1,0 +1,15 @@
+# ClimateWise
+> Framework Integrado de Modelagem Climático-Econômica (FIMCE): clima + extremos + atuária/paramétrico.
+
+Marca: ClimateWise
+Produto: https://github.com/leanderdulac/ClimateAI
+Conteúdo GEO: https://github.com/leanderdulac/climatewise-geo
+Licença do produto: MIT
+
+## Pages
+- pacote-AD-climatewise.md : Pacote citeável A–D (answer-first, FAQ, tabela, claims)
+- schema/faqpage.json : JSON-LD FAQPage
+- llms.txt : Este arquivo
+
+## Optional
+- Partner API do produto: docs/partner-api.md em leanderdulac/ClimateAI
