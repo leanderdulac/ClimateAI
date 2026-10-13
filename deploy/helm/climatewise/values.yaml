@@ -1,0 +1,116 @@
+# Default values for ClimateWise Helm chart
+global:
+  environment: production
+  domain: climatewise.ai
+
+api:
+  replicaCount: 3
+  image:
+    repository: ghcr.io/leanderdulac/climatewise-api
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  service:
+    type: ClusterIP
+    port: 8000
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 75
+    targetMemoryUtilizationPercentage: 80
+  livenessProbe:
+    path: /health
+    initialDelaySeconds: 15
+    periodSeconds: 10
+  readinessProbe:
+    path: /health
+    initialDelaySeconds: 10
+    periodSeconds: 5
+
+inference:
+  replicaCount: 2
+  image:
+    repository: ghcr.io/leanderdulac/climatewise-inference
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  service:
+    type: ClusterIP
+    port: 8001
+  resources:
+    limits:
+      cpu: 4000m
+      memory: 4Gi
+    requests:
+      cpu: 1000m
+      memory: 1Gi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 8
+    targetCPUUtilizationPercentage: 70
+  livenessProbe:
+    path: /health
+    initialDelaySeconds: 20
+    periodSeconds: 15
+  readinessProbe:
+    path: /status
+    initialDelaySeconds: 15
+    periodSeconds: 10
+
+client:
+  replicaCount: 2
+  image:
+    repository: ghcr.io/leanderdulac/climatewise-client
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  service:
+    type: ClusterIP
+    port: 80
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "180"
+  hosts:
+    - host: app.climatewise.ai
+      paths:
+        - path: /api
+          pathType: Prefix
+          service: api
+        - path: /predict
+          pathType: Prefix
+          service: inference
+        - path: /
+          pathType: Prefix
+          service: client
+  tls:
+    - secretName: climatewise-tls
+      hosts:
+        - app.climatewise.ai
+
+env:
+  ENVIRONMENT: production
+  DEBUG: "false"
+  LOG_LEVEL: INFO
+  INFERENCE_SERVICE_URL: "http://climatewise-inference:8001"
+  REDIS_ENABLED: "true"
+  REDIS_URL: "redis://climatewise-redis:6379/0"
+  RATE_LIMITING_ENABLED: "true"

@@ -1,0 +1,52 @@
+groups:
+  - name: climatewise_slos
+    rules:
+      - alert: HighActuarialQuoteLatency
+        expr: histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{path=~"/api/v1/pricing/.*"}[5m])) by (le)) > 0.8
+        for: 2m
+        labels:
+          severity: critical
+          tier: actuarial
+        annotations:
+          summary: "Actuarial Quote Latency P99 exceeded 800ms"
+          description: "P99 latency is currently {{ $value }}s, exceeding the 800ms mission-critical threshold."
+
+      - alert: High5xxErrorRate
+        expr: (sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m]))) * 100 > 1.0
+        for: 2m
+        labels:
+          severity: critical
+          tier: platform
+        annotations:
+          summary: "HTTP 5xx error rate exceeded 1%"
+          description: "Global error rate is {{ $value }}%, violating the 99.9% uptime SLA."
+
+      - alert: HighMLOpsInferenceFallbackRate
+        expr: (sum(rate(ml_inference_requests_total{mode="fallback_local"}[5m])) / sum(rate(ml_inference_requests_total[5m]))) * 100 > 5.0
+        for: 5m
+        labels:
+          severity: warning
+          tier: mlops
+        annotations:
+          summary: "MLOps remote inference server fallback rate elevated"
+          description: "Over 5% of PyTorch LSTM inferences are falling back to local CPU execution."
+
+      - alert: WeatherOracleDown
+        expr: (sum(rate(weather_oracle_requests_total{status="failure"}[5m])) / sum(rate(weather_oracle_requests_total[5m]))) * 100 > 10.0
+        for: 3m
+        labels:
+          severity: high
+          tier: oracles
+        annotations:
+          summary: "Weather Oracle failure rate > 10%"
+          description: "NOAA/INMET API oracles are experiencing high failure rates, impacting real-time parametric trigger validation."
+
+      - alert: HathorOracleUnreachable
+        expr: hathor_oracle_node_up == 0
+        for: 2m
+        labels:
+          severity: critical
+          tier: blockchain
+        annotations:
+          summary: "Hathor Network Blockchain Oracle is down"
+          description: "Cannot communicate with Hathor full-node / wallet-headless for parametric policy tokenization."

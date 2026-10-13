@@ -101,3 +101,49 @@ extend-exclude = '''
 [tool.bandit]
 exclude_dirs = ["tests", "venv", ".venv", "venv-hathor"]
 skips = ["B101", "B311"]  # Skip assert warnings and random warnings for non-crypto use
+
+[tool.coverage.run]
+source = [
+    "server/api",
+    "server/core",
+    "server/services",
+    "server/models",
+    "server/middleware",
+    "server/lib",
+    "server/utils",
+    "server/router_registry.py",
+    "server/app_factory.py",
+]
+omit = [
+    "server/tests/*",
+    "server/test_*",
+    "server/verify_*",
+    "server/demo_*",
+    "server/benchmark_*",
+    "server/reproduce_*",
+    "server/check_*",
+    "server/create_*",
+    "server/force_seed_*",
+    "server/scripts/*",
+    "server/alembic/*",
+    "server/cloud_functions/*",
+    "*/__pycache__/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+show_missing = true
+precision = 2
+

@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "climatewise.fullname" . }}-inference
+  labels:
+    {{- include "climatewise.labels" . | nindent 4 }}
+    app.kubernetes.io/component: inference
+spec:
+  replicas: {{ .Values.inference.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "climatewise.name" . }}
+      app.kubernetes.io/component: inference
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "climatewise.name" . }}
+        app.kubernetes.io/component: inference
+    spec:
+      containers:
+        - name: inference
+          image: "{{ .Values.inference.image.repository }}:{{ .Values.inference.image.tag }}"
+          imagePullPolicy: {{ .Values.inference.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8001
+              protocol: TCP
+          env:
+            - name: PORT
+              value: "8001"
+            - name: LOG_LEVEL
+              value: "INFO"
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.inference.livenessProbe.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.inference.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.inference.livenessProbe.periodSeconds }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.inference.readinessProbe.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.inference.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.inference.readinessProbe.periodSeconds }}
+          resources:
+            {{- toYaml .Values.inference.resources | nindent 12 }}

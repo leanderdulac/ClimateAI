@@ -33,6 +33,10 @@ test-frontend: ## Executa os testes do cliente React (Vitest)
 	@echo "Executando testes do frontend..."
 	@cd client && $(NPM) run test:run
 
+test-e2e: ## Executa os testes End-to-End com Playwright
+	@echo "Executando testes E2E do frontend..."
+	@cd client && $(NPM) run test:e2e
+
 test-all: ## Executa a suíte de testes completa (unit, integration, performance)
 	@echo "Executando suíte completa de testes..."
 	@$(PYTEST) server/tests -q

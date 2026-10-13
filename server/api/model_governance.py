@@ -16,13 +16,17 @@ from services.model_governance_service import (
     ChangeType,
     ModelStatus
 )
+from services.drift_detection_service import DriftDetectionService, DriftSeverity
+from services.model_registry_service import ModelRegistryService, ModelStage
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="", tags=["model-governance"])
 
-# Instância global do serviço
+# Instâncias globais dos serviços
 governance_service = ModelGovernanceService()
+drift_service = DriftDetectionService()
+registry_service = ModelRegistryService()
 
 
 # ============================================================================
@@ -497,3 +501,82 @@ async def get_example_model():
         },
         "description": "Example model structure for governance"
     }
+
+
+class DriftCheckRequest(BaseModel):
+    baseline_dataset: Dict[str, List[float]]
+    current_dataset: Dict[str, List[float]]
+
+
+class RollbackModelRequest(BaseModel):
+    model_name: str
+
+
+@router.post("/drift-check")
+async def check_climate_drift(
+    request: DriftCheckRequest,
+    current_user: User = Depends(require_analyst),
+):
+    """
+    Executa teste de drift estatístico (KS-test e PSI) entre série climática base e corrente.
+    """
+    assessment = drift_service.assess_multivariate_climate_drift(
+        request.baseline_dataset, request.current_dataset
+    )
+    return {
+        "overall_drift_detected": assessment.overall_drift_detected,
+        "max_severity": assessment.max_severity.value,
+        "recommended_actuarial_buffer": assessment.recommended_actuarial_buffer,
+        "timestamp_utc": assessment.timestamp_utc,
+        "feature_reports": [
+            {
+                "feature_name": r.feature_name,
+                "ks_statistic": r.ks_statistic,
+                "p_value": r.p_value,
+                "psi": r.psi,
+                "drift_detected": r.drift_detected,
+                "severity": r.severity.value,
+                "baseline_mean": r.baseline_mean,
+                "current_mean": r.current_mean,
+                "suggested_risk_margin_multiplier": r.suggested_risk_margin_multiplier,
+            }
+            for r in assessment.feature_reports
+        ],
+    }
+
+
+@router.get("/registry/models")
+async def list_registered_models(
+    current_user: User = Depends(require_analyst),
+):
+    """
+    Lista todos os modelos e suas versões registradas no MLOps Model Registry.
+    """
+    return registry_service.list_models()
+
+
+@router.post("/registry/rollback")
+async def rollback_model(
+    request: RollbackModelRequest,
+    current_user: User = Depends(require_admin),
+):
+    """
+    Executa rollback de emergência para a versão anterior do modelo.
+    """
+    promoted = registry_service.rollback_production_model(request.model_name)
+    if not promoted:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Não foi possível reverter {request.model_name}. Versão anterior não disponível.",
+        )
+    return {
+        "status": "success",
+        "message": f"Modelo {request.model_name} revertido com sucesso para versão {promoted.version}.",
+        "active_model": {
+            "model_name": promoted.model_name,
+            "version": promoted.version,
+            "stage": promoted.stage.value,
+            "artifact_checksum": promoted.artifact_checksum,
+        },
+    }
+

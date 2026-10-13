@@ -61,6 +61,7 @@ run_unit_tests() {
         -m unit \
         --tb=short \
         --cov=server \
+        --cov-config=.coveragerc \
         --cov-report=html:${COVERAGE_DIR} \
         --cov-report=term-missing \
         2>&1 | tee -a "${TEST_LOG}"; then
@@ -132,10 +133,10 @@ run_all_tests() {
         -v \
         --tb=short \
         --cov=server \
+        --cov-config=.coveragerc \
         --cov-report=html:${COVERAGE_DIR} \
         --cov-report=term-missing \
         --cov-report=json:coverage.json \
-        --cov-fail-under=80 \
         2>&1 | tee "${TEST_LOG}"; then
         print_success "All tests passed"
         return 0

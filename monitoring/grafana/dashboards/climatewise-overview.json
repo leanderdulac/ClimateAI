@@ -1,0 +1,131 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "title": "Actuarial Engine & Pricing SLOs",
+      "type": "row"
+    },
+    {
+      "id": 1,
+      "title": "Actuarial Quote Latency (p50 / p95 / p99)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 1 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{path=~\"/api/v1/pricing/.*\"}[5m])) by (le))",
+          "legendFormat": "p50 (Median)"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{path=~\"/api/v1/pricing/.*\"}[5m])) by (le))",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{path=~\"/api/v1/pricing/.*\"}[5m])) by (le))",
+          "legendFormat": "p99 (SLO: <800ms)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.5 },
+              { "color": "red", "value": 0.8 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "HTTP Throughput by Status Code",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 1 },
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{status=~\"2..\"}[5m]))",
+          "legendFormat": "2xx Success"
+        },
+        {
+          "expr": "sum(rate(http_requests_total{status=~\"4..\"}[5m]))",
+          "legendFormat": "4xx Client Error"
+        },
+        {
+          "expr": "sum(rate(http_requests_total{status=~\"5..\"}[5m]))",
+          "legendFormat": "5xx Server Error (SLO: <0.1%)"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 },
+      "id": 101,
+      "title": "MLOps Inference & Oracles Health",
+      "type": "row"
+    },
+    {
+      "id": 3,
+      "title": "MLOps Remote vs Local Fallback Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 10 },
+      "targets": [
+        {
+          "expr": "sum(rate(ml_inference_requests_total{mode=\"remote\"}[5m]))",
+          "legendFormat": "Remote PyTorch Service"
+        },
+        {
+          "expr": "sum(rate(ml_inference_requests_total{mode=\"fallback_local\"}[5m]))",
+          "legendFormat": "Local CPU Fallback (Alert > 5%)"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "External Weather Oracles Availability (NOAA / INMET / SGB)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 10 },
+      "targets": [
+        {
+          "expr": "sum(rate(weather_oracle_requests_total{provider=\"noaa\",status=\"success\"}[5m])) / sum(rate(weather_oracle_requests_total{provider=\"noaa\"}[5m]))",
+          "legendFormat": "NOAA Uptime %"
+        },
+        {
+          "expr": "sum(rate(weather_oracle_requests_total{provider=\"inmet\",status=\"success\"}[5m])) / sum(rate(weather_oracle_requests_total{provider=\"inmet\"}[5m]))",
+          "legendFormat": "INMET Uptime %"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1
+        }
+      }
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["climatewise", "actuarial", "mlops", "production"],
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timezone": "browser",
+  "title": "ClimateWise - Executive & SRE Overview",
+  "uid": "climatewise-overview",
+  "version": 1
+}
