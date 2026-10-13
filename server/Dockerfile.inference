@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install PyTorch CPU and core ML packages
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir torch==2.5.1 --index-url https://download.pytorch.org/whl/cpu && \
-    pip install --no-cache-dir numpy fastapi uvicorn pydantic requests
+    pip install --no-cache-dir numpy fastapi uvicorn pydantic "pydantic[email]" email-validator requests httpx scipy pandas joblib
 
 COPY server/ /app/server/
 WORKDIR /app/server
