@@ -1,70 +1,78 @@
+"""
+Locust Performance and Load Testing Suite for ClimateWise
+Simulates concurrent actuarial, climate forecast, and pricing queries.
+"""
+
 import json
-import time
-
+import logging
 from locust import HttpUser, between, task
-from locust_plugins.csvreader import CSVReader
 
-# CSV reader for test data
-cities_reader = CSVReader("data/br_cities.json")
+logger = logging.getLogger("locust")
 
 
 class ClimateWiseUser(HttpUser):
-    wait_time = between(1, 3)
+    wait_time = between(0.5, 2.0)
+    token: str = ""
+    headers: dict = {}
 
     def on_start(self):
-        """Login and get access token on start"""
-        response = self.client.post(
-            "/api/auth/login",
-            json={"username": "test_user", "password": "test_password"},
-        )
-        if response.status_code == 200:
-            self.token = response.json().get("access_token")
-            self.headers = {"Authorization": f"Bearer {self.token}"}
-        else:
-            self.token = None
-            self.headers = {}
+        """Authenticate user on start to test protected endpoints."""
+        login_payload = {
+            "email": "loadtest@climatewise.ai",
+            "password": "LoadTestSecurePassword123!",
+        }
+        # Try login or register
+        resp = self.client.post("/api/v1/auth/login", json=login_payload)
+        if resp.status_code == 401 or resp.status_code == 404:
+            reg = self.client.post(
+                "/api/v1/auth/register",
+                json={
+                    "email": "loadtest@climatewise.ai",
+                    "password": "LoadTestSecurePassword123!",
+                    "full_name": "Load Test Runner",
+                },
+            )
+            if reg.status_code in (200, 201):
+                resp = self.client.post("/api/v1/auth/login", json=login_payload)
+
+        if resp.status_code == 200:
+            token = resp.json().get("access_token")
+            if token:
+                self.token = token
+                self.headers = {
+                    "Authorization": f"Bearer {token}",
+                    "Content-Type": "application/json",
+                }
+
+    @task(5)
+    def test_health_endpoint(self):
+        """High-frequency health check ping."""
+        self.client.get("/health", name="/health")
 
     @task(3)
-    def get_weather_data(self):
-        """Test weather data endpoint"""
-        if hasattr(self, "token") and self.token:
-            # Get a random city for testing
-            try:
-                with open("data/br_cities.json", "r") as f:
-                    cities = json.load(f)
-                    if cities:
-                        city = cities[0]  # Use first city for simplicity
-                        self.client.get(
-                            f"/api/clima/weather?lat={city['lat']}&lon={city['lon']}",
-                            headers=self.headers,
-                        )
-            except:
-                pass
+    def test_climate_forecast(self):
+        """Test weather forecast calculation endpoint."""
+        params = {
+            "latitude": -23.5505,
+            "longitude": -46.6333,
+            "dias": 7,
+        }
+        self.client.get("/api/v1/clima/previsao", params=params, headers=self.headers, name="/api/v1/clima/previsao")
 
     @task(2)
-    def get_climate_forecast(self):
-        """Test climate forecast endpoint"""
-        if hasattr(self, "token") and self.token:
-            try:
-                with open("data/br_cities.json", "r") as f:
-                    cities = json.load(f)
-                    if cities:
-                        city = cities[0]
-                        self.client.get(
-                            f"/api/previsao/forecast?lat={city['lat']}&lon={city['lon']}&days=7",
-                            headers=self.headers,
-                        )
-            except:
-                pass
+    def test_actuarial_quote(self):
+        """Simulate parametric insurance actuarial quote calculation."""
+        payload = {
+            "latitude": -23.5505,
+            "longitude": -46.6333,
+            "coverage_amount": 100000.0,
+            "trigger_type": "drought",
+            "strike_value": 35.0,
+        }
+        self.client.post("/api/v1/pricing/quote", json=payload, headers=self.headers, name="/api/v1/pricing/quote")
 
-    @task(1)
-    def get_alerts(self):
-        """Test alerts endpoint"""
-        if hasattr(self, "token") and self.token:
-            self.client.get("/api/alertas/active", headers=self.headers)
-
-    @task(1)
-    def get_audit_logs(self):
-        """Test audit endpoint"""
-        if hasattr(self, "token") and self.token:
-            self.client.get("/api/audit/logs?page=1&limit=10", headers=self.headers)
+    @task(2)
+    def test_climate_events(self):
+        """Test active extreme event queries."""
+        params = {"latitude": -23.5505, "longitude": -46.6333, "raio": 50}
+        self.client.get("/api/v1/eventos", params=params, headers=self.headers, name="/api/v1/eventos")

@@ -43,10 +43,20 @@
     "react-dom": "^18.2.0",
     "react-leaflet": "^4.2.1",
     "react-markdown": "^10.1.0",
-    "react-router-dom": "^6.21.1",
+    "react-router-dom": "^7.18.4",
     "recharts": "^2.10.3",
     "tailwind-merge": "^2.1.0",
     "zustand": "^5.0.11"
+  },
+  "overrides": {
+    "braces": "^3.0.3",
+    "chokidar": {
+      "braces": "^3.0.3"
+    },
+    "micromatch": {
+      "braces": "^3.0.3"
+    },
+    "postcss-selector-parser": "^7.1.6"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.3",

@@ -19,12 +19,17 @@ O sistema combina:
 - **Frontend React** (Vite) - Port 5173
 - **Landing** - React route `/welcome` at http://localhost:5173/welcome
 
-### ✅ **Scripts de Gerenciamento**
-- `start_platform.sh` - Inicia todos os serviços
-- `stop_platform.sh` - Para todos os serviços
-- `status_platform.sh` - Verifica status da plataforma
-- `start_landing_page.sh` - Inicia apenas a landing page
-- `generate_pdf.sh` - Gera PDF da landing page
+### ✅ **Comandos de Desenvolvimento e Gestão (Makefile & Scripts)**
+- `make help` - Exibe os comandos disponíveis no projeto
+- `make test` - Executa a suíte de testes do backend e frontend
+- `make test-all` - Executa a suíte completa de testes (unit, integration, performance)
+- `make lint` / `make typecheck` - Validação estática de linter e tipos TypeScript
+- `make build` - Build de produção otimizado do frontend
+- `make start` / `make stop` / `make status` - Gerencia o ciclo de vida dos servidores
+- `make security` - Auditoria de vulnerabilidades de dependências
+- `make clean` - Limpeza de caches e arquivos temporários de build
+- `start_platform.sh` / `stop_platform.sh` - Scripts diretos de ciclo de vida
+- `scripts/verification/` - Diretório consolidado de scripts de diagnóstico e testes manuais
 
 ### ✅ **Integrações Climáticas**
 - **NOAA (National Oceanic and Atmospheric Administration)**: Dados climáticos oficiais dos EUA

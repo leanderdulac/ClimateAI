@@ -36,6 +36,7 @@ from api.eventos import router as eventos_router
 from api.external import router as external_router
 from api.gemini_integration import router as gemini_integration_router
 from api.grok_integration import router as grok_integration_router
+from api.poseidon import router as poseidon_router
 from api.noaa_integration import router as noaa_integration_router
 from api.xweather_forecast import router as xweather_forecast_router
 from api.model_governance import router as model_governance_router
@@ -308,6 +309,9 @@ def register_routers(app: FastAPI, api_prefix: str) -> None:
         )
         app.include_router(
             grok_integration_router, prefix=f"{api_prefix}/grok", tags=["grok"]
+        )
+        app.include_router(
+            poseidon_router, prefix=f"{api_prefix}/poseidon", tags=["poseidon"]
         )
         app.include_router(
             noaa_integration_router, prefix=f"{api_prefix}/noaa", tags=["noaa"]

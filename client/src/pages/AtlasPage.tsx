@@ -1,10 +1,7 @@
-import { useState } from 'react';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { AtlasDashboardPanel } from '@/components/AtlasDashboardPanel';
-import { useTranslation } from '@/hooks/useTranslation';
 
 export default function AtlasPage() {
-  const { t } = useTranslation();
 
   return (
     <DashboardLayout>

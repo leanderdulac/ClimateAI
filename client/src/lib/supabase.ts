@@ -19,9 +19,9 @@ const envKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim();
 const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || '').trim();
 const supabaseAnonKey = isValidJWT(envKey) ? envKey : '';
 
-if (!supabaseUrl || !supabaseAnonKey) {
-    console.error(
-        'Supabase credentials not configured! Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env'
+if ((!supabaseUrl || !supabaseAnonKey) && import.meta.env.MODE !== 'test') {
+    console.warn(
+        'Supabase credentials not configured. Direct client-side database access disabled; API fallback active.'
     );
 }
 
@@ -39,7 +39,9 @@ export const getSupabaseClient = (): SupabaseClient | null => {
     }
 
     if (!isSupabaseConfigured()) {
-        console.warn('Supabase not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
+        if (import.meta.env.MODE !== 'test') {
+            console.warn('Supabase not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to enable.');
+        }
         return null;
     }
 

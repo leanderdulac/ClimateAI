@@ -16,7 +16,8 @@ import {
   LogOut,
   User,
   Settings,
-  KeyRound
+  KeyRound,
+  Waves,
 } from "lucide-react";
 
 export function NavigationMenu() {
@@ -66,6 +67,13 @@ export function NavigationMenu() {
       descKey: 'nav.partners.desc',
       href: "/partners",
       icon: KeyRound,
+      enabled: true,
+    },
+    {
+      labelKey: 'nav.poseidon',
+      descKey: 'nav.poseidon.desc',
+      href: "/poseidon",
+      icon: Waves,
       enabled: true,
     },
   ].filter((item) => item.enabled);

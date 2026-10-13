@@ -21,6 +21,9 @@ const AgriStrategyPanel = lazy(() =>
 const PartnersPage = lazy(() =>
   import('@/pages/PartnersPage').then(m => ({ default: m.PartnersPage }))
 );
+const PoseidonPage = lazy(() =>
+  import('@/pages/PoseidonPage').then(m => ({ default: m.PoseidonPage }))
+);
 
 const router = createBrowserRouter([
   {
@@ -160,6 +163,17 @@ const router = createBrowserRouter([
       <ProtectedRoute>
         <Suspense fallback={<PageLoader />}>
           <PartnersPage />
+        </Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/poseidon",
+    errorElement: <RouteError />,
+    element: (
+      <ProtectedRoute>
+        <Suspense fallback={<PageLoader />}>
+          <PoseidonPage />
         </Suspense>
       </ProtectedRoute>
     ),

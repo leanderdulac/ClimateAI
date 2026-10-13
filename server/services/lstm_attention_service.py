@@ -10,6 +10,7 @@ Where x_t = [temp_t, precip_t, pressão_t, índice_NAO, fase_ENSO]
 
 import logging
 import math
+import os
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -32,15 +33,17 @@ logger = logging.getLogger(__name__)
 _BaseModule = nn.Module if HAS_TORCH else object
 
 
-def select_torch_device(prefer_mps: bool = False):
-    """Select a torch device.
+def select_torch_device(prefer_mps: bool = True):
+    """Pick CUDA, then Apple MPS, then CPU.
 
-    LSTM kernels on Apple MPS abort on small batches (MPSNDArray buffer).
-    Keep recurrence on CPU (this machine has 18 cores) and use MPS for
-    dense Monte Carlo draws when prefer_mps=True.
+    Apple MPS aborts on non-contiguous `expand` views (MPSNDArray buffer).
+    Attention uses `.contiguous()` so LSTM+attention can stay on GPU here.
+    DigitalOcean App Platform has no accelerator, so production stays on CPU.
     """
     if not HAS_TORCH:
         return None
+    if torch.cuda.is_available():
+        return torch.device("cuda")
     if prefer_mps:
         try:
             if torch.backends.mps.is_available() and torch.backends.mps.is_built():
@@ -120,9 +123,11 @@ class ClimateAttentionLSTM(_BaseModule):
         # Shape: (batch_size, hidden_size)
         context = final_hidden[-1]  # Get last layer hidden state
 
-        # Expand context to match sequence length
+        # Expand context to match sequence length.
+        # contiguous() is required on Apple MPS: expand() yields stride 0 and
+        # Linear() then aborts inside MPSNDArray.
         # Shape: (batch_size, seq_len, hidden_size)
-        context_expanded = context.unsqueeze(1).expand(-1, lstm_output.size(1), -1)
+        context_expanded = context.unsqueeze(1).expand(-1, lstm_output.size(1), -1).contiguous()
 
         # Compute attention scores: tanh(W_h * h_t + W_c * c_t)
         # Shape: (batch_size, seq_len, hidden_size)
@@ -175,7 +180,7 @@ class LSTMAttentionService:
     """
 
     def __init__(self, device=None):
-        self.device = device or select_torch_device(prefer_mps=False)
+        self.device = device or select_torch_device()
         if HAS_TORCH and self.device is not None and self.device.type == "cpu":
             import os
 
@@ -349,15 +354,15 @@ class LSTMAttentionService:
             self.model.train()
 
             # Shuffle training data
-            train_indices = torch.randperm(len(X_train))
+            train_indices = torch.randperm(len(X_train), device=X_train.device)
             X_train_shuffled = X_train[train_indices]
             y_train_shuffled = y_train[train_indices]
 
             epoch_loss = 0.0
 
             for i in range(0, len(X_train_shuffled), batch_size):
-                batch_X = X_train_shuffled[i : i + batch_size]
-                batch_y = y_train_shuffled[i : i + batch_size]
+                batch_X = X_train_shuffled[i : i + batch_size].contiguous()
+                batch_y = y_train_shuffled[i : i + batch_size].contiguous()
 
                 # Forward pass
                 predictions, _ = self.model(batch_X)
@@ -438,6 +443,35 @@ class LSTMAttentionService:
         Returns:
             Predictions with attention weights and confidence intervals
         """
+        # Check for remote inference delegation (Decoupled MLOps)
+        inference_url = os.getenv("INFERENCE_SERVICE_URL")
+        if inference_url:
+            try:
+                import json
+                from urllib.request import Request, urlopen
+                payload = {
+                    "temperature": temperature,
+                    "precipitation": precipitation,
+                    "pressure": pressure,
+                    "nao_index": nao_index,
+                    "enso_phase": enso_phase,
+                    "sequence_length": sequence_length,
+                    "num_predictions": num_predictions,
+                }
+                req = Request(
+                    f"{inference_url.rstrip('/')}/predict",
+                    data=json.dumps(payload).encode(),
+                    headers={"Content-Type": "application/json"},
+                    method="POST",
+                )
+                with urlopen(req, timeout=10) as resp:
+                    return json.loads(resp.read().decode())
+            except Exception as exc:
+                logger.warning(
+                    "Remote inference service failed (%s); falling back to local model",
+                    exc,
+                )
+
         if not self.is_trained:
             raise ValueError("Model must be trained before making predictions")
 

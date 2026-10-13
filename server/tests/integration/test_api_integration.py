@@ -37,6 +37,18 @@ async def client():
         yield ac
 
 
+@pytest.fixture
+async def authenticated_client():
+    """Cria cliente HTTP autenticado para testes"""
+    from services.auth_service import auth_service
+    token = auth_service.create_access_token(
+        data={"sub": "test-user-id", "email": "test@example.com", "role": "user"}
+    )
+    headers = {"Authorization": f"Bearer {token}"}
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test", headers=headers) as ac:
+        yield ac
+
+
 @pytest.mark.integration
 @pytest.mark.requires_db
 class TestHealthEndpoints:
@@ -146,7 +158,7 @@ class TestClimateEndpoints:
     """Testa endpoints de clima"""
 
     @pytest.mark.asyncio
-    async def test_get_clima_previsao(self, client):
+    async def test_get_clima_previsao(self, authenticated_client):
         """Testa previsão climática"""
         params = {
             "latitude": -23.5505,
@@ -154,14 +166,14 @@ class TestClimateEndpoints:
             "dias": 7
         }
 
-        response = await client.get("/api/v1/clima/previsao", params=params)
+        response = await authenticated_client.get("/api/v1/clima/previsao", params=params)
         assert response.status_code == 200
         data = response.json()
         # Aceitar tanto 'forecast' (inglês) quanto 'previsao' (português) ou 'data'
         assert "forecast" in data or "previsao" in data or "data" in data
 
     @pytest.mark.asyncio
-    async def test_get_clima_historico(self, client):
+    async def test_get_clima_historico(self, authenticated_client):
         """Testa dados históricos de clima"""
         params = {
             "latitude": -23.5505,
@@ -170,7 +182,7 @@ class TestClimateEndpoints:
             "data_fim": "2024-01-31"
         }
         
-        response = await client.get("/api/v1/clima/historico", params=params)
+        response = await authenticated_client.get("/api/v1/clima/historico", params=params)
         assert response.status_code == 200
 
 
@@ -180,7 +192,7 @@ class TestEventosEndpoints:
     """Testa endpoints de eventos climáticos"""
 
     @pytest.mark.asyncio
-    async def test_get_eventos(self, client):
+    async def test_get_eventos(self, authenticated_client):
         """Testa listagem de eventos"""
         params = {
             "latitude": -23.5505,
@@ -188,7 +200,7 @@ class TestEventosEndpoints:
             "raio": 50
         }
 
-        response = await client.get("/api/v1/eventos", params=params)
+        response = await authenticated_client.get("/api/v1/eventos", params=params)
         # 307 = Temporary Redirect (pode ocorrer se precisar autenticar)
         assert response.status_code in [200, 307]
         if response.status_code == 200:
@@ -202,14 +214,14 @@ class TestModelagemEndpoints:
     """Testa endpoints de modelagem econômica"""
 
     @pytest.mark.asyncio
-    async def test_previsao_precos(self, client):
+    async def test_previsao_precos(self, authenticated_client):
         """Testa previsão de preços"""
         params = {
             "simbolos": ["CORN", "SOYBEAN"],
             "dias": 30
         }
         
-        response = await client.get("/api/v1/modelagem/previsao-precos", params=params)
+        response = await authenticated_client.get("/api/v1/modelagem/previsao-precos", params=params)
         assert response.status_code == 200
 
 
@@ -219,27 +231,27 @@ class TestMathematicalEnginesEndpoints:
     """Testa endpoints de motores matemáticos"""
 
     @pytest.mark.asyncio
-    async def test_extreme_value_analysis(self, client):
+    async def test_extreme_value_analysis(self, authenticated_client):
         """Testa análise de valores extremos"""
         data = {
             "time_series_data": [10, 15, 20, 25, 30, 35, 40, 45, 50]
         }
         
-        response = await client.post(
+        response = await authenticated_client.post(
             "/api/v1/math-engines/extreme-value-analysis/gev",
             json=data
         )
         assert response.status_code in [200, 422]  # 422 se validação falhar
 
     @pytest.mark.asyncio
-    async def test_spatial_analysis(self, client):
+    async def test_spatial_analysis(self, authenticated_client):
         """Testa análise espacial"""
         data = {
             "coordinates": [[-23.55, -46.63], [-22.90, -43.17]],
             "values": [100, 200]
         }
         
-        response = await client.post(
+        response = await authenticated_client.post(
             "/api/v1/math-engines/spatial-analysis/kde",
             json=data
         )

@@ -3,14 +3,14 @@ import pytest
 
 @pytest.mark.integration
 class TestAgriStrategyApi:
-    def test_catalog_endpoint(self, client):
-        response = client.get("/api/v1/agri-strategy/catalog")
+    def test_catalog_endpoint(self, authenticated_client):
+        response = authenticated_client.get("/api/v1/agri-strategy/catalog")
         assert response.status_code == 200
         body = response.json()
         assert "supported_crops" in body
         assert "supported_stages" in body
 
-    def test_plan_endpoint(self, client, monkeypatch):
+    def test_plan_endpoint(self, authenticated_client, monkeypatch):
         from api import agri_strategy
 
         async def fake_generate_plan(**_kwargs):
@@ -51,14 +51,14 @@ class TestAgriStrategyApi:
             },
         }
 
-        response = client.post("/api/v1/agri-strategy/plan", json=payload)
+        response = authenticated_client.post("/api/v1/agri-strategy/plan", json=payload)
         assert response.status_code == 200
         body = response.json()
         assert body["crop_type"] == "soybean"
         assert "exposure_scores" in body
         assert "operational_actions" in body
 
-    def test_plan_endpoint_invalid_payload_returns_422(self, client):
+    def test_plan_endpoint_invalid_payload_returns_422(self, authenticated_client):
         invalid_payload = {
             "crop_type": "soybean",
             "phenological_stage": "flowering",
@@ -68,7 +68,7 @@ class TestAgriStrategyApi:
             "risk_tolerance": "extreme",
         }
 
-        response = client.post("/api/v1/agri-strategy/plan", json=invalid_payload)
+        response = authenticated_client.post("/api/v1/agri-strategy/plan", json=invalid_payload)
         assert response.status_code == 422
 
         body = response.json()

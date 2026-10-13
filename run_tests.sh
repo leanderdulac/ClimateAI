@@ -40,6 +40,9 @@ print_info() {
 
 # Check if pytest is installed
 check_pytest() {
+    if [ -f "./.venv/bin/activate" ]; then
+        source ./.venv/bin/activate
+    fi
     if ! command -v pytest &> /dev/null; then
         print_error "pytest not found! Install with:"
         echo "pip install -r server/requirements-test.txt"
@@ -199,15 +202,18 @@ show_statistics() {
     print_header "Test Statistics"
 
     if [ -f "${TEST_LOG}" ]; then
-        local total=$(grep -c "PASSED\|FAILED" "${TEST_LOG}" || echo "0")
-        local passed=$(grep -c "PASSED" "${TEST_LOG}" || echo "0")
-        local failed=$(grep -c "FAILED" "${TEST_LOG}" || echo "0")
+        local total=$(grep -c -E "PASSED|FAILED" "${TEST_LOG}" 2>/dev/null || true)
+        local passed=$(grep -c "PASSED" "${TEST_LOG}" 2>/dev/null || true)
+        local failed=$(grep -c "FAILED" "${TEST_LOG}" 2>/dev/null || true)
+        total=${total:-0}
+        passed=${passed:-0}
+        failed=${failed:-0}
 
         echo "Total Tests: ${total}"
-        echo "Passed: ${GREEN}${passed}${NC}"
-        echo "Failed: ${RED}${failed}${NC}"
+        echo -e "Passed: ${GREEN}${passed}${NC}"
+        echo -e "Failed: ${RED}${failed}${NC}"
 
-        if [ "$failed" -eq 0 ]; then
+        if [ "${failed}" -eq 0 ]; then
             print_success "All tests passed!"
         fi
     fi

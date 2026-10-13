@@ -64,9 +64,9 @@ class TestBaseEndpoints:
 
         assert response.status_code in [200, 404]
 
-    def test_api_root_endpoint(self, client: TestClient):
+    def test_api_root_endpoint(self, authenticated_client: TestClient):
         """Test GET /api endpoint"""
-        response = client.get("/api")
+        response = authenticated_client.get("/api")
 
         assert response.status_code in [200, 404, 307]
 

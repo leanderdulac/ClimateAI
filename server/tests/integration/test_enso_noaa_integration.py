@@ -16,7 +16,7 @@ async def ensure_test_db_ready():
 
 @pytest.mark.integration
 class TestENSONoaaIntegration:
-    def test_enso_series_endpoint(self, client, monkeypatch):
+    def test_enso_series_endpoint(self, authenticated_client, monkeypatch):
         from api import noaa_integration
 
         async def fake_roni_series():
@@ -27,7 +27,7 @@ class TestENSONoaaIntegration:
 
         monkeypatch.setattr(noaa_integration.enso_service, "get_roni_series", fake_roni_series)
 
-        response = client.get("/api/v1/noaa/enso/series", params={"index_name": "roni", "limit": 2})
+        response = authenticated_client.get("/api/v1/noaa/enso/series", params={"index_name": "roni", "limit": 2})
         assert response.status_code == 200
 
         data = response.json()
@@ -35,7 +35,7 @@ class TestENSONoaaIntegration:
         assert data["count"] == 2
         assert data["series"][-1]["value"] == -0.5
 
-    def test_enso_snapshot_and_persisted_latest(self, client, monkeypatch):
+    def test_enso_snapshot_and_persisted_latest(self, authenticated_client, monkeypatch):
         from api import noaa_integration
 
         async def fake_snapshot():
@@ -66,20 +66,20 @@ class TestENSONoaaIntegration:
 
         monkeypatch.setattr(noaa_integration.enso_service, "get_latest_snapshot", fake_snapshot)
 
-        response_snapshot = client.get("/api/v1/noaa/enso/snapshot", params={"persist": "true"})
+        response_snapshot = authenticated_client.get("/api/v1/noaa/enso/snapshot", params={"persist": "true"})
         assert response_snapshot.status_code == 200
         body_snapshot = response_snapshot.json()
         assert body_snapshot["persisted"] is True
         assert body_snapshot["snapshot"]["regime_label"] == "la_nina"
 
-        response_latest = client.get("/api/v1/noaa/enso/persisted/latest")
+        response_latest = authenticated_client.get("/api/v1/noaa/enso/persisted/latest")
         assert response_latest.status_code == 200
         body_latest = response_latest.json()
         assert body_latest["found"] is True
         assert body_latest["regime_label"] == "la_nina"
         assert body_latest["impact_risk_modifier"] == pytest.approx(1.075)
 
-    def test_enso_ingest_now_endpoint(self, client, monkeypatch):
+    def test_enso_ingest_now_endpoint(self, authenticated_client, monkeypatch):
         from api import noaa_integration
 
         async def fake_snapshot():
@@ -110,7 +110,7 @@ class TestENSONoaaIntegration:
 
         monkeypatch.setattr(noaa_integration.enso_service, "get_latest_snapshot", fake_snapshot)
 
-        response = client.post("/api/v1/noaa/enso/ingest-now")
+        response = authenticated_client.post("/api/v1/noaa/enso/ingest-now")
         assert response.status_code == 200
 
         data = response.json()

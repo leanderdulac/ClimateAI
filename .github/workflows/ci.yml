@@ -51,10 +51,10 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Run unit tests (fast lane)
+      - name: Run unit and integration tests
         env:
-          PYTEST_ADDOPTS: -m "not integration and not slow and not requires_db and not requires_redis and not performance" --disable-warnings --maxfail=1
-        run: pytest
+          PYTEST_ADDOPTS: --disable-warnings
+        run: pytest tests/unit tests/integration -q
 
       - name: Run blockchain endpoint regression tests
         run: pytest tests/unit/test_hathor_blockchain_endpoints.py -q
@@ -88,3 +88,6 @@ jobs:
         env:
           CI: true
         run: npm run test:run
+
+      - name: Build frontend
+        run: npm run build

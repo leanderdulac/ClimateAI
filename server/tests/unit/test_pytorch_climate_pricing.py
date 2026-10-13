@@ -21,7 +21,9 @@ def test_torch_device_is_mps_or_cpu():
         pytest.skip("real PyTorch not available in this test process")
     device = select_torch_device()
     assert device is not None
-    assert str(device) in {"mps", "cpu"}
+    assert str(device) in {"cuda", "mps", "cpu"}
+    cpu = select_torch_device(prefer_mps=False)
+    assert str(cpu) in {"cuda", "cpu"}
 
 
 @pytest.mark.unit
