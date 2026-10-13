@@ -1,0 +1,41 @@
+---
+version: "2.0"
+
+services:
+  climatewise-inference:
+    image: ghcr.io/leanderdulac/climatewise-inference:latest
+    expose:
+      - port: 8001
+        as: 8001
+        to:
+          - global: true
+    env:
+      - PORT=8001
+      - LOG_LEVEL=INFO
+      - FORCE_CPU=1
+
+profiles:
+  compute:
+    climatewise-inference:
+      resources:
+        cpu:
+          units: 2.0
+        memory:
+          size: 4Gi
+        storage:
+          size: 20Gi
+
+  placement:
+    akash:
+      attributes:
+        host: akash
+      pricing:
+        climatewise-inference:
+          denom: uakt
+          amount: 25000
+
+deployment:
+  climatewise-inference:
+    akash:
+      profile: climatewise-inference
+      count: 1
