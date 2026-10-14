@@ -502,7 +502,7 @@ class LSTMAttentionService:
             pred, attention_weights = self.model(input_tensor)
             predictions.append(float(pred.detach().cpu().item()))
             attention_weights_history.append(
-                attention_weights[0].detach().cpu().numpy()
+                attention_weights[0].detach().cpu().numpy().tolist()
             )
 
         return {
@@ -556,7 +556,7 @@ class LSTMAttentionService:
                 )  # Add batch dimension
                 predictions.append(float(pred.detach().cpu().item()))
                 attention_weights_list.append(
-                    attention_weights[0].detach().cpu().numpy()
+                    attention_weights[0].detach().cpu().numpy().tolist()
                 )
 
         return {

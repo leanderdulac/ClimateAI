@@ -114,13 +114,23 @@ async def predict_endpoint(payload: PredictRequest) -> Dict[str, Any]:
             sequence_length=payload.sequence_length,
             num_predictions=payload.num_predictions,
         )
-        return result
+        return _to_serializable(result)
     except Exception as exc:
         logger.error("Inference failed: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Inference computation error: {exc}",
         ) from exc
+
+
+def _to_serializable(obj: Any) -> Any:
+    if hasattr(obj, "tolist"):
+        return obj.tolist()
+    if isinstance(obj, dict):
+        return {k: _to_serializable(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_to_serializable(v) for v in obj]
+    return obj
 
 
 if __name__ == "__main__":
