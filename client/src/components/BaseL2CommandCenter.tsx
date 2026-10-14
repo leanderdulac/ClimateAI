@@ -18,7 +18,9 @@ import {
   Lock,
   Layers,
   Sparkles,
-  TrendingDown
+  TrendingDown,
+  Play,
+  X
 } from "lucide-react";
 import axios from "axios";
 import { buildApiUrl } from "@/lib/api";
@@ -45,6 +47,7 @@ export function BaseL2CommandCenter() {
   const [mintLoading, setMintLoading] = useState<boolean>(false);
   const [payoutLoading, setPayoutLoading] = useState<boolean>(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [showVideoModal, setShowVideoModal] = useState<boolean>(false);
 
   // Network Telemetry
   const [baseBlock, setBaseBlock] = useState<number>(48092011);
@@ -295,6 +298,14 @@ export function BaseL2CommandCenter() {
               <Button
                 variant="outline"
                 size="sm"
+                onClick={() => setShowVideoModal(true)}
+                className="rounded-full border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 text-xs font-semibold gap-1.5 shadow-sm"
+              >
+                <Play className="h-3.5 w-3.5 fill-current" /> Vídeo Pitch (1080p)
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={fetchStatus}
                 className="rounded-full border-border/80 hover:bg-muted/50 text-xs gap-1.5"
               >
@@ -526,6 +537,59 @@ export function BaseL2CommandCenter() {
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* Video Pitch Modal */}
+      {showVideoModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-xl animate-fade-in">
+          <div className="relative w-full max-w-5xl rounded-3xl border border-border/80 bg-card/95 shadow-2xl overflow-hidden p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-primary/10 text-primary">
+                  <Play className="h-5 w-5 fill-current" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-foreground">ClimateWise — Vídeo Pitch Institucional (Full HD 1080p)</h3>
+                  <p className="text-xs text-muted-foreground">Apresentação para investidores globais Tier-1 (a16z, Sequoia, Coinbase Ventures, Paradigm)</p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowVideoModal(false)}
+                className="rounded-full hover:bg-muted text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+
+            <div className="relative aspect-video rounded-2xl overflow-hidden border border-border/60 bg-black shadow-inner">
+              <video
+                src="/climatewise_presentation_video.mp4"
+                controls
+                autoPlay
+                className="w-full h-full object-cover"
+              />
+            </div>
+
+            <div className="flex items-center justify-between text-xs text-muted-foreground pt-2">
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30 text-[10px]">
+                  1080p • Full HD
+                </Badge>
+                <span>Duração: 1m 55s</span>
+                <span>• Narração IA em Inglês</span>
+              </div>
+              <a
+                href="/climatewise_presentation_video.mp4"
+                download="climatewise_presentation_video.mp4"
+                className="text-primary hover:underline font-medium inline-flex items-center gap-1"
+              >
+                Baixar Vídeo MP4 <ExternalLink className="h-3 w-3" />
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
