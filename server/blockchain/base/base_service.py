@@ -63,7 +63,9 @@ class BaseService:
         self.kms_signer = kms_signer
         self.contract_address = self.config.BASE_CLIMATE_POLICY_CONTRACT or os.getenv("CLIMATE_POLICY_CONTRACT")
         self.w3 = None
+        self.contract = None
         self._init_web3()
+        self._load_contract()
 
     def _init_web3(self) -> None:
         """Initializes connection to Base RPC provider."""
@@ -83,6 +85,28 @@ class BaseService:
             logger.warning("web3 not installed. BaseService running in mock simulation mode.")
             self.w3 = None
         except Exception as exc:
+            logger.error("Error connecting to Base RPC (%s): %s", self.config.rpc_url, exc)
+            self.w3 = None
+
+    def _load_contract(self) -> None:
+        """Loads the compiled ClimatePolicy contract if connected and address configured."""
+        if not self.w3 or not self.contract_address or self.contract_address == "0x0000000000000000000000000000000000000000":
+            return
+        try:
+            import json
+            from pathlib import Path
+            from web3 import Web3
+            artifact_path = Path(__file__).resolve().parent.parent / "ClimatePolicyArtifact.json"
+            if artifact_path.exists():
+                with open(artifact_path, "r", encoding="utf-8") as f:
+                    artifact = json.load(f)
+                self.contract = self.w3.eth.contract(
+                    address=Web3.to_checksum_address(self.contract_address),
+                    abi=artifact["abi"],
+                )
+                logger.info("Loaded ClimatePolicy contract at %s", self.contract_address)
+        except Exception as exc:
+            logger.warning("Could not load ClimatePolicy contract ABI: %s", exc)
             logger.error("Error connecting to Base RPC (%s): %s", self.config.rpc_url, exc)
             self.w3 = None
 
@@ -179,30 +203,72 @@ class BaseService:
         pk = self.config.BASE_OPERATOR_PRIVATE_KEY or os.getenv("BASE_OPERATOR_PRIVATE_KEY")
         if self.is_connected() and (pk or self.kms_signer) and contract != "0x0000000000000000000000000000000000000000":
             try:
-                tx_data = {
-                    "to": contract,
-                    "data": call_data,
-                    "gas": self.config.BASE_GAS_LIMIT_DEFAULT,
-                    "gasPrice": self.w3.eth.gas_price,
-                    "chainId": self.config.chain_id,
-                }
+                base_fee = self.w3.eth.get_block("latest").get("baseFeePerGas", 10_000_000)
+                priority_fee = self.w3.to_wei(0.01, "gwei")
+                max_fee = int(base_fee * 2) + priority_fee
+
                 if self.kms_signer:
+                    tx_data = {
+                        "to": self.w3.to_checksum_address(contract),
+                        "data": call_data,
+                        "gas": self.config.BASE_GAS_LIMIT_DEFAULT,
+                        "maxFeePerGas": max_fee,
+                        "maxPriorityFeePerGas": priority_fee,
+                        "chainId": self.config.chain_id,
+                    }
                     signed_tx = self.kms_signer.sign_transaction(tx_data)
                     tx_hash = self.w3.eth.send_raw_transaction(signed_tx).hex()
                 else:
                     account = self.w3.eth.account.from_key(pk)
-                    tx_data["nonce"] = self.w3.eth.get_transaction_count(account.address)
-                    tx_data["from"] = account.address
-                    signed = account.sign_transaction(tx_data)
-                    tx_hash = self.w3.eth.send_raw_transaction(signed.raw_transaction).hex()
+                    nonce = self.w3.eth.get_transaction_count(account.address, "pending")
+                    if self.contract:
+                        tx_data = self.contract.functions.mintPolicy(
+                            self.w3.to_checksum_address(to_address),
+                            slot,
+                            coverage_amount_cents,
+                        ).build_transaction({
+                            "from": account.address,
+                            "gas": self.config.BASE_GAS_LIMIT_DEFAULT,
+                            "maxFeePerGas": max_fee,
+                            "maxPriorityFeePerGas": priority_fee,
+                            "chainId": self.config.chain_id,
+                            "nonce": nonce,
+                        })
+                    else:
+                        tx_data = {
+                            "to": self.w3.to_checksum_address(contract),
+                            "data": call_data,
+                            "gas": self.config.BASE_GAS_LIMIT_DEFAULT,
+                            "maxFeePerGas": max_fee,
+                            "maxPriorityFeePerGas": priority_fee,
+                            "chainId": self.config.chain_id,
+                            "nonce": nonce,
+                            "from": account.address,
+                        }
+                    raw_hex = self.w3.eth.send_raw_transaction(signed.raw_transaction).hex()
+                    tx_hash = "0x" + raw_hex if not raw_hex.startswith("0x") else raw_hex
+
+                if not tx_hash.startswith("0x"):
+                    tx_hash = "0x" + tx_hash
+                receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash, timeout=60)
+                actual_token_id = mock_token_id
+                if receipt.logs:
+                    for log in receipt.logs:
+                        if len(log.topics) >= 3:
+                            try:
+                                actual_token_id = int(log.topics[2].hex(), 16)
+                                break
+                            except Exception:
+                                pass
 
                 return BaseTransactionResult(
-                    success=True,
+                    success=(receipt.status == 1),
                     tx_hash=tx_hash,
                     chain_id=self.config.chain_id,
                     network=self.config.NETWORK,
                     contract_address=contract,
-                    token_id=mock_token_id,
+                    token_id=actual_token_id,
+                    gas_used=receipt.gasUsed,
                     explorer_url=self.config.get_explorer_tx_url(tx_hash),
                 )
             except Exception as exc:
@@ -234,7 +300,7 @@ class BaseService:
         """
         contract = self.contract_address or "0x0000000000000000000000000000000000000000"
 
-        # ABI encode
+        # ABI encode fallback
         token_hex = hex(token_id)[2:].zfill(64)
         amount_hex = hex(payout_amount_cents)[2:].zfill(64)
         hash_hex = evidence_hash.replace("0x", "").zfill(64)
@@ -243,31 +309,67 @@ class BaseService:
         pk = self.config.BASE_OPERATOR_PRIVATE_KEY or os.getenv("BASE_OPERATOR_PRIVATE_KEY")
         if self.is_connected() and (pk or self.kms_signer) and contract != "0x0000000000000000000000000000000000000000":
             try:
-                tx_data = {
-                    "to": contract,
-                    "data": call_data,
-                    "gas": self.config.BASE_GAS_LIMIT_DEFAULT,
-                    "gasPrice": self.w3.eth.gas_price,
-                    "chainId": self.config.chain_id,
-                }
+                base_fee = self.w3.eth.get_block("latest").get("baseFeePerGas", 10_000_000)
+                priority_fee = self.w3.to_wei(0.01, "gwei")
+                max_fee = int(base_fee * 2) + priority_fee
+
                 if self.kms_signer:
+                    tx_data = {
+                        "to": self.w3.to_checksum_address(contract),
+                        "data": call_data,
+                        "gas": self.config.BASE_GAS_LIMIT_DEFAULT,
+                        "maxFeePerGas": max_fee,
+                        "maxPriorityFeePerGas": priority_fee,
+                        "chainId": self.config.chain_id,
+                    }
                     signed_tx = self.kms_signer.sign_transaction(tx_data)
                     tx_hash = self.w3.eth.send_raw_transaction(signed_tx).hex()
                 else:
                     account = self.w3.eth.account.from_key(pk)
-                    tx_data["nonce"] = self.w3.eth.get_transaction_count(account.address)
-                    tx_data["from"] = account.address
-                    signed = account.sign_transaction(tx_data)
-                    tx_hash = self.w3.eth.send_raw_transaction(signed.raw_transaction).hex()
+                    nonce = self.w3.eth.get_transaction_count(account.address, "pending")
+                    if self.contract:
+                        ev_bytes = bytes.fromhex(evidence_hash.replace("0x", "")) if isinstance(evidence_hash, str) else evidence_hash
+                        if len(ev_bytes) != 32:
+                            import hashlib
+                            ev_bytes = hashlib.sha256(ev_bytes).digest()
+                        tx_data = self.contract.functions.triggerPayoutWithProof(
+                            token_id,
+                            payout_amount_cents,
+                            ev_bytes,
+                        ).build_transaction({
+                            "from": account.address,
+                            "gas": self.config.BASE_GAS_LIMIT_DEFAULT,
+                            "maxFeePerGas": max_fee,
+                            "maxPriorityFeePerGas": priority_fee,
+                            "chainId": self.config.chain_id,
+                            "nonce": nonce,
+                        })
+                    else:
+                        tx_data = {
+                            "to": self.w3.to_checksum_address(contract),
+                            "data": call_data,
+                            "gas": self.config.BASE_GAS_LIMIT_DEFAULT,
+                            "maxFeePerGas": max_fee,
+                            "maxPriorityFeePerGas": priority_fee,
+                            "chainId": self.config.chain_id,
+                            "nonce": nonce,
+                            "from": account.address,
+                        }
+                    raw_hex = self.w3.eth.send_raw_transaction(signed.raw_transaction).hex()
+                    tx_hash = "0x" + raw_hex if not raw_hex.startswith("0x") else raw_hex
 
+                if not tx_hash.startswith("0x"):
+                    tx_hash = "0x" + tx_hash
+                receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash, timeout=60)
                 return BaseTransactionResult(
-                    success=True,
+                    success=(receipt.status == 1),
                     tx_hash=tx_hash,
                     chain_id=self.config.chain_id,
                     network=self.config.NETWORK,
                     contract_address=contract,
                     token_id=token_id,
                     evidence_hash=evidence_hash,
+                    gas_used=receipt.gasUsed,
                     explorer_url=self.config.get_explorer_tx_url(tx_hash),
                 )
             except Exception as exc:

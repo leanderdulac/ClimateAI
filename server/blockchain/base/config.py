@@ -99,7 +99,7 @@ class BaseConfig(BaseSettings):
         return f"{self.explorer_url}/token/{contract_address}?a={token_id}"
 
     class Config:
-        env_prefix = "BASE_"
+        env_prefix = ""
         extra = "ignore"
 
 

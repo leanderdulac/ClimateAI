@@ -76,6 +76,16 @@ CREATE TABLE IF NOT EXISTS policies (
     pricing_model TEXT,
     pricing_details JSONB DEFAULT '{}',
     
+    -- On-Chain Blockchain & RWA (Base L2)
+    blockchain_network TEXT DEFAULT 'base_sepolia',
+    blockchain_chain_id INTEGER DEFAULT 84532,
+    blockchain_contract TEXT DEFAULT '0x01dD68040B926Fd4938cD43Ae3c88758874DD0D0',
+    blockchain_token_id INTEGER,
+    blockchain_slot INTEGER,
+    blockchain_mint_tx_hash TEXT,
+    blockchain_payout_tx_hash TEXT,
+    blockchain_explorer_url TEXT,
+
     -- Metadata
     notes TEXT,
     documents JSONB DEFAULT '[]',
@@ -516,12 +526,18 @@ CREATE TABLE IF NOT EXISTS oracle_events (
 CREATE TABLE IF NOT EXISTS blockchain_transactions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tx_hash TEXT UNIQUE NOT NULL,
-    token_uid TEXT,
+    network TEXT DEFAULT 'base_sepolia',
+    chain_id INTEGER DEFAULT 84532,
+    contract_address TEXT,
+    token_id INTEGER,
+    slot INTEGER,
+    evidence_hash TEXT,
     from_address TEXT,
     to_address TEXT,
     amount DECIMAL(20, 4),
     block_height INTEGER,
     confirmations INTEGER DEFAULT 0,
+    gas_used INTEGER,
     status TEXT DEFAULT 'pending',
     message TEXT,
     explorer_url TEXT,

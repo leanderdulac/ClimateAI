@@ -102,7 +102,13 @@ def test_base_service_mint_policy(base_service):
 
 def test_base_service_trigger_payout_with_proof(base_service):
     """Test triggerPayoutWithProof with cryptographic evidence hash on Base."""
-    token_id = 999
+    # Mint a valid token first
+    mint_res = base_service.mint_policy(
+        to_address="0x1234567890123456789012345678901234567890",
+        slot=1001,
+        coverage_amount_cents=5000000,
+    )
+    token_id = mint_res.token_id or 1
     payout_cents = 2500000  # R$ 25,000.00
     evidence_hash = "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
 
