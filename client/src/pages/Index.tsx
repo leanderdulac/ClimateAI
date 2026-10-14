@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { usePeriod } from "@/lib/PeriodContext";
 import { Globe, TrendingUp, DollarSign, Zap, Cloud, Shield, Sparkles, Coins } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
+import { BaseL2CommandCenter } from "@/components/BaseL2CommandCenter";
 
 const ClimateDataWidget = lazy(() =>
   import("@/components/ClimateDataWidget").then((module) => ({ default: module.ClimateDataWidget }))
@@ -215,6 +216,11 @@ export function IndexPage() {
               </CardContent>
             </Card>
           ))}
+        </div>
+
+        {/* Base L2 & DePIN On-Chain Command Center */}
+        <div className="mb-20">
+          <BaseL2CommandCenter />
         </div>
 
         {/* Main Dashboard Section */}

@@ -17,12 +17,14 @@ import {
   Coins,
   BarChart3,
   Plus,
-  History
+  History,
+  Layers
 } from "lucide-react";
+import { BaseL2CommandCenter } from "@/components/BaseL2CommandCenter";
 
 export function TokenizationPage() {
   const { t, language } = useTranslation();
-  const [activeTab, setActiveTab] = useState("create");
+  const [activeTab, setActiveTab] = useState("base");
 
   return (
     <DashboardLayout
@@ -75,7 +77,11 @@ export function TokenizationPage() {
       {/* Main Content */}
       <div className="container mx-auto px-6 py-12">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:grid-cols-none lg:flex">
+          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:grid-cols-none lg:flex">
+            <TabsTrigger value="base" className="flex items-center gap-2">
+              <Layers className="h-4 w-4 text-blue-400" />
+              Base L2 On-Chain
+            </TabsTrigger>
             <TabsTrigger value="create" className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
               {t('tokenization.tabs.create')}
@@ -89,6 +95,10 @@ export function TokenizationPage() {
               {t('tokenization.tabs.market')}
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="base" className="space-y-8">
+            <BaseL2CommandCenter />
+          </TabsContent>
 
           <TabsContent value="create" className="space-y-8">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
