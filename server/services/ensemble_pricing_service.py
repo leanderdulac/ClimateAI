@@ -175,6 +175,8 @@ class EnsemblePricingService:
         dirichlet_alpha: Optional[List[float]] = None,
         bic_sensitivity: float = 1.0,
         uncertainty_factor: float = 1.0,
+        weathernext_exceedance: Optional[float] = None,
+        weathernext_loading_factor: float = 0.25,
     ) -> Dict[str, Any]:
         """
         Complete ensemble pricing calculation:
@@ -236,6 +238,16 @@ class EnsemblePricingService:
         # Calculate final premium: Σ_m w_m · Prêmio_m + z_α · VaR_ensemble
         final_premium = weighted_premium + z_alpha * var_ensemble_scaled
 
+        weathernext_loading = 0.0
+        if weathernext_exceedance is not None:
+            from services.weathernext_prob import apply_exceedance_loading
+
+            loaded = apply_exceedance_loading(
+                final_premium, weathernext_exceedance, weathernext_loading_factor
+            )
+            weathernext_loading = loaded - final_premium
+            final_premium = loaded
+
         return {
             "final_premium": final_premium,
             "weighted_mean_premium": weighted_premium,
@@ -253,6 +265,9 @@ class EnsemblePricingService:
             "n_models": n_models,
             "ensemble_method": "BIC-weighted with Dirichlet prior",
             "model_uncertainty": var_ensemble_scaled,
+            "weathernext_exceedance": weathernext_exceedance,
+            "weathernext_loading": weathernext_loading,
+            "weathernext_loading_factor": weathernext_loading_factor,
         }
 
     def update_model_performance(

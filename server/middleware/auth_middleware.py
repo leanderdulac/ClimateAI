@@ -42,8 +42,13 @@ def is_public_path(path: str, method: str = "GET", environment: Optional[str] = 
         f"{API_PREFIX}/auth/forgot-password",
         f"{API_PREFIX}/features",
         f"{API_PREFIX}/partner/catalog",
+        f"{API_PREFIX}/forecast/ensemble",
     }
     if normalized in public_exact:
+        return True
+    if method.upper() == "GET" and (
+        normalized.startswith(f"{API_PREFIX}/forecast/ensemble/")
+    ):
         return True
     # Partner data routes authenticate with X-API-Key inside the router.
     if normalized == f"{API_PREFIX}/partner" or normalized.startswith(f"{API_PREFIX}/partner/"):

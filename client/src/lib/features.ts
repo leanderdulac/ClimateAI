@@ -11,6 +11,7 @@ export const features = {
   tokenization: envFlag('VITE_ENABLE_TOKENIZATION'),
   assistant: envFlag('VITE_ENABLE_ASSISTANT'),
   analytics: envFlag('VITE_ENABLE_ANALYTICS'),
+  weathernext: envFlag('VITE_ENABLE_WEATHERNEXT'),
 };
 
 export type FeatureName = keyof typeof features;

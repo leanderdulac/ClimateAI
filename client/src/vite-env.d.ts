@@ -11,6 +11,7 @@ interface ImportMetaEnv {
   readonly VITE_ENABLE_TOKENIZATION?: string;
   readonly VITE_ENABLE_ATLAS?: string;
   readonly VITE_ENABLE_ASSISTANT?: string;
+  readonly VITE_ENABLE_WEATHERNEXT?: string;
 }
 
 interface ImportMeta {

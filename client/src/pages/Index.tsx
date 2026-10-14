@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { LocationSelector } from "@/components/LocationSelector";
 import { MapDisplay } from "@/components/MapDisplay";
 import { WeatherWidget } from "@/components/WeatherWidget";
+import { WeatherNextEnsembleWidget } from "@/components/WeatherNextEnsembleWidget";
 import { InsuranceRecommendation } from "@/components/InsuranceRecommendation";
 import { AgriStrategyPanel } from "@/components/AgriStrategyPanel";
 import { DashboardLayout } from "@/components/DashboardLayout";
@@ -239,6 +240,10 @@ export function IndexPage() {
             <div className="hover:-translate-y-1 transition-transform duration-300">
               <WeatherWidget />
             </div>
+          </div>
+
+          <div className="mb-8 hover:-translate-y-1 transition-transform duration-300">
+            <WeatherNextEnsembleWidget />
           </div>
 
           {/* Interactive Map Section */}

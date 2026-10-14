@@ -69,6 +69,9 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: Optional[str] = os.getenv("GEMINI_API_KEY")
     GROK_API_KEY: Optional[str] = os.getenv("GROK_API_KEY")
     OPENMETEO_API_KEY: Optional[str] = os.getenv("OPENMETEO_API_KEY")
+    OPEN_METEO_API_KEY: Optional[str] = os.getenv("OPEN_METEO_API_KEY") or os.getenv(
+        "OPENMETEO_API_KEY"
+    )
     NOAA_API_KEY: Optional[str] = os.getenv("NOAA_API_KEY")
     XWEATHER_CLIENT_ID: Optional[str] = os.getenv("XWEATHER_CLIENT_ID")
     XWEATHER_CLIENT_SECRET: Optional[str] = os.getenv("XWEATHER_CLIENT_SECRET")
@@ -76,6 +79,17 @@ class Settings(BaseSettings):
     # Configurações OpenMeteo
     OPENMETEO_CACHE_DIR: str = ".cache"
     OPENMETEO_CACHE_TIMEOUT: int = 3600  # 1 hora
+    OPEN_METEO_ENSEMBLE_URL: Optional[str] = os.getenv("OPEN_METEO_ENSEMBLE_URL")
+    OPEN_METEO_CUSTOMER_ENSEMBLE_URL: str = os.getenv(
+        "OPEN_METEO_CUSTOMER_ENSEMBLE_URL",
+        "https://customer-ensemble-api.open-meteo.com/v1/ensemble",
+    )
+
+    # Google WeatherNext 2 ensemble (Open-Meteo). Default on so local/dev keep working.
+    WEATHERNEXT_ENABLED: bool = os.getenv("WEATHERNEXT_ENABLED", "true").lower() == "true"
+    WEATHERNEXT_CACHE_TTL: int = int(os.getenv("WEATHERNEXT_CACHE_TTL", "7200"))
+    WEATHERNEXT_GRID_RESOLUTION: float = float(os.getenv("WEATHERNEXT_GRID_RESOLUTION", "1.0"))
+    WEATHERNEXT_AUTO_REFRESH: bool = os.getenv("WEATHERNEXT_AUTO_REFRESH", "false").lower() == "true"
 
     # Configurações de geocodificação
     GEOCODING_CACHE_TIMEOUT: int = 86400  # 24 horas
@@ -212,6 +226,7 @@ class Settings(BaseSettings):
     FEATURE_ATLAS: bool = os.getenv("FEATURE_ATLAS", "true").lower() == "true"
     FEATURE_BLOCKCHAIN: bool = os.getenv("FEATURE_BLOCKCHAIN", "true").lower() == "true"
     FEATURE_ASSISTANT: bool = os.getenv("FEATURE_ASSISTANT", "true").lower() == "true"
+    FEATURE_WEATHERNEXT: bool = os.getenv("WEATHERNEXT_ENABLED", "true").lower() == "true"
 
     # Configurações Blockchain
     BLOCKCHAIN_ENABLED: bool = os.getenv("BLOCKCHAIN_ENABLED", "false").lower() == "true"

@@ -507,6 +507,33 @@ async def get_climate_index(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.post("/oracle/consensus")
+async def evaluate_oracle_consensus_endpoint(request: ClimateIndexRequest):
+    """
+    Multi-source oracle vote.
+
+    Required YES votes stay at 2 (original INMET / NOAA / Open-Meteo rule).
+    WeatherNext 2 is an optional fourth voter: YES when the majority of
+    ensemble members exceed the trigger (P >= 0.5). It can confirm or
+    join consensus but never changes the 2-source threshold.
+    """
+    from services.oracle_consensus import evaluate_oracle_consensus
+
+    try:
+        return await evaluate_oracle_consensus(
+            latitude=request.latitude,
+            longitude=request.longitude,
+            index_type=request.index_type,
+            trigger_value=request.trigger_value,
+            trigger_condition=request.trigger_condition,
+            start_date=datetime.strptime(request.start_date, "%Y-%m-%d"),
+            end_date=datetime.strptime(request.end_date, "%Y-%m-%d"),
+        )
+    except Exception as e:
+        logger.error(f"Failed to evaluate oracle consensus: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("/wallet/balance/{token_uid}", response_model=WalletBalanceResponse)
 async def get_wallet_balance(
     token_uid: str,

@@ -15,6 +15,7 @@ def current_flags() -> Dict[str, bool]:
         "atlas": settings.FEATURE_ATLAS,
         "blockchain": settings.FEATURE_BLOCKCHAIN,
         "assistant": settings.FEATURE_ASSISTANT,
+        "weathernext": settings.FEATURE_WEATHERNEXT,
     }
 
 
@@ -46,6 +47,12 @@ def disabled_feature_for_path(path: str) -> Optional[str]:
                 f"{prefix}/gemini",
                 f"{prefix}/grok",
                 f"{prefix}/ia-agent",
+            ),
+        ),
+        (
+            "weathernext",
+            (
+                f"{prefix}/forecast/ensemble",
             ),
         ),
     ]

@@ -61,6 +61,8 @@ class ClimateOracleService:
     - INMET (Brazilian National Institute of Meteorology)
     - NOAA (US National Oceanic and Atmospheric Administration)
     - OpenMeteo (Open-source weather API)
+    - Google WeatherNext 2 ensemble (optional fourth voter via Open-Meteo;
+      consensus still requires 2 YES votes — see services.oracle_consensus)
     
     Features:
     - Fetch historical climate data

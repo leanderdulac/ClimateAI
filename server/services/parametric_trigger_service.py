@@ -91,6 +91,43 @@ class ParametricTriggerService:
         self.policies: Dict[str, ParametricPolicy] = {}
         
         logger.info("ParametricTriggerService initialized")
+
+    async def weathernext_trigger_inputs(
+        self,
+        latitude: float,
+        longitude: float,
+        threshold_value: float,
+        trigger_type: str = "rainfall",
+    ) -> Dict[str, Any]:
+        """
+        FIMCE / parametric input: WeatherNext exceedance probabilities.
+
+        Used as P(trigger) for pricing loadings. Does not replace observed
+        verification; it is an additional probabilistic input.
+        """
+        from services.weathernext_ensemble_service import get_weathernext_service
+
+        service = get_weathernext_service()
+        forecast = await service.forecast_point(latitude, longitude)
+        exceedance = forecast.get("pricing_exceedance") or {}
+        if trigger_type in {TriggerType.RAINFALL.value, TriggerType.FLOOD.value}:
+            key = f"ge_{int(threshold_value)}mm"
+            probability = exceedance.get("precip_exceedance", {}).get(
+                key, exceedance.get("p_heavy_rain", 0.0)
+            )
+        elif trigger_type == TriggerType.TEMPERATURE.value:
+            key = f"ge_{int(threshold_value)}c"
+            probability = exceedance.get("heat_exceedance", {}).get(key, 0.0)
+        else:
+            probability = exceedance.get("p_heavy_rain", 0.0)
+        return {
+            "source": "google_weathernext2_ensemble",
+            "probability": probability,
+            "threshold_value": threshold_value,
+            "trigger_type": trigger_type,
+            "pricing_exceedance": exceedance,
+            "loaded_premium_factor": 1.0 + 0.25 * float(probability or 0.0),
+        }
     
     def register_policy(self, policy: ParametricPolicy):
         """
