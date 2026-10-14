@@ -352,8 +352,10 @@ class OracleEvent(Base):
     payout_percentage = Column(Float, default=0.0)
     payout_amount = Column(DECIMAL(15, 2), default=0.0)
     
-    # Blockchain Reference
+    # Blockchain Reference & Cryptographic Audit
     blockchain_tx_id = Column(String, index=True, nullable=True) # Linked transaction if payout
+    evidence_hash = Column(String, index=True, nullable=True) # Cryptographic SHA-256 / Merkle root of audit dossier
+    evidence_json = Column(String, nullable=True) # Canonical JSON of multi-source telemetry evidence
     status = Column(String, default="EVALUATED") # PENDING, EVALUATED, TRIGGERED, PAID
     
     created_at = Column(DateTime, default=datetime.utcnow)
