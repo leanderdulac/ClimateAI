@@ -62,16 +62,20 @@ export function WeatherNextEnsembleWidget() {
   }, [selectedLocation, t]);
 
   const chartData = useMemo(() => {
-    return (data?.hourly_fan ?? []).map((point) => ({
-      time: new Date(point.time_local).toLocaleString(t('locale') || 'pt-BR', {
-        day: '2-digit',
-        hour: '2-digit',
-      }),
-      p10: point.temperature_p10_c,
-      p50: point.temperature_p50_c,
-      p90: point.temperature_p90_c,
-      band: (point.temperature_p90_c ?? 0) - (point.temperature_p10_c ?? 0),
-    }));
+    return (data?.hourly_fan ?? []).map((point) => {
+      const p10 = point.temperature_p10_c ?? 0;
+      const p90 = point.temperature_p90_c ?? p10;
+      return {
+        time: new Date(point.time_local).toLocaleString(t('locale') || 'pt-BR', {
+          day: '2-digit',
+          hour: '2-digit',
+        }),
+        p10,
+        p50: point.temperature_p50_c,
+        p90,
+        spread: Math.max(p90 - p10, 0),
+      };
+    });
   }, [data, t]);
 
   if (!isFeatureEnabled('weathernext')) {
@@ -162,19 +166,21 @@ export function WeatherNextEnsembleWidget() {
                     <Tooltip />
                     <Area
                       type="monotone"
-                      dataKey="p90"
+                      dataKey="p10"
+                      stackId="fan"
                       stroke="none"
-                      fill="rgba(34,211,238,0.18)"
-                      name="p90"
+                      fill="transparent"
+                      name="p10"
                     />
                     <Area
                       type="monotone"
-                      dataKey="p10"
+                      dataKey="spread"
+                      stackId="fan"
                       stroke="none"
-                      fill="rgba(15,23,42,0.35)"
-                      name="p10"
+                      fill="rgba(34,211,238,0.35)"
+                      name="p10–p90"
                     />
-                    <Line type="monotone" dataKey="p50" stroke="#22d3ee" dot={false} strokeWidth={2} name="p50" />
+                    <Line type="monotone" dataKey="p50" stroke="#0891b2" dot={false} strokeWidth={2} name="p50" />
                   </ComposedChart>
                 </ResponsiveContainer>
               </div>
