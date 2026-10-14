@@ -67,6 +67,16 @@ from config.database import (
 from services.auth_service import AuthService, auth_service
 from lib.security import rate_limiter
 
+
+@pytest.fixture(autouse=True)
+def _local_auth_fallback_unless_supabase_marked(monkeypatch, request):
+    """Keep existing tests on local public.users auth unless they opt into Supabase."""
+    if request.node.get_closest_marker("uses_supabase_auth"):
+        return
+    monkeypatch.setattr("services.auth_service.is_supabase_configured", lambda: False)
+    monkeypatch.setattr("config.supabase_client.is_supabase_configured", lambda: False)
+    monkeypatch.setattr("services.supabase_auth.is_supabase_configured", lambda: False)
+
 # Import FastAPI app after path fix
 from main import app  # noqa: E402
 from models.sqlalchemy_models import Base, User

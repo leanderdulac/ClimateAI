@@ -40,6 +40,7 @@ markers = [
     "requires_redis: Tests that require Redis",
     "async_context: Tests that require async context",
     "requires_server: Tests that require a running server",
+    "uses_supabase_auth: Tests that exercise the Supabase Auth login/register path",
 ]
 asyncio_mode = "auto"
 log_cli = false

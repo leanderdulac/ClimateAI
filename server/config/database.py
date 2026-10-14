@@ -184,9 +184,9 @@ async def init_db():
 
 
 def _sync_database_url(database_url: str) -> str:
-    url = database_url.replace("postgresql+asyncpg://", "postgresql://")
-    url = url.replace("sqlite+aiosqlite://", "sqlite://")
-    return url
+    from config.db_url import to_sync_database_url
+
+    return to_sync_database_url(database_url)
 
 
 def run_alembic_upgrade(database_url: str) -> None:
