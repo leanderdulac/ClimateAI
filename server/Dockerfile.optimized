@@ -36,7 +36,7 @@ RUN pip install --upgrade pip && \
 # ===== PRODUCTION STAGE =====
 FROM base as production
 
-# Copy application code
+# Copy application code (includes config/certs/prod-ca-2021.crt)
 COPY --chown=appuser:appuser . .
 
 # Change ownership to appuser

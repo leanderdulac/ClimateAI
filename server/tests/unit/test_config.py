@@ -165,6 +165,72 @@ class TestPostgresSslContext(unittest.TestCase):
                 is_localhost=False, environment="production", insecure_override=True
             )
 
+    def _ca_common_names(self, ctx):
+        names = []
+        for cert in ctx.get_ca_certs():
+            for rdn in cert.get("subject", ()):
+                for key, value in rdn:
+                    if key == "commonName":
+                        names.append(value)
+        return names
+
+    def test_verified_context_loads_bundled_supabase_ca(self):
+        from config.database import BUNDLED_SUPABASE_CA_PATH, build_postgres_ssl_context
+
+        self.assertTrue(BUNDLED_SUPABASE_CA_PATH.is_file())
+        ctx = build_postgres_ssl_context(
+            is_localhost=False, environment="production", insecure_override=False
+        )
+        self.assertIn("Supabase Root 2021 CA", self._ca_common_names(ctx))
+        self.assertEqual(ctx.verify_mode, __import__("ssl").CERT_REQUIRED)
+        self.assertTrue(ctx.check_hostname)
+
+    def test_db_ssl_root_cert_path_override(self):
+        import ssl
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+
+        from config.database import BUNDLED_SUPABASE_CA_PATH, build_postgres_ssl_context
+
+        with TemporaryDirectory() as tmp:
+            override = Path(tmp) / "custom-ca.crt"
+            override.write_bytes(BUNDLED_SUPABASE_CA_PATH.read_bytes())
+            with patch.dict(os.environ, {"DB_SSL_ROOT_CERT": str(override)}):
+                ctx = build_postgres_ssl_context(
+                    is_localhost=False,
+                    environment="production",
+                    insecure_override=False,
+                )
+            self.assertEqual(ctx.verify_mode, ssl.CERT_REQUIRED)
+            self.assertTrue(ctx.check_hostname)
+            self.assertIn("Supabase Root 2021 CA", self._ca_common_names(ctx))
+
+    def test_db_ssl_root_cert_pem_override(self):
+        import ssl
+        from config.database import BUNDLED_SUPABASE_CA_PATH, build_postgres_ssl_context
+
+        pem = BUNDLED_SUPABASE_CA_PATH.read_text()
+        ctx = build_postgres_ssl_context(
+            is_localhost=False,
+            environment="production",
+            insecure_override=False,
+            root_cert=pem,
+        )
+        self.assertEqual(ctx.verify_mode, ssl.CERT_REQUIRED)
+        self.assertTrue(ctx.check_hostname)
+        self.assertIn("Supabase Root 2021 CA", self._ca_common_names(ctx))
+
+    def test_db_ssl_root_cert_missing_path_raises(self):
+        from config.database import build_postgres_ssl_context
+
+        with self.assertRaises(FileNotFoundError):
+            build_postgres_ssl_context(
+                is_localhost=False,
+                environment="production",
+                insecure_override=False,
+                root_cert="/tmp/does-not-exist-climatewise-ca.pem",
+            )
+
 
 class TestRedisConfiguration(unittest.TestCase):
     """Testes para configuração do Redis"""

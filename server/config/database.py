@@ -14,14 +14,49 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool, NullPool
 from models.sqlalchemy_models import Base
 
+# Official Supabase root CA (prod-ca-2021). System CAs do not include this, so
+# verify-full against *.pooler.supabase.com fails with
+# "self-signed certificate in certificate chain" unless we load it.
+# Source: https://supabase.com/docs/guides/platform/ssl-enforcement
+# Official file: https://supabase-downloads.s3-ap-southeast-1.amazonaws.com/prod/ssl/prod-ca-2021.crt
+BUNDLED_SUPABASE_CA_PATH = Path(__file__).resolve().parent / "certs" / "prod-ca-2021.crt"
+
+
+def resolve_postgres_ssl_root_cert(
+    root_cert: Optional[str] = None,
+) -> tuple[Optional[str], Optional[str]]:
+    """Return (cafile, cadata) for an extra CA on top of system trust.
+
+    ``DB_SSL_ROOT_CERT`` may be a filesystem path or a PEM blob. When unset,
+    the bundled Supabase ``prod-ca-2021.crt`` is used.
+    """
+    override = root_cert if root_cert is not None else os.getenv("DB_SSL_ROOT_CERT")
+    if override is not None and override.strip():
+        value = override.strip()
+        if "-----BEGIN" in value:
+            return None, value
+        path = Path(value).expanduser()
+        if not path.is_file():
+            raise FileNotFoundError(f"DB_SSL_ROOT_CERT file not found: {path}")
+        return str(path), None
+
+    if BUNDLED_SUPABASE_CA_PATH.is_file():
+        return str(BUNDLED_SUPABASE_CA_PATH), None
+    return None, None
+
 
 def build_postgres_ssl_context(
     *,
     is_localhost: bool,
     environment: Optional[str] = None,
     insecure_override: Optional[bool] = None,
+    root_cert: Optional[str] = None,
 ) -> Optional[ssl.SSLContext]:
-    """Build an SSL context for remote Postgres. Localhost stays unencrypted."""
+    """Build an SSL context for remote Postgres. Localhost stays unencrypted.
+
+    Verified contexts load the system CA store plus the bundled Supabase root
+    CA (or ``DB_SSL_ROOT_CERT`` path/PEM override). Hostname checks stay on.
+    """
     if is_localhost:
         return None
 
@@ -37,7 +72,14 @@ def build_postgres_ssl_context(
         ssl_context.verify_mode = ssl.CERT_NONE
         return ssl_context
 
-    return ssl.create_default_context()
+    # System CAs first, then the extra root (Supabase or operator override).
+    ssl_context = ssl.create_default_context()
+    cafile, cadata = resolve_postgres_ssl_root_cert(root_cert)
+    if cafile or cadata:
+        ssl_context.load_verify_locations(cafile=cafile, cadata=cadata)
+    ssl_context.verify_mode = ssl.CERT_REQUIRED
+    ssl_context.check_hostname = True
+    return ssl_context
 
 # Configurações centralizadas
 from config.config import settings

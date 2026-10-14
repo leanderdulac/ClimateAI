@@ -29,7 +29,8 @@ def upgrade() -> None:
         sa.Column("session_id", sa.String(), nullable=False),
         sa.Column("event_type", sa.String(), nullable=False),
         sa.Column("user_id", sa.String(), nullable=True),
-        sa.Column("location_id", sa.String(), nullable=True),
+        # locations.id is uuid in production (Supabase); VARCHAR FK fails.
+        sa.Column("location_id", sa.Uuid(), nullable=True),
         sa.Column("latitude", sa.Float(), nullable=True),
         sa.Column("longitude", sa.Float(), nullable=True),
         sa.Column("city", sa.String(), nullable=True),
