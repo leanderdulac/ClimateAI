@@ -50,6 +50,34 @@ engine = None
 async_session_maker = None
 
 
+def _url_has_query_param(database_url: str, name: str) -> bool:
+    query = database_url.split("?", 1)[1] if "?" in database_url else ""
+    return any(part.startswith(name + "=") for part in query.split("&") if part)
+
+
+def apply_asyncpg_pgbouncer_settings(database_url: str) -> tuple[str, dict]:
+    """Disable asyncpg prepared-statement caches (PgBouncer transaction pooler, port 6543)."""
+    is_localhost = "localhost" in database_url or "127.0.0.1" in database_url
+    is_pooler = ":6543" in database_url
+    connect_args = {
+        "statement_cache_size": 0,
+        "prepared_statement_cache_size": 0,
+    }
+    # server_settings is accepted by PgBouncer; skip on local non-pooler Postgres.
+    if not is_localhost or is_pooler:
+        connect_args["server_settings"] = {
+            "prepared_statement_cache_size": "0"
+        }
+
+    if "asyncpg" in database_url:
+        for param in ("prepared_statement_cache_size", "statement_cache_size"):
+            if not _url_has_query_param(database_url, param):
+                separator = "&" if "?" in database_url else "?"
+                database_url += f"{separator}{param}=0"
+
+    return database_url, connect_args
+
+
 def _create_engine_and_session_maker(database_url: str):
     """Cria o engine e o session maker com base na URL do banco de dados."""
     global engine, async_session_maker
@@ -65,34 +93,12 @@ def _create_engine_and_session_maker(database_url: str):
         is_localhost = "localhost" in database_url or "127.0.0.1" in database_url
         use_ssl = not is_localhost
 
-        # asyncpg driver-level cache settings (always safe)
-        connect_args = {
-            "statement_cache_size": 0,
-            "prepared_statement_cache_size": 0,
-        }
-
-        # server_settings with prepared_statement_cache_size is only valid for
-        # PgBouncer pooler connections (not standard PostgreSQL)
-        if not is_localhost:
-            connect_args["server_settings"] = {
-                "prepared_statement_cache_size": "0"
-            }
+        database_url, connect_args = apply_asyncpg_pgbouncer_settings(database_url)
 
         if use_ssl:
             ssl_context = build_postgres_ssl_context(is_localhost=is_localhost)
             if ssl_context is not None:
                 connect_args["ssl"] = ssl_context
-
-        # Adiciona parâmetro para pgbouncer/asyncpg (only for pooler connections)
-        if "asyncpg" in database_url and not is_localhost:
-            separator = "&" if "?" in database_url else "?"
-            if "prepared_statement_cache_size" not in database_url:
-                database_url += f"{separator}prepared_statement_cache_size=0"
-            separator = "&"
-            if "statement_cache_size" not in database_url:
-                database_url += f"{separator}statement_cache_size=0"
-
-
 
         # Use NullPool in production to avoid PgBouncer connection limit issues
         # and ensure every request gets a fresh connection from the pooler.
@@ -184,20 +190,24 @@ async def init_db():
 
 
 def _sync_database_url(database_url: str) -> str:
-    url = database_url.replace("postgresql+asyncpg://", "postgresql://")
-    url = url.replace("sqlite+aiosqlite://", "sqlite://")
-    return url
+    from config.db_url import to_sync_database_url
+
+    return to_sync_database_url(database_url)
 
 
 def run_alembic_upgrade(database_url: str) -> None:
     """Apply Alembic migrations using a sync driver URL."""
     from alembic import command
     from alembic.config import Config
+    from config.db_url import escape_alembic_config_url
 
     server_dir = Path(__file__).resolve().parent.parent
     cfg = Config(str(server_dir / "alembic.ini"))
     cfg.set_main_option("script_location", str(server_dir / "alembic"))
-    cfg.set_main_option("sqlalchemy.url", _sync_database_url(database_url))
+    cfg.set_main_option(
+        "sqlalchemy.url",
+        escape_alembic_config_url(_sync_database_url(database_url)),
+    )
     command.upgrade(cfg, "head")
 
 

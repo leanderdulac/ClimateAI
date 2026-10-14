@@ -10,7 +10,7 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
-# Supabase Configuration
+# Supabase Configuration (module-level snapshot; prefer the getters below)
 SUPABASE_URL = os.getenv("SUPABASE_URL", "")
 SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
@@ -20,9 +20,46 @@ _supabase_client = None
 _supabase_admin_client = None
 
 
+def get_supabase_url() -> str:
+    """Runtime SUPABASE_URL with trailing slashes stripped."""
+    return (os.getenv("SUPABASE_URL") or SUPABASE_URL or "").strip().rstrip("/")
+
+
+def get_supabase_anon_key() -> str:
+    """Runtime SUPABASE_ANON_KEY."""
+    return (os.getenv("SUPABASE_ANON_KEY") or SUPABASE_ANON_KEY or "").strip()
+
+
+def get_supabase_service_role_key() -> str:
+    """Runtime SUPABASE_SERVICE_ROLE_KEY."""
+    return (os.getenv("SUPABASE_SERVICE_ROLE_KEY") or SUPABASE_SERVICE_ROLE_KEY or "").strip()
+
+
+def get_supabase_auth_issuer(supabase_url: Optional[str] = None) -> Optional[str]:
+    """
+    GoTrue issuer claim for this project: {SUPABASE_URL}/auth/v1
+
+    Trailing slashes on SUPABASE_URL are ignored so
+    https://proj.supabase.co and https://proj.supabase.co/ both yield
+    https://proj.supabase.co/auth/v1
+    """
+    url = (supabase_url if supabase_url is not None else get_supabase_url()).strip()
+    if not url:
+        return None
+    return url.rstrip("/") + "/auth/v1"
+
+
+def issuer_matches_supabase(actual_iss: Optional[str], expected_iss: Optional[str] = None) -> bool:
+    """Compare JWT iss against the configured project, ignoring trailing slashes."""
+    expected = expected_iss if expected_iss is not None else get_supabase_auth_issuer()
+    if not actual_iss or not expected:
+        return False
+    return actual_iss.rstrip("/") == expected.rstrip("/")
+
+
 def is_supabase_configured() -> bool:
-    """Check if Supabase credentials are configured"""
-    return bool(SUPABASE_URL and SUPABASE_ANON_KEY)
+    """Check if Supabase credentials are configured (reads env at call time)."""
+    return bool(get_supabase_url() and get_supabase_anon_key())
 
 
 @lru_cache(maxsize=1)
@@ -42,8 +79,10 @@ def get_supabase_client():
     
     try:
         from supabase import create_client, Client
-        _supabase_client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
-        logger.info(f"Supabase client initialized: {SUPABASE_URL}")
+        url = get_supabase_url()
+        key = get_supabase_anon_key()
+        _supabase_client = create_client(url, key)
+        logger.info(f"Supabase client initialized: {url}")
         return _supabase_client
     except ImportError:
         logger.error("supabase-py not installed. Run: pip install supabase")

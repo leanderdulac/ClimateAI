@@ -10,6 +10,8 @@ from typing import List, Optional
 from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
 
+from .db_url import assert_production_database_url, is_sqlite_database_url
+
 # IMPORTANTE: Carregar as variáveis de ambiente base antes de inicializar as configurações
 # para que os valores padrão do Pydantic possam ser lidos do ambiente.
 env_path = os.path.join(os.path.dirname(__file__), "..", "..", ".env")
@@ -168,8 +170,20 @@ class Settings(BaseSettings):
             supabase_url = self._build_supabase_database_url()
             if supabase_url:
                 self.DATABASE_URL = supabase_url
+            elif env_name == "production":
+                print("ERROR: DATABASE_URL is required when ENVIRONMENT=production.", file=sys.stderr)
+                print("Set DATABASE_URL (non-sqlite) or SUPABASE_DB_* before deploy.", file=sys.stderr)
+                sys.exit(1)
             else:
                 self.DATABASE_URL = LOCAL_DEV_DATABASE_URL
+
+        if env_name == "production":
+            try:
+                assert_production_database_url(self.DATABASE_URL, environment=env_name)
+            except RuntimeError as exc:
+                print(f"ERROR: {exc}", file=sys.stderr)
+                print("Set DATABASE_URL to a Postgres/Supabase URL before deploy.", file=sys.stderr)
+                sys.exit(1)
                 
         # Fix for asyncpg: remove ?sslmode=require which is not supported natively in the connection string
         if self.DATABASE_URL and "?sslmode=require" in self.DATABASE_URL:
@@ -225,7 +239,13 @@ elif not settings.SECRET_KEY or len(settings.SECRET_KEY) < 32:
 
 # sqlite-ban is gated on ENVIRONMENT==production, not DEBUG=false
 if settings.ENVIRONMENT.lower() == "production":
-    if settings.DATABASE_ENABLED and settings.DATABASE_URL == LOCAL_DEV_DATABASE_URL:
+    try:
+        assert_production_database_url(settings.DATABASE_URL, environment="production")
+    except RuntimeError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        print("Set DATABASE_URL or SUPABASE_DB_* before deploy.", file=sys.stderr)
+        sys.exit(1)
+    if is_sqlite_database_url(settings.DATABASE_URL) or settings.DATABASE_URL == LOCAL_DEV_DATABASE_URL:
         print("ERROR: development DATABASE_URL cannot be used in production!", file=sys.stderr)
         print("Set DATABASE_URL or SUPABASE_DB_* before deploy.", file=sys.stderr)
         sys.exit(1)
