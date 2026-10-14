@@ -6,6 +6,7 @@ import { LocationSelector } from "@/components/LocationSelector";
 import { MapDisplay } from "@/components/MapDisplay";
 import { WeatherWidget } from "@/components/WeatherWidget";
 import { WeatherNextEnsembleWidget } from "@/components/WeatherNextEnsembleWidget";
+import { BaseL2CommandCenter } from "@/components/BaseL2CommandCenter";
 import { InsuranceRecommendation } from "@/components/InsuranceRecommendation";
 import { AgriStrategyPanel } from "@/components/AgriStrategyPanel";
 import { DashboardLayout } from "@/components/DashboardLayout";
@@ -230,6 +231,10 @@ export function IndexPage() {
               </h2>
             </div>
             <PeriodButtons />
+          </div>
+
+          <div className="mb-8">
+            <BaseL2CommandCenter />
           </div>
 
           {/* Top Section - Location and Weather */}

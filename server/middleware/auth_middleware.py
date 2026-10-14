@@ -43,6 +43,7 @@ def is_public_path(path: str, method: str = "GET", environment: Optional[str] = 
         f"{API_PREFIX}/features",
         f"{API_PREFIX}/partner/catalog",
         f"{API_PREFIX}/forecast/ensemble",
+        f"{API_PREFIX}/compute/status",
     }
     if normalized in public_exact:
         return True

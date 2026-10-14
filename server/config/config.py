@@ -91,6 +91,10 @@ class Settings(BaseSettings):
     WEATHERNEXT_GRID_RESOLUTION: float = float(os.getenv("WEATHERNEXT_GRID_RESOLUTION", "1.0"))
     WEATHERNEXT_AUTO_REFRESH: bool = os.getenv("WEATHERNEXT_AUTO_REFRESH", "false").lower() == "true"
 
+    # Optional remote DePIN / Akash inference host. Never expose these to clients.
+    INFERENCE_SERVICE_URL: Optional[str] = os.getenv("INFERENCE_SERVICE_URL")
+    INFERENCE_SERVICE_TOKEN: Optional[str] = os.getenv("INFERENCE_SERVICE_TOKEN")
+
     # Configurações de geocodificação
     GEOCODING_CACHE_TIMEOUT: int = 86400  # 24 horas
     GEOCODING_MAX_RETRIES: int = 3

@@ -318,6 +318,12 @@ export const translations = {
         'weathernext.members': 'Membros do ensemble',
         'weathernext.horizon': 'Horizonte',
         'weathernext.mapLayer': 'P(chuva forte)',
+        'compute.akash.title': 'Akash DePIN AI',
+        'compute.akash.subtitle': 'Inferência remota',
+        'compute.status.online': 'Online • {{ms}}ms',
+        'compute.status.offline': 'Offline — cálculo local',
+        'compute.status.notConfigured': 'Não configurado — cálculo local',
+        'compute.status.checking': 'Verificando…',
 
         // Tokenization Page
         'tokenization.title': 'Tokenização Climática',
@@ -1141,6 +1147,12 @@ export const translations = {
         'weathernext.members': 'Ensemble members',
         'weathernext.horizon': 'Horizon',
         'weathernext.mapLayer': 'P(heavy rain)',
+        'compute.akash.title': 'Akash DePIN AI',
+        'compute.akash.subtitle': 'Remote inference',
+        'compute.status.online': 'Online • {{ms}}ms',
+        'compute.status.offline': 'Offline — local compute',
+        'compute.status.notConfigured': 'Not configured — local compute',
+        'compute.status.checking': 'Checking…',
 
         // Tokenization Page
         'tokenization.title': 'Climate Tokenization',
@@ -1964,6 +1976,12 @@ export const translations = {
         'weathernext.members': 'Miembros del ensemble',
         'weathernext.horizon': 'Horizonte',
         'weathernext.mapLayer': 'P(lluvia fuerte)',
+        'compute.akash.title': 'Akash DePIN AI',
+        'compute.akash.subtitle': 'Inferencia remota',
+        'compute.status.online': 'Online • {{ms}}ms',
+        'compute.status.offline': 'Offline — cálculo local',
+        'compute.status.notConfigured': 'No configurado — cálculo local',
+        'compute.status.checking': 'Comprobando…',
 
         // Tokenization Page
         'tokenization.title': 'Tokenización Climática',
@@ -2860,6 +2878,12 @@ export const translations = {
         'weathernext.members': '集合成员',
         'weathernext.horizon': '预报时效',
         'weathernext.mapLayer': 'P(强降雨)',
+        'compute.akash.title': 'Akash DePIN AI',
+        'compute.akash.subtitle': '远程推理',
+        'compute.status.online': 'Online • {{ms}}ms',
+        'compute.status.offline': '离线 — 本地计算',
+        'compute.status.notConfigured': '未配置 — 本地计算',
+        'compute.status.checking': '检查中…',
 
         // Tokenization Page
         'tokenization.title': '气候代币化',
