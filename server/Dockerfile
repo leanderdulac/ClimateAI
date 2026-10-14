@@ -54,7 +54,8 @@ ENV PATH="/opt/venv/bin:$PATH"
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Copy application code (contents of server/ directory to /app)
+# Copy application code (contents of server/ directory to /app).
+# Includes config/certs/prod-ca-2021.crt for verified Supabase pooler TLS.
 COPY server/ .
 
 # Create non-root user for security
