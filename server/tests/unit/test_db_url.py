@@ -10,6 +10,7 @@ from config.db_url import (
     PRODUCTION_DATABASE_URL_MISSING,
     PRODUCTION_DATABASE_URL_SQLITE,
     assert_production_database_url,
+    escape_alembic_config_url,
     is_sqlite_database_url,
     resolve_alembic_database_url,
 )
@@ -87,6 +88,67 @@ class TestAlembicUrlResolution:
             environment="development",
         )
         assert url == "sqlite:///./test.db"
+
+
+ENCODED_PASSWORD_URL = (
+    "postgresql+asyncpg://postgres.tyzmywhvpmdfepxdtyes:"
+    "p%40ss%2Fw%3Dord@aws-0-sa-east-1.pooler.supabase.com:6543/postgres"
+)
+ENCODED_PASSWORD_SYNC_URL = (
+    "postgresql://postgres.tyzmywhvpmdfepxdtyes:"
+    "p%40ss%2Fw%3Dord@aws-0-sa-east-1.pooler.supabase.com:6543/postgres"
+)
+
+
+@pytest.mark.unit
+class TestAlembicPercentEncodedPassword:
+    def test_escape_doubles_percent_signs(self):
+        assert escape_alembic_config_url(ENCODED_PASSWORD_SYNC_URL) == (
+            ENCODED_PASSWORD_SYNC_URL.replace("%", "%%")
+        )
+        assert "%40" in ENCODED_PASSWORD_SYNC_URL
+        assert "%%40" in escape_alembic_config_url(ENCODED_PASSWORD_SYNC_URL)
+
+    def test_set_main_option_rejects_unescaped_percent_password(self):
+        from pathlib import Path
+        from alembic.config import Config
+
+        cfg = Config(str(Path(__file__).resolve().parents[1] / "alembic.ini"))
+        with pytest.raises(ValueError, match="invalid interpolation syntax"):
+            cfg.set_main_option("sqlalchemy.url", ENCODED_PASSWORD_SYNC_URL)
+
+    def test_set_main_option_accepts_escaped_percent_password(self):
+        from pathlib import Path
+        from alembic.config import Config
+
+        cfg = Config(str(Path(__file__).resolve().parents[1] / "alembic.ini"))
+        cfg.set_main_option(
+            "sqlalchemy.url", escape_alembic_config_url(ENCODED_PASSWORD_SYNC_URL)
+        )
+        assert cfg.get_main_option("sqlalchemy.url") == ENCODED_PASSWORD_SYNC_URL
+
+    def test_run_alembic_upgrade_escapes_percent_encoded_password(self):
+        from unittest.mock import patch
+        from config.database import run_alembic_upgrade
+
+        with patch("alembic.command.upgrade") as upgrade:
+            run_alembic_upgrade(ENCODED_PASSWORD_URL)
+        upgrade.assert_called_once()
+        cfg = upgrade.call_args.args[0]
+        assert cfg.get_main_option("sqlalchemy.url") == ENCODED_PASSWORD_SYNC_URL
+
+    def test_asyncpg_disables_statement_cache_for_pgbouncer_6543(self):
+        from urllib.parse import parse_qs, urlparse
+        from config.database import apply_asyncpg_pgbouncer_settings
+
+        url, connect_args = apply_asyncpg_pgbouncer_settings(ENCODED_PASSWORD_URL)
+        assert connect_args["statement_cache_size"] == 0
+        assert connect_args["prepared_statement_cache_size"] == 0
+        assert connect_args["server_settings"]["prepared_statement_cache_size"] == "0"
+        query = parse_qs(urlparse(url).query)
+        assert query["statement_cache_size"] == ["0"]
+        assert query["prepared_statement_cache_size"] == ["0"]
+        assert "p%40ss%2Fw%3Dord" in url
 
 
 class TestSettingsProductionDatabase(unittest.TestCase):

@@ -22,7 +22,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from models.sqlalchemy_models import Base
-from config.db_url import resolve_alembic_database_url
+from config.db_url import escape_alembic_config_url, resolve_alembic_database_url
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
@@ -40,6 +40,11 @@ def _alembic_database_url(fallback=None):
     )
 
 
+def _set_sqlalchemy_url_on_config(url: str) -> None:
+    """Write the URL into Alembic Config without ConfigParser interpolation errors."""
+    config.set_main_option("sqlalchemy.url", escape_alembic_config_url(url))
+
+
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
 
@@ -53,6 +58,7 @@ def run_migrations_offline() -> None:
 
     """
     url = _alembic_database_url(config.get_main_option("sqlalchemy.url"))
+    _set_sqlalchemy_url_on_config(url)
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -74,6 +80,8 @@ def run_migrations_online() -> None:
     section = config.get_section(config.config_ini_section, {}) or {}
     database_url = _alembic_database_url(section.get("sqlalchemy.url"))
     if database_url:
+        _set_sqlalchemy_url_on_config(database_url)
+        # engine_from_config reads this dict as-is (no ConfigParser unescape).
         section["sqlalchemy.url"] = database_url
     connectable = engine_from_config(
         section,

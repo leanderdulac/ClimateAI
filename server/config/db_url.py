@@ -34,6 +34,16 @@ def to_sync_database_url(url: str) -> str:
     )
 
 
+def escape_alembic_config_url(url: str) -> str:
+    """Escape % so ConfigParser/Alembic interpolation does not treat encoded passwords as syntax.
+
+    Percent-encoded DATABASE_URL passwords (e.g. ``p%40ss``) crash
+    ``Config.set_main_option`` with ``ValueError: invalid interpolation syntax``.
+    ConfigParser unescapes ``%%`` back to ``%`` on get.
+    """
+    return url.replace("%", "%%")
+
+
 def assert_production_database_url(
     url: Optional[str], environment: Optional[str] = None
 ) -> None:
