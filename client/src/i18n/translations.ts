@@ -324,6 +324,12 @@ export const translations = {
         'compute.status.offline': 'Offline — cálculo local',
         'compute.status.notConfigured': 'Não configurado — cálculo local',
         'compute.status.checking': 'Verificando…',
+        'compute.base.title': 'Base L2 (Coinbase)',
+        'compute.base.blockUnavailable': 'Bloco —',
+        'compute.oracle.title': 'Oráculo Triangulado',
+        'compute.oracle.subtitle': 'Consenso 2-de-3',
+        'compute.contract.title': 'Smart Contract',
+        'compute.unavailable': 'indisponível',
 
         // Tokenization Page
         'tokenization.title': 'Tokenização Climática',
@@ -1153,6 +1159,12 @@ export const translations = {
         'compute.status.offline': 'Offline — local compute',
         'compute.status.notConfigured': 'Not configured — local compute',
         'compute.status.checking': 'Checking…',
+        'compute.base.title': 'Base L2 (Coinbase)',
+        'compute.base.blockUnavailable': 'Block —',
+        'compute.oracle.title': 'Triangulated Oracle',
+        'compute.oracle.subtitle': '2-of-3 consensus',
+        'compute.contract.title': 'Smart Contract',
+        'compute.unavailable': 'unavailable',
 
         // Tokenization Page
         'tokenization.title': 'Climate Tokenization',
@@ -1982,6 +1994,12 @@ export const translations = {
         'compute.status.offline': 'Offline — cálculo local',
         'compute.status.notConfigured': 'No configurado — cálculo local',
         'compute.status.checking': 'Comprobando…',
+        'compute.base.title': 'Base L2 (Coinbase)',
+        'compute.base.blockUnavailable': 'Bloque —',
+        'compute.oracle.title': 'Oráculo Triangulado',
+        'compute.oracle.subtitle': 'Consenso 2-de-3',
+        'compute.contract.title': 'Smart Contract',
+        'compute.unavailable': 'indisponible',
 
         // Tokenization Page
         'tokenization.title': 'Tokenización Climática',
@@ -2884,6 +2902,12 @@ export const translations = {
         'compute.status.offline': '离线 — 本地计算',
         'compute.status.notConfigured': '未配置 — 本地计算',
         'compute.status.checking': '检查中…',
+        'compute.base.title': 'Base L2 (Coinbase)',
+        'compute.base.blockUnavailable': '区块 —',
+        'compute.oracle.title': '三角预言机',
+        'compute.oracle.subtitle': '2/3 共识',
+        'compute.contract.title': '智能合约',
+        'compute.unavailable': '不可用',
 
         // Tokenization Page
         'tokenization.title': '气候代币化',

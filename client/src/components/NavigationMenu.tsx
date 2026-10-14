@@ -83,7 +83,7 @@ export function NavigationMenu() {
   return (
     <div className="relative">
       {/* Desktop Navigation */}
-      <div className="hidden md:flex items-center gap-1">
+      <div className="hidden lg:flex items-center gap-0.5">
         {navigationItems.map((item) => {
           const Icon = item.icon;
           const isItemActive = isActive(item.href);
@@ -91,8 +91,8 @@ export function NavigationMenu() {
             <Link
               key={item.href}
               to={item.href}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all duration-200 text-sm font-medium ${isItemActive
-                ? "bg-primary/10 text-primary"
+              className={`flex items-center gap-1.5 px-2.5 py-2 rounded-xl transition-all duration-200 text-sm font-medium whitespace-nowrap ${isItemActive
+                ? "bg-primary/10 text-primary border border-primary/20"
                 : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                 }`}
             >
@@ -104,7 +104,7 @@ export function NavigationMenu() {
       </div>
 
       {/* Mobile Navigation Button */}
-      <div className="md:hidden">
+      <div className="lg:hidden">
         <Button
           variant="ghost"
           size="icon"
@@ -119,10 +119,10 @@ export function NavigationMenu() {
       {isOpen && (
         <>
           <div
-            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 md:hidden"
+            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 lg:hidden"
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute top-full right-0 mt-2 w-full min-w-[300px] z-50 md:hidden p-4">
+          <div className="absolute top-full right-0 mt-2 w-full min-w-[300px] z-50 lg:hidden p-4">
             <Card className="border-border shadow-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
               <div className="p-4 space-y-4">
                 <div className="flex items-center justify-between">

@@ -7,6 +7,7 @@ import { useLocation } from '@/lib/LocationContext';
 import { Sun, Droplets, Wind, Thermometer, TrendingUp, TrendingDown, Minus, AlertTriangle, Cloud, Gauge, Globe, ShieldCheck } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "@/hooks/useTranslation";
+import { commandCenterChart } from "@/lib/commandCenterChart";
 
 interface ClimateDataPoint {
   date: string;
@@ -278,28 +279,28 @@ export function ClimateDataWidget() {
 
   if (loading) {
     return (
-      <Card className="overflow-hidden animate-fade-in" variant="default">
-        <CardHeader className="border-none bg-gradient-to-r from-primary-500 to-primary-600">
+      <Card className="cc-card overflow-hidden animate-fade-in border-border/80 bg-card/60 backdrop-blur-xl" variant="default">
+        <CardHeader className="cc-header border-none">
           <div className="flex items-center gap-4">
-            <div className="rounded-lg bg-white/10 p-3">
-              <Sun className="h-6 w-6 text-white animate-pulse" />
+            <div className="rounded-xl bg-amber-500/10 p-3 text-amber-400">
+              <Sun className="h-6 w-6 animate-pulse" />
             </div>
             <div>
-              <CardTitle className="text-xl font-bold text-white">{t('climate.widget.title')}</CardTitle>
-              <CardDescription className="text-primary-100">
+              <CardTitle className="text-xl font-bold text-foreground">{t('climate.widget.title')}</CardTitle>
+              <CardDescription>
                 {t('climate.widget.description')}
               </CardDescription>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-8 p-6 bg-gradient-to-b from-white to-neutral-50">
+        <CardContent className="space-y-8 p-6">
           <div className="space-y-4">
-            <div className="h-8 w-48 animate-pulse rounded-md bg-neutral-200"></div>
-            <div className="h-[250px] animate-pulse rounded-lg bg-neutral-200"></div>
+            <div className="h-8 w-48 animate-pulse rounded-md bg-muted"></div>
+            <div className="h-[250px] animate-pulse rounded-xl bg-muted"></div>
           </div>
           <div className="space-y-4">
-            <div className="h-8 w-48 animate-pulse rounded-md bg-neutral-200"></div>
-            <div className="h-[250px] animate-pulse rounded-lg bg-neutral-200"></div>
+            <div className="h-8 w-48 animate-pulse rounded-md bg-muted"></div>
+            <div className="h-[250px] animate-pulse rounded-xl bg-muted"></div>
           </div>
         </CardContent>
       </Card>
@@ -325,27 +326,27 @@ export function ClimateDataWidget() {
 
   if (error) {
     return (
-      <Card className="overflow-hidden animate-fade-in border-red-200" variant="default">
-        <CardHeader className="border-none bg-gradient-to-r from-red-600 to-red-700 pb-6">
+      <Card className="cc-card overflow-hidden animate-fade-in border-destructive/30" variant="default">
+        <CardHeader className="cc-header border-none pb-6">
           <div className="flex items-center gap-4">
-            <div className="rounded-lg bg-white/20 p-3">
-              <AlertTriangle className="h-6 w-6 text-white" />
+            <div className="rounded-xl bg-destructive/20 p-3">
+              <AlertTriangle className="h-6 w-6 text-red-400" />
             </div>
             <div>
-              <CardTitle className="text-xl font-bold text-white">{t('climate.error.title')}</CardTitle>
-              <CardDescription className="text-red-100/90 font-medium">
+              <CardTitle className="text-xl font-bold text-foreground">{t('climate.error.title')}</CardTitle>
+              <CardDescription className="font-medium text-red-300">
                 {t('climate.error.description')}
               </CardDescription>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="p-6 bg-red-50/30">
+        <CardContent className="p-6">
           <div className="flex flex-col gap-4">
-            <div className="p-4 rounded-md bg-white border border-red-100 shadow-sm">
-              <p className="text-sm font-medium text-red-800">{t('climate.error.technical')}:</p>
-              <p className="text-sm text-red-600 mt-1 font-mono break-all">{error}</p>
+            <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4">
+              <p className="text-sm font-medium text-red-300">{t('climate.error.technical')}:</p>
+              <p className="mt-1 break-all font-mono text-sm text-red-400">{error}</p>
             </div>
-            <div className="text-xs text-neutral-500 italic">
+            <div className="text-xs italic text-muted-foreground">
               {t('climate.error.fallback')}
             </div>
           </div>
@@ -357,24 +358,24 @@ export function ClimateDataWidget() {
   // Verificar se há localização selecionada
   if (!selectedLocation) {
     return (
-      <Card className="overflow-hidden animate-fade-in">
-        <CardHeader className="border-none bg-gradient-to-r from-gray-500 to-gray-600">
+      <Card className="cc-card overflow-hidden animate-fade-in border-border/80 bg-card/60 backdrop-blur-xl">
+        <CardHeader className="cc-header border-none">
           <div className="flex items-center gap-4">
-            <div className="rounded-lg bg-white/10 p-3">
-              <Cloud className="h-6 w-6 text-white" />
+            <div className="rounded-xl bg-blue-500/10 p-3 text-blue-400">
+              <Cloud className="h-6 w-6" />
             </div>
             <div>
-              <CardTitle className="text-xl font-bold text-white">{t('climate.noLocation.title')}</CardTitle>
-              <CardDescription className="text-gray-100">
+              <CardTitle className="text-xl font-bold text-foreground">{t('climate.noLocation.title')}</CardTitle>
+              <CardDescription>
                 {t('climate.noLocation.description')}
               </CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent className="p-6">
-          <div className="text-center py-8">
-            <Globe className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">{t('climate.noLocation.cta')}</p>
+          <div className="py-8 text-center">
+            <Globe className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+            <p className="text-muted-foreground">{t('climate.noLocation.cta')}</p>
           </div>
         </CardContent>
       </Card>
@@ -382,58 +383,58 @@ export function ClimateDataWidget() {
   }
 
   return (
-    <Card className="overflow-hidden animate-fade-in">
-      <CardHeader className="border-none bg-gradient-to-r from-primary-500 to-primary-600">
+    <Card className="cc-card overflow-hidden animate-fade-in border-border/80 bg-card/60 backdrop-blur-xl">
+      <CardHeader className="cc-header border-border/40">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
-            <div className="rounded-lg bg-white/10 p-3">
-              <Sun className="h-6 w-6 text-white" />
+            <div className="rounded-xl bg-amber-500/10 p-3 text-amber-400">
+              <Sun className="h-6 w-6" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <CardTitle className="text-xl font-bold text-white">Climate Analytics</CardTitle>
+              <div className="flex flex-wrap items-center gap-2">
+                <CardTitle className="text-xl font-bold text-foreground">Climate Analytics</CardTitle>
                 <Badge
                   variant="secondary"
-                  className="bg-white/20 border-none text-white gap-1 hover:bg-white/30 cursor-help"
+                  className="cursor-help gap-1 border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
                   title="Data verified against OpenMeteo Satellite & Ground Station telemetry (v3.2 Protocol)."
                 >
-                  <ShieldCheck className="h-3 w-3 text-green-300" />
+                  <ShieldCheck className="h-3 w-3" />
                   Verified Integrity
                 </Badge>
               </div>
-              <CardDescription className="text-primary-100">
+              <CardDescription>
                 {currentWeather ? `${getWeatherDescription(currentWeather.weatherCode || 0)} ${t('common.in')} ${selectedLocation?.cidade || t('common.yourLocation')}` : t('common.loading')}
               </CardDescription>
             </div>
           </div>
           {currentWeather && (
-            <div className="grid grid-cols-2 gap-4 sm:flex sm:items-center">
-              <div className="flex items-center gap-3 rounded-lg bg-white/10 px-4 py-2">
-                <Thermometer className="h-5 w-5 text-primary-100" />
+            <div className="grid grid-cols-2 gap-3 sm:flex sm:items-center">
+              <div className="flex items-center gap-3 rounded-xl border border-border/50 bg-muted/30 px-4 py-2">
+                <Thermometer className="h-5 w-5 text-amber-400" />
                 <div>
-                  <div className="text-sm text-primary-100">{t('weather.current')}</div>
-                  <div className="text-lg font-semibold text-white">
+                  <div className="text-xs uppercase tracking-wider text-muted-foreground">{t('weather.current')}</div>
+                  <div className="text-lg font-semibold text-foreground">
                     {currentWeather?.temperature?.toFixed(1) ?? 'N/A'}°C
                   </div>
-                  <div className="text-xs text-primary-100">
+                  <div className="text-xs text-muted-foreground">
                     {t('climate.widget.feelsLike', { temp: currentWeather?.apparentTemp?.toFixed(1) ?? currentWeather?.temperature?.toFixed(1) ?? 'N/A' })}
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-3 rounded-lg bg-white/10 px-4 py-2">
-                <Droplets className="h-5 w-5 text-primary-100" />
+              <div className="flex items-center gap-3 rounded-xl border border-border/50 bg-muted/30 px-4 py-2">
+                <Droplets className="h-5 w-5 text-blue-400" />
                 <div>
-                  <div className="text-sm text-primary-100">{t('weather.rain')}</div>
-                  <div className="text-lg font-semibold text-white">
+                  <div className="text-xs uppercase tracking-wider text-muted-foreground">{t('weather.rain')}</div>
+                  <div className="text-lg font-semibold text-foreground">
                     {currentWeather?.precipitation?.toFixed(1) ?? '0.0'}mm
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-3 rounded-lg bg-white/10 px-4 py-2">
-                <Wind className="h-5 w-5 text-primary-100" />
+              <div className="flex items-center gap-3 rounded-xl border border-border/50 bg-muted/30 px-4 py-2">
+                <Wind className="h-5 w-5 text-emerald-400" />
                 <div>
-                  <div className="text-sm text-primary-100">{t('weather.wind')}</div>
-                  <div className="text-lg font-semibold text-white">
+                  <div className="text-xs uppercase tracking-wider text-muted-foreground">{t('weather.wind')}</div>
+                  <div className="text-lg font-semibold text-foreground">
                     {currentWeather?.windSpeed?.toFixed(1) ?? '0.0'}km/h
                   </div>
                 </div>
@@ -442,52 +443,49 @@ export function ClimateDataWidget() {
           )}
         </div>
       </CardHeader>
-      <CardContent className="space-y-8 p-6 bg-gradient-to-b from-white to-neutral-50">
+      <CardContent className="space-y-8 p-6">
         <div className="animate-slide-up">
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="flex items-center gap-2 text-lg font-semibold text-neutral-900">
-              <Thermometer className="h-5 w-5 text-primary-500" />
+            <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+              <Thermometer className="h-5 w-5 text-amber-400" />
               {t('climate.widget.temperatureTrends')}
             </h3>
           </div>
-          <div className="rounded-lg bg-white p-6 shadow-soft">
+          <div className="rounded-2xl border border-border/50 bg-muted/20 p-6">
             <ResponsiveContainer width="100%" height={250}>
               <LineChart data={climateData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                <CartesianGrid strokeDasharray="3 3" stroke={commandCenterChart.grid} />
                 <XAxis
                   dataKey="date"
-                  stroke="#64748b"
+                  stroke={commandCenterChart.axis}
                   fontSize={12}
                   tickLine={false}
-                  axisLine={{ stroke: '#e2e8f0' }}
+                  axisLine={{ stroke: commandCenterChart.grid }}
+                  tick={{ fill: commandCenterChart.tick }}
                   tickFormatter={(value) => {
                     const d = new Date(value);
                     return isNaN(d.getTime()) ? value : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                   }}
                 />
                 <YAxis
-                  stroke="#64748b"
+                  stroke={commandCenterChart.axis}
                   fontSize={12}
                   tickLine={false}
-                  axisLine={{ stroke: '#e2e8f0' }}
+                  axisLine={{ stroke: commandCenterChart.grid }}
+                  tick={{ fill: commandCenterChart.tick }}
                   tickFormatter={(value) => `${value}°C`}
                 />
                 <Tooltip
-                  contentStyle={{
-                    background: 'white',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '8px',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-                  }}
+                  contentStyle={commandCenterChart.tooltip}
                   formatter={(value: number) => [`${value}°C`, t('weather.temp')]}
                   labelFormatter={(label: string) => {
                     const d = new Date(label);
                     return isNaN(d.getTime()) ? label : d.toLocaleDateString();
                   }}
                 />
-                <Line type="monotone" dataKey="maxTemp" name={t('common.max')} stroke="#ef4444" dot={false} />
-                <Line type="monotone" dataKey="minTemp" name={t('common.min')} stroke="#3b82f6" dot={false} />
-                <Line type="monotone" dataKey="avgTemp" name={t('common.avg')} stroke="#10b981" strokeWidth={2} />
+                <Line type="monotone" dataKey="maxTemp" name={t('common.max')} stroke={commandCenterChart.red} dot={false} />
+                <Line type="monotone" dataKey="minTemp" name={t('common.min')} stroke={commandCenterChart.blue} dot={false} />
+                <Line type="monotone" dataKey="avgTemp" name={t('common.avg')} stroke={commandCenterChart.emerald} strokeWidth={2} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -495,47 +493,44 @@ export function ClimateDataWidget() {
 
         <div className="animate-slide-up [animation-delay:200ms]">
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="flex items-center gap-2 text-lg font-semibold text-neutral-900">
-              <Droplets className="h-5 w-5 text-primary-500" />
+            <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+              <Droplets className="h-5 w-5 text-blue-400" />
               {t('climate.widget.precipitationAnalysis')}
             </h3>
             {climateTrends && (
-              <div className="flex items-center gap-2 rounded-lg bg-primary-50 px-3 py-1 text-sm text-primary-600">
+              <div className="flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-sm text-primary">
                 <Gauge className="h-4 w-4" />
                 {t('common.total')}: {climateTrends.rainfall?.totalAccumulated?.toFixed(0) ?? '0'}mm
               </div>
             )}
           </div>
-          <div className="rounded-lg bg-white p-6 shadow-soft">
+          <div className="rounded-2xl border border-border/50 bg-muted/20 p-6">
             <ResponsiveContainer width="100%" height={250}>
               <BarChart data={climateData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke={commandCenterChart.grid} vertical={false} />
                 <XAxis
                   dataKey="date"
-                  stroke="#64748b"
+                  stroke={commandCenterChart.axis}
                   fontSize={12}
                   tickLine={false}
-                  axisLine={{ stroke: '#e2e8f0' }}
+                  axisLine={{ stroke: commandCenterChart.grid }}
+                  tick={{ fill: commandCenterChart.tick }}
                   tickFormatter={(value) => {
                     const d = new Date(value);
                     return isNaN(d.getTime()) ? value : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                   }}
                 />
                 <YAxis
-                  stroke="#64748b"
+                  stroke={commandCenterChart.axis}
                   fontSize={12}
                   tickLine={false}
-                  axisLine={{ stroke: '#e2e8f0' }}
+                  axisLine={{ stroke: commandCenterChart.grid }}
+                  tick={{ fill: commandCenterChart.tick }}
                   tickFormatter={(value) => `${value}mm`}
                 />
                 <Tooltip
-                  cursor={{ fill: '#f1f5f9' }}
-                  contentStyle={{
-                    background: 'white',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '8px',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-                  }}
+                  cursor={{ fill: 'rgba(37, 99, 235, 0.08)' }}
+                  contentStyle={commandCenterChart.tooltip}
                   formatter={(value: number) => [`${value}mm`, t('weather.rain')]}
                   labelFormatter={(label: string) => {
                     const d = new Date(label);
@@ -544,11 +539,11 @@ export function ClimateDataWidget() {
                 />
                 <Bar
                   dataKey="rainfall"
-                  fill="#3b82f6"
+                  fill={commandCenterChart.blue}
                   radius={[4, 4, 0, 0]}
                   barSize={30}
                 />
-                <Line type="monotone" dataKey="rainProb" name={t('climate.analysis.trend')} stroke="#8b5cf6" yAxisId="right" />
+                <Line type="monotone" dataKey="rainProb" name={t('climate.analysis.trend')} stroke={commandCenterChart.sun} yAxisId="right" />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -556,14 +551,14 @@ export function ClimateDataWidget() {
 
         {climateTrends && (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <div className="rounded-lg bg-white p-6 shadow-soft">
-              <h4 className="mb-4 flex items-center gap-2 text-lg font-semibold text-neutral-900">
-                <Thermometer className="h-5 w-5 text-primary-500" />
+            <div className="rounded-2xl border border-border/50 bg-muted/20 p-6">
+              <h4 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
+                <Thermometer className="h-5 w-5 text-amber-400" />
                 {t('climate.widget.tempAnalysis')}
               </h4>
               <div className="space-y-4">
-                <div className="flex items-center justify-between rounded-lg bg-neutral-50 p-4">
-                  <span className="text-sm text-neutral-600">{t('climate.analysis.trend')}</span>
+                <div className="flex items-center justify-between rounded-xl border border-border/40 bg-card/50 p-4">
+                  <span className="text-sm text-muted-foreground">{t('climate.analysis.trend')}</span>
                   <div className="flex items-center gap-2">
                     {climateTrends.temperature.trend === 'rising' && <TrendingUp className="h-4 w-4 text-red-500" />}
                     {climateTrends.temperature.trend === 'falling' && <TrendingDown className="h-4 w-4 text-blue-500" />}
@@ -571,12 +566,12 @@ export function ClimateDataWidget() {
                     <span className="font-medium capitalize">{t(`climate.trends.${climateTrends.temperature.trend}`)}</span>
                   </div>
                 </div>
-                <div className="flex items-center justify-between rounded-lg bg-neutral-50 p-4">
-                  <span className="text-sm text-neutral-600">{t('climate.analysis.average')}</span>
+                <div className="flex items-center justify-between rounded-xl border border-border/40 bg-card/50 p-4">
+                  <span className="text-sm text-muted-foreground">{t('climate.analysis.average')}</span>
                   <span className="font-medium">{climateTrends?.temperature?.average?.toFixed(1) ?? 'N/A'}°C</span>
                 </div>
-                <div className="flex items-center justify-between rounded-lg bg-neutral-50 p-4">
-                  <span className="text-sm text-neutral-600">{t('climate.analysis.anomaly')}</span>
+                <div className="flex items-center justify-between rounded-xl border border-border/40 bg-card/50 p-4">
+                  <span className="text-sm text-muted-foreground">{t('climate.analysis.anomaly')}</span>
                   <span className={`font-medium ${climateTrends?.temperature?.anomaly && climateTrends.temperature.anomaly > 0 ? 'text-red-500' :
                     climateTrends?.temperature?.anomaly && climateTrends.temperature.anomaly < 0 ? 'text-blue-500' : 'text-neutral-500'
                     }`}>
@@ -586,14 +581,14 @@ export function ClimateDataWidget() {
               </div>
             </div>
 
-            <div className="rounded-lg bg-white p-6 shadow-soft">
-              <h4 className="mb-4 flex items-center gap-2 text-lg font-semibold text-neutral-900">
-                <Cloud className="h-5 w-5 text-primary-500" />
+            <div className="rounded-2xl border border-border/50 bg-muted/20 p-6">
+              <h4 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
+                <Cloud className="h-5 w-5 text-blue-400" />
                 {t('climate.widget.rainAnalysis')}
               </h4>
               <div className="space-y-4">
-                <div className="flex items-center justify-between rounded-lg bg-neutral-50 p-4">
-                  <span className="text-sm text-neutral-600">{t('climate.analysis.trend')}</span>
+                <div className="flex items-center justify-between rounded-xl border border-border/40 bg-card/50 p-4">
+                  <span className="text-sm text-muted-foreground">{t('climate.analysis.trend')}</span>
                   <div className="flex items-center gap-2">
                     {climateTrends.rainfall.trend === 'rising' && <TrendingUp className="h-4 w-4 text-blue-500" />}
                     {climateTrends.rainfall.trend === 'falling' && <TrendingDown className="h-4 w-4 text-orange-500" />}
@@ -601,51 +596,51 @@ export function ClimateDataWidget() {
                     <span className="font-medium capitalize">{t(`climate.trends.${climateTrends.rainfall.trend}`)}</span>
                   </div>
                 </div>
-                <div className="flex items-center justify-between rounded-lg bg-neutral-50 p-4">
-                  <span className="text-sm text-neutral-600">{t('climate.analysis.totalAccumulated')}</span>
+                <div className="flex items-center justify-between rounded-xl border border-border/40 bg-card/50 p-4">
+                  <span className="text-sm text-muted-foreground">{t('climate.analysis.totalAccumulated')}</span>
                   <span className="font-medium">{climateTrends?.rainfall?.totalAccumulated?.toFixed(0) ?? 'N/A'}mm</span>
                 </div>
-                <div className="flex items-center justify-between rounded-lg bg-neutral-50 p-4">
-                  <span className="text-sm text-neutral-600">{t('climate.analysis.daysWithRain')}</span>
+                <div className="flex items-center justify-between rounded-xl border border-border/40 bg-card/50 p-4">
+                  <span className="text-sm text-muted-foreground">{t('climate.analysis.daysWithRain')}</span>
                   <span className="font-medium">{climateTrends.rainfall.daysWithRain} {t('common.days')}</span>
                 </div>
               </div>
             </div>
 
             <div className="col-span-1 md:col-span-2">
-              <div className="rounded-lg bg-white p-6 shadow-soft">
-                <h4 className="mb-4 flex items-center gap-2 text-lg font-semibold text-neutral-900">
-                  <AlertTriangle className="h-5 w-5 text-primary-500" />
+              <div className="rounded-2xl border border-border/50 bg-muted/20 p-6">
+                <h4 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
+                  <AlertTriangle className="h-5 w-5 text-amber-400" />
                   {t('climate.widget.extremeEvents')}
                 </h4>
                 <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                  <div className="rounded-lg bg-neutral-50 p-4">
-                    <div className="text-sm text-neutral-600">{t('climate.widget.hotDays')}</div>
-                    <div className="mt-1 text-2xl font-semibold text-red-500">
+                  <div className="rounded-xl border border-border/40 bg-card/50 p-4">
+                    <div className="text-sm text-muted-foreground">{t('climate.widget.hotDays')}</div>
+                    <div className="mt-1 text-2xl font-semibold text-red-400">
                       {climateTrends.extremeEvents.hotDays}
                     </div>
-                    <div className="text-xs text-neutral-500">{t('climate.widget.above')} 30°C</div>
+                    <div className="text-xs text-muted-foreground">{t('climate.widget.above')} 30°C</div>
                   </div>
-                  <div className="rounded-lg bg-neutral-50 p-4">
-                    <div className="text-sm text-neutral-600">{t('climate.widget.coldDays')}</div>
-                    <div className="mt-1 text-2xl font-semibold text-blue-500">
+                  <div className="rounded-xl border border-border/40 bg-card/50 p-4">
+                    <div className="text-sm text-muted-foreground">{t('climate.widget.coldDays')}</div>
+                    <div className="mt-1 text-2xl font-semibold text-blue-400">
                       {climateTrends.extremeEvents.coldDays}
                     </div>
-                    <div className="text-xs text-neutral-500">{t('climate.widget.below')} 15°C</div>
+                    <div className="text-xs text-muted-foreground">{t('climate.widget.below')} 15°C</div>
                   </div>
-                  <div className="rounded-lg bg-neutral-50 p-4">
-                    <div className="text-sm text-neutral-600">{t('climate.widget.heavyRain')}</div>
-                    <div className="mt-1 text-2xl font-semibold text-blue-500">
+                  <div className="rounded-xl border border-border/40 bg-card/50 p-4">
+                    <div className="text-sm text-muted-foreground">{t('climate.widget.heavyRain')}</div>
+                    <div className="mt-1 text-2xl font-semibold text-blue-400">
                       {climateTrends.extremeEvents.heavyRainDays}
                     </div>
-                    <div className="text-xs text-neutral-500">{t('climate.widget.above')} 30mm</div>
+                    <div className="text-xs text-muted-foreground">{t('climate.widget.above')} 30mm</div>
                   </div>
-                  <div className="rounded-lg bg-neutral-50 p-4">
-                    <div className="text-sm text-neutral-600">{t('climate.widget.dryDays')}</div>
-                    <div className="mt-1 text-2xl font-semibold text-orange-500">
+                  <div className="rounded-xl border border-border/40 bg-card/50 p-4">
+                    <div className="text-sm text-muted-foreground">{t('climate.widget.dryDays')}</div>
+                    <div className="mt-1 text-2xl font-semibold text-amber-400">
                       {climateTrends.extremeEvents.dryDays}
                     </div>
-                    <div className="text-xs text-neutral-500">{t('climate.widget.noRain')}</div>
+                    <div className="text-xs text-muted-foreground">{t('climate.widget.noRain')}</div>
                   </div>
                 </div>
               </div>

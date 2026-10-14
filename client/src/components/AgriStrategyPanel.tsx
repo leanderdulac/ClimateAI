@@ -391,19 +391,22 @@ export function AgriStrategyPanel() {
   const ensoProjected = result?.climate_outlook.enso_projected;
 
   return (
-    <Card className="border-none shadow-soft-xl bg-card/50 backdrop-blur-sm">
-      <CardHeader>
-        <div className="flex items-start justify-between gap-4">
+    <Card className="cc-card border-border/80 bg-card/60 backdrop-blur-xl">
+      <CardHeader className="cc-header border-border/40">
+        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row">
           <div>
-            <CardTitle className="flex items-center gap-2 text-2xl">
-              <Leaf className="h-6 w-6 text-emerald-500" />
+            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-400">
+              <Leaf className="h-3.5 w-3.5" />
+              Agro
+            </div>
+            <CardTitle className="flex items-center gap-2 text-2xl text-foreground">
               Estratégia Agroclimática
             </CardTitle>
             <CardDescription className="mt-2 max-w-2xl text-sm leading-relaxed">
               Gera um plano operacional e financeiro integrado à cotação de seguro, com base em ENSO, previsão NOAA e perfil da lavoura.
             </CardDescription>
           </div>
-          <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/10 text-emerald-600">
+          <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/10 text-emerald-400">
             {loadingCatalog ? 'Atualizando catálogo...' : 'ENSO + NOAA'}
           </Badge>
         </div>

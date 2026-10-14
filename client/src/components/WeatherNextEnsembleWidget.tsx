@@ -11,12 +11,13 @@ import {
 } from 'recharts';
 import { Activity, CloudRain, Loader2, Thermometer } from 'lucide-react';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useLocation } from '@/lib/LocationContext';
 import { weathernextApi, type EnsembleForecast } from '@/lib/api/weathernext';
 import { isFeatureEnabled } from '@/lib/features';
 import { useTranslation } from '@/hooks/useTranslation';
+import { commandCenterChart } from '@/lib/commandCenterChart';
 
 function formatPct(value: number | undefined): string {
   if (value == null || Number.isNaN(value)) return '—';
@@ -84,12 +85,17 @@ export function WeatherNextEnsembleWidget() {
 
   if (!selectedLocation) {
     return (
-      <Card className="glass-card border-0 shadow-2xl overflow-hidden">
-        <CardHeader className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-700 opacity-90" />
-          <CardTitle className="relative z-10 text-white text-xl font-bold">
-            {t('weathernext.title')}
-          </CardTitle>
+      <Card className="cc-card overflow-hidden border-border/80 bg-card/60 backdrop-blur-xl">
+        <CardHeader className="cc-header border-border/40">
+          <div className="flex items-center gap-4">
+            <div className="rounded-xl bg-cyan-500/10 p-3 text-cyan-400">
+              <Activity className="h-6 w-6" />
+            </div>
+            <div>
+              <CardTitle className="text-xl font-bold text-foreground">{t('weathernext.title')}</CardTitle>
+              <CardDescription>{t('weathernext.subtitle')}</CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="p-6 text-sm text-muted-foreground">
           {t('weathernext.selectLocation')}
@@ -103,24 +109,24 @@ export function WeatherNextEnsembleWidget() {
   const heatEntries = Object.entries(exceedance?.heat_exceedance ?? {});
 
   return (
-    <Card className="w-full overflow-hidden glass-card border-0 shadow-2xl group">
-      <CardHeader className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-700 opacity-90" />
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjEiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncmlkKSIvPjwvc3ZnPg==')] opacity-20" />
-        <CardTitle className="relative z-10 flex items-center justify-between text-white">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-white/20 backdrop-blur-sm">
+    <Card className="cc-card w-full overflow-hidden border-border/80 bg-card/60 backdrop-blur-xl">
+      <CardHeader className="cc-header border-border/40">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-4">
+            <div className="rounded-xl bg-cyan-500/10 p-3 text-cyan-400">
               <Activity className="h-6 w-6" />
             </div>
             <div>
-              <div className="text-sm font-normal text-white/80">{t('weathernext.subtitle')}</div>
-              <div className="text-xl font-bold">{t('weathernext.title')}</div>
+              <div className="flex flex-wrap items-center gap-2">
+                <CardTitle className="text-xl font-bold text-foreground">{t('weathernext.title')}</CardTitle>
+                <Badge variant="outline" className="h-5 border-cyan-500/30 bg-cyan-500/10 px-1.5 py-0 text-[10px] font-bold uppercase tracking-wider text-cyan-400">
+                  WeatherNext 2
+                </Badge>
+              </div>
+              <CardDescription>{t('weathernext.subtitle')}</CardDescription>
             </div>
           </div>
-          <Badge className="bg-white/20 text-white border-white/30 hover:bg-white/30">
-            WeatherNext 2
-          </Badge>
-        </CardTitle>
+        </div>
       </CardHeader>
 
       <CardContent className="p-6 space-y-6">
@@ -160,10 +166,10 @@ export function WeatherNextEnsembleWidget() {
               <div className="h-[260px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="time" tick={{ fontSize: 11 }} />
-                    <YAxis unit="°C" tick={{ fontSize: 11 }} />
-                    <Tooltip />
+                    <CartesianGrid strokeDasharray="3 3" stroke={commandCenterChart.grid} />
+                    <XAxis dataKey="time" stroke={commandCenterChart.axis} tick={{ fill: commandCenterChart.tick, fontSize: 11 }} />
+                    <YAxis unit="°C" stroke={commandCenterChart.axis} tick={{ fill: commandCenterChart.tick, fontSize: 11 }} />
+                    <Tooltip contentStyle={commandCenterChart.tooltip} />
                     <Area
                       type="monotone"
                       dataKey="p10"
@@ -177,10 +183,10 @@ export function WeatherNextEnsembleWidget() {
                       dataKey="spread"
                       stackId="fan"
                       stroke="none"
-                      fill="rgba(34,211,238,0.35)"
+                      fill="rgba(96,165,250,0.28)"
                       name="p10–p90"
                     />
-                    <Line type="monotone" dataKey="p50" stroke="#0891b2" dot={false} strokeWidth={2} name="p50" />
+                    <Line type="monotone" dataKey="p50" stroke={commandCenterChart.blue} dot={false} strokeWidth={2} name="p50" />
                   </ComposedChart>
                 </ResponsiveContainer>
               </div>

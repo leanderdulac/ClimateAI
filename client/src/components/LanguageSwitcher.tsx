@@ -20,9 +20,9 @@ export function LanguageSwitcher() {
 
     return (
         <Select value={language} onValueChange={(value: any) => setLanguage(value)}>
-            <SelectTrigger className="w-[155px] bg-transparent border-none focus:ring-0 focus:ring-offset-0">
+            <SelectTrigger className="w-[118px] sm:w-[155px] bg-transparent border-none focus:ring-0 focus:ring-offset-0 px-2">
                 <div className="flex items-center gap-2">
-                    <Globe className="h-4 w-4 text-gray-500 shrink-0" />
+                    <Globe className="h-4 w-4 text-muted-foreground shrink-0" />
                     <SelectValue placeholder="Language">
                         {LANGUAGE_LABELS[language] || language}
                     </SelectValue>

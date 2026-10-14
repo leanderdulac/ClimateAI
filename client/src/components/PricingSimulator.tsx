@@ -223,7 +223,7 @@ const climateEvents: ClimateEvent[] = [
 function ErrorAlert({ message, onClose }: { message: string, onClose: () => void }) {
   const { t } = useTranslation();
   return (
-    <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-800 rounded flex items-center justify-between animate-fade-in">
+    <div className="mb-4 p-3 bg-destructive/15 border border-destructive/40 text-red-300 rounded-xl flex items-center justify-between animate-fade-in">
       <div className="flex items-center gap-2">
         <AlertTriangle className="h-5 w-5 text-red-500" />
         <span className="font-medium">{message}</span>
@@ -641,12 +641,12 @@ export function PricingSimulator() {
   };
 
   return (
-    <Card className="pricing-simulator overflow-hidden animate-fade-in" variant="default">
+    <Card className="pricing-simulator cc-card overflow-hidden animate-fade-in border-border/80 bg-card/60 backdrop-blur-xl" variant="default">
       {calcError && (
         <ErrorAlert message={calcError} onClose={() => setCalcError(null)} />
       )}
       {demoQuote && (
-        <div className="mb-4 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <div className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
           Cotacao demonstrativa. Estes numeros nao devem ser usados como premio real.
         </div>
       )}
@@ -655,7 +655,7 @@ export function PricingSimulator() {
         <label htmlFor="variableSim" className="text-sm">{t('pricing.simulator.variable')}</label>
       </div>
       {variableSim && (
-        <div className="mb-4 p-3 bg-blue-50 rounded text-xs text-blue-900">
+        <div className="mb-4 rounded-xl border border-blue-500/20 bg-blue-500/10 p-3 text-xs text-blue-200">
           <div><b>Simulações em lote (5 execuções aleatórias):</b></div>
           <ol className="list-decimal ml-4">
             {advancedResults?.batch?.map((b: any, idx: number) => (
@@ -810,30 +810,30 @@ export function PricingSimulator() {
           )}
         </div>
       )}
-      <CardHeader className="border-none bg-gradient-to-r from-primary-500 to-primary-600">
+      <CardHeader className="cc-header border-border/40">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
-            <div className="rounded-lg bg-white/10 p-3">
-              <Calculator className="h-6 w-6 text-white" />
+            <div className="rounded-xl bg-primary/10 p-3 text-primary">
+              <Calculator className="h-6 w-6" />
             </div>
             <div>
-              <CardTitle className="text-xl font-bold text-white">{t('pricing.simulator.title')}</CardTitle>
-              <CardDescription className="text-primary-100">
+              <CardTitle className="text-xl font-bold text-foreground">{t('pricing.simulator.title')}</CardTitle>
+              <CardDescription>
                 {t('pricing.simulator.subtitle')}
               </CardDescription>
             </div>
           </div>
           {premium > 0 && (
-            <div className="flex items-center gap-3 rounded-lg bg-white/10 px-4 py-2">
-              <DollarSign className="h-5 w-5 text-primary-100" />
+            <div className="flex items-center gap-3 rounded-xl border border-border/50 bg-muted/30 px-4 py-2">
+              <DollarSign className="h-5 w-5 text-emerald-400" />
               <div>
-                <div className="text-sm text-primary-100">
+                <div className="text-xs uppercase tracking-wider text-muted-foreground">
                   {t('pricing.labels.totalInsurance')} ({coveragePeriod} {coveragePeriod === 1 ? t('pricing.labels.year') : t('pricing.labels.years')})
                 </div>
-                <div className="text-lg font-semibold text-white">
+                <div className="text-lg font-semibold text-foreground">
                   R$ {premium.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                 </div>
-                <div className="text-xs text-primary-200">
+                <div className="text-xs text-muted-foreground">
                   R$ {(premium / coveragePeriod).toLocaleString(undefined, { maximumFractionDigits: 2 })}/{t('pricing.labels.year')}
                 </div>
               </div>
@@ -841,24 +841,24 @@ export function PricingSimulator() {
           )}
         </div>
       </CardHeader>
-      <CardContent className="space-y-10 p-8 bg-gradient-to-b from-white to-neutral-50">
+      <CardContent className="space-y-10 p-6 md:p-8">
 
         {/* Tab Navigation */}
-        <div className="flex border-b border-gray-200">
+        <div className="inline-flex rounded-2xl border border-border/40 bg-muted/40 p-1">
           <button
             onClick={() => setActiveTab('simulator')}
-            className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'simulator'
-              ? 'border-primary-500 text-primary-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
+            className={`rounded-xl px-6 py-2.5 text-sm font-medium transition-colors ${activeTab === 'simulator'
+              ? 'bg-card text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground'
               }`}
           >
             {t('pricing.tabs.simulator')}
           </button>
           <button
             onClick={() => window.location.href = '/tokenization'}
-            className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'tokenization'
-              ? 'border-primary-500 text-primary-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
+            className={`rounded-xl px-6 py-2.5 text-sm font-medium transition-colors ${activeTab === 'tokenization'
+              ? 'bg-card text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground'
               }`}
           >
             {t('pricing.tabs.tokenization')}
@@ -870,8 +870,8 @@ export function PricingSimulator() {
             {/* Climate Events Selection */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <Label className="flex items-center gap-2 text-sm font-medium text-neutral-700">
-                  <Cloud className="h-4 w-4 text-primary-500" />
+                <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
+                  <Cloud className="h-4 w-4 text-primary" />
                   {t('pricing.labels.climateEvent')}
                 </Label>
                 {selectedEvent && (
@@ -906,7 +906,7 @@ export function PricingSimulator() {
               <div className="flex items-center justify-between">
                 <Label
                   htmlFor="assetValue"
-                  className="flex items-center gap-2 text-sm font-medium text-neutral-700"
+                  className="flex items-center gap-2 text-sm font-medium text-foreground"
                 >
                   <DollarSign className="h-4 w-4 text-primary-500" />
                   {t('pricing.labels.assetValue')}
@@ -915,7 +915,7 @@ export function PricingSimulator() {
                   ${assetValue.toLocaleString()}
                 </Badge>
               </div>
-              <div className="rounded-lg border border-neutral-200 bg-white p-4">
+              <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
                 <Input
                   id="assetValue"
                   type="number"
@@ -937,7 +937,7 @@ export function PricingSimulator() {
               <div className="flex items-center justify-between">
                 <Label
                   htmlFor="frequency"
-                  className="flex items-center gap-2 text-sm font-medium text-neutral-700"
+                  className="flex items-center gap-2 text-sm font-medium text-foreground"
                 >
                   <Activity className="h-4 w-4 text-primary-500" />
                   Frequência do Evento
@@ -946,7 +946,7 @@ export function PricingSimulator() {
                   {frequency}%
                 </Badge>
               </div>
-              <div className="rounded-lg border border-neutral-200 bg-white p-4">
+              <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
                 <Slider
                   id="frequency"
                   min={0}
@@ -966,7 +966,7 @@ export function PricingSimulator() {
               <div className="flex items-center justify-between">
                 <Label
                   htmlFor="severity"
-                  className="flex items-center gap-2 text-sm font-medium text-neutral-700"
+                  className="flex items-center gap-2 text-sm font-medium text-foreground"
                 >
                   <AlertTriangle className="h-4 w-4 text-warning-500" />
                   Maximum Severity
@@ -989,7 +989,7 @@ export function PricingSimulator() {
               <div className="flex items-center justify-between">
                 <Label
                   htmlFor="confidence"
-                  className="flex items-center gap-2 text-sm font-medium text-neutral-700"
+                  className="flex items-center gap-2 text-sm font-medium text-foreground"
                 >
                   <TrendingUp className="h-4 w-4 text-primary-500" />
                   Confidence Level
@@ -998,7 +998,7 @@ export function PricingSimulator() {
                   {confidence}%
                 </Badge>
               </div>
-              <div className="rounded-lg border border-neutral-200 bg-white p-4">
+              <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
                 <Slider
                   id="confidence"
                   min={50}
@@ -1047,7 +1047,7 @@ export function PricingSimulator() {
             </div>
 
             {/* Risk Assessment Button */}
-            <div className="rounded-lg border-2 border-dashed border-neutral-200 bg-neutral-50 p-6">
+            <div className="rounded-2xl border-2 border-dashed border-border/60 bg-muted/20 p-6">
               <div className="space-y-4 text-center">
                 <Calculator className="mx-auto h-8 w-8 text-primary-400" />
                 <div>
@@ -1059,7 +1059,7 @@ export function PricingSimulator() {
                 <Button
                   onClick={handleCalculate}
                   disabled={calculating}
-                  className="w-full shadow-sm bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white disabled:opacity-50"
+                  className="w-full rounded-full shadow-md shadow-primary/20 disabled:opacity-50"
                   size="lg"
                 >
                   <Calculator className="mr-2 h-4 w-4" />

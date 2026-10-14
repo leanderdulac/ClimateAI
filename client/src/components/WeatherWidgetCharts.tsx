@@ -11,6 +11,7 @@ import {
 } from 'recharts';
 
 import { useTranslation } from '@/hooks/useTranslation';
+import { commandCenterChart } from '@/lib/commandCenterChart';
 
 export interface WeatherChartPoint {
   date: string;
@@ -44,18 +45,23 @@ export function WeatherWidgetCharts({ climateData }: WeatherWidgetChartsProps) {
   return (
     <>
       <div>
-        <h3 className="mb-4 text-lg font-semibold">{t('weather.temperatureOverTime')}</h3>
+        <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground">{t('weather.temperatureOverTime')}</h3>
         <ResponsiveContainer width="100%" height={250}>
           <LineChart data={climateData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" tickFormatter={formatDate} />
-            <YAxis unit="°C" />
-            <Tooltip labelFormatter={formatDate} formatter={formatTemperature} />
+            <CartesianGrid strokeDasharray="3 3" stroke={commandCenterChart.grid} />
+            <XAxis dataKey="date" tickFormatter={formatDate} stroke={commandCenterChart.axis} tick={{ fill: commandCenterChart.tick, fontSize: 12 }} />
+            <YAxis unit="°C" stroke={commandCenterChart.axis} tick={{ fill: commandCenterChart.tick, fontSize: 12 }} />
+            <Tooltip
+              contentStyle={commandCenterChart.tooltip}
+              labelFormatter={formatDate}
+              formatter={formatTemperature}
+            />
             <Line
               type="monotone"
               dataKey="temperature"
               name={t('weather.temperature')}
-              stroke="#10b981"
+              stroke={commandCenterChart.emerald}
+              strokeWidth={2}
               dot={false}
             />
           </LineChart>
@@ -63,17 +69,21 @@ export function WeatherWidgetCharts({ climateData }: WeatherWidgetChartsProps) {
       </div>
 
       <div>
-        <h3 className="mb-4 text-lg font-semibold">{t('weather.precipitation')}</h3>
+        <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground">{t('weather.precipitation')}</h3>
         <ResponsiveContainer width="100%" height={250}>
           <BarChart data={climateData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" tickFormatter={formatDate} />
-            <YAxis unit="mm" />
-            <Tooltip labelFormatter={formatDate} formatter={formatRain} />
+            <CartesianGrid strokeDasharray="3 3" stroke={commandCenterChart.grid} />
+            <XAxis dataKey="date" tickFormatter={formatDate} stroke={commandCenterChart.axis} tick={{ fill: commandCenterChart.tick, fontSize: 12 }} />
+            <YAxis unit="mm" stroke={commandCenterChart.axis} tick={{ fill: commandCenterChart.tick, fontSize: 12 }} />
+            <Tooltip
+              contentStyle={commandCenterChart.tooltip}
+              labelFormatter={formatDate}
+              formatter={formatRain}
+            />
             <Bar
               dataKey="precipitation"
               name={t('weather.rain')}
-              fill="#3b82f6"
+              fill={commandCenterChart.blue}
               radius={[4, 4, 0, 0]}
             />
           </BarChart>

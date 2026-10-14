@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Cpu } from 'lucide-react';
+import { Cpu, FileCheck, Layers, Radio } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { computeApi, computeStatusLabel, type ComputeStatus } from '@/lib/api/compute';
@@ -51,11 +51,12 @@ export function BaseL2CommandCenter() {
   }, []);
 
   const label = computeStatusLabel(status, t);
+  const unavailable = t('compute.unavailable');
 
   return (
-    <div className="w-full" data-testid="akash-depin-card">
+    <div className="w-full space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <div className="flex flex-col gap-3 p-4 rounded-2xl bg-gradient-to-br from-card/80 to-card/40 border border-primary/20 backdrop-blur-md shadow-sm">
+        <div className="flex flex-col gap-3 p-4 rounded-2xl bg-gradient-to-br from-card/80 to-card/40 border border-primary/20 backdrop-blur-md shadow-sm" data-testid="akash-depin-card">
           <div className="flex items-center gap-3 min-w-0">
             <div className="p-2.5 rounded-xl bg-primary/10 text-primary shrink-0">
               <Cpu className="h-5 w-5" />
@@ -72,6 +73,57 @@ export function BaseL2CommandCenter() {
             className={`self-start text-xs font-mono ${statusBadgeClass(status?.status)}`}
           >
             {label}
+          </Badge>
+        </div>
+
+        <div className="flex flex-col gap-3 p-4 rounded-2xl bg-gradient-to-br from-card/80 to-card/40 border border-blue-500/20 backdrop-blur-md shadow-sm" data-testid="base-l2-card">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-500 shrink-0">
+              <Layers className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                {t('compute.base.title')}
+              </div>
+              <div className="text-sm font-bold text-foreground font-mono">{t('compute.base.blockUnavailable')}</div>
+            </div>
+          </div>
+          <Badge variant="outline" className="self-start bg-muted text-muted-foreground border-border text-xs font-mono">
+            {unavailable}
+          </Badge>
+        </div>
+
+        <div className="flex flex-col gap-3 p-4 rounded-2xl bg-gradient-to-br from-card/80 to-card/40 border border-purple-500/20 backdrop-blur-md shadow-sm" data-testid="oracle-card">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-400 shrink-0">
+              <Radio className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                {t('compute.oracle.title')}
+              </div>
+              <div className="text-sm font-bold text-foreground">{t('compute.oracle.subtitle')}</div>
+            </div>
+          </div>
+          <Badge variant="outline" className="self-start bg-muted text-muted-foreground border-border text-xs">
+            {unavailable}
+          </Badge>
+        </div>
+
+        <div className="flex flex-col gap-3 p-4 rounded-2xl bg-gradient-to-br from-card/80 to-card/40 border border-amber-500/20 backdrop-blur-md shadow-sm" data-testid="contract-card">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-500 shrink-0">
+              <FileCheck className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                {t('compute.contract.title')}
+              </div>
+              <div className="text-xs font-mono text-muted-foreground">—</div>
+            </div>
+          </div>
+          <Badge variant="outline" className="self-start bg-muted text-muted-foreground border-border text-xs">
+            {unavailable}
           </Badge>
         </div>
       </div>

@@ -189,15 +189,15 @@ export function WeatherWidget() {
 
   if (error) {
     return (
-      <Card className="overflow-hidden bg-red-50">
+      <Card className="cc-card overflow-hidden border-destructive/30 bg-destructive/10">
         <CardHeader className="border-none">
           <div className="flex items-center gap-4">
-            <div className="rounded-lg bg-red-100 p-3">
-              <AlertTriangle className="h-6 w-6 text-red-600" />
+            <div className="rounded-xl bg-destructive/20 p-3">
+              <AlertTriangle className="h-6 w-6 text-red-400" />
             </div>
             <div>
-              <CardTitle className="text-xl font-bold text-red-700">{t('weather.error.title')}</CardTitle>
-              <CardDescription className="text-red-600">
+              <CardTitle className="text-xl font-bold text-red-300">{t('weather.error.title')}</CardTitle>
+              <CardDescription className="text-red-300/80">
                 {error}
               </CardDescription>
             </div>
@@ -209,15 +209,15 @@ export function WeatherWidget() {
 
   if (loading || isLoadingLocation) {
     return (
-      <Card className="overflow-hidden">
-        <CardHeader className="border-none bg-gradient-to-r from-primary-500 to-primary-600">
+      <Card className="cc-card h-full overflow-hidden border-border/80 bg-card/60 backdrop-blur-xl">
+        <CardHeader className="cc-header border-none">
           <div className="flex items-center gap-4">
-            <div className="rounded-lg bg-white/10 p-3">
-              <Sun className="h-6 w-6 text-white animate-pulse" />
+            <div className="rounded-xl bg-amber-500/10 p-3 text-amber-400">
+              <Sun className="h-6 w-6 animate-pulse" />
             </div>
             <div>
-              <CardTitle className="text-xl font-bold text-white">{t('weather.title')}</CardTitle>
-              <CardDescription className="text-primary-100">
+              <CardTitle className="text-xl font-bold text-foreground">{t('weather.title')}</CardTitle>
+              <CardDescription>
                 {isLoadingLocation ? t('weather.loadingLocation') : t('weather.loading')}
               </CardDescription>
             </div>
@@ -228,25 +228,25 @@ export function WeatherWidget() {
   }
 
   return (
-    <Card className="overflow-hidden">
-      <CardHeader className="border-none bg-gradient-to-r from-primary-500 to-primary-600">
+    <Card className="cc-card h-full overflow-hidden border-border/80 bg-card/60 backdrop-blur-xl">
+      <CardHeader className="cc-header border-border/40">
         <div className="flex items-center gap-4">
-          <div className="rounded-lg bg-white/10 p-3">
-            <Sun className="h-6 w-6 text-white" />
+          <div className="rounded-xl bg-amber-500/10 p-3 text-amber-400">
+            <Sun className="h-6 w-6" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <CardTitle className="text-xl font-bold text-white">
+            <div className="flex flex-wrap items-center gap-2">
+              <CardTitle className="text-xl font-bold text-foreground">
                 {selectedLocation ? `${selectedLocation.cidade}, ${selectedLocation.estado}` : t('weather.title')}
               </CardTitle>
               {currentWeather && (
-                <Badge variant="outline" className="bg-white/20 border-white/40 text-white gap-1 px-1.5 py-0 h-5 text-[10px] uppercase font-bold tracking-wider">
-                  <Zap className="h-2.5 w-2.5 fill-yellow-400 text-yellow-400" />
+                <Badge variant="outline" className="h-5 gap-1 border-amber-500/30 bg-amber-500/10 px-1.5 py-0 text-[10px] font-bold uppercase tracking-wider text-amber-400">
+                  <Zap className="h-2.5 w-2.5 fill-amber-400 text-amber-400" />
                   {t('weather.liveBadge')}
                 </Badge>
               )}
             </div>
-            <CardDescription className="text-primary-100">
+            <CardDescription>
               {currentWeather ? `${getWeatherDescription(
                 currentWeather.temperature,
                 currentWeather.humidity,
@@ -257,31 +257,31 @@ export function WeatherWidget() {
           </div>
         </div>
         {currentWeather && (
-          <div className="grid grid-cols-2 gap-4 sm:flex sm:items-center mt-4">
-            <div className="flex items-center gap-3 rounded-lg bg-white/10 px-4 py-2">
-              <Thermometer className="h-5 w-5 text-primary-100" />
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:flex sm:items-center">
+            <div className="flex items-center gap-3 rounded-xl border border-border/50 bg-muted/30 px-4 py-2">
+              <Thermometer className="h-5 w-5 text-amber-400" />
               <div>
-                <div className="text-sm text-primary-100">{t('weather.temperature')}</div>
-                <div className="text-lg font-semibold text-white">
+                <div className="text-xs uppercase tracking-wider text-muted-foreground">{t('weather.temperature')}</div>
+                <div className="text-lg font-semibold text-foreground">
                   {currentWeather.temperature.toFixed(1)}°C
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-3 rounded-lg bg-white/10 px-4 py-2">
-              <Droplets className="h-5 w-5 text-primary-100" />
+            <div className="flex items-center gap-3 rounded-xl border border-border/50 bg-muted/30 px-4 py-2">
+              <Droplets className="h-5 w-5 text-blue-400" />
               <div>
-                <div className="text-sm text-primary-100">{t('weather.rain')}</div>
-                <div className="text-lg font-semibold text-white">
+                <div className="text-xs uppercase tracking-wider text-muted-foreground">{t('weather.rain')}</div>
+                <div className="text-lg font-semibold text-foreground">
                   {currentWeather.precipitation.toFixed(1)}mm
                 </div>
               </div>
             </div>
             {currentWeather.windSpeed && (
-              <div className="flex items-center gap-3 rounded-lg bg-white/10 px-4 py-2">
-                <Wind className="h-5 w-5 text-primary-100" />
+              <div className="flex items-center gap-3 rounded-xl border border-border/50 bg-muted/30 px-4 py-2">
+                <Wind className="h-5 w-5 text-emerald-400" />
                 <div>
-                  <div className="text-sm text-primary-100">{t('weather.wind')}</div>
-                  <div className="text-lg font-semibold text-white">
+                  <div className="text-xs uppercase tracking-wider text-muted-foreground">{t('weather.wind')}</div>
+                  <div className="text-lg font-semibold text-foreground">
                     {currentWeather.windSpeed.toFixed(1)}km/h
                   </div>
                 </div>
@@ -295,15 +295,15 @@ export function WeatherWidget() {
           <Suspense
             fallback={
               <div className="space-y-8">
-                <div className="h-[286px] rounded-lg bg-muted animate-pulse" />
-                <div className="h-[286px] rounded-lg bg-muted animate-pulse" />
+                <div className="h-[286px] rounded-xl bg-muted animate-pulse" />
+                <div className="h-[286px] rounded-xl bg-muted animate-pulse" />
               </div>
             }
           >
             <WeatherWidgetCharts climateData={climateData} />
           </Suspense>
         ) : (
-          <div className="rounded-lg border border-dashed border-border bg-muted/40 px-4 py-6 text-sm text-muted-foreground">
+          <div className="rounded-xl border border-dashed border-border/70 bg-muted/30 px-4 py-6 text-sm text-muted-foreground">
             {t('weather.loadingHistorical')}
           </div>
         )}
