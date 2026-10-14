@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock
+from urllib.parse import urlparse
 
 import pytest
 
@@ -149,7 +150,12 @@ async def test_forecast_point_uses_mocked_http():
     assert result["hourly_fan"]
     assert result["daily"]
     assert "p_heavy_rain" in result["pricing_exceedance"]
-    assert result["license"]["url"].startswith("https://open-meteo.com")
+    license_url = urlparse(result["license"]["url"])
+    assert license_url.scheme == "https"
+    assert license_url.hostname == "open-meteo.com"
+    # startswith("https://open-meteo.com") would also accept open-meteo.com.evil.example
+    lookalike = urlparse("https://open-meteo.com.evil.example/en/license")
+    assert lookalike.hostname != "open-meteo.com"
     # second call hits cache
     result2 = await service.forecast_point(-22.9068, -43.1729)
     assert result2["daily"]

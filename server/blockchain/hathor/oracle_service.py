@@ -19,6 +19,21 @@ from blockchain.hathor.hathor_service import HathorService, get_hathor_service
 
 logger = logging.getLogger(__name__)
 
+_LOG_UNSAFE_CHARS = str.maketrans({"\r": "", "\n": "", "\x00": ""})
+
+
+def _safe_log_token(value: Any, max_len: int = 64) -> str:
+    """Normalize a log token: strip CR/LF/NUL so a value cannot split log lines."""
+    text = str(value).translate(_LOG_UNSAFE_CHARS)
+    if len(text) > max_len:
+        return text[:max_len] + "…"
+    return text
+
+
+def _safe_log_float(value: Any, digits: int = 4) -> str:
+    """Cast to float, round, then CR/LF-sanitize before interpolation into logs."""
+    return _safe_log_token(f"{round(float(value), digits):.{digits}f}")
+
 
 @dataclass
 class ClimateDataPoint:
@@ -502,7 +517,7 @@ class ClimateOracleService:
                 "extent": f"{latitude-lat_range},{longitude-lon_range},{latitude+lat_range},{longitude+lon_range}",
             }
             
-            logger.debug(f"Searching NOAA stations: {stations_params}")
+            logger.debug("Searching NOAA stations: limit=%s (extent redacted)", stations_params.get("limit"))
             stations_response = requests.get(
                 stations_url,
                 headers=headers,
@@ -513,12 +528,13 @@ class ClimateOracleService:
             stations_data = stations_response.json()
             
             if not stations_data.get("results"):
-                logger.warning(f"No NOAA stations found near ({latitude}, {longitude})")
+                logger.warning("No NOAA stations found near requested coordinates")
+                logger.debug("NOAA station search coordinates redacted")
                 return self._get_openmeteo_data(latitude, longitude, start_date, end_date)
             
             # Step 2: Get data from first station
             station_id = stations_data["results"][0]["id"]
-            logger.info(f"Using NOAA station: {station_id}")
+            logger.info("Using NOAA station: %s", _safe_log_token(station_id))
             
             # Step 3: Fetch data for date range
             # Check date range constraints (max 1 year for daily data)
@@ -604,7 +620,11 @@ class ClimateOracleService:
                 )
                 data_points.append(point)
             
-            logger.info(f"Fetched {len(data_points)} data points from NOAA station {station_id}")
+            logger.info(
+                "Fetched %s data points from NOAA station %s",
+                len(data_points),
+                _safe_log_token(station_id),
+            )
             return data_points
             
         except requests.exceptions.HTTPError as e:
@@ -795,9 +815,11 @@ class ClimateOracleService:
         self.index_cache[cache_key] = index
         
         logger.info(
-            f"Climate index calculated: {index_type}={index_value}, "
-            f"trigger={trigger_met}"
+            "Climate index calculated: type=%s trigger=%s",
+            _safe_log_token(index_type),
+            trigger_met,
         )
+        logger.debug("Climate index value redacted")
         
         return index
     
@@ -837,7 +859,12 @@ class ClimateOracleService:
             "timestamp": datetime.now().isoformat(),
         }
         
-        logger.info(f"Publishing climate index to blockchain: {publication_data}")
+        logger.info(
+            "Publishing climate index to blockchain: type=%s trigger=%s data_hash=%s",
+            _safe_log_token(publication_data.get("index_type")),
+            publication_data.get("trigger_met"),
+            _safe_log_token(publication_data.get("data_hash")),
+        )
         
         # In production, would call:
         # result = self.hathor.execute_nano_contract(...)
