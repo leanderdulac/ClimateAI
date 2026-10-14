@@ -445,7 +445,7 @@ class LSTMAttentionService:
         """
         # Check for remote inference delegation (Decoupled MLOps)
         inference_url = os.getenv("INFERENCE_SERVICE_URL")
-        if inference_url:
+        if inference_url and not os.getenv("IS_INFERENCE_SERVICE"):
             try:
                 import json
                 from urllib.request import Request, urlopen

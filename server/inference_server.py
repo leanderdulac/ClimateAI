@@ -8,6 +8,9 @@ from __future__ import annotations
 
 import logging
 import os
+os.environ["IS_INFERENCE_SERVICE"] = "1"
+os.environ.pop("INFERENCE_SERVICE_URL", None)
+
 from typing import Any, Dict, List, Optional
 import uvicorn
 from fastapi import FastAPI, HTTPException, status
