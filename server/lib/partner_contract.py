@@ -7,8 +7,8 @@ from typing import Any, Dict, Optional
 
 LICENSES: Dict[str, Dict[str, str]] = {
     "open-meteo": {
-        "license": "CC BY 4.0 (via Open-Meteo)",
-        "attribution": "Weather data by Open-Meteo.com",
+        "license": "CC BY 4.0 (via Open-Meteo). Non-commercial free tier; commercial use needs an API key and the customer endpoint.",
+        "attribution": "Weather data by Open-Meteo.com (Google WeatherNext 2 ensemble)",
         "url": "https://open-meteo.com/en/license",
     },
     "openstreetmap": {

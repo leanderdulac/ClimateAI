@@ -453,6 +453,7 @@ async def http_exception_handler(request, exc):
 # Variável global para armazenar o health checker
 health_checker: Optional[HealthChecker] = None
 enso_ingestion_task: Optional[asyncio.Task] = None
+weathernext_refresh_task: Optional[asyncio.Task] = None
 
 
 async def _run_enso_ingestion_once() -> None:
@@ -498,6 +499,25 @@ async def _enso_monthly_ingestion_loop() -> None:
                 logger.warning("ENSO monthly ingestion failed: %s", exc)
 
         await asyncio.sleep(check_interval_seconds)
+
+
+async def _weathernext_brazil_refresh_loop() -> None:
+    """Optional background warm of the Brazil WeatherNext grid cache."""
+    interval_seconds = int(os.getenv("WEATHERNEXT_REFRESH_INTERVAL_SECONDS", str(2 * 3600)))
+    resolution = float(os.getenv("WEATHERNEXT_GRID_RESOLUTION", "1.0"))
+    while True:
+        try:
+            from services.weathernext_ensemble_service import get_weathernext_service
+
+            service = get_weathernext_service()
+            if service.enabled:
+                await service.forecast_brazil_grid(resolution=resolution, force_refresh=True)
+                logger.info("WeatherNext Brazil grid cache refreshed")
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:
+            logger.warning(f"WeatherNext Brazil refresh failed: {exc}")
+        await asyncio.sleep(max(interval_seconds, 900))
 
 
 # Endpoint de verificação de saúde completa
@@ -553,7 +573,7 @@ async def health_check() -> Dict[str, Any]:
 @app.on_event("startup")
 async def startup_event():
     """Evento executado na inicialização do servidor"""
-    global health_checker, enso_ingestion_task
+    global health_checker, enso_ingestion_task, weathernext_refresh_task
 
     logger.info("Inicializando ClimateWise...")
 
@@ -693,6 +713,10 @@ async def startup_event():
         enso_ingestion_task = asyncio.create_task(_enso_monthly_ingestion_loop())
         logger.info("✓ ENSO monthly ingestion scheduler initialized")
 
+    if settings.WEATHERNEXT_ENABLED and settings.WEATHERNEXT_AUTO_REFRESH:
+        weathernext_refresh_task = asyncio.create_task(_weathernext_brazil_refresh_loop())
+        logger.info("✓ WeatherNext Brazil grid refresh scheduler initialized")
+
     logger.info("=" * 60)
     logger.info("Servidor ClimateWise iniciado com sucesso")
 
@@ -700,8 +724,16 @@ async def startup_event():
 @app.on_event("shutdown")
 async def shutdown_event():
     """Evento executado no encerramento do servidor"""
-    global enso_ingestion_task
+    global enso_ingestion_task, weathernext_refresh_task
     logger.info("Encerrando ClimateWise...")
+
+    if weathernext_refresh_task:
+        weathernext_refresh_task.cancel()
+        try:
+            await weathernext_refresh_task
+        except asyncio.CancelledError:
+            pass
+        weathernext_refresh_task = None
 
     if enso_ingestion_task:
         enso_ingestion_task.cancel()

@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { CircleMarker, MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import { Icon } from 'leaflet';
 import { useLocation } from '@/lib/LocationContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Globe, Thermometer, Droplets, Wind, MapPin } from 'lucide-react';
 import { embrapaApi } from '@/lib/api';
+import { weathernextApi, type BrazilGridCell } from '@/lib/api/weathernext';
+import { isFeatureEnabled } from '@/lib/features';
 import { useTranslation } from '@/hooks/useTranslation';
 
 // Fix for default marker icon
@@ -44,6 +46,8 @@ export function MapDisplay() {
     const { t } = useTranslation();
     const [weather, setWeather] = useState<WeatherInfo | null>(null);
     const [loading, setLoading] = useState(false);
+    const [showHeavyRain, setShowHeavyRain] = useState(false);
+    const [rainCells, setRainCells] = useState<BrazilGridCell[]>([]);
 
     useEffect(() => {
         async function fetchWeather() {
@@ -71,6 +75,24 @@ export function MapDisplay() {
 
         fetchWeather();
     }, [selectedLocation]);
+
+    useEffect(() => {
+        if (!isFeatureEnabled('weathernext') || !showHeavyRain) {
+            return;
+        }
+        let cancelled = false;
+        weathernextApi
+            .getBrazilGrid(2)
+            .then((grid) => {
+                if (!cancelled) setRainCells(grid.cells ?? []);
+            })
+            .catch(() => {
+                if (!cancelled) setRainCells([]);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [showHeavyRain]);
 
     if (!selectedLocation) {
         return null;
@@ -100,6 +122,19 @@ export function MapDisplay() {
                             <span className="font-bold">{selectedLocation.cidade}, {selectedLocation.estado}</span>
                         </div>
                     </div>
+                    {isFeatureEnabled('weathernext') && (
+                        <button
+                            type="button"
+                            onClick={() => setShowHeavyRain((value) => !value)}
+                            className={`relative z-10 text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                                showHeavyRain
+                                    ? 'bg-white/25 text-white border-white/40'
+                                    : 'bg-black/20 text-white/70 border-white/20'
+                            }`}
+                        >
+                            {t('weathernext.mapLayer')}
+                        </button>
+                    )}
                 </CardTitle>
             </CardHeader>
 
@@ -140,6 +175,26 @@ export function MapDisplay() {
                             url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
                         />
 
+                        {showHeavyRain &&
+                            rainCells.map((cell) => (
+                                <CircleMarker
+                                    key={`${cell.lat}:${cell.lon}`}
+                                    center={[cell.lat, cell.lon]}
+                                    radius={8}
+                                    pathOptions={{
+                                        color: 'transparent',
+                                        fillColor: cell.p_heavy_rain > 0.6 ? '#2563eb' : cell.p_heavy_rain > 0.3 ? '#22d3ee' : '#fde047',
+                                        fillOpacity: 0.35 + cell.p_heavy_rain * 0.45,
+                                    }}
+                                >
+                                    <Popup>
+                                        <div className="text-sm">
+                                            <div className="font-semibold">{t('weathernext.heavyRain')}</div>
+                                            <div>{Math.round(cell.p_heavy_rain * 100)}%</div>
+                                        </div>
+                                    </Popup>
+                                </CircleMarker>
+                            ))}
                         <Marker position={position} icon={defaultIcon}>
                             <Popup className="min-w-[250px]">
                                 <div className="p-3">

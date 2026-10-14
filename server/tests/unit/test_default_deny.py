@@ -14,6 +14,9 @@ def test_public_paths_allowlist():
     assert is_public_path("/api/v1/auth/refresh", "POST") is True
     assert is_public_path("/api/v1/auth/forgot-password", "POST") is True
     assert is_public_path("/api/v1/features", "GET") is True
+    assert is_public_path("/api/v1/forecast/ensemble", "GET") is True
+    assert is_public_path("/api/v1/forecast/ensemble/brazil", "GET") is True
+    assert is_public_path("/api/v1/forecast/ensemble/brazil/refresh", "POST") is False
     assert is_public_path("/api/v1/pricing/calculate", "POST") is False
     assert is_public_path("/api/v1/health/full", "GET") is False
     assert is_public_path("/api/v1/blockchain/hathor/status", "GET") is False
