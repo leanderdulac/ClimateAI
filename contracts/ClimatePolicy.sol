@@ -20,6 +20,7 @@ contract ClimatePolicy is ERC721, Ownable {
 
     event PolicyMinted(address indexed to, uint256 indexed tokenId, uint256 slot, uint256 value);
     event PayoutTriggered(uint256 indexed tokenId, address indexed beneficiary, uint256 amount);
+    event PayoutTriggeredWithProof(uint256 indexed tokenId, address indexed beneficiary, uint256 amount, bytes32 indexed evidenceHash);
     event OracleUpdated(address indexed previousOracle, address indexed newOracle);
     event CollateralDeposited(uint256 amount);
 
@@ -61,6 +62,20 @@ contract ClimatePolicy is ERC721, Ownable {
         totalCollateral -= payoutAmount;
 
         emit PayoutTriggered(tokenId, beneficiary, payoutAmount);
+    }
+
+    function triggerPayoutWithProof(uint256 tokenId, uint256 payoutAmount, bytes32 evidenceHash) external {
+        require(msg.sender == oracle, "Only oracle can trigger payout");
+        require(_policyExists(tokenId), "Policy does not exist");
+        require(payoutAmount > 0, "Payout must be positive");
+        require(payoutAmount <= _values[tokenId], "Payout exceeds coverage value");
+        require(evidenceHash != bytes32(0), "Evidence hash cannot be empty");
+
+        address beneficiary = ownerOf(tokenId);
+        _values[tokenId] -= payoutAmount;
+        totalCollateral -= payoutAmount;
+
+        emit PayoutTriggeredWithProof(tokenId, beneficiary, payoutAmount, evidenceHash);
     }
 
     function slotOf(uint256 tokenId) external view returns (uint256) {

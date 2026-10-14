@@ -102,6 +102,7 @@ from api.transition_risk import router as transition_risk_router
 from api.unified_pricing import router as unified_pricing_router
 from api.var_backtesting import router as var_backtesting_router
 from api.hathor_blockchain import router as hathor_blockchain_router
+from api.base_blockchain import router as base_blockchain_router
 from api.celestrak import router as celestrak_router
 from api.partner import router as partner_router
 from api.partners import router as partners_admin_router
@@ -413,6 +414,10 @@ def register_routers(app: FastAPI, api_prefix: str) -> None:
             hathor_blockchain_router,
             prefix=f"{api_prefix}/blockchain/hathor",
             tags=["hathor_blockchain"],
+        )
+        app.include_router(
+            base_blockchain_router,
+            prefix=f"{api_prefix}",
         )
         app.include_router(
             celestrak_router, prefix=f"{api_prefix}/celestrak", tags=["celestrak"]
