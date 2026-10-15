@@ -15,28 +15,28 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         type={type}
         className={cn(
           "h-10 rounded-md px-3 py-2 text-sm transition-all duration-200",
-          "placeholder:text-neutral-400",
-          "focus:outline-none focus:ring-2 focus:ring-offset-1",
+          "bg-background text-foreground placeholder:text-muted-foreground",
+          "focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-offset-background",
           "disabled:cursor-not-allowed disabled:opacity-50",
           variant === 'default' && [
-            "border border-neutral-200 bg-white",
-            "hover:border-neutral-300",
-            "focus:border-primary-300 focus:ring-primary-200",
+            "border border-input",
+            "hover:border-primary/40",
+            "focus:border-primary focus:ring-primary/20",
           ],
           variant === 'outlined' && [
-            "border-2 border-neutral-200 bg-white",
-            "hover:border-neutral-300",
-            "focus:border-primary-300 focus:ring-primary-200",
+            "border-2 border-input",
+            "hover:border-primary/40",
+            "focus:border-primary focus:ring-primary/20",
           ],
           variant === 'filled' && [
-            "border border-transparent bg-neutral-100",
-            "hover:bg-neutral-200",
-            "focus:bg-white focus:border-primary-300 focus:ring-primary-200",
+            "border border-transparent bg-muted",
+            "hover:bg-muted/80",
+            "focus:bg-background focus:border-primary focus:ring-primary/20",
           ],
           error && [
-            "border-danger-300 bg-danger-50",
-            "hover:border-danger-400",
-            "focus:border-danger-400 focus:ring-danger-200",
+            "border-destructive bg-destructive/10",
+            "hover:border-destructive",
+            "focus:border-destructive focus:ring-destructive/20",
           ],
           fullWidth && "w-full",
           className

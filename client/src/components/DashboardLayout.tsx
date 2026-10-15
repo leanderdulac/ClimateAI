@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { NavigationMenu } from "@/components/NavigationMenu";
 import { useAuth } from "@/lib/AuthContext";
@@ -18,20 +18,27 @@ export function DashboardLayout({ children, title, subtitle }: DashboardLayoutPr
   const { user, logout } = useAuth();
   const { t } = useTranslation();
 
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.add('command-center');
+    return () => root.classList.remove('command-center');
+  }, []);
+
   return (
-    <div className="min-h-screen bg-background text-foreground font-sans">
-      {/* Navigation Header - Glass Effect */}
-      <nav className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center gap-8">
-              <Link to="/" className="flex items-center transition-opacity hover:opacity-80">
+    <div className="command-center min-h-screen bg-background text-foreground font-sans">
+      <nav className="sticky top-0 z-50 w-full border-b border-border/40 bg-[#0F172A]/80 backdrop-blur-md supports-[backdrop-filter]:bg-[#0F172A]/70">
+        <div className="mx-auto w-full max-w-[96rem] px-4 sm:px-6 lg:px-8">
+          <div className="flex h-16 items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3 md:gap-8">
+              <Link to="/" className="flex shrink-0 items-center transition-opacity hover:opacity-80">
                 <Logo size={32} />
               </Link>
-              <NavigationMenu />
+              <div className="shrink-0">
+                <NavigationMenu />
+              </div>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex shrink-0 items-center gap-1 sm:gap-4">
               <LanguageSwitcher />
               <div className="h-6 w-px bg-border/60 hidden sm:block" />
 
@@ -71,9 +78,8 @@ export function DashboardLayout({ children, title, subtitle }: DashboardLayoutPr
         </div>
       </nav>
 
-      {/* Page Header - Professional Gradient */}
       {title && (
-        <header className="border-b border-border bg-muted/30">
+        <header className="border-b border-border/40 bg-card/30 backdrop-blur-sm">
           <div className="container mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
             <div className="flex flex-col gap-2">
               <h1 className="text-3xl font-bold tracking-tight text-foreground font-display sm:text-4xl">
@@ -89,7 +95,6 @@ export function DashboardLayout({ children, title, subtitle }: DashboardLayoutPr
         </header>
       )}
 
-      {/* Main Content */}
       <main className="flex-1 py-8">
         <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {children}

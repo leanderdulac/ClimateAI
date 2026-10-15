@@ -11,13 +11,13 @@ const Card = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "rounded-lg bg-white transition-all duration-200",
-      variant === 'default' && "shadow-soft",
-      variant === 'bordered' && "border-2 border-neutral-200",
-      variant === 'ghost' && "bg-neutral-50",
-      hover && variant === 'default' && "hover:shadow-soft-md",
-      hover && variant === 'bordered' && "hover:border-primary-300",
-      hover && variant === 'ghost' && "hover:bg-neutral-100",
+      "rounded-2xl bg-card text-card-foreground border border-border/60 transition-all duration-300",
+      variant === 'default' && "shadow-lg shadow-black/10",
+      variant === 'bordered' && "border-2",
+      variant === 'ghost' && "bg-muted/40 border-transparent shadow-none",
+      hover && variant === 'default' && "hover:border-primary/30 hover:shadow-xl hover:shadow-black/20",
+      hover && variant === 'bordered' && "hover:border-primary/40",
+      hover && variant === 'ghost' && "hover:bg-muted/60",
       className
     )}
     {...props}
@@ -33,7 +33,7 @@ const CardHeader = React.forwardRef<
     ref={ref}
     className={cn(
       "flex flex-col space-y-1.5 p-6",
-      "border-b border-neutral-100",
+      "border-b border-border/40",
       className
     )}
     {...props}
@@ -48,7 +48,7 @@ const CardTitle = React.forwardRef<
   <h3
     ref={ref}
     className={cn(
-      "text-xl font-semibold leading-none tracking-tight text-neutral-900",
+      "text-xl font-semibold leading-none tracking-tight text-card-foreground font-display",
       className
     )}
     {...props}
@@ -62,7 +62,7 @@ const CardDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <p
     ref={ref}
-    className={cn("text-sm text-neutral-500", className)}
+    className={cn("text-sm text-muted-foreground", className)}
     {...props}
   />
 ))
@@ -91,7 +91,7 @@ const CardFooter = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "flex items-center justify-end gap-4 p-6 border-t border-neutral-100",
+      "flex items-center justify-end gap-4 p-6 border-t border-border/40",
       className
     )}
     {...props}

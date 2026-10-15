@@ -153,24 +153,27 @@ export function InsuranceRecommendation() {
     const Icon = recommendation.icon;
 
     return (
-        <Card className="glass-card border-0 shadow-xl overflow-hidden relative hover-lift">
-            <div className={`absolute top-0 left-0 w-2 h-full ${recommendation.type === 'drought' ? 'bg-orange-500' : recommendation.type === 'flood' ? 'bg-blue-500' : recommendation.type === 'wind' ? 'bg-slate-500' : 'bg-emerald-500'}`}></div>
-            <CardHeader>
-                <div className="flex items-center gap-3">
-                    <div className={`p-3 rounded-xl bg-white/50 backdrop-blur-sm shadow-sm ${recommendation.color}`}>
+        <Card className="cc-card relative overflow-hidden border-border/80 bg-card/60 backdrop-blur-xl">
+            <div className={`absolute top-0 left-0 w-1.5 h-full ${recommendation.type === 'drought' ? 'bg-amber-400' : recommendation.type === 'flood' ? 'bg-blue-400' : recommendation.type === 'wind' ? 'bg-slate-400' : 'bg-emerald-400'}`}></div>
+            <CardHeader className="cc-header border-border/40">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                    <div className={`rounded-xl border border-border/50 bg-muted/40 p-3 ${recommendation.color}`}>
                         <Icon className="h-8 w-8" />
                     </div>
                     <div>
-                        <CardTitle className="text-xl font-black bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+                        <div className="mb-1 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+                            AI
+                        </div>
+                        <CardTitle className="text-xl font-bold text-foreground">
                             Recomendação Inteligente
                         </CardTitle>
                         <CardDescription>
                             Baseado no histórico climático de {selectedLocation.cidade}
                         </CardDescription>
                     </div>
-                    <div className="ml-auto flex flex-col items-end">
-                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Confiança</span>
-                        <div className="flex items-center gap-1 text-green-600 font-bold">
+                    <div className="sm:ml-auto flex flex-col sm:items-end">
+                        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Confiança</span>
+                        <div className="flex items-center gap-1 font-bold text-emerald-400">
                             <CheckCircle className="h-4 w-4" />
                             {(recommendation.confidence * 100).toFixed(0)}%
                         </div>
@@ -179,23 +182,23 @@ export function InsuranceRecommendation() {
             </CardHeader>
             <CardContent>
                 <div className="mb-6">
-                    <h3 className={`text-2xl font-bold mb-2 ${recommendation.color}`}>
+                    <h3 className={`mb-2 text-2xl font-bold ${recommendation.color}`}>
                         {recommendation.title}
                     </h3>
-                    <p className="text-gray-600 leading-relaxed">
+                    <p className="leading-relaxed text-muted-foreground">
                         {recommendation.description}
                     </p>
                 </div>
 
-                <div className="bg-white/40 rounded-xl p-4 mb-6">
-                    <h4 className="flex items-center gap-2 font-semibold text-gray-800 mb-3">
-                        <TrendingUp className="h-4 w-4" />
+                <div className="mb-6 rounded-2xl border border-border/50 bg-muted/30 p-4">
+                    <h4 className="mb-3 flex items-center gap-2 font-semibold text-foreground">
+                        <TrendingUp className="h-4 w-4 text-primary" />
                         Análise de Fatores
                     </h4>
                     <ul className="space-y-2">
                         {recommendation.reasoning.map((reason, index) => (
-                            <li key={index} className="flex items-start gap-2 text-sm text-gray-700">
-                                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                            <li key={index} className="flex items-start gap-2 text-sm text-muted-foreground">
+                                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary"></span>
                                 {reason}
                             </li>
                         ))}
@@ -203,7 +206,7 @@ export function InsuranceRecommendation() {
                 </div>
 
                 <Button
-                    className="w-full btn-premium group"
+                    className="w-full rounded-full shadow-md shadow-primary/20 group"
                     onClick={() => {
                         window.dispatchEvent(new CustomEvent('climateai:insurance-intent', {
                             detail: {

@@ -4,17 +4,17 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center rounded-md text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]",
+  "inline-flex items-center justify-center rounded-md text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]",
   {
     variants: {
       variant: {
-        default: "bg-primary text-white shadow-soft hover:bg-primary-600 hover:shadow-soft-md",
-        secondary: "bg-success text-white shadow-soft hover:bg-success-600 hover:shadow-soft-md",
-        outline: "border-2 border-neutral-200 bg-white text-neutral-700 hover:border-primary hover:bg-primary-50 hover:text-primary-600",
-        ghost: "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-800",
-        warning: "bg-warning text-white shadow-soft hover:bg-warning-600 hover:shadow-soft-md",
-        danger: "bg-danger text-white shadow-soft hover:bg-danger-600 hover:shadow-soft-md",
-        link: "text-primary-600 underline-offset-4 hover:underline hover:text-primary-700",
+        default: "bg-primary text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/90",
+        secondary: "bg-secondary text-secondary-foreground shadow-md shadow-secondary/20 hover:bg-secondary/90",
+        outline: "border border-border/80 bg-transparent text-foreground hover:bg-muted/50 hover:border-primary/40",
+        ghost: "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+        warning: "bg-accent text-accent-foreground shadow-md shadow-accent/20 hover:bg-accent/90",
+        danger: "bg-destructive text-destructive-foreground shadow-md hover:bg-destructive/90",
+        link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
         xs: "h-7 rounded px-2 text-xs",

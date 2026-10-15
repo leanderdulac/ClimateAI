@@ -258,10 +258,13 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <MapPin className="h-5 w-5" />
+    <Card className="cc-card h-full w-full border-border/80 bg-card/60 backdrop-blur-xl">
+      <CardHeader className="cc-header border-border/40">
+        <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+          <MapPin className="h-3.5 w-3.5" />
+          Geo
+        </div>
+        <CardTitle className="flex items-center gap-2 text-foreground">
           {t('location.title')}
         </CardTitle>
         <CardDescription>
@@ -271,7 +274,7 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
       <CardContent>
         <div className="space-y-4">
           {/* Local atual */}
-          <div className="space-y-2 bg-neutral-50 p-4 rounded-lg border border-neutral-200">
+          <div className="space-y-2 rounded-2xl border border-border/60 bg-muted/30 p-4">
             {location ? (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -286,11 +289,11 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
                   </Button>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-neutral-700">
+                  <p className="text-sm font-medium text-foreground">
                     {formatCoordinates(location.latitude, location.longitude)}
                   </p>
                   {location.cidade && (
-                    <p className="text-sm font-medium text-neutral-700">
+                    <p className="text-sm font-medium text-foreground">
                       {location.cidade}, {location.estado}
                     </p>
                   )}
@@ -325,15 +328,15 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
                   onBlur={() => setTimeout(() => setShowSuggestions(false), 200)} // Delay para permitir clique
                 />
                 {showSuggestions && citySuggestions.length > 0 && (
-                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                  <div className="absolute z-10 w-full mt-1 bg-card border border-border/70 rounded-xl shadow-2xl max-h-60 overflow-y-auto">
                     {citySuggestions.map((suggestion, index) => (
                       <div
                         key={index}
-                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                        className="px-4 py-2 hover:bg-muted/60 cursor-pointer text-sm"
                         onClick={() => selectCitySuggestion(suggestion)}
                       >
-                        <div className="font-medium">{suggestion.cidade}</div>
-                        <div className="text-gray-500 text-xs">{suggestion.estado} - {suggestion.estado}</div>
+                        <div className="font-medium text-foreground">{suggestion.cidade}</div>
+                        <div className="text-muted-foreground text-xs">{suggestion.estado} - {suggestion.estado}</div>
                       </div>
                     ))}
                   </div>
@@ -361,11 +364,11 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
             </Button>
 
             {/* Coordenadas manuais */}
-            <div className="space-y-2 pt-2 border-t border-neutral-200">
+            <div className="space-y-2 pt-2 border-t border-border/50">
               <Label>{t('location.coordinates')}</Label>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <Label className="text-xs text-neutral-500">{t('location.latitude')}</Label>
+                  <Label className="text-xs text-muted-foreground">{t('location.latitude')}</Label>
                   <Input
                     id="manual-lat"
                     placeholder="-23.5505"
@@ -374,7 +377,7 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
                   />
                 </div>
                 <div>
-                  <Label className="text-xs text-neutral-500">{t('location.longitude')}</Label>
+                  <Label className="text-xs text-muted-foreground">{t('location.longitude')}</Label>
                   <Input
                     id="manual-lng"
                     placeholder="-46.6333"
@@ -397,7 +400,7 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
 
           {/* Localizações recentes */}
           {recentLocations.length > 0 && (
-            <div className="space-y-2 pt-2 border-t border-neutral-200">
+            <div className="space-y-2 pt-2 border-t border-border/50">
               <Label className="flex items-center gap-2">
                 <Clock className="h-4 w-4" />
                 {t('location.recent')}
@@ -412,7 +415,7 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
                   >
                     <div className="flex flex-col items-start">
                       <span className="text-sm font-medium">{loc.name}</span>
-                      <span className="text-xs text-neutral-500">
+                      <span className="text-xs text-muted-foreground">
                         {formatCoordinates(loc.latitude, loc.longitude)}
                       </span>
                     </div>
@@ -423,8 +426,8 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
           )}
 
           {error && (
-            <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600 flex items-center gap-2">
-              <div className="rounded-full bg-red-100 p-1">
+            <div className="rounded-xl bg-destructive/10 border border-destructive/30 px-4 py-3 text-sm text-red-300 flex items-center gap-2">
+              <div className="rounded-full bg-destructive/20 p-1">
                 <MapPin className="h-4 w-4" />
               </div>
               {error}

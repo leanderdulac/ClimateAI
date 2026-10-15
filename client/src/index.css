@@ -564,6 +564,230 @@
 }
 
 /* ===================================================
+   DASHBOARD COMMAND CENTER — scoped to .command-center
+   Does not affect the landing page (.lp-* / Welcome).
+   Brand: slate #0F172A / #1E293B, emerald #059669 / #34D399,
+   blue #2563EB / #60A5FA, sun #FBBF24
+   =================================================== */
+.command-center {
+  color-scheme: dark;
+  --background: 222 47% 11%;
+  --foreground: 210 40% 98%;
+  --card: 217 33% 17%;
+  --card-foreground: 210 40% 98%;
+  --popover: 217 33% 17%;
+  --popover-foreground: 210 40% 98%;
+  --primary: 161 94% 30%;
+  --primary-foreground: 210 40% 98%;
+  --primary-color-20: rgba(5, 150, 105, 0.25);
+  --primary-color-10: rgba(5, 150, 105, 0.12);
+  --secondary: 221 83% 53%;
+  --secondary-foreground: 210 40% 98%;
+  --accent: 43 96% 56%;
+  --accent-foreground: 222 47% 11%;
+  --muted: 217 33% 14%;
+  --muted-foreground: 215 16% 72%;
+  --border: 215 25% 27%;
+  --input: 215 25% 27%;
+  --ring: 161 94% 39%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 210 40% 98%;
+  --gradient-primary: linear-gradient(135deg, #059669 0%, #2563EB 100%);
+  --gradient-ocean: linear-gradient(135deg, #2563EB 0%, #34D399 100%);
+  --gradient-mesh:
+    radial-gradient(at 12% 8%, rgba(5, 150, 105, 0.18) 0px, transparent 46%),
+    radial-gradient(at 88% 0%, rgba(37, 99, 235, 0.16) 0px, transparent 42%),
+    radial-gradient(at 70% 88%, rgba(251, 191, 36, 0.08) 0px, transparent 48%);
+  background-color: #0F172A;
+  background-image:
+    radial-gradient(at 18% 0%, rgba(5, 150, 105, 0.14) 0px, transparent 42%),
+    radial-gradient(at 86% 8%, rgba(37, 99, 235, 0.12) 0px, transparent 40%),
+    radial-gradient(at 50% 100%, rgba(251, 191, 36, 0.06) 0px, transparent 46%);
+  color: hsl(var(--foreground));
+}
+
+.command-center .cc-card {
+  border: 1px solid hsl(var(--border) / 0.8);
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.88) 0%, rgba(15, 23, 42, 0.72) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 24px 60px rgba(2, 6, 23, 0.35);
+  border-radius: 1.5rem;
+  overflow: hidden;
+}
+
+.command-center .cc-header {
+  border-bottom: 1px solid hsl(var(--border) / 0.45);
+  background: linear-gradient(90deg, rgba(30, 41, 59, 0.92) 0%, rgba(15, 23, 42, 0.55) 55%, rgba(5, 150, 105, 0.08) 100%);
+}
+
+.command-center .cc-chip {
+  border: 1px solid hsl(var(--border) / 0.7);
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.85) 0%, rgba(15, 23, 42, 0.55) 100%);
+  backdrop-filter: blur(12px);
+  border-radius: 1rem;
+}
+
+.command-center .glass-card {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.92) 0%, rgba(15, 23, 42, 0.72) 100%);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  box-shadow: 0 18px 48px rgba(2, 6, 23, 0.35);
+}
+
+.command-center .leaflet-popup-content-wrapper,
+.command-center .leaflet-popup-tip {
+  background: #1E293B;
+  color: #E2E8F0;
+  border: 1px solid rgba(96, 165, 250, 0.22);
+  box-shadow: 0 16px 40px rgba(2, 6, 23, 0.5);
+}
+
+.command-center .leaflet-popup-content {
+  color: #E2E8F0;
+  margin: 0;
+}
+
+.command-center .leaflet-container {
+  background: #0F172A;
+  font-family: Inter, sans-serif;
+}
+
+/* Remap leftover light-theme utilities used by large dashboard widgets */
+.command-center .bg-white {
+  background-color: rgba(30, 41, 59, 0.62);
+}
+
+.command-center .bg-white\/40 {
+  background-color: rgba(30, 41, 59, 0.4);
+}
+
+.command-center .bg-white\/50 {
+  background-color: rgba(30, 41, 59, 0.5);
+}
+
+.command-center .bg-white\/70 {
+  background-color: rgba(30, 41, 59, 0.7);
+}
+
+.command-center .from-white {
+  --tw-gradient-from: rgba(30, 41, 59, 0.55) var(--tw-gradient-from-position);
+  --tw-gradient-to: rgb(30 41 59 / 0) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.command-center .to-neutral-50 {
+  --tw-gradient-to: rgba(15, 23, 42, 0.35) var(--tw-gradient-to-position);
+}
+
+.command-center .bg-neutral-50,
+.command-center .bg-neutral-100 {
+  background-color: rgba(30, 41, 59, 0.45);
+}
+
+.command-center .bg-neutral-200 {
+  background-color: rgba(51, 65, 85, 0.7);
+}
+
+.command-center .text-neutral-900,
+.command-center .text-gray-900,
+.command-center .text-neutral-800,
+.command-center .text-gray-800 {
+  color: #F8FAFC;
+}
+
+.command-center .text-neutral-700,
+.command-center .text-gray-700,
+.command-center .text-neutral-600,
+.command-center .text-gray-600 {
+  color: #CBD5E1;
+}
+
+.command-center .text-neutral-500,
+.command-center .text-gray-500,
+.command-center .text-neutral-400,
+.command-center .text-gray-400 {
+  color: #94A3B8;
+}
+
+.command-center .border-neutral-200,
+.command-center .border-gray-200,
+.command-center .border-neutral-100,
+.command-center .border-gray-300 {
+  border-color: rgba(148, 163, 184, 0.22);
+}
+
+.command-center .bg-blue-50,
+.command-center .bg-blue-100 {
+  background-color: rgba(37, 99, 235, 0.14);
+  color: #BFDBFE;
+}
+
+.command-center .text-blue-900 {
+  color: #93C5FD;
+}
+
+.command-center .border-blue-100,
+.command-center .border-blue-200 {
+  border-color: rgba(96, 165, 250, 0.28);
+}
+
+.command-center .bg-amber-50 {
+  background-color: rgba(251, 191, 36, 0.12);
+}
+
+.command-center .text-amber-900 {
+  color: #FBBF24;
+}
+
+.command-center .border-amber-300 {
+  border-color: rgba(251, 191, 36, 0.35);
+}
+
+.command-center .bg-red-50,
+.command-center .bg-red-100 {
+  background-color: rgba(239, 68, 68, 0.12);
+}
+
+.command-center .text-red-800,
+.command-center .text-red-700,
+.command-center .text-red-600 {
+  color: #FCA5A5;
+}
+
+.command-center .bg-primary-50 {
+  background-color: rgba(5, 150, 105, 0.14);
+}
+
+.command-center .text-primary-600,
+.command-center .text-primary-700,
+.command-center .text-primary-500 {
+  color: #34D399;
+}
+
+.command-center .text-primary-100,
+.command-center .text-primary-200 {
+  color: #A7F3D0;
+}
+
+.command-center .from-primary-500 {
+  --tw-gradient-from: #059669 var(--tw-gradient-from-position);
+  --tw-gradient-to: rgb(5 150 105 / 0) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.command-center .to-primary-600 {
+  --tw-gradient-to: #2563EB var(--tw-gradient-to-position);
+}
+
+.command-center .from-gray-500 {
+  --tw-gradient-from: #334155 var(--tw-gradient-from-position);
+}
+
+.command-center .to-gray-600 {
+  --tw-gradient-to: #1E293B var(--tw-gradient-to-position);
+}
+
+/* ===================================================
    LANDING PAGE — Dark Cinematic Theme
    =================================================== */
 :root {

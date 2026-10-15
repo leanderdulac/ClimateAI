@@ -63,9 +63,9 @@ function DeferredSection({
       {visible ? (
         children
       ) : (
-        <div className="space-y-4 rounded-2xl border border-border/60 bg-card/40 p-6">
-          <Skeleton className="h-8 w-56" />
-          <Skeleton className={`w-full rounded-xl ${minHeightClassName}`} />
+        <div className="space-y-4 rounded-3xl border border-border/60 bg-card/40 p-6">
+          <Skeleton className="h-8 w-56 bg-muted" />
+          <Skeleton className={`w-full rounded-xl bg-muted ${minHeightClassName}`} />
         </div>
       )}
     </div>
@@ -74,36 +74,35 @@ function DeferredSection({
 
 function PeriodButtons() {
   const { selectedPeriod, setSelectedPeriod } = usePeriod();
+  const periods = [7, 30, 90] as const;
 
   return (
-    <div className="ml-auto flex gap-2">
-      <Button
-        variant={selectedPeriod === 7 ? "default" : "outline"}
-        size="sm"
-        onClick={() => setSelectedPeriod(7)}
-        className="transition-all hover:scale-105"
-      >
-        7D
-      </Button>
-      <Button
-        variant={selectedPeriod === 30 ? "default" : "outline"}
-        size="sm"
-        onClick={() => setSelectedPeriod(30)}
-        className="transition-all hover:scale-105"
-      >
-        30D
-      </Button>
-      <Button
-        variant={selectedPeriod === 90 ? "default" : "outline"}
-        size="sm"
-        onClick={() => setSelectedPeriod(90)}
-        className="transition-all hover:scale-105"
-      >
-        90D
-      </Button>
+    <div className="flex flex-wrap gap-2">
+      {periods.map((days) => (
+        <Button
+          key={days}
+          variant={selectedPeriod === days ? "default" : "outline"}
+          size="sm"
+          onClick={() => setSelectedPeriod(days)}
+          className={
+            selectedPeriod === days
+              ? "rounded-full shadow-md shadow-primary/25"
+              : "rounded-full border-border/80 hover:bg-muted/50"
+          }
+        >
+          {days}D
+        </Button>
+      ))}
     </div>
   );
 }
+
+const STATS = [
+  { icon: TrendingUp, label: 'dashboard.stats.growth', value: '+24.5%', chip: 'border-emerald-500/20', iconWrap: 'bg-emerald-500/10 text-emerald-400' },
+  { icon: Globe, label: 'dashboard.stats.monitored', value: '1.2M+', chip: 'border-blue-500/20', iconWrap: 'bg-blue-500/10 text-blue-400' },
+  { icon: DollarSign, label: 'dashboard.stats.value', value: '$5.2B', chip: 'border-amber-500/20', iconWrap: 'bg-amber-500/10 text-amber-400' },
+  { icon: Shield, label: 'dashboard.stats.accuracy', value: '99.9%', chip: 'border-primary/20', iconWrap: 'bg-primary/10 text-primary' },
+] as const;
 
 export function IndexPage() {
   const { t } = useTranslation();
@@ -128,33 +127,27 @@ export function IndexPage() {
 
   return (
     <DashboardLayout>
-      {/* Hero Section with Professional Mesh Gradient */}
-      <section className="relative py-20 md:py-32 overflow-hidden rounded-3xl mb-12 bg-gradient-mesh">
-        <div className="absolute inset-0 bg-background/5 backdrop-blur-3xl"></div>
-
-        <div className="container mx-auto max-w-7xl px-4 relative z-10 text-center">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 px-4 py-2 rounded-full text-sm font-medium text-primary mb-8 animate-fade-in">
+      <section className="relative mb-10 overflow-hidden rounded-3xl border border-border/70 bg-card/50 backdrop-blur-xl">
+        <div className="absolute inset-0 bg-gradient-mesh opacity-80" />
+        <div className="relative z-10 px-5 py-10 text-center sm:px-10 md:py-14">
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-medium text-primary">
             <Sparkles className="h-4 w-4" />
             {t('dashboard.badge')}
           </div>
 
-          {/* Main title */}
-          <h1 className="text-5xl md:text-7xl font-display font-bold mb-6 tracking-tight text-foreground animate-slide-up">
-            <span className="bg-gradient-primary bg-clip-text text-transparent">ClimateWise</span>
-            <span className="inline-block ml-3 animate-float">🌍</span>
+          <h1 className="mb-5 font-display text-4xl font-bold tracking-tight text-foreground sm:text-5xl md:text-6xl">
+            <span className="text-gradient-primary">ClimateWise</span>
+            <span className="ml-3 inline-block animate-float">🌍</span>
           </h1>
 
-          {/* Subtitle */}
-          <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-10 leading-relaxed animate-slide-up animation-delay-200">
+          <p className="mx-auto mb-8 max-w-3xl text-base leading-relaxed text-muted-foreground md:text-xl">
             {t('dashboard.subtitle')}
           </p>
 
-          {/* CTA buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slide-up animation-delay-300">
+          <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Button
               size="lg"
-              className="rounded-full text-lg px-8 h-14 shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all hover:scale-105"
+              className="h-12 rounded-full px-8 text-base shadow-lg shadow-primary/25 hover:shadow-primary/40"
               onClick={() => {
                 const dashboard = document.querySelector('#dashboard');
                 if (dashboard) {
@@ -171,7 +164,7 @@ export function IndexPage() {
             <Button
               size="lg"
               variant="outline"
-              className="rounded-full text-lg px-8 h-14 border-2 hover:bg-muted/50 transition-all hover:scale-105"
+              className="h-12 rounded-full border-border/80 px-8 text-base hover:bg-muted/50"
               onClick={() => {
                 const dataWidget = document.querySelector('.climate-data-widget');
                 if (dataWidget) {
@@ -188,7 +181,7 @@ export function IndexPage() {
             <Button
               size="lg"
               variant="secondary"
-              className="rounded-full text-lg px-8 h-14 transition-all hover:scale-105"
+              className="h-12 rounded-full px-8 text-base"
               onClick={startInsuranceJourney}
             >
               <Shield className="mr-2 h-5 w-5" />
@@ -198,37 +191,41 @@ export function IndexPage() {
         </div>
       </section>
 
-      {/* Stats Section with Glassmorphism Cards */}
-      <section className="py-8 stats-section">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-20">
-          {[
-            { icon: TrendingUp, label: 'dashboard.stats.growth', value: '+24.5%', color: 'primary' },
-            { icon: Globe, label: 'dashboard.stats.monitored', value: '1.2M+', color: 'secondary' },
-            { icon: DollarSign, label: 'dashboard.stats.value', value: '$5.2B', color: 'accent' },
-            { icon: Shield, label: 'dashboard.stats.accuracy', value: '99.9%', color: 'destructive' },
-          ].map((stat, i) => (
-            <Card key={i} className="border-none shadow-soft-xl bg-card/50 backdrop-blur-sm hover:-translate-y-1 transition-transform duration-300">
-              <CardContent className="p-8 text-center">
-                <div className={`mx-auto w-12 h-12 rounded-2xl bg-${stat.color}/10 flex items-center justify-center mb-4`}>
-                  <stat.icon className={`h-6 w-6 text-${stat.color}`} />
+      <section className="stats-section py-2">
+        <div className="mb-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {STATS.map((stat) => (
+            <Card key={stat.label} className={`cc-chip border ${stat.chip} bg-card/50 p-0 shadow-none hover:border-primary/30`}>
+              <CardContent className="flex items-center justify-between p-5">
+                <div className="flex items-center gap-3">
+                  <div className={`rounded-xl p-2.5 ${stat.iconWrap}`}>
+                    <stat.icon className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      {t(stat.label)}
+                    </div>
+                    <div className="font-display text-2xl font-bold text-foreground">{stat.value}</div>
+                  </div>
                 </div>
-                <div className="text-3xl font-bold text-foreground mb-1">{stat.value}</div>
-                <div className="text-sm font-medium text-muted-foreground">{t(stat.label)}</div>
               </CardContent>
             </Card>
           ))}
         </div>
 
-        {/* Main Dashboard Section */}
-        <div className="mb-16">
-          <div className="flex items-center justify-between mb-10">
+        <div className="mb-16" id="dashboard">
+          <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
+              <div className="rounded-xl bg-primary/10 p-2">
                 <Cloud className="h-6 w-6 text-primary" />
               </div>
-              <h2 className="text-3xl font-display font-bold text-foreground">
-                {t('dashboard.title')}
-              </h2>
+              <div>
+                <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Operations
+                </div>
+                <h2 className="font-display text-2xl font-bold text-foreground md:text-3xl">
+                  {t('dashboard.title')}
+                </h2>
+              </div>
             </div>
             <PeriodButtons />
           </div>
@@ -237,66 +234,60 @@ export function IndexPage() {
             <BaseL2CommandCenter />
           </div>
 
-          {/* Top Section - Location and Weather */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            <div className="hover:-translate-y-1 transition-transform duration-300">
+          <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-stretch">
+            <div className="h-full">
               <LocationSelector />
             </div>
-            <div className="hover:-translate-y-1 transition-transform duration-300">
+            <div className="h-full">
               <WeatherWidget />
             </div>
           </div>
 
-          <div className="mb-8 hover:-translate-y-1 transition-transform duration-300">
+          <div className="mb-8">
             <WeatherNextEnsembleWidget />
           </div>
 
-          {/* Interactive Map Section */}
-          <div className="mb-8 hover:-translate-y-1 transition-transform duration-300">
+          <div className="mb-8">
             <MapDisplay />
           </div>
 
-          {/* AI Insurance Recommendation */}
-          <div className="mb-8 hover:-translate-y-1 transition-transform duration-300">
+          <div className="mb-8">
             <InsuranceRecommendation />
           </div>
 
-          {/* Climate Data Analysis */}
-          <div className="mb-8 hover:-translate-y-1 transition-transform duration-300 climate-data-widget">
+          <div className="climate-data-widget mb-8">
             <DeferredSection minHeightClassName="h-[520px]">
-              <Suspense fallback={<Skeleton className="h-[520px] w-full rounded-2xl" />}>
+              <Suspense fallback={<Skeleton className="h-[520px] w-full rounded-3xl bg-muted" />}>
                 <ClimateDataWidget />
               </Suspense>
             </DeferredSection>
           </div>
 
-          {/* Pricing Simulator */}
-          <div className="mb-16 hover:-translate-y-1 transition-transform duration-300">
+          <div className="mb-12">
             <DeferredSection minHeightClassName="h-[640px]">
-              <Suspense fallback={<Skeleton className="h-[640px] w-full rounded-2xl" />}>
+              <Suspense fallback={<Skeleton className="h-[640px] w-full rounded-3xl bg-muted" />}>
                 <PricingSimulator />
               </Suspense>
             </DeferredSection>
           </div>
 
-          <div className="mb-16 hover:-translate-y-1 transition-transform duration-300">
+          <div className="mb-12">
             <AgriStrategyPanel />
           </div>
         </div>
 
-        {/* Tokenization Section */}
-        <div className="mb-12 rounded-3xl overflow-hidden relative shadow-2xl" id="tokenization-section">
-          <div className="absolute inset-0 bg-gradient-ocean opacity-10"></div>
-          <div className="relative p-12 md:p-16 flex flex-col md:flex-row items-center justify-between gap-12 bg-card/60 backdrop-blur-md">
+        <div className="relative mb-12 overflow-hidden rounded-3xl border border-border/70 bg-card/50 backdrop-blur-md" id="tokenization-section">
+          <div className="absolute inset-0 bg-gradient-ocean opacity-10" />
+          <div className="relative flex flex-col items-center justify-between gap-10 p-8 md:flex-row md:p-14">
             <div className="flex-1">
-              <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full mb-6">
+              <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-2">
                 <Sparkles className="h-4 w-4 text-primary" />
                 <span className="text-sm font-semibold text-primary">{t('dashboard.tokenization.badge')}</span>
               </div>
-              <h2 className="text-3xl md:text-4xl font-display font-bold mb-4 text-foreground">
+              <h2 className="mb-4 font-display text-3xl font-bold text-foreground md:text-4xl">
                 {t('dashboard.tokenization.title')}
               </h2>
-              <p className="text-muted-foreground mb-8 text-lg leading-relaxed max-w-xl">
+              <p className="mb-8 max-w-xl text-lg leading-relaxed text-muted-foreground">
                 {t('dashboard.tokenization.desc')}
               </p>
               <Button
@@ -308,29 +299,27 @@ export function IndexPage() {
                 {t('dashboard.tokenization.cta')}
               </Button>
             </div>
-            <div className="hidden md:block relative">
-              {/* Abstract decorative element */}
-              <div className="w-64 h-64 bg-gradient-primary rounded-full opacity-20 blur-3xl absolute -top-10 -right-10 animate-pulse-slow"></div>
-              <div className="relative z-10 bg-card p-6 rounded-2xl shadow-soft-lg border border-border/50">
+            <div className="relative hidden md:block">
+              <div className="absolute -right-10 -top-10 h-64 w-64 animate-pulse-slow rounded-full bg-gradient-primary opacity-20 blur-3xl" />
+              <div className="relative z-10 rounded-2xl border border-border/50 bg-card p-6 shadow-2xl">
                 <Coins className="h-24 w-24 text-primary" />
               </div>
             </div>
           </div>
         </div>
 
-        {/* CTA Section */}
-        <div className="text-center py-20 bg-muted/30 rounded-3xl">
-          <div className="max-w-3xl mx-auto px-4">
-            <h3 className="text-4xl font-display font-bold text-foreground mb-6">
+        <div className="rounded-3xl border border-border/60 bg-muted/20 py-16 text-center">
+          <div className="mx-auto max-w-3xl px-4">
+            <h3 className="mb-5 font-display text-3xl font-bold text-foreground md:text-4xl">
               {t('dashboard.footer.cta.title')}
             </h3>
-            <p className="text-xl text-muted-foreground mb-10 font-light">
+            <p className="mb-8 text-lg font-light text-muted-foreground md:text-xl">
               {t('dashboard.footer.cta.desc')}
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col justify-center gap-3 sm:flex-row">
               <Button
                 size="lg"
-                className="rounded-full px-10 h-14 text-lg shadow-xl hover:scale-105 transition-all"
+                className="h-12 rounded-full px-10 text-lg shadow-xl"
               >
                 <Sparkles className="mr-2 h-5 w-5" />
                 {t('dashboard.footer.cta.primary')}
@@ -338,7 +327,7 @@ export function IndexPage() {
               <Button
                 size="lg"
                 variant="outline"
-                className="rounded-full px-10 h-14 text-lg border-2 bg-background hover:bg-muted/50 hover:scale-105 transition-all"
+                className="h-12 rounded-full border-border/80 px-10 text-lg hover:bg-muted/50"
               >
                 <Globe className="mr-2 h-5 w-5" />
                 {t('dashboard.footer.cta.secondary')}
