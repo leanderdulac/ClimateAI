@@ -670,9 +670,19 @@ async def startup_event():
     from blockchain.base.config import get_base_config
     base_config = get_base_config()
     if base_config.configured:
-        logger.info("✓ Base L2 RPC configured (status via GET /api/v1/blockchain/base/status)")
+        logger.info(
+            "✓ Base L2 RPC configured "
+            "(status via GET /api/v1/blockchain/base/status)"
+        )
     else:
         logger.info("⚠ Base L2 not configured (BASE_RPC_URL unset); app continues")
+
+    try:
+        from services.pytorch_climate_pricing_service import schedule_warmup
+
+        await schedule_warmup()
+    except Exception as exc:
+        logger.warning("⚠ LSTM overlay warmup skipped: %s", exc)
 
     # News Crawler - Background RSS Scraping
     try:

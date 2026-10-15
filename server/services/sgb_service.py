@@ -23,12 +23,9 @@ class SGBGeoportalClient:
     via ArcGIS REST API. Inclui dados de suscetibilidade e áreas de risco.
     """
     
-    # Serviços conhecidos no Geoportal SGB
+    # SIGMINE/Areas_Risco always 404s on the public geoportal — do not call it.
     SERVICES = {
         "cemaden": "Cemaden/FeatureServer",
-        "areas_risco": "SIGMINE/Areas_Risco/FeatureServer",  # Exemplo típico
-        "suscetibilidade": "SIGMINE/Suscetibilidade/FeatureServer",
-        "geologia": "SIGMINE/Geologia/MapServer",
     }
     
     def __init__(self, config: SGBGeoportalConfig = None):
@@ -66,33 +63,8 @@ class SGBGeoportalClient:
         Returns:
             DataFrame com áreas de risco e classificação
         """
-        # Geometria no formato ArcGIS JSON
-        geometry = {
-            "xmin": min_lon,
-            "ymin": min_lat,
-            "xmax": max_lon,
-            "ymax": max_lat,
-            "spatialReference": {"wkid": 4326}
-        }
-        
-        params = {
-            "geometry": str(geometry).replace("'", '"'),
-            "geometryType": geometry_type,
-            "spatialRel": "esriSpatialRelIntersects",
-            "outFields": "*",
-            "returnGeometry": "true",
-        }
-        
-        try:
-            # Tenta buscar no serviço de áreas de risco
-            data = self._make_request(self.SERVICES.get("areas_risco", "Cemaden/FeatureServer"), 
-                                     layer_id=0, params=params)
-        except Exception as e:
-            print(f"Serviço de áreas de risco não disponível, tentando alternativa: {e}")
-            # Fallback para serviço Cemaden ou outro disponível
-            data = self._make_request("Cemaden/FeatureServer", layer_id=0, params=params)
-        
-        return self._parse_features(data)
+        # SIGMINE/Areas_Risco always 404s — never hit ArcGIS from the quote path.
+        return pd.DataFrame()
     
     def fetch_susceptibility_by_municipio(self, cod_ibge: str) -> pd.DataFrame:
         """
@@ -163,15 +135,8 @@ class SGBGeoportalClient:
         Returns:
             Dict com classificação de risco e fator de ajuste
         """
-        # Converte km para graus (aproximado)
-        buffer_deg = buffer_km / 111.0
-        
-        min_lon = lon - buffer_deg
-        max_lon = lon + buffer_deg
-        min_lat = lat - buffer_deg
-        max_lat = lat + buffer_deg
-        
-        df = self.fetch_risk_areas_by_bbox(min_lon, min_lat, max_lon, max_lat)
+        # Guard: skip HTTP. SIGMINE/Areas_Risco 404s; bbox lookup is a no-op.
+        df = pd.DataFrame()
         
         if df.empty:
             return {

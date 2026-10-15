@@ -39,6 +39,7 @@ async def main() -> None:
         days=args.days,
         epochs=args.epochs,
         n_sims=args.sims,
+        allow_inline_train=True,
     )
     print(json.dumps(result, indent=2, default=str))
 

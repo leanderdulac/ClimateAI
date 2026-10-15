@@ -10,13 +10,19 @@ import logging
 
 from services.extreme_value_pricing_service import DefensivePricingOrchestrator
 from services.openmeteo_service import OpenMeteoService
-from services.noaa_service import NOAAService
 from services.sgb_service import GeologicalRiskAdjuster
 from services.celestrak_service import CelesTrakService
 from services.news_crawler_service import get_news_crawler_service
 from services.geocoding_service import GeocodingService
 
 logger = logging.getLogger(__name__)
+
+# Hard budgets so POST /pricing/quote stays under the ~20s frontend limit
+# even on a 1-worker professional-xs box. EVT and overlay run concurrently.
+GEOCODE_TIMEOUT_SECONDS = 5.0
+EVT_TIMEOUT_SECONDS = 15.0
+OVERLAY_TIMEOUT_SECONDS = 8.0
+OPENMETEO_FETCH_TIMEOUT_SECONDS = 12.0
 
 # Instância global para ajustes geológicos
 try:
@@ -383,12 +389,13 @@ async def _calculate_evt_pricing(
     try:
         om_service = OpenMeteoService()
         end_date = datetime.now()
-        start_date = end_date - timedelta(days=365 * 2)
+        start_date = end_date - timedelta(days=365)
 
         logger.info(
             f"Fetching climate data for pricing: {request.latitude}, {request.longitude}"
         )
-        # Note: OpenMeteoService.obter_historico is async
+        # One year avoids the >365-day chunk loop (extra HTTP + 1s sleep).
+        # Sync Open-Meteo / EVT CPU is offloaded; this wait_for can expire.
         try:
             clima_data = await asyncio.wait_for(
                 om_service.obter_historico(
@@ -398,10 +405,12 @@ async def _calculate_evt_pricing(
                     end_date,
                     variavel="temperature_2m_max",
                 ),
-                timeout=18,
+                timeout=OPENMETEO_FETCH_TIMEOUT_SECONDS,
             )
         except asyncio.TimeoutError:
-            logger.warning("OpenMeteo historical fetch timed out in EVT pricing; falling back")
+            logger.warning(
+                "OpenMeteo historical fetch timed out in EVT pricing; falling back"
+            )
             return None
 
         if not clima_data:
@@ -413,7 +422,8 @@ async def _calculate_evt_pricing(
         df["date"] = pd.to_datetime(df["date"])
 
         orchestrator = DefensivePricingOrchestrator()
-        evt_result = orchestrator.price_contract(
+        evt_result = await asyncio.to_thread(
+            orchestrator.price_contract,
             df,
             asset_value=request.asset_value,
             severity_amount=request.severity_amount,
@@ -530,40 +540,84 @@ async def _calculate_evt_pricing(
         return None
 
 
-async def _apply_pytorch_climate_overlay(request: PolicyRequest, result: PricingResult) -> None:
-    """Scale premium with LSTM attention trained on real Open-Meteo archive (MPS/CPU)."""
+async def _await_or_fallback(coro, timeout: float, fallback, label: str):
+    """Bound an awaitable. Timeouts/errors return fallback; never raise."""
     try:
-        from services.lstm_attention_service import HAS_TORCH
-        from services.pytorch_climate_pricing_service import pytorch_climate_pricing_service
+        return await asyncio.wait_for(coro, timeout=timeout)
+    except asyncio.TimeoutError:
+        logger.warning("%s timed out after %.1fs", label, timeout)
+        return fallback
+    except Exception as exc:
+        logger.warning("%s failed: %s", label, exc)
+        return fallback
 
-        if not HAS_TORCH or result.financials is None:
-            return
-        sim = await asyncio.wait_for(
-            pytorch_climate_pricing_service.simulate(
-                request.latitude or -23.55,
-                request.longitude or -46.63,
-                asset_value=request.asset_value,
-                severity_amount=request.severity_amount,
-                frequency_pct=request.frequency_pct,
-                coverage_period_years=request.coverage_period_years,
-                days=365,
-                epochs=8,
-                n_sims=128,
-            ),
-            timeout=20,
-        )
-        freq_m = float(sim["simulation"]["frequency_multiplier"])
-        sev_m = float(sim["simulation"]["severity_multiplier"])
+
+async def _compute_pytorch_overlay(request: PolicyRequest) -> dict:
+    """Never trains inline. Cache miss → overlay_pending."""
+    from services.pytorch_climate_pricing_service import (
+        pytorch_climate_pricing_service,
+    )
+
+    return await pytorch_climate_pricing_service.compute_overlay(
+        request.latitude or -23.55,
+        request.longitude or -46.63,
+        asset_value=request.asset_value,
+        severity_amount=request.severity_amount,
+        frequency_pct=request.frequency_pct,
+        coverage_period_years=request.coverage_period_years,
+        days=365,
+        epochs=12,
+        n_sims=128,
+    )
+
+
+def _apply_news_to_result(
+    result: PricingResult, quote_region: Optional[dict]
+) -> None:
+    if result.financials is None:
+        return
+    new_price, news_multiplier, news_status = _apply_news_adjustment(
+        result.financials.total_premium, quote_region
+    )
+    result.financials.total_premium = new_price
+    if result.risk_factors is None:
+        result.risk_factors = {}
+    result.risk_factors["news_alerts"] = news_multiplier
+    if news_status and news_status not in (result.status or ""):
+        result.status = (result.status or "") + news_status
+
+
+def _merge_overlay(result: PricingResult, overlay: Optional[dict]) -> None:
+    if result.risk_factors is None:
+        result.risk_factors = {}
+    if result.financials is None:
+        result.risk_factors["overlay_pending"] = True
+        return
+    if not overlay or overlay.get("overlay_pending"):
+        result.risk_factors["overlay_pending"] = True
+        if overlay:
+            if overlay.get("region") is not None:
+                result.risk_factors["overlay_region"] = overlay["region"]
+            if overlay.get("reason"):
+                result.risk_factors["overlay_reason"] = overlay["reason"]
+        return
+    try:
+        freq_m = float(overlay["simulation"]["frequency_multiplier"])
+        sev_m = float(overlay["simulation"]["severity_multiplier"])
         combined = (freq_m + sev_m) / 2.0
         result.financials.total_premium *= combined
-        if result.risk_factors is None:
-            result.risk_factors = {}
         result.risk_factors["pytorch_lstm"] = combined
-        result.risk_factors["pytorch_device"] = sim.get("device")
-        result.risk_factors["pytorch_n_obs"] = sim["observations"]["n"]
-        result.risk_factors["pytorch_next_day_precip_mm"] = sim["lstm"]["next_day_precip_mm"]
+        result.risk_factors["pytorch_device"] = overlay.get("device")
+        observations = overlay.get("observations") or {}
+        lstm = overlay.get("lstm") or {}
+        result.risk_factors["pytorch_n_obs"] = observations.get("n")
+        result.risk_factors["pytorch_next_day_precip_mm"] = lstm.get(
+            "next_day_precip_mm"
+        )
+        result.risk_factors["overlay_pending"] = False
     except Exception as exc:
-        logger.warning("PyTorch climate overlay skipped: %s", exc)
+        logger.warning("PyTorch climate overlay merge skipped: %s", exc)
+        result.risk_factors["overlay_pending"] = True
 
 
 @router.post("/calculate", response_model=PricingResult)
@@ -573,6 +627,9 @@ async def calculate_policy_endpoint(request: PolicyRequest) -> PricingResult:
     1. Real Climate Data (OpenMeteo)
     2. Extreme Value Theory (EVT) for tail risk
     3. Fractal Analysis for market regime
+
+    Geocode, EVT, and LSTM overlay run concurrently with hard timeouts.
+    LSTM training never runs on this request path.
     """
     from lib.tracing import set_span_attributes, start_span
 
@@ -584,23 +641,41 @@ async def calculate_policy_endpoint(request: PolicyRequest) -> PricingResult:
             "pricing.frequency_pct": request.frequency_pct,
         },
     ) as span:
-        quote_region = await _resolve_quote_region(request.latitude, request.longitude)
-
-        try:
-            evt_result = await asyncio.wait_for(
-                _calculate_evt_pricing(request, quote_region=quote_region), timeout=25
-            )
-        except asyncio.TimeoutError:
-            logger.warning("EVT pricing timed out; using heuristic fallback")
-            evt_result = None
+        quote_region, evt_result, overlay = await asyncio.gather(
+            _await_or_fallback(
+                _resolve_quote_region(request.latitude, request.longitude),
+                GEOCODE_TIMEOUT_SECONDS,
+                None,
+                "geocode",
+            ),
+            _await_or_fallback(
+                _calculate_evt_pricing(request, quote_region=None),
+                EVT_TIMEOUT_SECONDS,
+                None,
+                "evt",
+            ),
+            _await_or_fallback(
+                _compute_pytorch_overlay(request),
+                OVERLAY_TIMEOUT_SECONDS,
+                {"overlay_pending": True, "reason": "timeout"},
+                "overlay",
+            ),
+        )
 
         if evt_result:
-            set_span_attributes(span, **{"pricing.engine": "evt", "pricing.status": evt_result.status})
+            set_span_attributes(
+                span,
+                **{"pricing.engine": "evt", "pricing.status": evt_result.status},
+            )
             result = evt_result
         else:
             pricer = ClimatePricingService()
-            result = pricer.calculate_policy(request, quote_region=quote_region)
-            set_span_attributes(span, **{"pricing.engine": "heuristic", "pricing.status": result.status})
+            result = pricer.calculate_policy(request, quote_region=None)
+            set_span_attributes(
+                span,
+                **{"pricing.engine": "heuristic", "pricing.status": result.status},
+            )
 
-        await _apply_pytorch_climate_overlay(request, result)
+        _apply_news_to_result(result, quote_region)
+        _merge_overlay(result, overlay)
         return result
