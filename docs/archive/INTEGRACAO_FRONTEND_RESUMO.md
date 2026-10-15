@@ -1,5 +1,7 @@
 # ✅ Integração Frontend-Backend - CONCLUÍDA
 
+> **Hathor removed.** ClimateWise uses Base L2 only (`GET /api/v1/blockchain/base/status`). Paths below that mention Hathor are historical.
+
 **Data**: 24 de Fevereiro de 2026  
 **Status**: ✅ **FRONTEND INTEGRADO**
 
@@ -51,7 +53,7 @@
 ```
 ✅ server/blockchain/hathor/hathor_service.py
 ✅ server/blockchain/hathor/climate_token_service.py
-✅ server/blockchain/hathor/oracle_service.py
+✅ server/services/climate_oracle_service.py
 ✅ server/api/hathor_blockchain.py
 ✅ server/scripts/test_noaa_*.py
 ```
@@ -64,7 +66,7 @@
 
 ```bash
 cd /home/exp/Downloads/ClimateAI/server
-source venv-hathor/bin/activate
+source ../.venv/bin/activate
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
@@ -101,7 +103,7 @@ npm run dev
 
 **API Endpoint**:
 ```typescript
-POST /api/v1/blockchain/hathor/oracle/index
+POST /api/v1/oracle/index
 {
   "index_type": "precipitation",
   "latitude": -23.5505,
@@ -305,7 +307,7 @@ const index = await getClimateIndex({
 ```bash
 # Backend
 cd server
-source venv-hathor/bin/activate
+source ../.venv/bin/activate
 python scripts/test_noaa_brazil_stations.py
 python scripts/test_noaa_cache_ratelimit.py
 
@@ -326,7 +328,7 @@ curl -X POST http://localhost:8000/api/v1/blockchain/hathor/tokens/create/drough
   -d "region=Sertão PE&latitude=-8.0&longitude=-37.0&start_date=2026-01-01&end_date=2026-06-30&trigger_precipitation_mm=200.0&payout_amount=50000"
 
 # Buscar índice climático
-curl -X POST http://localhost:8000/api/v1/blockchain/hathor/oracle/index \
+curl -X POST http://localhost:8000/api/v1/oracle/index \
   -H "Content-Type: application/json" \
   -d '{
     "index_type": "precipitation",
@@ -402,7 +404,7 @@ curl -X POST http://localhost:8000/api/v1/blockchain/hathor/oracle/index \
 ## 🎉 Conclusão
 
 **Integração Frontend-Backend 100% CONCLUÍDA** para:
-- ✅ Hathor Blockchain (tokens climáticos)
+- ✅ Base L2 (tokens climáticos)
 - ✅ NOAA Oracle (dados em tempo real)
 - ✅ Cache/Rate Limiting (monitoramento)
 - ✅ Backtesting (visualização)

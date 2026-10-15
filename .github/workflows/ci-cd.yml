@@ -103,7 +103,7 @@ jobs:
           OTEL_SDK_DISABLED: "true"
         run: |
           cd server
-          pytest tests/unit/test_hathor_blockchain_endpoints.py -q
+          pytest tests/unit/test_base_status.py -q
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v4

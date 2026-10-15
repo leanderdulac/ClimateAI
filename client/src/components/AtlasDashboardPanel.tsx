@@ -743,7 +743,7 @@ export function AtlasDashboardPanel() {
                   <CardContent className="pt-6">
                     <div className="text-center">
                       <div className="text-2xl font-bold">
-                        Hathor Testnet
+                        Base L2
                       </div>
                       <div className="text-sm text-muted-foreground">
                         {t('atlas.blockchain.network')}
@@ -895,7 +895,7 @@ export function AtlasDashboardPanel() {
               <div>
                 <div className="font-semibold">Blockchain Simulation</div>
                 <div className="text-muted-foreground">
-                  Hathor Testnet com smart contracts de payout
+                  Base L2 com contratos de payout
                 </div>
               </div>
             </div>

@@ -7,14 +7,15 @@ PROTECTED_POSTS = (
     "/api/v1/pricing/quote",
     "/api/v1/pricing/calculate",
     "/api/v1/policy-pricing/calculate",
-    "/api/v1/blockchain/hathor/tokens/create",
+    "/api/v1/tokenizacao/tokenizar-com-mint",
     "/api/v1/gemini/chat",
     "/api/v1/grok/analyze",
     "/api/v1/mlflow/models/demo/transition",
 )
 
 PROTECTED_GETS = (
-    "/api/v1/blockchain/hathor/status",
+    "/api/v1/blockchain/base/status",
+    "/api/v1/health",
     "/api/v1/gemini/capabilities",
     "/api/v1/grok/status",
     "/api/v1/partners",

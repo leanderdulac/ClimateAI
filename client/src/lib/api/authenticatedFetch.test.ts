@@ -32,6 +32,14 @@ describe('classifyProbeStatus', () => {
     expect(classifyProbeStatus(jsonResponse(503))).toBe('offline');
     expect(classifyProbeStatus(null)).toBe('offline');
   });
+
+  it('treats HTML 200 (SPA fallback) as offline, not a live backend', () => {
+    const html = new Response('<!doctype html><html><body>ClimateWise</body></html>', {
+      status: 200,
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    });
+    expect(classifyProbeStatus(html)).toBe('offline');
+  });
 });
 
 describe('probeStatusLabel', () => {

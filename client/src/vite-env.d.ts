@@ -6,7 +6,7 @@ interface ImportMetaEnv {
   readonly VITE_USE_MOCK_DATA?: string;
   readonly VITE_SUPABASE_URL?: string;
   readonly VITE_SUPABASE_ANON_KEY?: string;
-  readonly VITE_HATHOR_API_URL?: string;
+  readonly VITE_BASE_EXPLORER_URL?: string;
   readonly VITE_ENABLE_ANALYTICS?: string;
   readonly VITE_ENABLE_TOKENIZATION?: string;
   readonly VITE_ENABLE_ATLAS?: string;

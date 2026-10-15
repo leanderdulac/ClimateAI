@@ -22,7 +22,7 @@ def test_features_endpoint_is_public(client: TestClient):
 @pytest.mark.unit
 def test_disabled_feature_for_path_when_flags_on():
     assert disabled_feature_for_path("/api/v1/gemini/chat") is None
-    assert disabled_feature_for_path("/api/v1/blockchain/hathor/status") is None
+    assert disabled_feature_for_path("/api/v1/blockchain/base/status") is None
     assert disabled_feature_for_path("/api/v1/atlas-realtime/risk-summary") is None
     assert disabled_feature_for_path("/api/v1/forecast/ensemble") is None
 

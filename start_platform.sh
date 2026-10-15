@@ -38,7 +38,7 @@ wait_for_http() {
     return 1
 }
 
-# Require project .venv (never fall back to committed server/venv-hathor)
+# Require project .venv
 VENV_BIN="$PROJECT_ROOT/.venv/bin/python"
 if [ ! -x "$VENV_BIN" ]; then
     echo "ERROR: .venv not found at $PROJECT_ROOT/.venv"

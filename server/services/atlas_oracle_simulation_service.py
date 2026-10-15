@@ -6,7 +6,7 @@ Este serviço:
 1. Simula eventos de desastres em tempo real
 2. Gera scores de severidade baseados em dados do Atlas
 3. Simula triggers de payout no Oracle
-4. Simula transações blockchain (Hathor)
+4. Simula transações blockchain (Base L2)
 """
 
 import logging
@@ -474,7 +474,7 @@ class AtlasOracleSimulationService:
             'total_payouts_triggered': len([e for e in self.events if e.payout_triggered]),
             'total_blockchain_transactions': len(self.transactions),
             'last_update': self._last_update.isoformat(),
-            'network': 'Hathor Testnet (Simulated)',
+            'network': 'Base L2 (Simulated)',
             'contract_address': '0x' + hashlib.md5(b'climate_oracle', usedforsecurity=False).hexdigest(),
         }
 

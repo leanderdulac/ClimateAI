@@ -46,7 +46,7 @@
 **O que isso mostra:**
 - ✅ **Backend API**: Conexão com FastAPI
 - ✅ **Oracle**: Oracle simulation ativo
-- ✅ **Blockchain**: Transações Hathor simuladas
+- ✅ **Blockchain**: Transações Base L2 simuladas
 - ✅ **Clima (OpenMeteo)**: Dados climáticos reais
 
 ---
@@ -112,7 +112,7 @@
 - ✅ Dados do **CelesTrak** (eventos espaciais)
 - ✅ Dados do **Atlas Digital** (desastres terrestres)
 - ✅ **Oracle Simulation** (triggers de payout)
-- ✅ **Blockchain** (transações Hathor)
+- ✅ **Blockchain** (transações Base L2)
 
 ---
 
@@ -197,7 +197,7 @@
 
 ```
 ┌────────────────────────────────────────────────────────┐
-│  ⛓️ Transações Blockchain (Hathor Testnet Simulated) │
+│  ⛓️ Transações Blockchain (Base L2) │
 ├────────────────────────────────────────────────────────┤
 │  ┌──────────────────────────────────────────────────┐ │
 │  │ ✓ be391e1bb6370c1a... | R$ 35.000 | 9 conf.     │ │
@@ -208,8 +208,8 @@
 │  └──────────────────────────────────────────────────┘ │
 │                                                        │
 │  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐   │
-│  │ 11           │ │ Hathor       │ │ SIMULATION   │   │
-│  │ Transações   │ │ Testnet      │ │ Mode         │   │
+│  │ 11           │ │ Base L2      │ │ SIMULATION   │   │
+│  │ Transações   │ │              │ │ Mode         │   │
 │  └──────────────┘ └──────────────┘ └──────────────┘   │
 └────────────────────────────────────────────────────────┘
 ```
@@ -222,7 +222,7 @@
 - Status (Confirmado/Pendente)
 
 **Integração visível:**
-- ✅ **Hathor Blockchain** (simulated)
+- ✅ **Base L2** (simulated)
 - ✅ **Oracle** (trigger de payouts)
 - ✅ **Smart Contracts** (execução automática)
 

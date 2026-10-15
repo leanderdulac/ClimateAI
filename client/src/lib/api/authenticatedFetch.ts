@@ -53,13 +53,17 @@ export function classifyProbeStatus(response: Response | null | undefined): Prob
   if (!response) {
     return 'offline';
   }
-  if (response.ok) {
-    return 'online';
-  }
   if (response.status === 401) {
     return 'session_expired';
   }
-  return 'offline';
+  if (!response.ok) {
+    return 'offline';
+  }
+  const contentType = response.headers.get('content-type') || '';
+  if (!contentType.toLowerCase().includes('application/json')) {
+    return 'offline';
+  }
+  return 'online';
 }
 
 export function probeStatusLabel(

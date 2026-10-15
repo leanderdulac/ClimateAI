@@ -1,6 +1,5 @@
 """
 Serviço de tokenização blockchain para eventos climáticos
-Adaptação do conceito Hathor para o sistema ClimateWise
 """
 
 import hashlib
@@ -17,7 +16,7 @@ from services.tokenizacao_eventos_service import TokenizacaoEventosService
 class BlockchainTokenService:
     """
     Serviço para tokenização de eventos climáticos com conceito blockchain.
-    Adapta o conceito de tokens Hathor para o sistema ClimateWise.
+    Tokenização de eventos climáticos no ClimateWise.
     """
 
     def __init__(self):
@@ -101,7 +100,7 @@ class BlockchainTokenService:
         """
         Cria estrutura do token blockchain baseada no token ClimateWise
         """
-        # Gerar UID único para o token (similar ao Hathor)
+        # Gerar UID único para o token
         token_uid = self._generate_token_uid(climate_token)
 
         # Criar dados do token

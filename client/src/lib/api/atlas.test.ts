@@ -26,9 +26,9 @@ function jsonResponse(status: number, body: unknown = {}) {
 
 describe('ATLAS_STATUS_ENDPOINTS', () => {
   it('probes dedicated services instead of portfolio-risk', () => {
-    expect(ATLAS_STATUS_ENDPOINTS.backend).toBe('/health');
+    expect(ATLAS_STATUS_ENDPOINTS.backend).toBe('/api/v1/health');
     expect(ATLAS_STATUS_ENDPOINTS.oracle).toBe('/api/v1/atlas-simulation/oracle-status');
-    expect(ATLAS_STATUS_ENDPOINTS.blockchain).toBe('/api/v1/blockchain/hathor/status');
+    expect(ATLAS_STATUS_ENDPOINTS.blockchain).toBe('/api/v1/blockchain/base/status');
     expect(ATLAS_STATUS_ENDPOINTS.weather).toBe('/api/v1/atlas-realtime/health');
     expect(ATLAS_STATUS_ENDPOINTS.celestrak).toBe('/api/v1/celestrak/space-weather');
     expect(Object.values(ATLAS_STATUS_ENDPOINTS)).not.toContain(
@@ -49,11 +49,11 @@ describe('fetchAtlasDashboard', () => {
   it('classifies 401 probes as session_expired and still loads payload data', async () => {
     fetchWithAuthRetryMock.mockImplementation(async (input) => {
       const url = String(input);
-      if (url === '/health') return jsonResponse(200, { status: 'ok' });
+      if (url === '/api/v1/health') return jsonResponse(200, { status: 'ok' });
       if (url === '/api/v1/atlas-simulation/oracle-status') {
         return jsonResponse(401, { detail: 'Não autenticado' });
       }
-      if (url === '/api/v1/blockchain/hathor/status') return jsonResponse(200, { network: 'testnet' });
+      if (url === '/api/v1/blockchain/base/status') return jsonResponse(200, { network: 'base' });
       if (url === '/api/v1/atlas-realtime/health') return jsonResponse(200, { status: 'healthy' });
       if (url === '/api/v1/celestrak/space-weather') return jsonResponse(503, { detail: 'down' });
       if (url === '/api/v1/atlas-simulation/portfolio-risk') {

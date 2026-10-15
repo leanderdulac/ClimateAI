@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { hathorApi, type ClimateIndexRequest, type ClimateIndexResponse } from '@/lib/hathor';
+import { getClimateIndex, type ClimateIndexRequest, type ClimateIndexResponse } from '@/lib/api/climateOracle';
 import { 
   Cloud, 
   Thermometer, 
@@ -111,8 +111,8 @@ export function OraclePage() {
     setIndexError('');
     
     try {
-      const response = await hathorApi.post<ClimateIndexResponse>('/oracle/index', indexData);
-      setIndexResult(response.data);
+      const result = await getClimateIndex(indexData);
+      setIndexResult(result);
     } catch (error: any) {
       setIndexError(error.response?.data?.detail || 'Erro ao buscar índice climático');
       console.error('Error fetching climate index:', error);

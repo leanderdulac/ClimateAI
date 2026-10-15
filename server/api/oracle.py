@@ -4,19 +4,22 @@ Exposes the Oracle Service for severity evaluation, payout triggering,
 and system status monitoring.
 """
 
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
-from typing import Optional, List
+import logging
 from datetime import datetime
+from typing import List
+
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from config.database import get_db_session
-from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import APIRouter, HTTPException, Depends
 from middleware.auth_middleware import require_admin
 from models.schemas import User
-
-from services.oracle_service import OracleService, SeverityEvent
+from services.climate_oracle_service import get_climate_oracle_service
 from services.kms_signer_service import KMSSigner
+from services.oracle_service import OracleService, SeverityEvent
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/oracle", tags=["Oracle"])
 
@@ -44,6 +47,17 @@ class BatchEvalRequest(BaseModel):
 class ConsensusVoteRequest(BaseModel):
     event: SeverityEventRequest
     oracle_id: str = Field(..., description="ID of the voting oracle instance")
+
+
+class ClimateIndexQuery(BaseModel):
+    index_type: str = Field(..., description="Index type (precipitation, temperature, etc.)")
+    latitude: float = Field(..., ge=-90, le=90)
+    longitude: float = Field(..., ge=-180, le=180)
+    start_date: str = Field(..., description="Start date (YYYY-MM-DD)")
+    end_date: str = Field(..., description="End date (YYYY-MM-DD)")
+    trigger_value: float
+    trigger_condition: str = Field(..., pattern="^(above|below)$")
+    source: str = Field(default="openmeteo")
 
 
 # ─── Endpoints ─────────────────────────────────────────────────────
@@ -117,6 +131,59 @@ async def submit_consensus_vote(
     )
     result = await oracle.submit_vote(event, request.oracle_id)
     return result
+
+
+@router.post("/index")
+async def get_climate_index(request: ClimateIndexQuery):
+    """Climate index from INMET / NOAA / Open-Meteo (no chain dependency)."""
+    try:
+        index = get_climate_oracle_service().get_climate_index(
+            index_type=request.index_type,
+            latitude=request.latitude,
+            longitude=request.longitude,
+            start_date=datetime.strptime(request.start_date, "%Y-%m-%d"),
+            end_date=datetime.strptime(request.end_date, "%Y-%m-%d"),
+            trigger_value=request.trigger_value,
+            trigger_condition=request.trigger_condition,
+            source=request.source,
+        )
+        return {
+            "index_type": index.index_type,
+            "region": index.region,
+            "latitude": index.latitude,
+            "longitude": index.longitude,
+            "start_date": index.start_date.strftime("%Y-%m-%d"),
+            "end_date": index.end_date.strftime("%Y-%m-%d"),
+            "index_value": index.value,
+            "trigger_value": index.trigger_value,
+            "trigger_condition": index.trigger_condition,
+            "trigger_met": index.trigger_met,
+            "data_points_count": len(index.data_points),
+            "calculation_method": index.calculation_method,
+        }
+    except Exception as exc:
+        logger.error("Failed to get climate index: %s", exc)
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.post("/consensus")
+async def evaluate_oracle_consensus_endpoint(request: ClimateIndexQuery):
+    """Multi-source oracle vote (INMET / NOAA / Open-Meteo, optional WeatherNext)."""
+    from services.oracle_consensus import evaluate_oracle_consensus
+
+    try:
+        return await evaluate_oracle_consensus(
+            latitude=request.latitude,
+            longitude=request.longitude,
+            index_type=request.index_type,
+            trigger_value=request.trigger_value,
+            trigger_condition=request.trigger_condition,
+            start_date=datetime.strptime(request.start_date, "%Y-%m-%d"),
+            end_date=datetime.strptime(request.end_date, "%Y-%m-%d"),
+        )
+    except Exception as exc:
+        logger.error("Failed to evaluate oracle consensus: %s", exc)
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
 @router.get("/status")

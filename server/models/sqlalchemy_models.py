@@ -364,7 +364,7 @@ class OracleEvent(Base):
 
 class BlockchainTransaction(Base):
     """
-    Modelo genérico para transações Hathor registradas
+    Modelo genérico para transações blockchain registradas
     Tabela: blockchain_transactions
     """
     __tablename__ = "blockchain_transactions"
@@ -372,7 +372,7 @@ class BlockchainTransaction(Base):
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     
     tx_hash = Column(String, unique=True, index=True, nullable=False)
-    token_uid = Column(String, index=True) # UID of the created Hathor token (e.g. CLMT)
+    token_uid = Column(String, index=True) # UID of the created token
     
     from_address = Column(String)
     to_address = Column(String)
