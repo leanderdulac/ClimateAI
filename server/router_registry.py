@@ -92,6 +92,7 @@ from api.probabilistic_climate_scenarios import (
 )
 from api.previsao import router as previsao_router
 from api.weathernext_ensemble import router as weathernext_ensemble_router
+from api.compute_status import router as compute_status_router
 from api.pricing import router as pricing_router
 from api.extreme_value_pricing import router as extreme_value_pricing_router
 from api.sips_performance_analytics import router as sips_performance_analytics_router
@@ -121,6 +122,11 @@ def register_routers(app: FastAPI, api_prefix: str) -> None:
             weathernext_ensemble_router,
             prefix=api_prefix,
             tags=["weathernext-ensemble"],
+        )
+        app.include_router(
+            compute_status_router,
+            prefix=api_prefix,
+            tags=["compute"],
         )
         app.include_router(
             xweather_forecast_router,
