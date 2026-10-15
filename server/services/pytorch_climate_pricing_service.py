@@ -63,8 +63,9 @@ def _finite(values: np.ndarray) -> np.ndarray:
         return arr
     if not mask.any():
         return np.array([], dtype=np.float64)
-    idx = np.arange(len(arr))
-    arr[~mask] = np.interp(idx[~mask], idx[mask], arr[mask])
+    idx = np.asarray(np.arange(len(arr)), dtype=np.float64)
+    good = np.asarray(mask, dtype=bool)
+    arr[~good] = np.interp(idx[~good], idx[good], arr[good])
     return arr
 
 
@@ -73,7 +74,7 @@ def fetch_openmeteo_daily_archive(
     longitude: float,
     days: int = 365,
     timeout: int = 12,
-) -> Dict[str, List[float]]:
+) -> Dict[str, Any]:
     """Pull real daily observations from the Open-Meteo archive (UTC)."""
     end = datetime.now(timezone.utc).date() - timedelta(days=5)
     start = end - timedelta(days=max(60, days))

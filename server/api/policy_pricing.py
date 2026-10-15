@@ -396,11 +396,13 @@ async def _calculate_evt_pricing(
         )
         # One year avoids the >365-day chunk loop (extra HTTP + 1s sleep).
         # Sync Open-Meteo / EVT CPU is offloaded; this wait_for can expire.
+        lat = request.latitude if request.latitude is not None else -23.55
+        lon = request.longitude if request.longitude is not None else -46.63
         try:
             clima_data = await asyncio.wait_for(
                 om_service.obter_historico(
-                    request.latitude,
-                    request.longitude,
+                    lat,
+                    lon,
                     start_date,
                     end_date,
                     variavel="temperature_2m_max",
