@@ -1,10 +1,17 @@
 {
   "@context": "https://schema.org",
   "@type": "FAQPage",
+  "@id": "https://www.climatewise.com.br/#faq",
+  "url": "https://www.climatewise.com.br/",
+  "inLanguage": "pt-BR",
+  "isPartOf": {
+    "@id": "https://www.climatewise.com.br/#organization"
+  },
   "mainEntity": [
     {
       "@type": "Question",
       "name": "O que é o ClimateWise?",
+      "url": "https://www.climatewise.com.br/#faq-o-que-e-o-climatewise",
       "acceptedAnswer": {
         "@type": "Answer",
         "text": "O ClimateWise é um app atuarial climático baseado no FIMCE (Framework Integrado de Modelagem Climático-Econômica) que prevê eventos climáticos extremos e modela impactos em commodities e mercados financeiros, com integrações NOAA, Embrapa e OpenMeteo."
@@ -13,6 +20,7 @@
     {
       "@type": "Question",
       "name": "O que significa FIMCE?",
+      "url": "https://www.climatewise.com.br/#faq-o-que-significa-fimce",
       "acceptedAnswer": {
         "@type": "Answer",
         "text": "FIMCE é o Framework Integrado de Modelagem Climático-Econômica, o núcleo metodológico do ClimateWise."
@@ -21,6 +29,7 @@
     {
       "@type": "Question",
       "name": "Quais APIs climáticas o ClimateWise integra?",
+      "url": "https://www.climatewise.com.br/#faq-quais-apis-climaticas",
       "acceptedAnswer": {
         "@type": "Answer",
         "text": "NOAA, Embrapa ClimAPI e OpenMeteo, com sistema de fallback quando uma fonte falha."
@@ -29,6 +38,7 @@
     {
       "@type": "Question",
       "name": "O ClimateWise tem Partner API?",
+      "url": "https://www.climatewise.com.br/#faq-partner-api",
       "acceptedAnswer": {
         "@type": "Answer",
         "text": "Sim. A documentação está em docs/partner-api.md no repositório, com autenticação por header X-API-Key e catálogo em GET /api/v1/partner/catalog."
@@ -37,6 +47,7 @@
     {
       "@type": "Question",
       "name": "ClimateWise e o repositório ClimateAI são o mesmo?",
+      "url": "https://www.climatewise.com.br/#faq-climatewise-climateai",
       "acceptedAnswer": {
         "@type": "Answer",
         "text": "Sim. ClimateWise é a marca do produto; o código público está em github.com/leanderdulac/ClimateAI."
@@ -45,6 +56,7 @@
     {
       "@type": "Question",
       "name": "O ClimateWise é open source?",
+      "url": "https://www.climatewise.com.br/#faq-open-source",
       "acceptedAnswer": {
         "@type": "Answer",
         "text": "O projeto público está sob licença MIT, conforme o README."

@@ -5,8 +5,17 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Logo } from "@/components/Logo";
 import {
   ArrowRight, Play, Satellite, BrainCircuit, Coins, Zap,
-  Leaf, Waves, Flame, Snowflake, ChevronRight, Star
+  Leaf, Waves, Flame, Snowflake, ChevronRight, ChevronDown, Star
 } from "lucide-react";
+
+const FAQ_ITEMS = [
+  { id: "faq-o-que-e-o-climatewise", q: "lp.faq.q1", a: "lp.faq.a1" },
+  { id: "faq-o-que-significa-fimce", q: "lp.faq.q2", a: "lp.faq.a2" },
+  { id: "faq-quais-apis-climaticas", q: "lp.faq.q3", a: "lp.faq.a3" },
+  { id: "faq-partner-api", q: "lp.faq.q4", a: "lp.faq.a4" },
+  { id: "faq-climatewise-climateai", q: "lp.faq.q5", a: "lp.faq.a5" },
+  { id: "faq-open-source", q: "lp.faq.q6", a: "lp.faq.a6" },
+] as const;
 
 /* ──────────────────────────────────────────────
    Hook: Intersection Observer for scroll-reveal
@@ -478,6 +487,39 @@ export function WelcomePage() {
         </div>
       </section>
 
+      {/* ── FAQ (visível e alinhada ao JSON-LD FAQPage) ── */}
+      <section
+        id="faq"
+        className="py-24 px-6"
+        style={{ background: 'var(--lp-bg-2)' }}
+        aria-labelledby="lp-faq-title"
+      >
+        <div className="container mx-auto max-w-3xl">
+          <div className="text-center mb-14">
+            <span className="text-xs font-bold tracking-[0.2em] uppercase lp-gradient-text">
+              {t('lp.faq.tag')}
+            </span>
+            <h2
+              id="lp-faq-title"
+              className="font-black mt-3 text-3xl md:text-4xl text-white"
+            >
+              {t('lp.faq.title')}
+            </h2>
+          </div>
+          <div className="space-y-3">
+            {FAQ_ITEMS.map((item) => (
+              <details key={item.id} id={item.id} className="lp-faq-item">
+                <summary className="lp-faq-summary">
+                  <span>{t(item.q)}</span>
+                  <ChevronDown className="lp-faq-chevron w-5 h-5 shrink-0" aria-hidden="true" />
+                </summary>
+                <p className="lp-faq-answer">{t(item.a)}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── CTA FINAL ── */}
       <section
         className="py-32 px-6 relative overflow-hidden"
@@ -557,6 +599,15 @@ export function WelcomePage() {
             <div>
               <h5 className="font-bold text-white mb-4 text-sm">{t('lp.footer.company')}</h5>
               <ul className="space-y-2">
+                <li>
+                  <a
+                    href="#faq"
+                    className="text-sm hover:text-green-400 transition-colors"
+                    style={{ color: 'rgba(240,253,244,0.45)' }}
+                  >
+                    FAQ
+                  </a>
+                </li>
                 {['Blog', 'Suporte', 'Termos', 'Privacidade'].map(l => (
                   <li key={l}>
                     <span className="text-sm cursor-default" style={{ color: 'rgba(240,253,244,0.45)' }}>{l}</span>
