@@ -5,59 +5,6 @@ import pytest
 
 
 @pytest.mark.unit
-def test_hathor_status_endpoint_returns_integration_details(authenticated_client, monkeypatch):
-    from api import hathor_blockchain
-
-    class FakeHathorService:
-        def get_integration_status(self):
-            return {
-                "mode": "production",
-                "network": "testnet",
-                "initialized": True,
-                "wallet_address": "hth_test_address",
-                "rpc_url": "https://node.testnet.hathor.network",
-                "full_node_reachable": True,
-                "full_node_error": None,
-                "headless_wallet_configured": True,
-                "headless_wallet_reachable": True,
-                "headless_wallet_error": None,
-                "production_strict": False,
-                "known_tokens": 2,
-            }
-
-    monkeypatch.setattr(hathor_blockchain, "get_hathor_service", lambda: FakeHathorService())
-
-    response = authenticated_client.get("/api/v1/blockchain/hathor/status")
-    assert response.status_code == 200
-    payload = response.json()
-    assert payload["mode"] == "production"
-    assert payload["headless_wallet_configured"] is True
-    assert payload["headless_wallet_reachable"] is True
-
-
-@pytest.mark.unit
-def test_hathor_wallet_balance_endpoint_returns_values(authenticated_client, monkeypatch):
-    from api import hathor_blockchain
-
-    class FakeHathorService:
-        def get_balance(self, token_uid: str = "00"):
-            return {
-                "token_uid": token_uid,
-                "available": 120,
-                "locked": 5,
-                "total": 125,
-            }
-
-    monkeypatch.setattr(hathor_blockchain, "get_hathor_service", lambda: FakeHathorService())
-
-    response = authenticated_client.get("/api/v1/blockchain/hathor/wallet/balance/00")
-    assert response.status_code == 200
-    payload = response.json()
-    assert payload["token_uid"] == "00"
-    assert payload["total"] == 125
-
-
-@pytest.mark.unit
 def test_tokenizar_com_mint_returns_on_chain_and_persists_transaction(authenticated_client, monkeypatch):
     from api import tokenizacao
 
@@ -104,7 +51,7 @@ def test_tokenizar_com_mint_returns_on_chain_and_persists_transaction(authentica
             "descricao": "Teste de tokenizacao com mint",
             "nivel_alerta": 3,
         },
-        "destination_address": "hth_demo_wallet_01",
+        "destination_address": "0xdemo",
         "mint_on_chain": True,
     }
 

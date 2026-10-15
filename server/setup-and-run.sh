@@ -10,7 +10,7 @@ cd "$SCRIPT_DIR"
 if [ -x "$SCRIPT_DIR/../.venv/bin/python" ]; then
   VENV_PYTHON="$SCRIPT_DIR/../.venv/bin/python"
 else
-  VENV_DIR="$SCRIPT_DIR/venv-hathor"
+  VENV_DIR="$SCRIPT_DIR/../.venv"
   VENV_PYTHON="$VENV_DIR/bin/python3"
 
   # Criar venv se não existir
@@ -65,8 +65,8 @@ for i in {1..60}; do
     echo ""
     echo "Acessos:"
     echo "  - API Docs: http://localhost:8000/docs"
-    echo "  - Hathor API: http://localhost:8000/api/v1/blockchain/hathor"
-    echo "  - Oracle: http://localhost:8000/api/v1/blockchain/hathor/oracle/index"
+    echo "  - Base L2 status: http://localhost:8000/api/v1/blockchain/base/status"
+    echo "  - Oracle: http://localhost:8000/api/v1/oracle/index"
     echo ""
     echo "PID: $SERVER_PID"
     exit 0

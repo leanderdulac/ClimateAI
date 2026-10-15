@@ -57,7 +57,7 @@ jobs:
         run: pytest
 
       - name: Run blockchain endpoint regression tests
-        run: pytest tests/unit/test_hathor_blockchain_endpoints.py -q
+        run: pytest tests/unit/test_base_status.py -q
 
   frontend:
     runs-on: ubuntu-latest

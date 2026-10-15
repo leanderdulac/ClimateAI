@@ -122,7 +122,7 @@ def demo_integration_flow():
                            ↓
    ┌────────────────────────────────────────────────────────────┐
    │  4. BLOCKCHAIN CONFIRMA                                    │
-   │     - Hathor Testnet (Simulated)                           │
+   │     - Base L2 (Simulated)                                  │
    │     - Confirmations: 6-100 blocks                          │
    │     - Transaction registrada                               │
    └────────────────────────────────────────────────────────────┘
@@ -156,7 +156,7 @@ def main():
     - Cross-check em tempo real
   
   ✓ BLOCKCHAIN SIMULADO
-    - Hathor Testnet (Simulated)
+    - Base L2 (Simulated)
     - Transações de payout
     - Token CLMT (Climate Index Token)
     - Confirmations e block height

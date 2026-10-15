@@ -548,24 +548,32 @@ async def health_check_critical() -> Dict[str, Any]:
     return await health_checker.check_critical()
 
 
-# Endpoint de verificação de saúde simples (compatibilidade)
-@app.get("/health")
-async def health_check() -> Dict[str, Any]:
-    """
-    Verificar o estado de saúde da API (health check simples)
-    """
+def _simple_health() -> Dict[str, Any]:
     status = "healthy" if not missing_vars else "degraded"
     response = {
         "status": status,
         "version": "1.0.0",
         "api_prefix": API_PREFIX,
     }
-
     if missing_vars:
         response["warnings"] = f"Configurações ausentes: {', '.join(missing_vars)}"
         response["missing_vars"] = missing_vars
-
     return response
+
+
+# Public liveness probe (local / k8s). DigitalOcean only routes /api/* to the API.
+@app.get("/health")
+async def health_check() -> Dict[str, Any]:
+    """
+    Verificar o estado de saúde da API (health check simples)
+    """
+    return _simple_health()
+
+
+@app.get(f"{API_PREFIX}/health")
+async def health_check_api() -> Dict[str, Any]:
+    """Authenticated JSON health for Atlas. DO App Platform only proxies /api/*."""
+    return _simple_health()
 
 
 
@@ -659,28 +667,12 @@ async def startup_event():
     else:
         logger.warning("⚠ MLflow Model Registry: Não configurado")
 
-    from blockchain.hathor.hathor_service import get_hathor_service
-    try:
-        hathor_service = get_hathor_service()
-        hathor_mode = os.getenv("HATHOR_INTEGRATION_MODE", "sandbox").lower()
-        headless_wallet_url = os.getenv("HATHOR_HEADLESS_WALLET_URL", "").strip()
-
-        # Fail-fast to avoid a false-production startup without wallet connectivity target.
-        if hathor_mode == "production" and not headless_wallet_url:
-            raise RuntimeError(
-                "HATHOR_INTEGRATION_MODE=production requires HATHOR_HEADLESS_WALLET_URL"
-            )
-
-        wallet_address = os.getenv("HATHOR_WALLET_ADDRESS", "").strip() or None
-        if hathor_mode == "production":
-            hathor_service.initialize(address=wallet_address)
-            logger.info("✓ Hathor Blockchain Service initialized (Production Mode)")
-        else:
-            hathor_service.initialize(address=wallet_address or "0xClimateWiseHathorOracleMock")
-            logger.info("✓ Hathor Blockchain Service initialized (Sandbox Mode)")
-    except Exception as e:
-        logger.warning(f"⚠ Hathor Service initialization failed: {e}")
-        raise
+    from blockchain.base.config import get_base_config
+    base_config = get_base_config()
+    if base_config.configured:
+        logger.info("✓ Base L2 RPC configured (status via GET /api/v1/blockchain/base/status)")
+    else:
+        logger.info("⚠ Base L2 not configured (BASE_RPC_URL unset); app continues")
 
     # News Crawler - Background RSS Scraping
     try:

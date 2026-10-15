@@ -12,7 +12,7 @@ API Key do NOAA adicionada ao serviço Oracle para busca de dados climáticos hi
 ```
 NOAA API Key: WDjhFaVSxFFpLelfYoKaQjnaTorOMcfV
 Status: ✅ Configurada
-Local: blockchain/hathor/oracle_service.py
+Local: services/climate_oracle_service.py
 ```
 
 ---
@@ -21,7 +21,7 @@ Local: blockchain/hathor/oracle_service.py
 
 ### 1. oracle_service.py
 
-**Local**: `server/blockchain/hathor/oracle_service.py`
+**Local**: `server/services/climate_oracle_service.py`
 
 **Alteração**:
 ```python
@@ -52,13 +52,9 @@ Agora busca dados reais da NOAA:
 # NOAA Climate API
 NOAA_API_KEY=WDjhFaVSxFFpLelfYoKaQjnaTorOMcfV
 
-# HATHOR BLOCKCHAIN CONFIGURATION
-HATHOR_NETWORK=testnet
-HATHOR_WALLET_ADDRESS=
-HATHOR_WALLET_SEED=
-HATHOR_CLIMATE_TOKEN_SYMBOL=CLMT
-HATHOR_CLIMATE_TOKEN_NAME=Climate Index Token
-HATHOR_CLIMATE_TOKEN_INITIAL_SUPPLY=1000000
+# BASE L2 (optional)
+BASE_RPC_URL=
+BASE_CHAIN_ID=84532
 ```
 
 ---
@@ -90,7 +86,7 @@ HATHOR_CLIMATE_TOKEN_INITIAL_SUPPLY=1000000
 ### 1. Via Oracle Service
 
 ```python
-from blockchain.hathor.oracle_service import get_climate_oracle_service
+from services.climate_oracle_service import get_climate_oracle_service
 
 oracle = get_climate_oracle_service()
 
@@ -110,7 +106,7 @@ print(f"Fonte: {data_points[0].source}")
 ### 2. Via API REST (quando integrada)
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/blockchain/hathor/oracle/index \
+curl -X POST http://localhost:8000/api/v1/oracle/index \
   -H "Content-Type: application/json" \
   -d '{
     "index_type": "precipitation",
@@ -184,7 +180,7 @@ curl -X POST http://localhost:8000/api/v1/blockchain/hathor/oracle/index \
 │     └─ trigger verification                                     │
 │                                                                  │
 │  7. Publicação na Blockchain (opcional)                         │
-│     └─ Hathor Nano Contract                                     │
+│     └─ Base L2 contract                                     │
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -209,11 +205,11 @@ curl -X POST http://localhost:8000/api/v1/blockchain/hathor/oracle/index \
 
 ```bash
 cd /home/exp/Downloads/ClimateAI/server
-source venv-hathor/bin/activate
+source ../.venv/bin/activate
 
 # Executar script de teste
 python -c "
-from blockchain.hathor.oracle_service import get_climate_oracle_service
+from services.climate_oracle_service import get_climate_oracle_service
 from datetime import datetime, timedelta
 
 oracle = get_climate_oracle_service()
@@ -267,9 +263,9 @@ print(f'Source: {data[0].source if data else \"None\"}')
 
 ### ClimateWise Oracle
 
-- **Service**: `blockchain/hathor/oracle_service.py`
-- **Demo**: `scripts/demo_hathor_blockchain.py`
-- **Docs**: `blockchain/hathor/README.md`
+- **Service**: `services/climate_oracle_service.py`
+- **Demo**: `scripts/test_noaa_brazil_stations.py`
+- **Docs**: `server/services/climate_oracle_service.py`
 
 ---
 

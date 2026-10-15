@@ -20,7 +20,8 @@ def test_public_paths_allowlist():
     assert is_public_path("/api/v1/forecast/ensemble/brazil/refresh", "POST") is False
     assert is_public_path("/api/v1/pricing/calculate", "POST") is False
     assert is_public_path("/api/v1/health/full", "GET") is False
-    assert is_public_path("/api/v1/blockchain/hathor/status", "GET") is False
+    assert is_public_path("/api/v1/blockchain/base/status", "GET") is False
+    assert is_public_path("/api/v1/health", "GET") is False
     assert is_public_path("/docs", "GET", environment="development") is True
     assert is_public_path("/docs", "GET", environment="production") is False
     assert is_public_path("/anything", "OPTIONS") is True
@@ -51,9 +52,25 @@ def test_protected_pricing_returns_401_without_token(client: TestClient):
 
 
 @pytest.mark.unit
-def test_protected_hathor_returns_401_without_token(client: TestClient):
-    response = client.get("/api/v1/blockchain/hathor/status")
+def test_protected_base_status_returns_401_without_token(client: TestClient):
+    response = client.get("/api/v1/blockchain/base/status")
     assert response.status_code == 401
+
+
+@pytest.mark.unit
+def test_api_v1_health_returns_401_without_token(client: TestClient):
+    response = client.get("/api/v1/health")
+    assert response.status_code == 401
+
+
+@pytest.mark.unit
+def test_api_v1_health_returns_json_when_authenticated(
+    authenticated_client: TestClient,
+):
+    response = authenticated_client.get("/api/v1/health")
+    assert response.status_code == 200
+    assert "application/json" in response.headers.get("content-type", "")
+    assert "status" in response.json()
 
 
 @pytest.mark.unit
@@ -71,7 +88,7 @@ def test_mlflow_transition_requires_auth(client: TestClient):
 @pytest.mark.unit
 def test_invalid_bearer_token_is_rejected(client: TestClient):
     response = client.get(
-        "/api/v1/blockchain/hathor/status",
+        "/api/v1/blockchain/base/status",
         headers={"Authorization": "Bearer not-a-real-token"},
     )
     assert response.status_code == 401

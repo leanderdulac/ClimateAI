@@ -6,7 +6,7 @@ Tests Redis caching and rate limiting functionality.
 
 Usage:
     cd server
-    source venv-hathor/bin/activate
+    source ../.venv/bin/activate
     python scripts/test_noaa_cache_ratelimit.py
 """
 
@@ -18,7 +18,7 @@ from datetime import datetime, timedelta
 # Add server to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from blockchain.hathor.oracle_service import get_climate_oracle_service
+from services.climate_oracle_service import get_climate_oracle_service
 
 
 def print_header(title: str):

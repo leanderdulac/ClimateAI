@@ -388,7 +388,7 @@ O dashboard integrado mostra:
    - Atlas Digital: gratuito
 
 5. **Blockchain Integration**
-   - Settlement automático via Hathor
+   - Settlement automático via Base L2
    - Transparência total
 
 ---

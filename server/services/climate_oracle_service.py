@@ -1,8 +1,7 @@
 """
 Climate Oracle Service
 
-Service for fetching and publishing climate data to Hathor blockchain.
-Integrates with INMET, NOAA, and OpenMeteo for climate data.
+Fetches climate data from INMET, NOAA, and Open-Meteo.
 """
 
 import logging
@@ -14,8 +13,6 @@ import hashlib
 import json
 
 import requests
-
-from blockchain.hathor.hathor_service import HathorService, get_hathor_service
 
 logger = logging.getLogger(__name__)
 
@@ -82,21 +79,18 @@ class ClimateOracleService:
     Features:
     - Fetch historical climate data
     - Calculate climate indices
-    - Publish data to Hathor blockchain
     - Verify data integrity
     - Redis caching for performance
     - Rate limiting for API compliance
     """
     
-    def __init__(self, hathor_service: Optional[HathorService] = None, use_cache: bool = True):
+    def __init__(self, use_cache: bool = True):
         """
         Initialize Climate Oracle Service
         
         Args:
-            hathor_service: Hathor service instance
             use_cache: Enable Redis caching (default: True)
         """
-        self.hathor = hathor_service or get_hathor_service()
         
         # API endpoints
         self.inmet_base_url = "https://apitempo.inmet.gov.br"
@@ -829,7 +823,7 @@ class ClimateOracleService:
         data_hash: Optional[str] = None,
     ) -> str:
         """
-        Publish climate index to Hathor blockchain
+        Hash a climate index for optional on-chain publish (Base L2 when configured).
         
         Args:
             index: ClimateIndex to publish
@@ -867,7 +861,7 @@ class ClimateOracleService:
         )
         
         # In production, would call:
-        # result = self.hathor.execute_nano_contract(...)
+        # On-chain publish is handled by the Base L2 stack when configured.
         
         return data_hash
     

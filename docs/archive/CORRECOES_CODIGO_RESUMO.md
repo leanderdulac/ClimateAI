@@ -1,5 +1,7 @@
 # ✅ Correções de Código - Frontend & Backend
 
+> **Hathor removed.** ClimateWise uses Base L2 only. Paths below that mention Hathor are historical.
+
 **Data**: 24 de Fevereiro de 2026  
 **Status**: ✅ **CORRIGIDO**
 
@@ -19,7 +21,7 @@
 | Arquivo | Erro | Correção | Status |
 |---------|------|----------|--------|
 | `api/hathor_blockchain.py` | `regex` (Pydantic v1) | Mudar para `pattern` (Pydantic v2) | ✅ |
-| `blockchain/hathor/oracle_service.py` | `import os` faltando | Adicionar `import os` | ✅ |
+| `services/climate_oracle_service.py` | `import os` faltando | Adicionar `import os` | ✅ |
 | `main.py` | Router hathor não registrado | Adicionar import e include_router | ✅ |
 
 ---
@@ -180,7 +182,7 @@ python3 -m py_compile main.py
    - Linha 58: regex → pattern
    - Linha 124: regex → pattern
 
-✅ server/blockchain/hathor/oracle_service.py
+✅ server/services/climate_oracle_service.py
    - Linha 5: import os adicionado
 
 ✅ server/main.py
@@ -196,7 +198,7 @@ python3 -m py_compile main.py
 
 ```bash
 cd server
-source venv-hathor/bin/activate
+source ../.venv/bin/activate
 ./start-dev.sh
 ```
 
@@ -217,7 +219,7 @@ curl http://localhost:8000/health
 curl http://localhost:8000/api/v1/blockchain/hathor/tokens
 
 # Oracle index
-curl -X POST http://localhost:8000/api/v1/blockchain/hathor/oracle/index \
+curl -X POST http://localhost:8000/api/v1/oracle/index \
   -H "Content-Type: application/json" \
   -d '{
     "index_type": "precipitation",

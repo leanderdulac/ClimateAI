@@ -130,7 +130,7 @@ export function WelcomePage() {
     `📡 23 ${t('lp.ticker.states')}`,
     `⚡ ${t('lp.ticker.update')}`,
     `🛰️ ${t('lp.ticker.cemaden')}`,
-    `🔗 ${t('lp.ticker.hathor')}`,
+    `🔗 ${t('lp.ticker.base')}`,
   ];
   const tickerFull = [...tickerItems, ...tickerItems];
 
@@ -572,7 +572,7 @@ export function WelcomePage() {
             <div className="flex gap-4">
               {[
                 { label: "CEMADEN", tip: "Integração oficial" },
-                { label: "Hathor", tip: "Blockchain parceira" },
+                { label: "Base", tip: "Blockchain Base L2" },
                 { label: "SUSEP", tip: "Em conformidade" },
               ].map(b => (
                 <span

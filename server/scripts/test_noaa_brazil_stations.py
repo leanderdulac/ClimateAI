@@ -7,7 +7,7 @@ Verifies data quality, coverage, and API functionality.
 
 Usage:
     cd server
-    source venv-hathor/bin/activate
+    source ../.venv/bin/activate
     python scripts/test_noaa_brazil_stations.py
 """
 
@@ -19,8 +19,7 @@ from typing import List, Dict, Any
 # Add server to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from blockchain.hathor.oracle_service import get_climate_oracle_service
-from blockchain.hathor.config import get_hathor_config
+from services.climate_oracle_service import get_climate_oracle_service
 
 
 # Brazilian cities with known NOAA stations
@@ -95,12 +94,10 @@ def test_noaa_connection():
     print_header("TESTE 1: CONEXÃO COM NOAA API")
     
     oracle = get_climate_oracle_service()
-    config = get_hathor_config()
     
     print(f"📊 Configuração:")
     print(f"   NOAA API Key: {oracle.noaa_token[:20]}...")
     print(f"   NOAA Base URL: {oracle.noaa_base_url}")
-    print(f"   Hathor Network: {config.NETWORK}")
     
     # Test API token validity with a simple request
     try:

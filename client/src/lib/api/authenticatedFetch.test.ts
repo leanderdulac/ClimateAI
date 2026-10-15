@@ -26,11 +26,40 @@ function jsonResponse(status: number, body: unknown = {}) {
 }
 
 describe('classifyProbeStatus', () => {
-  it('treats 401 as session expired, not offline', () => {
-    expect(classifyProbeStatus(jsonResponse(200))).toBe('online');
-    expect(classifyProbeStatus(jsonResponse(401))).toBe('session_expired');
-    expect(classifyProbeStatus(jsonResponse(503))).toBe('offline');
-    expect(classifyProbeStatus(null)).toBe('offline');
+  it('treats 401 as session expired, not offline', async () => {
+    await expect(classifyProbeStatus(jsonResponse(200, { status: 'ok' }))).resolves.toBe(
+      'online'
+    );
+    await expect(classifyProbeStatus(jsonResponse(401))).resolves.toBe('session_expired');
+    await expect(classifyProbeStatus(jsonResponse(503))).resolves.toBe('offline');
+    await expect(classifyProbeStatus(null)).resolves.toBe('offline');
+  });
+
+  it('treats HTML 200 (SPA fallback) as offline, not a live backend', async () => {
+    const html = new Response('<!doctype html><html><body>ClimateWise</body></html>', {
+      status: 200,
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    });
+    await expect(classifyProbeStatus(html)).resolves.toBe('offline');
+  });
+
+  it('treats 200 with HTML body labeled as JSON as offline', async () => {
+    const spoofed = new Response('<!doctype html><html><body>ClimateWise</body></html>', {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+    await expect(classifyProbeStatus(spoofed)).resolves.toBe('offline');
+  });
+
+  it('requires a string status field when asked (Backend API health)', async () => {
+    await expect(
+      classifyProbeStatus(jsonResponse(200, { ok: true }), { requireStatusField: true })
+    ).resolves.toBe('offline');
+    await expect(
+      classifyProbeStatus(jsonResponse(200, { status: 'healthy' }), {
+        requireStatusField: true,
+      })
+    ).resolves.toBe('online');
   });
 });
 
@@ -109,7 +138,7 @@ describe('fetchWithAuthRetry', () => {
     fetchWithTrackingMock.mockResolvedValue(jsonResponse(401));
     const response = await fetchWithAuthRetry('http://api.test/api/v1/celestrak/space-weather');
     expect(response.status).toBe(401);
-    expect(classifyProbeStatus(response)).toBe('session_expired');
+    await expect(classifyProbeStatus(response)).resolves.toBe('session_expired');
     expect(fetchWithTrackingMock).toHaveBeenCalledTimes(1);
   });
 });

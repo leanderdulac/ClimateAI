@@ -46,7 +46,7 @@ Todos os 4 itens dos "Próximos Passos" foram implementados:
 
 ```bash
 cd /home/exp/Downloads/ClimateAI/server
-source venv-hathor/bin/activate
+source ../.venv/bin/activate
 python scripts/test_noaa_brazil_stations.py
 ```
 
@@ -60,7 +60,7 @@ python scripts/test_noaa_brazil_stations.py
 📊 Configuração:
    NOAA API Key: WDjhFaVSxFFpLelfYoKa...
    NOAA Base URL: https://www.ncei.noaa.gov/cdo-web/api/v2
-   Hathor Network: testnet
+   Base L2: optional
 
 🔍 Testando conexão...
    ✅ Conexão bem-sucedida!
@@ -73,7 +73,7 @@ python scripts/test_noaa_brazil_stations.py
 ## 2️⃣ Implementar Cache (Redis)
 
 ### Arquivo Modificado
-**`server/blockchain/hathor/oracle_service.py`**
+**`server/services/climate_oracle_service.py`**
 
 ### Funcionalidades Implementadas
 
@@ -139,7 +139,7 @@ def _get_cache_key(self, prefix: str, **kwargs) -> str:
 ### Como Usar
 
 ```python
-from blockchain.hathor.oracle_service import get_climate_oracle_service
+from services.climate_oracle_service import get_climate_oracle_service
 
 # Com cache (default)
 oracle = get_climate_oracle_service(use_cache=True)
@@ -295,7 +295,7 @@ except requests.exceptions.HTTPError as e:
 
 ```bash
 cd /home/exp/Downloads/ClimateAI/server
-source venv-hathor/bin/activate
+source ../.venv/bin/activate
 python scripts/test_noaa_cache_ratelimit.py
 ```
 
@@ -390,7 +390,7 @@ python scripts/test_noaa_cache_ratelimit.py
 
 ```bash
 cd /home/exp/Downloads/ClimateAI/server
-source venv-hathor/bin/activate
+source ../.venv/bin/activate
 
 # Teste 1: Estações Brasileiras
 python scripts/test_noaa_brazil_stations.py

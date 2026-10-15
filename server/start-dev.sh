@@ -6,10 +6,8 @@ cd "$SCRIPT_DIR"
 
 if [ -x "$SCRIPT_DIR/../.venv/bin/python" ]; then
   VENV_PYTHON="$SCRIPT_DIR/../.venv/bin/python"
-elif [ -x "$SCRIPT_DIR/venv-hathor/bin/python3" ]; then
-  VENV_PYTHON="$SCRIPT_DIR/venv-hathor/bin/python3"
 else
-  echo "❌ Nenhum ambiente Python utilizável encontrado (.venv ou venv-hathor)"
+  echo "❌ Nenhum ambiente Python utilizável encontrado (.venv)"
   exit 1
 fi
 
@@ -53,8 +51,8 @@ for i in {1..30}; do
     echo ""
     echo "Access points:"
     echo "  - API Docs: http://localhost:8000/docs"
-    echo "  - Hathor API: http://localhost:8000/api/v1/blockchain/hathor"
-    echo "  - Oracle API: http://localhost:8000/api/v1/blockchain/hathor/oracle"
+    echo "  - Base L2 status: http://localhost:8000/api/v1/blockchain/base/status"
+    echo "  - Oracle API: http://localhost:8000/api/v1/oracle/index"
     echo ""
     exit 0
   fi

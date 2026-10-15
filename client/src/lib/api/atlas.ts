@@ -119,9 +119,9 @@ export interface AtlasDashboardPayload {
 }
 
 export const ATLAS_STATUS_ENDPOINTS = {
-  backend: '/health',
+  backend: '/api/v1/health',
   oracle: '/api/v1/atlas-simulation/oracle-status',
-  blockchain: '/api/v1/blockchain/hathor/status',
+  blockchain: '/api/v1/blockchain/base/status',
   weather: '/api/v1/atlas-realtime/health',
   celestrak: '/api/v1/celestrak/space-weather',
 } as const;
@@ -201,11 +201,11 @@ export async function fetchAtlasDashboard(): Promise<AtlasDashboardPayload> {
     spaceWeather: await readJson<SpaceWeather | null>(celestrak, null),
     conjunctions: await readJson<ConjunctionsData | null>(conjunctions, null),
     connections: {
-      backend: classifyProbeStatus(backend),
-      oracle: classifyProbeStatus(oracle),
-      blockchain: classifyProbeStatus(blockchain),
-      weather: classifyProbeStatus(weatherHealth),
-      celestrak: classifyProbeStatus(celestrak),
+      backend: await classifyProbeStatus(backend, { requireStatusField: true }),
+      oracle: await classifyProbeStatus(oracle),
+      blockchain: await classifyProbeStatus(blockchain),
+      weather: await classifyProbeStatus(weatherHealth),
+      celestrak: await classifyProbeStatus(celestrak),
     },
   };
 }

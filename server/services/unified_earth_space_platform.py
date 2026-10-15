@@ -7,7 +7,7 @@ Integra:
 2. CelesTrak (dados de satélites e clima espacial)
 3. OpenMeteo (dados climáticos em tempo real)
 4. Oracle Simulation (payouts automáticos)
-5. Blockchain (transações Hathor)
+5. Blockchain (transações Base L2)
 
 Arquitetura:
 ┌─────────────────────────────────────────────────────────┐

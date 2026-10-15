@@ -24,7 +24,7 @@ O ClimateWise agora é uma plataforma **UNIFICADA** que integra:
 ├─────────────────────────────────────────────────────────────┤
 │  ORACLE LAYER (Unified)                                     │
 │  • Triggers paramétricos, payouts automáticos              │
-│  • Blockchain: Hathor Testnet                               │
+│  • Blockchain: Base L2                               │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -117,7 +117,7 @@ GET /api/v1/unified-platform/dashboard-summary
 2. Oracle unificado com triggers multi-camada
 3. Análise de correlação cruzada (espaço → terra)
 4. Dados 100% gratuitos (CelesTrak, OpenMeteo, Atlas)
-5. Blockchain settlement via Hathor
+5. Blockchain settlement via Base L2
 
 ---
 

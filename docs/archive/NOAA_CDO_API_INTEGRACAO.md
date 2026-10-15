@@ -240,7 +240,7 @@ curl -H "token:WDjhFaVSxFFpLelfYoKaQjnaTorOMcfV" \
 ### Via Python
 
 ```python
-from blockchain.hathor.oracle_service import get_climate_oracle_service
+from services.climate_oracle_service import get_climate_oracle_service
 from datetime import datetime, timedelta
 
 oracle = get_climate_oracle_service()
@@ -271,7 +271,7 @@ print(f"Temperatura média: {avg_temp:.1f}°C")
 ### Via API REST (quando integrada)
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/blockchain/hathor/oracle/index \
+curl -X POST http://localhost:8000/api/v1/oracle/index \
   -H "Content-Type: application/json" \
   -d '{
     "index_type": "precipitation",
@@ -391,9 +391,9 @@ def fetch_noaa_data(...):
 
 ### ClimateWise
 
-- **Oracle Service**: `blockchain/hathor/oracle_service.py`
-- **Demo Script**: `scripts/demo_hathor_blockchain.py`
-- **Docs**: `blockchain/hathor/README.md`
+- **Oracle Service**: `services/climate_oracle_service.py`
+- **Demo Script**: `scripts/test_noaa_brazil_stations.py`
+- **Docs**: `server/services/climate_oracle_service.py`
 
 ---
 

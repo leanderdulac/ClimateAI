@@ -59,7 +59,7 @@ async def evaluate_oracle_consensus(
     `required_votes` stays 2 so existing consensus logic is preserved.
     """
     if oracle_service is None:
-        from blockchain.hathor.oracle_service import get_climate_oracle_service
+        from services.climate_oracle_service import get_climate_oracle_service
 
         oracle_service = get_climate_oracle_service()
 

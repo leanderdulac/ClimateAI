@@ -100,5 +100,5 @@ extend-exclude = '''
 '''
 
 [tool.bandit]
-exclude_dirs = ["tests", "venv", ".venv", "venv-hathor"]
+exclude_dirs = ["tests", "venv", ".venv"]
 skips = ["B101", "B311"]  # Skip assert warnings and random warnings for non-crypto use

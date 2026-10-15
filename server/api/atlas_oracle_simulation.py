@@ -116,7 +116,7 @@ async def get_oracle_status():
     - Total de eventos processados
     - Total de payouts triggerados
     - Transações blockchain
-    - Rede (Hathor Testnet Simulated)
+    - Rede (Base L2 Simulated)
     """
     status = atlas_oracle_simulation.get_oracle_status()
     return status

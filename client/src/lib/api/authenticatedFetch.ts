@@ -49,17 +49,34 @@ export async function fetchWithAuthRetry(
   return response;
 }
 
-export function classifyProbeStatus(response: Response | null | undefined): ProbeStatus {
+export async function classifyProbeStatus(
+  response: Response | null | undefined,
+  options?: { requireStatusField?: boolean }
+): Promise<ProbeStatus> {
   if (!response) {
     return 'offline';
-  }
-  if (response.ok) {
-    return 'online';
   }
   if (response.status === 401) {
     return 'session_expired';
   }
-  return 'offline';
+  if (!response.ok) {
+    return 'offline';
+  }
+  try {
+    const body: unknown = await response.clone().json();
+    if (body === null || typeof body !== 'object' || Array.isArray(body)) {
+      return 'offline';
+    }
+    if (
+      options?.requireStatusField &&
+      typeof (body as { status?: unknown }).status !== 'string'
+    ) {
+      return 'offline';
+    }
+    return 'online';
+  } catch {
+    return 'offline';
+  }
 }
 
 export function probeStatusLabel(
