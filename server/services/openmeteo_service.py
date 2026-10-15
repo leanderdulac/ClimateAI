@@ -40,8 +40,7 @@ class OpenMeteoService:
                 allowable_methods=("GET", "POST"),
                 stale_if_error=True,
             )
-            # Disable SSL verify if needed (OpenMeteo SSLError workaround)
-            self.cache_session.verify = False 
+            self.cache_session.verify = True
 
             retry_session = retry(self.cache_session, retries=5, backoff_factor=0.2)
             
@@ -200,8 +199,10 @@ class OpenMeteoService:
             else:
                 url = "https://archive-api.open-meteo.com/v1/archive"
 
-            # Fazer a requisição à API
-            responses = self.openmeteo.weather_api(url, params)
+            # Sync client — offload so the event loop stays responsive.
+            responses = await asyncio.to_thread(
+                self.openmeteo.weather_api, url, params
+            )
             
             # Algumas versões retornam uma lista, outras o objeto direto se for apenas uma localização
             if isinstance(responses, list):

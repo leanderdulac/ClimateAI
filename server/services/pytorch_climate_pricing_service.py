@@ -1,21 +1,23 @@
 """Climate-adjusted pricing on real Open-Meteo series + LSTM attention (PyTorch).
 
-No synthetic climate. Training uses archive observations. Monte Carlo draws
-empirical residuals of that fit — bootstrap of real forecast error, not fake weather.
+Training never runs on the quote request path. Models are cached per rounded
+region (in-memory LRU, ~24h TTL) and trained in a background thread.
 """
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
-import math
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 import numpy as np
 
+from lib.ttl_lru import TtlLruCache
 from services.lstm_attention_service import (
     HAS_TORCH,
     LSTMAttentionService,
@@ -31,6 +33,25 @@ DAILY_VARS = (
     "surface_pressure_mean",
     "wind_speed_10m_max",
 )
+CACHE_TTL_SECONDS = 24 * 3600
+REGION_DECIMALS = 2
+MONTE_ALEGRE = (-2.0, -54.07)
+
+
+def region_key(latitude: float, longitude: float) -> Tuple[float, float]:
+    return (
+        round(float(latitude), REGION_DECIMALS),
+        round(float(longitude), REGION_DECIMALS),
+    )
+
+
+@dataclass
+class CachedLstm:
+    service: LSTMAttentionService
+    archive: Dict[str, Any]
+    oni: Optional[float]
+    regime: Optional[str]
+    train_metrics: Dict[str, Any]
 
 
 def _finite(values: np.ndarray) -> np.ndarray:
@@ -42,8 +63,9 @@ def _finite(values: np.ndarray) -> np.ndarray:
         return arr
     if not mask.any():
         return np.array([], dtype=np.float64)
-    idx = np.arange(len(arr))
-    arr[~mask] = np.interp(idx[~mask], idx[mask], arr[mask])
+    idx = np.asarray(np.arange(len(arr)), dtype=np.float64)
+    good = np.asarray(mask, dtype=bool)
+    arr[~good] = np.interp(idx[~good], idx[good], arr[good])
     return arr
 
 
@@ -51,8 +73,8 @@ def fetch_openmeteo_daily_archive(
     latitude: float,
     longitude: float,
     days: int = 365,
-    timeout: int = 45,
-) -> Dict[str, List[float]]:
+    timeout: int = 12,
+) -> Dict[str, Any]:
     """Pull real daily observations from the Open-Meteo archive (UTC)."""
     end = datetime.now(timezone.utc).date() - timedelta(days=5)
     start = end - timedelta(days=max(60, days))
@@ -73,7 +95,9 @@ def fetch_openmeteo_daily_archive(
     dates = daily.get("time") or []
     temp = _finite(np.array(daily.get("temperature_2m_mean") or [], dtype=np.float64))
     precip = _finite(np.array(daily.get("precipitation_sum") or [], dtype=np.float64))
-    pressure = _finite(np.array(daily.get("surface_pressure_mean") or [], dtype=np.float64))
+    pressure = _finite(
+        np.array(daily.get("surface_pressure_mean") or [], dtype=np.float64)
+    )
     wind = _finite(np.array(daily.get("wind_speed_10m_max") or [], dtype=np.float64))
     n = min(len(dates), len(temp), len(precip), len(pressure), len(wind))
     if n < 40:
@@ -126,6 +150,248 @@ def climate_exceedance_multipliers(
 class PyTorchClimatePricingService:
     def __init__(self) -> None:
         self.device = select_torch_device() if HAS_TORCH else None
+        self.model_cache: TtlLruCache[CachedLstm] = TtlLruCache(
+            maxsize=32, ttl_seconds=CACHE_TTL_SECONDS
+        )
+        self.archive_cache: TtlLruCache[Dict[str, Any]] = TtlLruCache(
+            maxsize=64, ttl_seconds=CACHE_TTL_SECONDS
+        )
+        oni_t = Tuple[Optional[float], Optional[str]]
+        self.oni_cache: TtlLruCache[oni_t] = TtlLruCache(
+            maxsize=4, ttl_seconds=CACHE_TTL_SECONDS
+        )
+        self._inflight: Set[Tuple[float, float]] = set()
+
+    def reset_caches(self) -> None:
+        self.model_cache.clear()
+        self.archive_cache.clear()
+        self.oni_cache.clear()
+        self._inflight.clear()
+
+    async def get_archive(
+        self, latitude: float, longitude: float, days: int = 365
+    ) -> Dict[str, Any]:
+        key = (*region_key(latitude, longitude), days)
+        cached = self.archive_cache.get(key)
+        if cached is not None:
+            return cached
+        archive = await asyncio.to_thread(
+            fetch_openmeteo_daily_archive, latitude, longitude, days
+        )
+        return self.archive_cache.set(key, archive)
+
+    async def get_oni(self) -> Tuple[Optional[float], Optional[str]]:
+        cached = self.oni_cache.get("latest")
+        if cached is not None:
+            return cached
+        snap = await _fetch_oni_snapshot()
+        return self.oni_cache.set("latest", snap)
+
+    def schedule_train(
+        self,
+        latitude: float,
+        longitude: float,
+        *,
+        days: int = 365,
+        epochs: int = 12,
+    ) -> None:
+        key = region_key(latitude, longitude)
+        if self.model_cache.get(key) is not None or key in self._inflight:
+            return
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            return
+        self._inflight.add(key)
+        try:
+            loop.create_task(
+                self._train_region(key, latitude, longitude, days, epochs)
+            )
+        except Exception:
+            self._inflight.discard(key)
+
+    async def _train_region(
+        self,
+        key: Tuple[float, float],
+        latitude: float,
+        longitude: float,
+        days: int,
+        epochs: int,
+    ) -> None:
+        try:
+            if not HAS_TORCH:
+                return
+            archive = await self.get_archive(latitude, longitude, days)
+            oni, regime = await self.get_oni()
+            cached = await asyncio.to_thread(
+                self._train_sync, archive, oni, regime, epochs
+            )
+            self.model_cache.set(key, cached)
+            logger.info("LSTM overlay trained for region %s", key)
+        except Exception as exc:
+            logger.warning("Background LSTM train failed for %s: %s", key, exc)
+        finally:
+            self._inflight.discard(key)
+
+    def _train_sync(
+        self,
+        archive: Dict[str, Any],
+        oni: Optional[float],
+        regime: Optional[str],
+        epochs: int,
+    ) -> CachedLstm:
+        n = archive["n_obs"]
+        enso = [oni if oni is not None else 0.0] * n
+        service = LSTMAttentionService(device=self.device)
+        metrics = service.train_model(
+            temperature=archive["temperature"],
+            precipitation=archive["precipitation"],
+            pressure=archive["pressure"],
+            nao_index=archive["wind"],
+            enso_phase=enso,
+            targets=archive["precipitation"],
+            sequence_length=14,
+            epochs=epochs,
+            batch_size=32,
+            validation_split=0.15,
+        )
+        return CachedLstm(
+            service=service,
+            archive=archive,
+            oni=oni,
+            regime=regime,
+            train_metrics=metrics,
+        )
+
+    def _predict_price_sync(
+        self,
+        cached: CachedLstm,
+        *,
+        asset_value: float,
+        severity_amount: float,
+        frequency_pct: float,
+        coverage_period_years: int,
+        sequence_length: int,
+        n_sims: int,
+        horizon_days: int,
+        epochs: int,
+    ) -> Dict[str, Any]:
+        archive = cached.archive
+        n = archive["n_obs"]
+        oni = cached.oni
+        enso = [oni if oni is not None else 0.0] * n
+        features_used = ["temperature", "precipitation", "pressure", "wind"]
+        if oni is not None:
+            features_used.append("enso_oni")
+        temp = archive["temperature"]
+        precip = archive["precipitation"]
+        pressure = archive["pressure"]
+        wind = archive["wind"]
+        service = cached.service
+
+        pred = service.predict(
+            temperature=temp,
+            precipitation=precip,
+            pressure=pressure,
+            nao_index=wind,
+            enso_phase=enso,
+            sequence_length=sequence_length,
+        )
+        y_hat = float(pred["predictions"][0])
+        residuals = _in_sample_residuals(
+            service, temp, precip, pressure, wind, enso, sequence_length
+        )
+        simulated = _bootstrap_paths(
+            y_hat=y_hat,
+            residuals=residuals,
+            n_sims=n_sims,
+            horizon_days=horizon_days,
+            device=_bootstrap_device(),
+        )
+        multipliers = climate_exceedance_multipliers(np.asarray(precip), simulated)
+        adj_freq = float(frequency_pct) * multipliers["frequency_multiplier"]
+        adj_sev = float(severity_amount) * multipliers["severity_multiplier"]
+        expected_loss = (
+            (adj_freq / 100.0)
+            * min(adj_sev, asset_value)
+            * coverage_period_years
+        )
+        loading = 0.35 + 0.15
+        climate_premium = expected_loss * (1.0 + loading)
+        return {
+            "overlay_pending": False,
+            "device": str(service.device),
+            "torch": True,
+            "observations": {
+                "n": n,
+                "start": archive["start"],
+                "end": archive["end"],
+                "source": archive["source"],
+                "features": features_used,
+                "enso_oni": oni,
+                "enso_regime": cached.regime,
+            },
+            "lstm": {
+                "epochs": epochs,
+                "sequence_length": sequence_length,
+                "final_train_loss": cached.train_metrics.get("final_train_loss"),
+                "final_val_loss": cached.train_metrics.get("final_val_loss"),
+                "next_day_precip_mm": y_hat,
+            },
+            "simulation": {
+                "n_sims": n_sims,
+                "horizon_days": horizon_days,
+                "method": (
+                    "empirical residual bootstrap on LSTM fit "
+                    "to Open-Meteo archive"
+                ),
+                **multipliers,
+            },
+            "pricing": {
+                "input_frequency_pct": frequency_pct,
+                "input_severity_amount": severity_amount,
+                "adjusted_frequency_pct": adj_freq,
+                "adjusted_severity_amount": adj_sev,
+                "expected_loss": expected_loss,
+                "climate_loaded_premium": climate_premium,
+            },
+        }
+
+    async def compute_overlay(
+        self,
+        latitude: float,
+        longitude: float,
+        *,
+        asset_value: float,
+        severity_amount: float,
+        frequency_pct: float,
+        coverage_period_years: int = 1,
+        days: int = 365,
+        epochs: int = 12,
+        sequence_length: int = 14,
+        n_sims: int = 128,
+        horizon_days: int = 30,
+    ) -> Dict[str, Any]:
+        """Quote-safe overlay: never trains inline. Cache miss → overlay_pending."""
+        if not HAS_TORCH:
+            return {"overlay_pending": True, "reason": "torch_unavailable"}
+        key = region_key(latitude, longitude)
+        cached = self.model_cache.get(key)
+        if cached is None:
+            self.schedule_train(latitude, longitude, days=days, epochs=epochs)
+            return {"overlay_pending": True, "region": list(key)}
+        return await asyncio.to_thread(
+            self._predict_price_sync,
+            cached,
+            asset_value=asset_value,
+            severity_amount=severity_amount,
+            frequency_pct=frequency_pct,
+            coverage_period_years=coverage_period_years,
+            sequence_length=sequence_length,
+            n_sims=n_sims,
+            horizon_days=horizon_days,
+            epochs=epochs,
+        )
 
     async def simulate(
         self,
@@ -141,108 +407,33 @@ class PyTorchClimatePricingService:
         sequence_length: int = 14,
         n_sims: int = 256,
         horizon_days: int = 30,
+        allow_inline_train: bool = False,
     ) -> Dict[str, Any]:
         if not HAS_TORCH:
             raise RuntimeError("PyTorch is not installed")
-
-        archive = await _async_archive(latitude, longitude, days)
-        oni, regime = await _async_oni()
-        n = archive["n_obs"]
-        enso = [oni] * n if oni is not None else [0.0] * n
-        features_used = ["temperature", "precipitation", "pressure", "wind"]
-        if oni is not None:
-            features_used.append("enso_oni")
-
-        temp = archive["temperature"]
-        precip = archive["precipitation"]
-        pressure = archive["pressure"]
-        wind = archive["wind"]
-
-        service = LSTMAttentionService(device=self.device)
-        train_metrics = service.train_model(
-            temperature=temp,
-            precipitation=precip,
-            pressure=pressure,
-            nao_index=wind,
-            enso_phase=enso,
-            targets=precip,
+        key = region_key(latitude, longitude)
+        cached = self.model_cache.get(key)
+        if cached is None and allow_inline_train:
+            await self._train_region(key, latitude, longitude, days, epochs)
+            cached = self.model_cache.get(key)
+        if cached is None:
+            self.schedule_train(latitude, longitude, days=days, epochs=epochs)
+            return {"overlay_pending": True, "region": list(key)}
+        return await asyncio.to_thread(
+            self._predict_price_sync,
+            cached,
+            asset_value=asset_value,
+            severity_amount=severity_amount,
+            frequency_pct=frequency_pct,
+            coverage_period_years=coverage_period_years,
             sequence_length=sequence_length,
-            epochs=epochs,
-            batch_size=32,
-            validation_split=0.15,
-        )
-
-        pred = service.predict(
-            temperature=temp,
-            precipitation=precip,
-            pressure=pressure,
-            nao_index=wind,
-            enso_phase=enso,
-            sequence_length=sequence_length,
-        )
-        y_hat = float(pred["predictions"][0])
-
-        residuals = _in_sample_residuals(
-            service, temp, precip, pressure, wind, enso, sequence_length
-        )
-        simulated = _bootstrap_paths(
-            y_hat=y_hat,
-            residuals=residuals,
             n_sims=n_sims,
             horizon_days=horizon_days,
-            device=_bootstrap_device(),
+            epochs=epochs,
         )
-        multipliers = climate_exceedance_multipliers(np.asarray(precip), simulated)
-
-        adj_freq = float(frequency_pct) * multipliers["frequency_multiplier"]
-        adj_sev = float(severity_amount) * multipliers["severity_multiplier"]
-        expected_loss = (adj_freq / 100.0) * min(adj_sev, asset_value) * coverage_period_years
-        loading = 0.35 + 0.15
-        climate_premium = expected_loss * (1.0 + loading)
-
-        return {
-            "device": str(service.device),
-            "torch": True,
-            "observations": {
-                "n": n,
-                "start": archive["start"],
-                "end": archive["end"],
-                "source": archive["source"],
-                "features": features_used,
-                "enso_oni": oni,
-                "enso_regime": regime,
-            },
-            "lstm": {
-                "epochs": epochs,
-                "sequence_length": sequence_length,
-                "final_train_loss": train_metrics.get("final_train_loss"),
-                "final_val_loss": train_metrics.get("final_val_loss"),
-                "next_day_precip_mm": y_hat,
-            },
-            "simulation": {
-                "n_sims": n_sims,
-                "horizon_days": horizon_days,
-                "method": "empirical residual bootstrap on LSTM fit to Open-Meteo archive",
-                **multipliers,
-            },
-            "pricing": {
-                "input_frequency_pct": frequency_pct,
-                "input_severity_amount": severity_amount,
-                "adjusted_frequency_pct": adj_freq,
-                "adjusted_severity_amount": adj_sev,
-                "expected_loss": expected_loss,
-                "climate_loaded_premium": climate_premium,
-            },
-        }
 
 
-async def _async_archive(lat: float, lon: float, days: int) -> Dict[str, Any]:
-    import asyncio
-
-    return await asyncio.to_thread(fetch_openmeteo_daily_archive, lat, lon, days)
-
-
-async def _async_oni() -> Tuple[Optional[float], Optional[str]]:
+async def _fetch_oni_snapshot() -> Tuple[Optional[float], Optional[str]]:
     try:
         from services.enso_service import ENSOService
 
@@ -272,7 +463,9 @@ def _in_sample_residuals(
         return np.array([0.0])
     features = service.prepare_climate_features(temp, precip, pressure, wind, enso)
     normalized = service.normalize_features(features)
-    X, y = service.create_sequences(normalized, np.array(precip, dtype=np.float64), seq_len)
+    X, y = service.create_sequences(
+        normalized, np.array(precip, dtype=np.float64), seq_len
+    )
     if len(X) == 0:
         return np.array([0.0])
     service.model.eval()
@@ -311,3 +504,12 @@ def _bootstrap_paths(
 
 
 pytorch_climate_pricing_service = PyTorchClimatePricingService()
+
+
+async def schedule_warmup() -> None:
+    """Warm the Monte Alegre region in the background. Never blocks startup."""
+    try:
+        pytorch_climate_pricing_service.schedule_train(*MONTE_ALEGRE)
+        logger.info("LSTM overlay warmup scheduled for Monte Alegre %s", MONTE_ALEGRE)
+    except Exception as exc:
+        logger.warning("LSTM overlay warmup skipped: %s", exc)
