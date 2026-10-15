@@ -69,7 +69,9 @@ async def probe_base_status() -> Dict[str, Any]:
         return {
             "status": "offline" if chain_mismatch else "online",
             "network": "base",
-            "chain_id": observed_chain if observed_chain is not None else config.chain_id,
+            "chain_id": (
+                observed_chain if observed_chain is not None else config.chain_id
+            ),
             "latest_block": latest_block,
             "explorer_url": config.explorer_url or None,
             "contracts": contracts,

@@ -50,7 +50,9 @@ class ConsensusVoteRequest(BaseModel):
 
 
 class ClimateIndexQuery(BaseModel):
-    index_type: str = Field(..., description="Index type (precipitation, temperature, etc.)")
+    index_type: str = Field(
+        ..., description="Index type (precipitation, temperature, etc.)"
+    )
     latitude: float = Field(..., ge=-90, le=90)
     longitude: float = Field(..., ge=-180, le=180)
     start_date: str = Field(..., description="Start date (YYYY-MM-DD)")
@@ -135,7 +137,7 @@ async def submit_consensus_vote(
 
 @router.post("/index")
 async def get_climate_index(request: ClimateIndexQuery):
-    """Climate index from INMET / NOAA / Open-Meteo (no chain dependency)."""
+    """Climate index from INMET / NOAA / Open-Meteo."""
     try:
         index = get_climate_oracle_service().get_climate_index(
             index_type=request.index_type,

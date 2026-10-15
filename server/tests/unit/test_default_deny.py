@@ -64,7 +64,9 @@ def test_api_v1_health_returns_401_without_token(client: TestClient):
 
 
 @pytest.mark.unit
-def test_api_v1_health_returns_json_when_authenticated(authenticated_client: TestClient):
+def test_api_v1_health_returns_json_when_authenticated(
+    authenticated_client: TestClient,
+):
     response = authenticated_client.get("/api/v1/health")
     assert response.status_code == 200
     assert "application/json" in response.headers.get("content-type", "")

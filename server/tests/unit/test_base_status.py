@@ -5,7 +5,9 @@ from fastapi.testclient import TestClient
 
 
 @pytest.mark.unit
-def test_base_status_not_configured_without_rpc(authenticated_client: TestClient, monkeypatch):
+def test_base_status_not_configured_without_rpc(
+    authenticated_client: TestClient, monkeypatch
+):
     monkeypatch.delenv("BASE_RPC_URL", raising=False)
     monkeypatch.delenv("BASE_CHAIN_ID", raising=False)
     monkeypatch.delenv("BASE_CONTRACT_ADDRESS", raising=False)
@@ -20,7 +22,9 @@ def test_base_status_not_configured_without_rpc(authenticated_client: TestClient
 
 
 @pytest.mark.unit
-def test_base_status_online_when_rpc_responds(authenticated_client: TestClient, monkeypatch):
+def test_base_status_online_when_rpc_responds(
+    authenticated_client: TestClient, monkeypatch
+):
     monkeypatch.setenv("BASE_RPC_URL", "https://example.invalid")
     monkeypatch.setenv("BASE_CHAIN_ID", "84532")
     monkeypatch.setenv("BASE_CONTRACT_ADDRESS", "0xabc")
