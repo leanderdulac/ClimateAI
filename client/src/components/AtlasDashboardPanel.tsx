@@ -8,7 +8,6 @@ import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { buildApiUrl } from '@/lib/api';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
@@ -25,13 +24,26 @@ import {
   XCircle,
   Database,
   Server,
+  Newspaper,
   Wifi,
-  WifiOff,
-  Newspaper
+  WifiOff
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslation } from "@/hooks/useTranslation";
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import {
+  emptyAtlasDashboard,
+  fetchAtlasDashboard,
+  refreshNewsAlerts,
+  type AtlasConnectionStatus,
+  type AtlasDashboardPayload,
+  type BlockchainTransaction,
+  type ConjunctionAlert,
+  type LiveEvent,
+  type NewsAlert,
+  type WeatherCityData,
+} from '@/lib/api/atlas';
+import { probeStatusLabel, type ProbeStatus } from '@/lib/api/authenticatedFetch';
 
 const GlobeVisualization = lazy(() =>
   import('./GlobeVisualization').then((module) => ({ default: module.GlobeVisualization }))
@@ -49,220 +61,36 @@ interface GlobeEvent {
   source?: string;
 }
 
-interface AtlasData {
-  oracleStatus: OracleStatus;
-  portfolioRisk: PortfolioRisk;
-  liveEvents: LiveEvent[];
-  realtimeWeather: WeatherCityData[];
-  riskSummary: Record<string, unknown> | null;
-  spaceWeather: SpaceWeather | null;
-  conjunctions: ConjunctionsData | null;
-}
-
-interface OracleStatus {
-  total_events_processed?: number;
-  total_payouts_triggered?: number;
-  total_blockchain_transactions?: number;
-}
-
-interface PortfolioRiskSummary {
-  total_exposure?: number;
-  potential_payout?: number;
-  total_alerts?: number;
-  high_severity_count?: number;
-  impacted_policies_count?: number;
-}
-
-interface BlockchainTransaction {
-  tx_id?: string;
-  confirmations?: number;
-  amount?: number;
-}
-
-interface PortfolioRisk {
-  summary?: PortfolioRiskSummary;
-  blockchain_transactions?: BlockchainTransaction[];
-}
-
-interface LiveEvent {
-  event_id?: string;
-  disaster_type: string;
-  severity_score: number;
-  payout_triggered?: boolean;
-  payout_amount?: number;
-  description?: string;
-  timestamp?: string;
-  municipio?: string;
-  uf?: string;
-  latitude?: number;
-  longitude?: number;
-  source?: string;
-}
-
-interface WeatherCurrent {
-  temperature?: number;
-  humidity?: number;
-  wind_speed?: number;
-  precipitation?: number;
-  weather_description?: string;
-}
-
-interface WeatherRiskIndicators {
-  risk_level?: string;
-}
-
-interface WeatherCityData {
-  city: string;
-  source?: string;
-  current?: WeatherCurrent;
-  risk_indicators?: WeatherRiskIndicators;
-}
-
-interface SpaceWeather {
-  geomagnetic_storm_active?: boolean;
-  kp_index?: number;
-  solar_flux?: number;
-  status?: string;
-  timestamp?: string;
-}
-
-interface ConjunctionAlert {
-  satellite_1: string;
-  satellite_2: string;
-  miss_distance_km: number;
-  probability: string;
-  tca_time: string;
-}
-
-interface ConjunctionsData {
-  alerts?: ConjunctionAlert[];
-}
-
-interface NewsAlert {
-  alert_id: string;
-  title: string;
-  summary: string;
-  source: string;
-  source_url: string;
-  published: string;
-  disaster_type: string;
-  severity: string;
-  severity_score: number;
-  locations: string[];
-  uf: string | null;
-  confidence: number;
-}
+const EMPTY_CONNECTIONS: AtlasConnectionStatus = {
+  backend: 'offline',
+  oracle: 'offline',
+  blockchain: 'offline',
+  weather: 'offline',
+  celestrak: 'offline',
+};
 
 export function AtlasDashboardPanel() {
   const { t, language } = useTranslation();
-  const [data, setData] = useState<AtlasData | null>(null);
+  const [data, setData] = useState<AtlasDashboardPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [shouldRenderGlobe, setShouldRenderGlobe] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [newsAlerts, setNewsAlerts] = useState<NewsAlert[]>([]);
   const [newsLoading, setNewsLoading] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<{
-    backend: boolean;
-    oracle: boolean;
-    blockchain: boolean;
-    weather: boolean;
-    celestrak: boolean;
-  }>({
-    backend: false,
-    oracle: false,
-    blockchain: false,
-    weather: false,
-    celestrak: false,
-  });
+  const [connectionStatus, setConnectionStatus] = useState<AtlasConnectionStatus>(EMPTY_CONNECTIONS);
 
   const fetchData = React.useCallback(async () => {
     try {
       setLoading(true);
-
-      // Buscar dados de múltiplas fontes
-      const [oracleRes, portfolioRes, eventsRes, weatherRes, riskRes, spaceWeatherRes, conjunctionsRes, allCitiesRes] = await Promise.allSettled([
-        fetch(buildApiUrl('/api/v1/atlas-simulation/oracle-status')),
-        fetch(buildApiUrl('/api/v1/atlas-simulation/portfolio-risk')),
-        fetch(buildApiUrl('/api/v1/atlas-simulation/live-events?limit=10')),
-        fetch(buildApiUrl('/api/v1/atlas-realtime/risk-summary')),
-        fetch(buildApiUrl('/api/v1/atlas-integration/health')),
-        fetch(buildApiUrl('/api/v1/celestrak/space-weather')),
-        fetch(buildApiUrl('/api/v1/celestrak/conjunctions')),
-        fetch(buildApiUrl('/api/v1/atlas-realtime/all-cities')),
-      ]);
-
-      const atlasData: Partial<AtlasData> = {};
-
-      // Backend health
-      if (riskRes.status === 'fulfilled' && riskRes.value.ok) {
-        setConnectionStatus(prev => ({ ...prev, backend: true }));
-      }
-
-      if (oracleRes.status === 'fulfilled' && oracleRes.value.ok) {
-        atlasData.oracleStatus = await oracleRes.value.json();
-        setConnectionStatus(prev => ({ ...prev, oracle: true }));
-      } else {
-        console.warn('Oracle status failed:', oracleRes);
-      }
-
-      if (portfolioRes.status === 'fulfilled' && portfolioRes.value.ok) {
-        atlasData.portfolioRisk = await portfolioRes.value.json();
-        setConnectionStatus(prev => ({ ...prev, blockchain: true }));
-      } else {
-        console.warn('Portfolio risk failed:', portfolioRes);
-      }
-
-      if (eventsRes.status === 'fulfilled' && eventsRes.value.ok) {
-        const events = await eventsRes.value.json();
-        console.log('Live events loaded:', events?.length || 0);
-        atlasData.liveEvents = events;
-      } else {
-        console.warn('Live events failed:', eventsRes);
-        atlasData.liveEvents = [];
-      }
-
-      if (weatherRes.status === 'fulfilled' && weatherRes.value.ok) {
-        atlasData.riskSummary = await weatherRes.value.json();
-        setConnectionStatus(prev => ({ ...prev, weather: true }));
-      } else {
-        console.warn('Weather summary failed:', weatherRes);
-      }
-
-      // All cities weather data
-      if (allCitiesRes.status === 'fulfilled' && allCitiesRes.value.ok) {
-        const citiesJson = await allCitiesRes.value.json();
-        atlasData.realtimeWeather = citiesJson.data || [];
-        setConnectionStatus(prev => ({ ...prev, weather: true }));
-      } else {
-        console.warn('All cities weather failed:', allCitiesRes);
-        atlasData.realtimeWeather = [];
-      }
-
-      // CelesTrak Data Processing
-      let celestrakOnline = false;
-      if (spaceWeatherRes.status === 'fulfilled' && spaceWeatherRes.value.ok) {
-        atlasData.spaceWeather = await spaceWeatherRes.value.json();
-        celestrakOnline = true;
-      }
-      if (conjunctionsRes.status === 'fulfilled' && conjunctionsRes.value.ok) {
-        atlasData.conjunctions = await conjunctionsRes.value.json();
-        celestrakOnline = true;
-      }
-      setConnectionStatus(prev => ({ ...prev, celestrak: celestrakOnline }));
-
-      setData(atlasData as AtlasData);
+      const dashboard = await fetchAtlasDashboard();
+      setConnectionStatus(dashboard.connections);
+      setData(dashboard);
       setLastUpdate(new Date());
     } catch (error) {
       console.error(t('atlas.panel.error.fetching'), error);
-      setData({
-        oracleStatus: { total_events_processed: 0, total_payouts_triggered: 0 },
-        portfolioRisk: { summary: { total_exposure: 0, potential_payout: 0, total_alerts: 0, high_severity_count: 0, impacted_policies_count: 0 } },
-        liveEvents: [],
-        realtimeWeather: [],
-        riskSummary: null,
-        spaceWeather: null,
-        conjunctions: null,
-      });
+      const fallback = emptyAtlasDashboard();
+      setConnectionStatus(fallback.connections);
+      setData(fallback);
     } finally {
       setLoading(false);
     }
@@ -281,8 +109,16 @@ export function AtlasDashboardPanel() {
     })}`;
   };
 
-  const getStatusColor = (status: boolean) => status ? 'text-green-600' : 'text-red-600';
-  const getStatusIcon = (status: boolean) => status ? <CheckCircle className="h-4 w-4" /> : <XCircle className="h-4 w-4" />;
+  const getStatusColor = (status: ProbeStatus) => {
+    if (status === 'online') return 'text-emerald-400';
+    if (status === 'session_expired') return 'text-amber-400';
+    return 'text-red-400';
+  };
+  const getStatusIcon = (status: ProbeStatus) => {
+    if (status === 'online') return <CheckCircle className="h-4 w-4" />;
+    if (status === 'session_expired') return <AlertTriangle className="h-4 w-4" />;
+    return <XCircle className="h-4 w-4" />;
+  };
 
   const getSeverityColor = (score: number) => {
     if (score >= 4.0) return 'text-red-600 font-bold';
@@ -363,27 +199,22 @@ export function AtlasDashboardPanel() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-5 gap-4">
-            <div className="flex items-center gap-2">
-              {getStatusIcon(connectionStatus.backend)}
-              <span className={getStatusColor(connectionStatus.backend)}>Backend API</span>
-            </div>
-            <div className="flex items-center gap-2">
-              {getStatusIcon(connectionStatus.oracle)}
-              <span className={getStatusColor(connectionStatus.oracle)}>Oracle</span>
-            </div>
-            <div className="flex items-center gap-2">
-              {getStatusIcon(connectionStatus.blockchain)}
-              <span className={getStatusColor(connectionStatus.blockchain)}>Blockchain</span>
-            </div>
-            <div className="flex items-center gap-2">
-              {getStatusIcon(connectionStatus.weather)}
-              <span className={getStatusColor(connectionStatus.weather)}>Clima</span>
-            </div>
-            <div className="flex items-center gap-2">
-              {getStatusIcon(connectionStatus.celestrak)}
-              <span className={getStatusColor(connectionStatus.celestrak)}>CelesTrak API</span>
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4" data-testid="atlas-connection-status">
+            {([
+              ['backend', 'Backend API'],
+              ['oracle', 'Oracle'],
+              ['blockchain', 'Blockchain'],
+              ['weather', 'Clima'],
+              ['celestrak', 'CelesTrak API'],
+            ] as const).map(([key, label]) => (
+              <div key={key} className="flex items-center gap-2 min-w-0" data-testid={`atlas-status-${key}`}>
+                <span className={getStatusColor(connectionStatus[key])}>{getStatusIcon(connectionStatus[key])}</span>
+                <div className="min-w-0">
+                  <div className={`text-sm font-medium ${getStatusColor(connectionStatus[key])}`}>{label}</div>
+                  <div className="text-xs text-muted-foreground">{probeStatusLabel(connectionStatus[key], t)}</div>
+                </div>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
@@ -402,10 +233,10 @@ export function AtlasDashboardPanel() {
             </Suspense>
           </div>
         ) : (
-          <Card className="border-slate-200 bg-slate-50/80">
+          <Card className="border-border bg-card">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="h-5 w-5 text-blue-600" />
+              <CardTitle className="flex items-center gap-2 text-foreground">
+                <Activity className="h-5 w-5 text-primary" />
                 Visualizacao 3D sob demanda
               </CardTitle>
               <CardDescription>
@@ -432,15 +263,15 @@ export function AtlasDashboardPanel() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border-red-100 bg-red-50/20">
+        <Card className="border-border bg-card">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <ShieldAlert className="h-4 w-4 text-red-600" />
+            <CardTitle className="text-sm font-medium flex items-center gap-2 text-foreground">
+              <ShieldAlert className="h-4 w-4 text-primary" />
               {t('atlas.kpi.exposure')}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-700">
+            <div className="text-2xl font-bold text-foreground">
               {formatCurrency(data?.portfolioRisk?.summary?.total_exposure || 0)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
@@ -449,15 +280,15 @@ export function AtlasDashboardPanel() {
           </CardContent>
         </Card>
 
-        <Card className="border-amber-100 bg-amber-50/20">
+        <Card className="border-border bg-card">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-amber-600" />
+            <CardTitle className="text-sm font-medium flex items-center gap-2 text-foreground">
+              <TrendingUp className="h-4 w-4 text-primary" />
               {t('atlas.kpi.payout')}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-amber-700">
+            <div className="text-2xl font-bold text-foreground">
               {formatCurrency(data?.portfolioRisk?.summary?.potential_payout || 0)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
@@ -466,15 +297,15 @@ export function AtlasDashboardPanel() {
           </CardContent>
         </Card>
 
-        <Card className="border-blue-100 bg-blue-50/20">
+        <Card className="border-border bg-card">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Activity className="h-4 w-4 text-blue-600" />
+            <CardTitle className="text-sm font-medium flex items-center gap-2 text-foreground">
+              <Activity className="h-4 w-4 text-primary" />
               {t('atlas.kpi.activeEvents')}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-700">
+            <div className="text-2xl font-bold text-foreground">
               {data?.portfolioRisk?.summary?.total_alerts || 0}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
@@ -483,15 +314,15 @@ export function AtlasDashboardPanel() {
           </CardContent>
         </Card>
 
-        <Card className="border-emerald-100 bg-emerald-50/20">
+        <Card className="border-border bg-card">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Database className="h-4 w-4 text-emerald-600" />
+            <CardTitle className="text-sm font-medium flex items-center gap-2 text-foreground">
+              <Database className="h-4 w-4 text-primary" />
               {t('atlas.kpi.oracleStatus')}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-emerald-700">
+            <div className="text-2xl font-bold text-foreground">
               {data?.oracleStatus?.total_events_processed || 0}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
@@ -955,14 +786,8 @@ export function AtlasDashboardPanel() {
                 onClick={async () => {
                   setNewsLoading(true);
                   try {
-                    const res = await fetch(buildApiUrl('/api/v1/news-crawler/refresh'), { method: 'POST' });
-                    if (res.ok) {
-                      const alertsRes = await fetch(buildApiUrl('/api/v1/news-crawler/alerts?limit=20'));
-                      if (alertsRes.ok) {
-                        const json = await alertsRes.json();
-                        setNewsAlerts(json.alerts || []);
-                      }
-                    }
+                    const alerts = await refreshNewsAlerts();
+                    setNewsAlerts(alerts);
                   } catch (e) { console.error(e); }
                   setNewsLoading(false);
                 }}
