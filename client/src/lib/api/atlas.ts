@@ -201,11 +201,11 @@ export async function fetchAtlasDashboard(): Promise<AtlasDashboardPayload> {
     spaceWeather: await readJson<SpaceWeather | null>(celestrak, null),
     conjunctions: await readJson<ConjunctionsData | null>(conjunctions, null),
     connections: {
-      backend: classifyProbeStatus(backend),
-      oracle: classifyProbeStatus(oracle),
-      blockchain: classifyProbeStatus(blockchain),
-      weather: classifyProbeStatus(weatherHealth),
-      celestrak: classifyProbeStatus(celestrak),
+      backend: await classifyProbeStatus(backend, { requireStatusField: true }),
+      oracle: await classifyProbeStatus(oracle),
+      blockchain: await classifyProbeStatus(blockchain),
+      weather: await classifyProbeStatus(weatherHealth),
+      celestrak: await classifyProbeStatus(celestrak),
     },
   };
 }

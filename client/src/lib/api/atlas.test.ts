@@ -49,7 +49,7 @@ describe('fetchAtlasDashboard', () => {
   it('classifies 401 probes as session_expired and still loads payload data', async () => {
     fetchWithAuthRetryMock.mockImplementation(async (input) => {
       const url = String(input);
-      if (url === '/api/v1/health') return jsonResponse(200, { status: 'ok' });
+      if (url === '/api/v1/health') return jsonResponse(200, { status: 'healthy' });
       if (url === '/api/v1/atlas-simulation/oracle-status') {
         return jsonResponse(401, { detail: 'Não autenticado' });
       }
@@ -77,6 +77,22 @@ describe('fetchAtlasDashboard', () => {
     expect(dashboard.portfolioRisk.summary?.total_exposure).toBe(10);
     expect(dashboard.liveEvents).toHaveLength(1);
     expect(dashboard.realtimeWeather[0]?.city).toBe('SP');
+  });
+
+  it('treats SPA HTML 200 on /api/v1/health as backend offline', async () => {
+    fetchWithAuthRetryMock.mockImplementation(async (input) => {
+      const url = String(input);
+      if (url === '/api/v1/health') {
+        return new Response('<!doctype html><html><body>ClimateWise</body></html>', {
+          status: 200,
+          headers: { 'Content-Type': 'text/html; charset=utf-8' },
+        });
+      }
+      return jsonResponse(200, { status: 'ok' });
+    });
+
+    const dashboard = await fetchAtlasDashboard();
+    expect(dashboard.connections.backend).toBe('offline');
   });
 });
 
