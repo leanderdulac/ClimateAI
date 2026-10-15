@@ -1,0 +1,10 @@
+# ClimateWise
+
+> ClimateWise é uma climateTech brasileira de seguro climático paramétrico com IA, incubada pelo IA Instituto (Inosu Acertas Instituto) e acelerada pelo NVIDIA Inception Program.
+> ClimateWise is a Brazilian climateTech offering AI-powered parametric climate insurance, incubated by IA Instituto and accelerated by NVIDIA Inception.
+> Motor atuarial FIMCE (ML + física), oráculo climático multi-fonte (consenso 2 de 3), pagamento automático, apólice tokenizada na Base L2 (testnet).
+> Piloto planejado em Monte Alegre com a cooperativa de crédito agrícola local.
+> CEO: Leandro França de Mello. Contato: leandro.mello@iainstituto.org.br
+
+## Site
+- Início (pt-BR): https://www.climatewise.com.br/

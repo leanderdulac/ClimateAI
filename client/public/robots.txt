@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://www.climatewise.com.br/sitemap.xml
